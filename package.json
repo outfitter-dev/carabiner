@@ -1,21 +1,22 @@
 {
-  "name": "grapple",
+  "name": "@outfitter/grapple",
   "version": "1.0.0",
-  "description": "A new project created from bun-monorepo-template",
+  "description": "A monorepo dedicated to tooling for Claude Code hooks",
   "type": "module",
   "private": true,
   "keywords": [
+    "claude-code",
+    "hooks",
+    "tooling",
     "monorepo",
     "bun",
-    "typescript",
-    "template",
-    "starter"
+    "typescript"
   ],
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/outfitter-dev/grapple.git"
   },
   "workspaces": [
     "apps/*",

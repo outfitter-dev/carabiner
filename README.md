@@ -1,17 +1,19 @@
-# grapple
+# @outfitter/grapple
 
-A modern web project built with Astro, TypeScript, and Bun.
+A monorepo dedicated to tooling for Claude Code hooks.
+
+## Overview
+
+Grapple provides utilities, tools, and libraries for building and managing Claude Code hooks - from simple pre-commit formatters to complex multi-agent workflows.
 
 ## Features
 
-- ⚡ **Astro v5** with modern performance optimizations
-- 🎨 **Tailwind CSS** with shadcn/ui components  
-- 📱 **View Transitions** for smooth navigation
-- 🖼️ **Image Optimization** with Sharp
-- 🔧 **TypeScript** strict mode with type-safe environment variables
+- 🔧 **TypeScript** strict mode with comprehensive type safety
 - 🧪 **Biome** + Ultracite for lightning-fast linting
 - 🐛 **Lefthook** for git hooks
 - 📦 **Bun** for fast package management and builds
+- ⚡ **Turbo** for efficient monorepo management
+- 🎯 **Claude Code** hook utilities and patterns
 
 ## Getting Started
 
@@ -19,14 +21,14 @@ A modern web project built with Astro, TypeScript, and Bun.
 # Install dependencies
 bun install
 
-# Start development server
+# Start development
 bun run dev
 
-# Build for production
+# Build all packages
 bun run build
 
-# Preview production build
-bun run preview
+# Run tests
+bun run test
 ```
 
 ## Development
@@ -35,8 +37,16 @@ bun run preview
 - **Lint code**: `bun run lint`
 - **Type check**: `bun run typecheck`
 
-## Deployment
+## Monorepo Structure
 
-The site is configured for static deployment to Cloudflare Pages, Vercel, or any static hosting service.
+- **apps/**: Applications and examples
+- **packages/**: Reusable libraries and utilities for Claude Code hooks
+
+## Contributing
+
+1. Create feature branches for all changes
+2. Follow conventional commit messages
+3. Run linting and type checking before committing
+4. Use PRs for code review
 
 Built from [bun-monorepo-template](https://github.com/galligan/bun-monorepo-template).
