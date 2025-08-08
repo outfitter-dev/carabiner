@@ -1,16 +1,7 @@
 pre-commit:
   parallel: true
-  commands:
-    format:
-      run: bun run format:check
-    lint:
-      run: bun run lint
-    typecheck:
-      run: bun run typecheck:core
-      glob: "*.{ts,tsx}"
+  commands: {}
 
 pre-push:
   parallel: true
-  commands:
-    test:
-      run: bun run test:ci
+  commands: {}

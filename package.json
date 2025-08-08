@@ -34,7 +34,7 @@
     "lint:fix": "bun x ultracite@latest lint --write",
     "lint:packages": "publint packages/*/dist",
     "typecheck": "turbo typecheck",
-    "typecheck:core": "turbo typecheck --filter='!@claude-code/hooks-examples'",
+    "typecheck:core": "turbo typecheck --filter=@claude-code/hooks-core --filter=@claude-code/hooks-config --filter=@claude-code/hooks-validators --filter=@claude-code/hooks-cli --filter=@claude-code/hooks-testing",
     "typecheck:all": "tsc --noEmit",
     "ci:full": "bun run lint && bun run typecheck && bun run test:ci && bun run build",
     "setup:tests": "bun scripts/setup-tests.ts",
