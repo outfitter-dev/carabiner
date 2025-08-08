@@ -1,0 +1,28 @@
+{
+  "name": "@claude-code/hooks-examples",
+  "version": "0.1.0",
+  "description": "Example implementations demonstrating Claude Code hooks APIs",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "examples"
+  ],
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@claude-code/hooks-core": "workspace:*",
+    "@claude-code/hooks-validators": "workspace:*",
+    "@claude-code/hooks-config": "workspace:*",
+    "@claude-code/hooks-testing": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.19",
+    "typescript": "^5.7.2"
+  }
+}

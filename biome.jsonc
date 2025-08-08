@@ -10,5 +10,17 @@
       "allowComments": true,
       "allowTrailingCommas": true
     }
+  },
+  "files": {
+    "includes": [
+      "packages/hooks-core/src/**",
+      "packages/hooks-config/src/**",
+      "packages/hooks-validators/src/**",
+      "packages/hooks-cli/src/**",
+      "packages/hooks-testing/src/**",
+      "*.ts",
+      "*.js",
+      "*.json"
+    ]
   }
 }

@@ -1,0 +1,52 @@
+{
+  "name": "@claude-code/hooks-cli",
+  "version": "0.1.0",
+  "description": "CLI tools for Claude Code hooks development",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "claude-hooks": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun run build:clean && bun run build:tsc && bun run build:chmod",
+    "build:clean": "rm -rf dist",
+    "build:tsc": "tsc --project tsconfig.build.json",
+    "build:chmod": "chmod +x dist/cli.js",
+    "dev": "tsc --watch --project tsconfig.build.json",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build"
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "cli",
+    "development-tools"
+  ],
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@claude-code/hooks-core": "workspace:*",
+    "@claude-code/hooks-config": "workspace:*",
+    "@claude-code/hooks-validators": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.19",
+    "typescript": "^5.7.2"
+  }
+}

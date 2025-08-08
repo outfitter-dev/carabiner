@@ -1,0 +1,44 @@
+{
+  "name": "@claude-code/hooks-config",
+  "version": "0.1.0",
+  "description": "Configuration management for Claude Code hooks",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun run build:clean && bun run build:tsc",
+    "build:clean": "rm -rf dist",
+    "build:tsc": "tsc --project tsconfig.build.json",
+    "dev": "tsc --watch --project tsconfig.build.json",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build"
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "configuration"
+  ],
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@claude-code/hooks-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.19",
+    "typescript": "^5.7.2"
+  }
+}

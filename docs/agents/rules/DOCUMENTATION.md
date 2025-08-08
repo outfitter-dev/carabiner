@@ -4,20 +4,25 @@
 
 ### Package README Structure
 
-```markdown
+````markdown
 # Package Name
 
 Brief description of what this package does.
 
 ## Installation
 
-\`\`\`bash bun add @org/package-name \`\`\`
+```bash
+bun add @org/package-name
+```
 
 ## Usage
 
-\`\`\`typescript import { feature } from '@org/package-name';
+```typescript
+import { feature } from '@org/package-name';
 
-// Basic example const result = feature(options); \`\`\`
+// Basic example
+const result = feature(options);
+```
 
 ## API Reference
 
@@ -37,12 +42,14 @@ Description of the function.
 
 Full TypeScript support with exported types.
 
-\`\`\`typescript import type { Options, Result } from '@org/package-name'; \`\`\`
+```typescript
+import type { Options, Result } from '@org/package-name';
+```
 
 ## License
 
 MIT
-```
+````
 
 ### App README Structure
 
@@ -250,26 +257,9 @@ function fibonacci(n: number): number {
 
 ## Documentation Tools
 
-### Markdown Linting
-
-```json
-// .markdownlint-cli2.jsonc
-{
-  "config": {
-    "default": true,
-    "MD013": false, // Line length
-    "MD033": false, // HTML in markdown
-    "MD041": false // First line heading
-  }
-}
-```
-
 ### Documentation Site
 
-- Use Docusaurus for comprehensive docs
-- VitePress for simpler projects
-- GitHub Pages for hosting
-- Algolia DocSearch for search
+- Use Astro Starlight for comprehensive docs
 
 ## Best Practices
 

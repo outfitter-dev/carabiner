@@ -3,9 +3,17 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "linked": [],
-  "access": "restricted",
+  "linked": [
+    [
+      "@claude-code/hooks-core",
+      "@claude-code/hooks-validators",
+      "@claude-code/hooks-config",
+      "@claude-code/hooks-testing",
+      "@claude-code/hooks-cli"
+    ]
+  ],
+  "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": ["@outfitter/grapple", "examples"]
 }

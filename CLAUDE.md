@@ -8,7 +8,7 @@ This is a modern TypeScript monorepo starter template built with Bun, Turbo, and
 
 ## Important Rules
 
-@./.agents/rules/IMPORTANT.md
+@docs/agents/rules/IMPORTANT.md
 
 ## Important Patterns
 

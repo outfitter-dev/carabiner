@@ -6,7 +6,7 @@ pre-commit:
     lint:
       run: bun run lint
     typecheck:
-      run: bun run typecheck
+      run: bun run typecheck:core
       glob: "*.{ts,tsx}"
 
 pre-push:
