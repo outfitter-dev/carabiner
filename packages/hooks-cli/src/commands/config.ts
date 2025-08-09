@@ -81,14 +81,22 @@ export class ConfigCommand extends BaseCommand {
   private showConfigHelp(): void {
     process.stdout.write(`
 Configuration commands:
-  show           Display current configuration
-  validate       Validate configuration files
-  export         Export configuration to a file
+  show                Display current configuration
+  validate            Validate configuration files
+  export              Export configuration to a file
+  generate-settings   Generate Claude Code settings.json
+  enable              Enable a specific hook
+  disable             Disable a specific hook
+  set-timeout         Set timeout for a specific hook
 
 Examples:
   claude-hooks config show
   claude-hooks config validate
   claude-hooks config export --format json --output my-config.json
+  claude-hooks config generate-settings
+  claude-hooks config enable PreToolUse:Bash
+  claude-hooks config disable PostToolUse:Write
+  claude-hooks config set-timeout PreToolUse:Bash 10000
 `);
   }
 
@@ -236,7 +244,12 @@ Examples:
       const warnings = await this.performConfigValidation(config);
 
       if (warnings > 0) {
-        // Handle warnings if needed
+        process.stderr.write(
+          `⚠️  Configuration validation completed with ${warnings} warning${warnings > 1 ? 's' : ''}\n`
+        );
+        process.exit(2); // Exit with code 2 for warnings (distinct from errors)
+      } else {
+        process.stdout.write('✅ Configuration validation passed with no warnings\n');
       }
     } catch (_error) {
       process.exit(1);
