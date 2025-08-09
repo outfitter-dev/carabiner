@@ -73,64 +73,44 @@ export class ClaudeHooksCli {
   }
 
   /**
-   * Parse command line arguments
-   */
-  private parseGlobalArgs(args: string[]): {
-    command?: string;
-    commandArgs: string[];
-  } {
-    try {
-      const { values, positionals } = parseArgs({
-        args,
-        allowPositionals: true,
-        options: {
-          help: { type: 'boolean', short: 'h' },
-          version: { type: 'boolean', short: 'v' },
-          verbose: { type: 'boolean' },
-          debug: { type: 'boolean' },
-          workspace: { type: 'string', short: 'w' },
-        },
-      });
-
-      // Handle global options
-      if (values.help) {
-        await this.showHelp();
-        process.exit(0);
-      }
-
-      if (values.version) {
-        process.exit(0);
-      }
-
-      if (values.verbose) {
-        this.config.verbose = true;
-      }
-
-      if (values.debug) {
-        this.config.debug = true;
-      }
-
-      if (values.workspace) {
-        this.config.workspacePath = resolve(values.workspace);
-      }
-
-      const command = positionals[0];
-      const commandArgs = positionals.slice(1);
-
-      return { command, commandArgs };
-    } catch (error) {
-      this.error(
-        `Invalid arguments: ${error instanceof Error ? error.message : error}`
-      );
-      process.exit(1);
-    }
-  }
-
-  /**
    * Run the CLI
    */
   async run(args: string[]): Promise<void> {
-    const { command, commandArgs } = this.parseGlobalArgs(args);
+    const { values, positionals } = parseArgs({
+      args,
+      allowPositionals: true,
+      options: {
+        help: { type: 'boolean', short: 'h' },
+        version: { type: 'boolean', short: 'v' },
+        verbose: { type: 'boolean' },
+        debug: { type: 'boolean' },
+        workspace: { type: 'string', short: 'w' },
+      },
+    });
+
+    // Handle global help option
+    if (values.help && positionals.length === 0) {
+      await this.showHelp();
+      return;
+    }
+
+    if (values.version) {
+      process.exit(0);
+    }
+
+    // Update config based on parsed options
+    if (values.verbose) {
+      this.config.verbose = true;
+    }
+    if (values.debug) {
+      this.config.debug = true;
+    }
+    if (values.workspace) {
+      this.config.workspacePath = resolve(values.workspace);
+    }
+
+    const command = positionals[0];
+    const commandArgs = positionals.slice(1);
 
     if (!command) {
       await this.showHelp();
@@ -156,6 +136,8 @@ export class ClaudeHooksCli {
         `Command failed: ${error instanceof Error ? error.message : error}`
       );
       if (this.config.debug && error instanceof Error && error.stack) {
+        // TODO: Implement debug stack trace display
+        // Debug mode stack trace display not yet implemented
       }
       process.exit(1);
     }
@@ -171,6 +153,8 @@ export class ClaudeHooksCli {
     }
 
     for (const _command of this.commands.values()) {
+      // TODO: Implement help display for available commands
+      // Command list display not yet implemented
     }
   }
 
@@ -179,19 +163,26 @@ export class ClaudeHooksCli {
    */
   private showAvailableCommands(): void {
     for (const _command of this.commands.values()) {
+      // TODO: Implement available commands display
+      // Commands display not yet implemented
     }
   }
 
   /**
    * Log message
    */
-  log(_message: string): void {}
+  log(_message: string): void {
+    // TODO: Implement logging
+    // Logging not yet implemented
+  }
 
   /**
    * Log verbose message
    */
   verbose(_message: string): void {
     if (this.config.verbose) {
+      // TODO: Implement verbose logging
+      // Verbose logging not yet implemented
     }
   }
 
@@ -200,28 +191,42 @@ export class ClaudeHooksCli {
    */
   debug(_message: string): void {
     if (this.config.debug) {
+      // TODO: Implement debug logging
+      // Debug logging not yet implemented
     }
   }
 
   /**
    * Log error message
    */
-  error(_message: string): void {}
+  error(_message: string): void {
+    // TODO: Implement error logging
+    // Error logging not yet implemented
+  }
 
   /**
    * Log warning message
    */
-  warn(_message: string): void {}
+  warn(_message: string): void {
+    // TODO: Implement warning logging
+    // Warning logging not yet implemented
+  }
 
   /**
    * Log success message
    */
-  success(_message: string): void {}
+  success(_message: string): void {
+    // TODO: Implement success logging
+    // Success logging not yet implemented
+  }
 
   /**
    * Log info message
    */
-  info(_message: string): void {}
+  info(_message: string): void {
+    // TODO: Implement info logging
+    // Info logging not yet implemented
+  }
 }
 
 /**
@@ -240,8 +245,8 @@ export abstract class BaseCommand implements Command {
    */
   protected parseArgs(
     args: string[],
-    options: Record<string, any>
-  ): { values: any; positionals: string[] } {
+    options: Record<string, { type: 'boolean' | 'string'; short?: string }>
+  ): { values: Record<string, string | boolean | undefined>; positionals: string[] } {
     try {
       return parseArgs({
         args,
@@ -261,6 +266,8 @@ export abstract class BaseCommand implements Command {
   protected showHelp(): void {
     if (Object.keys(this.options).length > 0) {
       for (const [_option, _desc] of Object.entries(this.options)) {
+        // TODO: Implement help display for command options
+        // Command-specific help display not yet implemented
       }
     }
   }

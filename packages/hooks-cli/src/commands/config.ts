@@ -109,12 +109,12 @@ Examples:
   ): Promise<void> {
     const config = await configManager.load();
 
-    this.showConfigExtends(config);
-    this.showHookConfigurations(config, verbose);
-    this.showConfigVariables(config);
+    this.showConfigExtends(config as Record<string, unknown>);
+    this.showHookConfigurations(config as Record<string, unknown>, verbose);
+    this.showConfigVariables(config as Record<string, unknown>);
 
     if (verbose) {
-      this.showEnvironmentOverrides(config);
+      this.showEnvironmentOverrides(config as Record<string, unknown>);
     }
   }
 
@@ -148,7 +148,10 @@ Examples:
             verbose
           );
         } else {
-          this.displayToolSpecificConfigs(eventConfig, verbose);
+          this.displayToolSpecificConfigs(
+            eventConfig as Record<string, unknown>,
+            verbose
+          );
         }
       }
     }
@@ -241,7 +244,9 @@ Examples:
   private async validateConfig(configManager: ConfigManager): Promise<void> {
     try {
       const config = await configManager.load({ validate: true });
-      const warnings = await this.performConfigValidation(config);
+      const warnings = this.performConfigValidation(
+        config as Record<string, unknown>
+      );
 
       if (warnings > 0) {
         process.stderr.write(
@@ -249,7 +254,9 @@ Examples:
         );
         process.exit(2); // Exit with code 2 for warnings (distinct from errors)
       } else {
-        process.stdout.write('✅ Configuration validation passed with no warnings\n');
+        process.stdout.write(
+          '✅ Configuration validation passed with no warnings\n'
+        );
       }
     } catch (_error) {
       process.exit(1);
@@ -268,7 +275,10 @@ Examples:
       }
 
       if (eventConfig && typeof eventConfig === 'object') {
-        warnings += this.validateEventConfig(eventConfig, event);
+        warnings += this.validateEventConfig(
+          eventConfig as Record<string, unknown>,
+          event
+        );
       }
     }
 
@@ -291,7 +301,10 @@ Examples:
         ''
       );
     } else {
-      warnings += this.validateToolConfigs(eventConfig, event);
+      warnings += this.validateToolConfigs(
+        eventConfig as Record<string, unknown>,
+        event
+      );
     }
 
     return warnings;
@@ -453,14 +466,17 @@ Examples:
       throw new Error(`Hook not found: ${hookId}`);
     }
 
-    await configManager.setHookConfig(
-      event as HookEvent,
-      tool as ToolName | undefined,
-      {
+    if (tool) {
+      await configManager.setHookConfig(event as HookEvent, tool as ToolName, {
         ...hookConfig,
         timeout,
-      }
-    );
+      });
+    } else {
+      await configManager.setHookConfig(event as HookEvent, {
+        ...hookConfig,
+        timeout,
+      });
+    }
   }
 
   /**
