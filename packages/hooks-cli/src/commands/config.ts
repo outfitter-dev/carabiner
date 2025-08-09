@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ConfigManager } from '@claude-code/hooks-config';
+import type { HookEvent, ToolName } from '@claude-code/hooks-core';
 import { BaseCommand, type CliConfig } from '../cli';
 
 // Regex constants for better performance
@@ -87,7 +88,7 @@ Configuration commands:
 Examples:
   claude-hooks config show
   claude-hooks config validate
-  claude-hooks config export --format yaml --output my-config.yaml
+  claude-hooks config export --format json --output my-config.json
 `);
   }
 
@@ -375,8 +376,8 @@ Examples:
     const [event, tool] = hookId.split(':');
 
     await configManager.toggleHook(
-      event as Record<string, unknown>,
-      tool as Record<string, unknown>,
+      event as HookEvent,
+      tool as ToolName | undefined,
       true
     );
   }
@@ -401,8 +402,8 @@ Examples:
     const [event, tool] = hookId.split(':');
 
     await configManager.toggleHook(
-      event as Record<string, unknown>,
-      tool as Record<string, unknown>,
+      event as HookEvent,
+      tool as ToolName | undefined,
       false
     );
   }
@@ -427,21 +428,21 @@ Examples:
     const [event, tool] = hookId.split(':');
     const timeout = Number.parseInt(timeoutStr, 10);
 
-    if (Number.isNaN(timeout) || timeout < 0) {
+    if (Number.isNaN(timeout) || timeout <= 0) {
       throw new Error('Timeout must be a positive number');
     }
 
     const hookConfig = configManager.getHookConfig(
-      event as Record<string, unknown>,
-      tool as Record<string, unknown>
+      event as HookEvent,
+      tool as ToolName | undefined
     );
     if (!hookConfig) {
       throw new Error(`Hook not found: ${hookId}`);
     }
 
     await configManager.setHookConfig(
-      event as Record<string, unknown>,
-      tool as Record<string, unknown>,
+      event as HookEvent,
+      tool as ToolName | undefined,
       {
         ...hookConfig,
         timeout,

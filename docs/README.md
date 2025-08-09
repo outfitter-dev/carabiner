@@ -45,6 +45,10 @@ bun add @claude-code/hooks-core
 bun add @claude-code/hooks-validators
 bun add --dev @claude-code/hooks-testing
 npm install -g @claude-code/hooks-cli
+
+# Alternatively, invoke the CLI without a global install (Bun):
+# bunx will fetch and run the package on demand
+# bunx @claude-code/hooks-cli --help
 ```
 
 ### 2. Initialize Project
@@ -79,7 +83,7 @@ runClaudeHook(async (context) => {
 
 ```bash
 # Test the hook
-echo '{"session_id":"test","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la"},"cwd":"/tmp","transcript_path":"/tmp/transcript.md"}' | bun your-hook.ts
+echo '{"session_id":"test","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la"},"cwd":"/tmp","transcript_path":"/tmp/transcript.md"}' | bun path/to/your-hook.ts
 ```
 
 ## 🏗️ Library Architecture
@@ -134,7 +138,7 @@ This documentation follows these principles:
 - **Active voice**: "Create a hook" instead of "A hook can be created"
 - **Concise sentences**: Clear, direct explanations
 - **Practical examples**: Every concept includes working code
-- **Explain the why**: Context and reasoning, not just instructions
+- **Provide the rationale**: Context and reasoning, not just instructions
 
 ### Code Examples
 
@@ -222,7 +226,7 @@ Choose your path based on your experience level:
 ### Experienced Developer
 
 1. Check [Migration Guide](./migration-guide.md) for v2.0 changes
-2. Review [Configuration Reference](./resources/claude-code-hooks-configuration.md)
+2. Review the [Configuration Reference](./resources/claude-code-hooks-configuration.md)
 3. Explore the [TypeScript Integration Guide](./resources/claude-code-hooks-typescript.md)
 
 ### Contributor

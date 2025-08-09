@@ -34,15 +34,23 @@ async function exampleHook(context: HookContext): Promise<HookResult> {
   // Access tool input with full type safety
   if (context.event === 'PostToolUse' && context.toolResponse) {
     // Example: inspect toolResponse here
+    void 0; // No-op: intentionally empty for demonstration
   }
 
   if (context.event === 'UserPromptSubmit' && context.userPrompt) {
+    void 0; // No-op: intentionally empty for demonstration
   }
 
-  return HookResults.success(`${context.event} hook completed successfully`, {
-    processedAt: new Date().toISOString(),
-    hookVersion: '0.2.0',
-  });
+  const timestamp = new Date().toISOString();
+  return {
+    ...HookResults.success(`${context.event} hook completed successfully`, {
+      processedAt: timestamp,
+    }),
+    metadata: {
+      hookVersion: '0.2.0',
+      timestamp,
+    },
+  };
 }
 
 /**
@@ -68,7 +76,8 @@ export async function testNewRuntime(): Promise<void> {
   const context = createHookContext(preToolUseInput);
 
   // Execute hook
-  await exampleHook(context);
+  const result = await exampleHook(context);
+  console.log('[exampleHook]', JSON.stringify(result, null, 2));
 }
 
 /**
