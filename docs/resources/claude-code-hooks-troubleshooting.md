@@ -22,6 +22,7 @@ This guide provides troubleshooting solutions, debugging techniques, and best pr
 **Possible Causes & Solutions**:
 
 #### Invalid Configuration Syntax
+
 ```json
 // ❌ Incorrect
 {
@@ -43,6 +44,7 @@ This guide provides troubleshooting solutions, debugging techniques, and best pr
 ```
 
 #### Settings File Not Found
+
 ```bash
 # Check if settings file exists
 ls -la .claude/settings.json
@@ -53,6 +55,7 @@ cat .claude/settings.json | json_pp
 ```
 
 #### Wrong Tool Name
+
 ```json
 // ❌ Incorrect tool names
 {
@@ -82,13 +85,14 @@ cat .claude/settings.json | json_pp
 **Solutions**:
 
 #### Increase Timeout
+
 ```json
 {
   "hooks": {
     "PreToolUse": {
       "Bash": {
         "command": "bun run slow-validation.ts",
-        "timeout": 30000  // 30 seconds instead of default 10
+        "timeout": 30000 // 30 seconds instead of default 10
       }
     }
   }
@@ -96,6 +100,7 @@ cat .claude/settings.json | json_pp
 ```
 
 #### Optimize Hook Performance
+
 ```typescript
 // ❌ Slow: Multiple synchronous operations
 function slowHook() {
@@ -106,15 +111,11 @@ function slowHook() {
 
 // ✅ Fast: Parallel operations with early exit
 async function fastHook() {
-  const operations = [
-    checkCache(),
-    validateQuickly(),
-    essentialCheck()
-  ];
-  
+  const operations = [checkCache(), validateQuickly(), essentialCheck()];
+
   const results = await Promise.allSettled(operations);
-  const failures = results.filter(r => r.status === 'rejected');
-  
+  const failures = results.filter((r) => r.status === 'rejected');
+
   if (failures.length > 0) {
     console.error('Hook validation failed');
     process.exit(1);
@@ -129,6 +130,7 @@ async function fastHook() {
 **Solutions**:
 
 #### Review Exit Codes
+
 ```typescript
 // ❌ Always blocks on any error
 if (someCondition) {
@@ -147,20 +149,21 @@ if (isCriticalError(error)) {
 ```
 
 #### Implement Proper Validation Logic
+
 ```typescript
 function validateBashCommand(command: string): boolean {
   // ❌ Too restrictive
   if (command.includes('rm')) {
     return false; // Blocks 'rm temp.txt' which might be legitimate
   }
-  
+
   // ✅ More nuanced validation
   const dangerousPatterns = [
-    /rm\s+-rf\s+(\/|\$HOME|\~)/,  // Only dangerous rm commands
-    /sudo\s+rm\s+-rf/,            // Dangerous sudo rm
+    /rm\s+-rf\s+(\/|\$HOME|\~)/, // Only dangerous rm commands
+    /sudo\s+rm\s+-rf/, // Dangerous sudo rm
   ];
-  
-  return !dangerousPatterns.some(pattern => pattern.test(command));
+
+  return !dangerousPatterns.some((pattern) => pattern.test(command));
 }
 ```
 
@@ -171,10 +174,11 @@ function validateBashCommand(command: string): boolean {
 **Solutions**:
 
 #### Check Variable Names
+
 ```typescript
 // ❌ Incorrect variable names
-const toolName = process.env.TOOL_NAME;        // Wrong
-const sessionId = process.env.SESSION_ID;      // Wrong
+const toolName = process.env.TOOL_NAME; // Wrong
+const sessionId = process.env.SESSION_ID; // Wrong
 
 // ✅ Correct variable names
 const toolName = process.env.CLAUDE_TOOL_NAME;
@@ -183,6 +187,7 @@ const toolInput = process.env.TOOL_INPUT;
 ```
 
 #### Handle Missing Variables
+
 ```typescript
 // ❌ No fallback handling
 const workspacePath = process.env.CLAUDE_PROJECT_DIR;
@@ -203,6 +208,7 @@ if (!fs.existsSync(workspacePath)) {
 **Solutions**:
 
 #### Robust JSON Parsing
+
 ```typescript
 // ❌ Fragile parsing
 const toolInput = JSON.parse(process.env.TOOL_INPUT);
@@ -210,11 +216,11 @@ const toolInput = JSON.parse(process.env.TOOL_INPUT);
 // ✅ Robust parsing with error handling
 function parseToolInput(): Record<string, any> {
   const inputStr = process.env.TOOL_INPUT;
-  
+
   if (!inputStr) {
     return {};
   }
-  
+
   try {
     return JSON.parse(inputStr);
   } catch (error) {
@@ -257,20 +263,22 @@ export function logEnvironment(): void {
 ```
 
 Usage in hooks:
+
 ```typescript
 import { debugLog, logEnvironment } from './debug-utils.ts';
 
 async function main() {
   logEnvironment();
   debugLog('Hook starting', { toolName: process.env.CLAUDE_TOOL_NAME });
-  
+
   // Hook logic...
-  
+
   debugLog('Hook completed successfully');
 }
 ```
 
 Enable debugging:
+
 ```bash
 export CLAUDE_HOOK_DEBUG=true
 # Run Claude Code operations to see debug output
@@ -292,7 +300,7 @@ const traceFile = join(process.cwd(), '.claude', 'hook-trace.log');
 function logTrace(event: string, data: any): void {
   const timestamp = new Date().toISOString();
   const entry = `[${timestamp}] ${event}: ${JSON.stringify(data)}\n`;
-  
+
   try {
     appendFileSync(traceFile, entry);
   } catch (error) {
@@ -308,14 +316,14 @@ function traceHookExecution(command: string[], hookType: string, toolName: strin
     environment: {
       CLAUDE_SESSION_ID: process.env.CLAUDE_SESSION_ID,
       CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
-      TOOL_INPUT: process.env.TOOL_INPUT
-    }
+      TOOL_INPUT: process.env.TOOL_INPUT,
+    },
   });
 
   const startTime = Date.now();
   const childProcess = spawn(command[0], command.slice(1), {
     stdio: 'inherit',
-    env: process.env
+    env: process.env,
   });
 
   childProcess.on('close', (code) => {
@@ -324,9 +332,9 @@ function traceHookExecution(command: string[], hookType: string, toolName: strin
       hookType,
       toolName,
       exitCode: code,
-      duration: `${duration}ms`
+      duration: `${duration}ms`,
     });
-    
+
     process.exit(code || 0);
   });
 
@@ -334,7 +342,7 @@ function traceHookExecution(command: string[], hookType: string, toolName: strin
     logTrace('HOOK_ERROR', {
       hookType,
       toolName,
-      error: error.message
+      error: error.message,
     });
     process.exit(1);
   });
@@ -369,48 +377,48 @@ const testCases: HookTestCase[] = [
     hookType: 'PreToolUse',
     toolName: 'Bash',
     environment: {
-      TOOL_INPUT: JSON.stringify({ command: 'ls -la' })
+      TOOL_INPUT: JSON.stringify({ command: 'ls -la' }),
     },
-    expectedExitCode: 0
+    expectedExitCode: 0,
   },
   {
     name: 'Dangerous bash command',
     hookType: 'PreToolUse',
     toolName: 'Bash',
     environment: {
-      TOOL_INPUT: JSON.stringify({ command: 'rm -rf /' })
+      TOOL_INPUT: JSON.stringify({ command: 'rm -rf /' }),
     },
-    expectedExitCode: 1
+    expectedExitCode: 1,
   },
   {
     name: 'File write operation',
     hookType: 'PostToolUse',
     toolName: 'Write',
     environment: {
-      TOOL_INPUT: JSON.stringify({ 
-        file_path: 'test.ts', 
-        content: 'console.log("test");' 
-      })
+      TOOL_INPUT: JSON.stringify({
+        file_path: 'test.ts',
+        content: 'console.log("test");',
+      }),
     },
-    expectedExitCode: 0
-  }
+    expectedExitCode: 0,
+  },
 ];
 
 async function runHookTest(testCase: HookTestCase, hookScript: string): Promise<boolean> {
   console.log(`Running test: ${testCase.name}`);
-  
+
   return new Promise((resolve) => {
     const env = {
       ...process.env,
       CLAUDE_TOOL_NAME: testCase.toolName,
       CLAUDE_SESSION_ID: 'test-session',
       CLAUDE_PROJECT_DIR: process.cwd(),
-      ...testCase.environment
+      ...testCase.environment,
     };
 
     const child = spawn('bun', ['run', hookScript], {
       env,
-      stdio: 'pipe'
+      stdio: 'pipe',
     });
 
     const timeout = setTimeout(() => {
@@ -421,7 +429,7 @@ async function runHookTest(testCase: HookTestCase, hookScript: string): Promise<
 
     child.on('close', (code) => {
       clearTimeout(timeout);
-      
+
       if (code === testCase.expectedExitCode) {
         console.log(`✅ ${testCase.name}: Passed`);
         resolve(true);
@@ -435,17 +443,17 @@ async function runHookTest(testCase: HookTestCase, hookScript: string): Promise<
 
 async function runAllTests(hookScript: string): Promise<void> {
   console.log(`Testing hook script: ${hookScript}`);
-  
+
   let passed = 0;
   let total = testCases.length;
-  
+
   for (const testCase of testCases) {
     const success = await runHookTest(testCase, hookScript);
     if (success) passed++;
   }
-  
+
   console.log(`\nResults: ${passed}/${total} tests passed`);
-  
+
   if (passed !== total) {
     process.exit(1);
   }
@@ -466,6 +474,7 @@ runAllTests(hookScript);
 ### 1. Hook Design Principles
 
 #### Keep Hooks Fast and Focused
+
 ```typescript
 // ❌ Slow, doing too much
 async function slowHook() {
@@ -485,6 +494,7 @@ async function fastHook() {
 ```
 
 #### Use Proper Error Handling
+
 ```typescript
 // ❌ Poor error handling
 function badHook() {
@@ -508,10 +518,11 @@ function goodHook() {
 ```
 
 #### Provide Clear Feedback
+
 ```typescript
 function feedbackHook() {
   console.log('🔍 Validating command...');
-  
+
   if (isValid) {
     console.log('✅ Validation passed');
   } else {
@@ -525,6 +536,7 @@ function feedbackHook() {
 ### 2. Configuration Management
 
 #### Use Environment-Based Configuration
+
 ```json
 {
   "hooks": {
@@ -551,6 +563,7 @@ if (isProduction || strictMode) {
 ```
 
 #### Centralize Hook Logic
+
 ```typescript
 // hooks/lib/hook-manager.ts
 export class HookManager {
@@ -566,14 +579,14 @@ export class HookManager {
 
   async executePreHook(toolName: string, input: any): Promise<HookResult> {
     const validators = this.getValidators(toolName);
-    
+
     for (const validator of validators) {
       const result = await validator.validate(input);
       if (!result.success && result.blocking) {
         return result;
       }
     }
-    
+
     return { success: true };
   }
 }
@@ -582,35 +595,37 @@ export class HookManager {
 ### 3. Security Best Practices
 
 #### Input Sanitization
+
 ```typescript
 function sanitizeInput(input: string): string {
   // Remove potentially dangerous characters
   return input
     .replace(/[;&|`$(){}[\]]/g, '') // Shell metacharacters
-    .replace(/\.\.\//g, '')         // Path traversal
+    .replace(/\.\.\//g, '') // Path traversal
     .trim();
 }
 
 function validateFilePath(filePath: string): boolean {
   const sanitized = sanitizeInput(filePath);
-  
+
   // Must be within workspace
   const resolved = path.resolve(process.cwd(), sanitized);
   if (!resolved.startsWith(process.cwd())) {
     return false;
   }
-  
+
   // No sensitive files
   const sensitive = ['.env', '.secret', '.key'];
-  if (sensitive.some(pattern => sanitized.includes(pattern))) {
+  if (sensitive.some((pattern) => sanitized.includes(pattern))) {
     return false;
   }
-  
+
   return true;
 }
 ```
 
 #### Principle of Least Privilege
+
 ```typescript
 // ❌ Too permissive
 function permissiveHook() {
@@ -621,12 +636,12 @@ function permissiveHook() {
 // ✅ Restrictive by default
 function restrictiveHook() {
   const allowedOperations = getConfiguredAllowedOperations();
-  
+
   if (!allowedOperations.includes(currentOperation)) {
     console.error(`Operation not allowed: ${currentOperation}`);
     return { success: false, block: true };
   }
-  
+
   return { success: true };
 }
 ```
@@ -634,6 +649,7 @@ function restrictiveHook() {
 ### 4. Performance Optimization
 
 #### Implement Caching
+
 ```typescript
 const cache = new Map<string, { result: any; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -641,12 +657,12 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 function getCachedResult(key: string): any | null {
   const cached = cache.get(key);
   if (!cached) return null;
-  
+
   if (Date.now() - cached.timestamp > CACHE_TTL) {
     cache.delete(key);
     return null;
   }
-  
+
   return cached.result;
 }
 
@@ -657,19 +673,20 @@ function setCachedResult(key: string, result: any): void {
 async function expensiveValidation(input: string): Promise<boolean> {
   const cacheKey = `validation:${input}`;
   const cached = getCachedResult(cacheKey);
-  
+
   if (cached !== null) {
     return cached;
   }
-  
+
   const result = await performExpensiveValidation(input);
   setCachedResult(cacheKey, result);
-  
+
   return result;
 }
 ```
 
 #### Parallel Processing
+
 ```typescript
 // ❌ Sequential validation
 async function slowValidation(inputs: string[]) {
@@ -680,10 +697,10 @@ async function slowValidation(inputs: string[]) {
 
 // ✅ Parallel validation
 async function fastValidation(inputs: string[]) {
-  const validations = inputs.map(input => validateInput(input));
+  const validations = inputs.map((input) => validateInput(input));
   const results = await Promise.allSettled(validations);
-  
-  const failures = results.filter(r => r.status === 'rejected');
+
+  const failures = results.filter((r) => r.status === 'rejected');
   if (failures.length > 0) {
     throw new Error(`${failures.length} validations failed`);
   }
@@ -715,28 +732,22 @@ function safeHook(userInput: string) {
 function protectFileSystem(filePath: string): boolean {
   const resolved = path.resolve(filePath);
   const workspace = path.resolve(process.env.CLAUDE_PROJECT_DIR || '');
-  
+
   // Prevent path traversal
   if (!resolved.startsWith(workspace)) {
     console.error('Path traversal attempt blocked:', filePath);
     return false;
   }
-  
+
   // Protect sensitive files
-  const sensitivePatterns = [
-    /\.env/,
-    /\.secret/,
-    /private.*key/,
-    /\.ssh\//,
-    /node_modules/
-  ];
-  
-  const blocked = sensitivePatterns.find(pattern => pattern.test(resolved));
+  const sensitivePatterns = [/\.env/, /\.secret/, /private.*key/, /\.ssh\//, /node_modules/];
+
+  const blocked = sensitivePatterns.find((pattern) => pattern.test(resolved));
   if (blocked) {
     console.error('Sensitive file access blocked:', filePath);
     return false;
   }
-  
+
   return true;
 }
 ```
@@ -748,12 +759,12 @@ function enforceResourceLimits() {
   // Memory limit check
   const memUsage = process.memoryUsage();
   const maxMemoryMB = 100;
-  
+
   if (memUsage.heapUsed > maxMemoryMB * 1024 * 1024) {
     console.error('Hook memory usage exceeded limit');
     process.exit(1);
   }
-  
+
   // Execution time limit
   const maxExecutionTime = 10000; // 10 seconds
   setTimeout(() => {
@@ -804,18 +815,18 @@ describe('Hook Integration', () => {
   test('pre-hook should validate and allow safe commands', async () => {
     const result = await runHookWithInput('hooks/pre-tool-use.ts', {
       CLAUDE_TOOL_NAME: 'Bash',
-      TOOL_INPUT: JSON.stringify({ command: 'ls -la' })
+      TOOL_INPUT: JSON.stringify({ command: 'ls -la' }),
     });
-    
+
     expect(result.exitCode).toBe(0);
   });
 
   test('pre-hook should block dangerous commands', async () => {
     const result = await runHookWithInput('hooks/pre-tool-use.ts', {
       CLAUDE_TOOL_NAME: 'Bash',
-      TOOL_INPUT: JSON.stringify({ command: 'rm -rf /' })
+      TOOL_INPUT: JSON.stringify({ command: 'rm -rf /' }),
     });
-    
+
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain('Dangerous command detected');
   });
@@ -825,14 +836,14 @@ async function runHookWithInput(scriptPath: string, env: Record<string, string>)
   return new Promise((resolve) => {
     let stdout = '';
     let stderr = '';
-    
+
     const child = spawn('bun', ['run', scriptPath], {
       env: { ...process.env, ...env },
-      stdio: 'pipe'
+      stdio: 'pipe',
     });
 
-    child.stdout?.on('data', (data) => stdout += data.toString());
-    child.stderr?.on('data', (data) => stderr += data.toString());
+    child.stdout?.on('data', (data) => (stdout += data.toString()));
+    child.stderr?.on('data', (data) => (stderr += data.toString()));
 
     child.on('close', (code) => {
       resolve({ exitCode: code, stdout, stderr });

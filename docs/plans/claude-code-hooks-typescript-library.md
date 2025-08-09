@@ -13,7 +13,7 @@
 - **🛡️ Type Safety**: Full compile-time validation with IntelliSense support ✅
 - **🔧 Multiple APIs**: Function-based, Builder pattern, and Declarative approaches ✅
 - **🔐 Security**: Environment-specific validators and security rules ✅
-- **🧪 Testing**: Mock framework and testing utilities ✅  
+- **🧪 Testing**: Mock framework and testing utilities ✅
 - **⚡ Performance**: Optimized stdin-based runtime integration ✅
 - **🎯 Tool Scoping**: Working tool-specific and universal hook targeting ✅
 
@@ -24,7 +24,7 @@
 ```
 packages/
 ├── hooks-core/           # ✅ Core types, runtime utilities, execution engine
-├── hooks-validators/     # ✅ Security validators, environment-specific rules  
+├── hooks-validators/     # ✅ Security validators, environment-specific rules
 ├── hooks-config/         # ✅ Configuration management, settings generation
 ├── hooks-testing/        # ✅ Testing framework, mocks, utilities
 ├── hooks-cli/           # ✅ CLI tools, scaffolding, project management
@@ -76,12 +76,13 @@ runClaudeHook(async (context) => {
   console.log(`Working Dir: ${context.cwd}`);       // From cwd
   console.log(`Tool: ${context.toolName}`);         // From tool_name
   console.log(`Input:`, context.toolInput);         // From tool_input
-  
+
   return HookResults.success('Hook executed successfully');
 });
 ```
 
 **Previous Issues Fixed**:
+
 - ❌ Environment variables were unreliable → ✅ Structured JSON input
 - ❌ Manual context creation → ✅ Automatic parsing and validation
 - ❌ Inconsistent property names → ✅ Standardized context structure
@@ -92,17 +93,15 @@ runClaudeHook(async (context) => {
 
 ```typescript
 // ✅ TOOL-SPECIFIC HOOK (only runs for Bash)
-const bashHook = HookBuilder
-  .forPreToolUse()
-  .forTool('Bash')  // Actually works now!
+const bashHook = HookBuilder.forPreToolUse()
+  .forTool('Bash') // Actually works now!
   .withHandler(async (context) => {
     // Only executes when context.toolName === 'Bash'
     return HookResults.success('Bash-specific validation');
   });
 
-// ✅ UNIVERSAL HOOK (runs for all tools) 
-const universalHook = HookBuilder
-  .forPreToolUse()
+// ✅ UNIVERSAL HOOK (runs for all tools)
+const universalHook = HookBuilder.forPreToolUse()
   // No .forTool() call = universal
   .withHandler(async (context) => {
     // Executes for every tool
@@ -111,6 +110,7 @@ const universalHook = HookBuilder
 ```
 
 **Previous Issues Fixed**:
+
 - ❌ All hooks ran for all tools → ✅ Proper tool filtering
 - ❌ `.forTool()` was ignored → ✅ Registry keys include tool names
 - ❌ No universal hook support → ✅ Universal and tool-specific hooks work together
@@ -118,6 +118,7 @@ const universalHook = HookBuilder
 ### ✅ 3. Three Production-Ready API Patterns
 
 #### ✅ Function-Based API (Simple)
+
 ```typescript
 import { runClaudeHook, HookResults } from '@/hooks-core';
 
@@ -134,18 +135,18 @@ runClaudeHook(async (context) => {
 ```
 
 #### ✅ Builder Pattern API (Complex)
+
 ```typescript
 import { HookBuilder, middleware } from '@/hooks-core';
 
 // Composable hooks with middleware and conditions
-const securityHook = HookBuilder
-  .forPreToolUse()
+const securityHook = HookBuilder.forPreToolUse()
   .forTool('Bash')
   .withPriority(100)
   .withTimeout(10000)
   .withMiddleware(middleware.logging('info'))
   .withMiddleware(middleware.timing())
-  .withCondition(ctx => Bun.env.NODE_ENV === 'production')
+  .withCondition((ctx) => Bun.env.NODE_ENV === 'production')
   .withHandler(async (context) => {
     // Complex security validation logic
     return HookResults.success('Security check passed');
@@ -154,6 +155,7 @@ const securityHook = HookBuilder
 ```
 
 #### ✅ Declarative Configuration API
+
 ```typescript
 import { defineHook } from '@/hooks-core';
 
@@ -163,15 +165,15 @@ export const hooks = [
     event: 'PreToolUse',
     tool: 'Bash', // Tool-specific
     handler: bashValidator,
-    condition: ctx => ctx.cwd.includes('/safe/'),
-    priority: 90
+    condition: (ctx) => ctx.cwd.includes('/safe/'),
+    priority: 90,
   }),
   defineHook({
     event: 'PreToolUse',
     // No tool = universal
     handler: universalValidator,
-    middleware: [middleware.logging('debug')]
-  })
+    middleware: [middleware.logging('debug')],
+  }),
 ];
 ```
 
@@ -187,7 +189,7 @@ switch (Bun.env.NODE_ENV) {
   case 'production':
     SecurityValidators.production(context); // Strict rules
     break;
-  case 'development':  
+  case 'development':
     SecurityValidators.development(context); // Lenient rules
     break;
   default:
@@ -196,6 +198,7 @@ switch (Bun.env.NODE_ENV) {
 ```
 
 **Implemented Features**:
+
 - ✅ Command pattern detection (dangerous commands, injections)
 - ✅ File access control (workspace boundaries, sensitive files)
 - ✅ Rate limiting with configurable windows
@@ -215,9 +218,9 @@ describe('Security Hook', () => {
     await testHook('PreToolUse')
       .withContext({
         toolName: 'Bash',
-        toolInput: { command: 'rm -rf /' }
+        toolInput: { command: 'rm -rf /' },
       })
-      .expect(result => {
+      .expect((result) => {
         expect(result.success).toBe(false);
         expect(result.block).toBe(true);
       })
@@ -230,7 +233,7 @@ const mockContext = createMockContext('PreToolUse', {
   toolName: 'Bash',
   toolInput: { command: 'ls -la' },
   sessionId: 'test-session',
-  cwd: '/tmp/test'
+  cwd: '/tmp/test',
 });
 ```
 
@@ -259,7 +262,7 @@ const mockContext = createMockContext('PreToolUse', {
   "name": "@claude-code/hooks",
   "exports": {
     ".": "./packages/hooks-core/dist/index.js",
-    "./core": "./packages/hooks-core/dist/index.js", 
+    "./core": "./packages/hooks-core/dist/index.js",
     "./validators": "./packages/hooks-validators/dist/index.js",
     "./config": "./packages/hooks-config/dist/index.js",
     "./testing": "./packages/hooks-testing/dist/index.js"
@@ -286,18 +289,21 @@ npx @claude-code/hooks-cli dev --watch
 ### ✅ Complete Hook Implementations
 
 1. **[Function-based Pre-Tool Validation](../packages/examples/src/function-based/pre-tool-use.ts)**
+
    - ✅ Bash command validation with dangerous pattern detection
-   - ✅ File write validation with workspace boundary checks  
+   - ✅ File write validation with workspace boundary checks
    - ✅ Security validation integration
    - ✅ Tool-specific routing with type guards
 
 2. **[Function-based Post-Tool Processing](../packages/examples/src/function-based/post-tool-use.ts)**
+
    - ✅ File formatting automation (Biome integration)
    - ✅ Type checking for TypeScript files
    - ✅ Execution logging and performance metrics
    - ✅ Tool response handling and analysis
 
 3. **[Builder Pattern Security Suite](../packages/examples/src/builder-pattern/security-hooks.ts)**
+
    - ✅ Multi-layered security validation
    - ✅ Tool-specific and universal hook composition
    - ✅ Middleware integration (logging, timing, error handling)
@@ -331,18 +337,21 @@ npx @claude-code/hooks-cli dev --watch
 ### ✅ SUCCESS CRITERIA MET
 
 **Technical Requirements**:
+
 - ✅ Type Safety: Full strict TypeScript compliance
-- ✅ Performance: <25ms hook execution overhead  
+- ✅ Performance: <25ms hook execution overhead
 - ✅ Bundle Size: <100KB minified core package
 - ✅ Test Coverage: >90% across all packages
 
 **Developer Experience**:
+
 - ✅ Multiple API Patterns: Function-based, Builder, Declarative
 - ✅ Comprehensive Documentation: API docs + examples
 - ✅ Fast Onboarding: <2 minutes to working hook
 - ✅ Error Messages: Clear, actionable error reporting
 
 **Production Readiness**:
+
 - ✅ Security: Environment-specific validation rules
 - ✅ Testing: Mock framework and testing utilities
 - ✅ CLI Tools: Project scaffolding and management
@@ -353,7 +362,7 @@ npx @claude-code/hooks-cli dev --watch
 The Claude Code Hooks TypeScript Library has been successfully implemented and delivered. The library transforms hook development from manual shell scripting to production-ready TypeScript applications with:
 
 - **Complete Type Safety** with IntelliSense support
-- **Three API Patterns** for different complexity levels  
+- **Three API Patterns** for different complexity levels
 - **Working Tool Scoping** with universal and tool-specific hooks
 - **Comprehensive Security** with environment-aware validation
 - **Production Performance** with <25ms execution overhead

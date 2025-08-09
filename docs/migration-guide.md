@@ -28,26 +28,26 @@ The Claude Code hooks runtime has been completely redesigned for better reliabil
 ### 1. Import Statements
 
 **Before (Old)**:
+
 ```typescript
 import {
   createHookContext,
   executeHooksAndCombine,
   exitWithResult,
-  HookResults
+  HookResults,
 } from '@claude-code/hooks-core';
 ```
 
 **After (New)**:
+
 ```typescript
-import {
-  runClaudeHook,
-  HookResults
-} from '@/hooks-core';
+import { runClaudeHook, HookResults } from '@/hooks-core';
 ```
 
 ### 2. Runtime Execution Pattern
 
 **Before (Old - Environment Variables)**:
+
 ```typescript
 #!/usr/bin/env bun
 
@@ -57,10 +57,10 @@ async function main() {
   // ❌ Used environment variables
   const context = createHookContext('PreToolUse');
   const toolInput = JSON.parse(process.env.TOOL_INPUT || '{}');
-  
+
   console.log(`Tool: ${context.toolName}`);
   console.log(`Input:`, toolInput);
-  
+
   const result = await myHookHandler(context);
   exitWithResult(result);
 }
@@ -71,6 +71,7 @@ if (import.meta.main) {
 ```
 
 **After (New - JSON Stdin)**:
+
 ```typescript
 #!/usr/bin/env bun
 
@@ -82,7 +83,7 @@ runClaudeHook(async (context) => {
   console.log(`Input:`, context.toolInput);
   console.log(`Session: ${context.sessionId}`);
   console.log(`Working Dir: ${context.cwd}`);
-  
+
   return await myHookHandler(context);
 });
 
@@ -95,6 +96,7 @@ async function myHookHandler(context: HookContext): Promise<HookResult> {
 ### 3. Context Property Changes
 
 **Before (Old Properties)**:
+
 ```typescript
 async function handleHook(context: HookContext) {
   // ❌ Old property names
@@ -105,21 +107,22 @@ async function handleHook(context: HookContext) {
 ```
 
 **After (New Properties)**:
+
 ```typescript
 async function handleHook(context: HookContext): Promise<HookResult> {
   // ✅ New property names
   console.log(`Working Directory: ${context.cwd}`);
   console.log(`Tool Response: ${context.toolResponse}`); // for PostToolUse
-  
+
   const result = HookResults.success('Processing completed');
-  
+
   // ✅ metadata is on the result, not context
   return {
     ...result,
     metadata: {
       duration: Date.now() - startTime,
-      timestamp: new Date().toISOString()
-    }
+      timestamp: new Date().toISOString(),
+    },
   };
 }
 ```
@@ -127,21 +130,21 @@ async function handleHook(context: HookContext): Promise<HookResult> {
 ### 4. Tool Scoping Fixes
 
 **Before (Broken Tool Scoping)**:
+
 ```typescript
 // ❌ This ran for ALL tools despite .forTool('Bash')
-const bashHook = HookBuilder
-  .forPreToolUse()
-  .forTool('Bash')  // This was ignored!
+const bashHook = HookBuilder.forPreToolUse()
+  .forTool('Bash') // This was ignored!
   .withHandler(handler)
   .build();
 ```
 
 **After (Working Tool Scoping)**:
+
 ```typescript
 // ✅ This now ONLY runs for Bash commands
-const bashOnlyHook = HookBuilder
-  .forPreToolUse()
-  .forTool('Bash')  // Actually works now!
+const bashOnlyHook = HookBuilder.forPreToolUse()
+  .forTool('Bash') // Actually works now!
   .withHandler(async (context) => {
     // Only executes when context.toolName === 'Bash'
     return HookResults.success('Bash-specific logic');
@@ -149,8 +152,7 @@ const bashOnlyHook = HookBuilder
   .build();
 
 // ✅ Universal hook (runs for all tools)
-const universalHook = HookBuilder
-  .forPreToolUse()
+const universalHook = HookBuilder.forPreToolUse()
   // No .forTool() call = universal
   .withHandler(async (context) => {
     // Runs for ALL tools
@@ -162,6 +164,7 @@ const universalHook = HookBuilder
 ### 5. Input/Output Structure
 
 **Before (Environment Variables)**:
+
 ```typescript
 // ❌ Parsed environment variables manually
 const toolInput = JSON.parse(process.env.TOOL_INPUT || '{}');
@@ -170,15 +173,16 @@ const workspacePath = process.env.CLAUDE_PROJECT_DIR || '';
 ```
 
 **After (Structured JSON Input)**:
+
 ```typescript
 // ✅ Receives structured JSON automatically
 runClaudeHook(async (context) => {
   // All data available directly from context
-  const toolInput = context.toolInput;          // From tool_input
-  const sessionId = context.sessionId;          // From session_id  
-  const cwd = context.cwd;                     // From cwd
-  const toolResponse = context.toolResponse;   // From tool_response (PostToolUse)
-  
+  const toolInput = context.toolInput; // From tool_input
+  const sessionId = context.sessionId; // From session_id
+  const cwd = context.cwd; // From cwd
+  const toolResponse = context.toolResponse; // From tool_response (PostToolUse)
+
   return HookResults.success('Data accessed from context');
 });
 ```
@@ -188,11 +192,12 @@ runClaudeHook(async (context) => {
 Your hooks now receive JSON via stdin with this structure:
 
 ### PreToolUse Example
+
 ```json
 {
   "session_id": "abc123-session-id",
   "transcript_path": "/path/to/transcript.md",
-  "cwd": "/current/working/directory", 
+  "cwd": "/current/working/directory",
   "hook_event_name": "PreToolUse",
   "tool_name": "Bash",
   "tool_input": {
@@ -203,12 +208,13 @@ Your hooks now receive JSON via stdin with this structure:
 ```
 
 ### PostToolUse Example
+
 ```json
 {
   "session_id": "abc123-session-id",
   "transcript_path": "/path/to/transcript.md",
   "cwd": "/current/working/directory",
-  "hook_event_name": "PostToolUse", 
+  "hook_event_name": "PostToolUse",
   "tool_name": "Write",
   "tool_input": {
     "file_path": "/tmp/file.txt",
@@ -226,21 +232,22 @@ Your hooks now receive JSON via stdin with this structure:
 ### Example 1: Simple Validation Hook
 
 **Before**:
+
 ```typescript
 #!/usr/bin/env bun
 import { createHookContext, exitWithResult, HookResults } from '@claude-code/hooks-core';
 
 async function main() {
   const context = createHookContext('PreToolUse');
-  
+
   if (context.toolName === 'Bash') {
     const command = JSON.parse(process.env.TOOL_INPUT || '{}').command;
-    
+
     if (command?.includes('rm -rf')) {
       exitWithResult(HookResults.block('Dangerous command blocked'));
     }
   }
-  
+
   exitWithResult(HookResults.success('Validation passed'));
 }
 
@@ -248,21 +255,22 @@ if (import.meta.main) main();
 ```
 
 **After**:
+
 ```typescript
 #!/usr/bin/env bun
 import { runClaudeHook, HookResults, isBashToolInput } from '@/hooks-core';
 
 runClaudeHook(async (context) => {
   console.log(`🔍 Validating ${context.toolName} in session ${context.sessionId}`);
-  
+
   if (context.toolName === 'Bash' && isBashToolInput(context.toolInput)) {
     const { command } = context.toolInput;
-    
+
     if (command.includes('rm -rf')) {
       return HookResults.block('Dangerous command blocked');
     }
   }
-  
+
   return HookResults.success('Validation passed');
 });
 ```
@@ -270,12 +278,18 @@ runClaudeHook(async (context) => {
 ### Example 2: Builder Pattern Hook
 
 **Before**:
+
 ```typescript
 #!/usr/bin/env bun
-import { HookBuilder, registerHook, createHookContext, executeHooksAndCombine, exitWithResult } from '@claude-code/hooks-core';
+import {
+  HookBuilder,
+  registerHook,
+  createHookContext,
+  executeHooksAndCombine,
+  exitWithResult,
+} from '@claude-code/hooks-core';
 
-const securityHook = HookBuilder
-  .forPreToolUse()
+const securityHook = HookBuilder.forPreToolUse()
   .forTool('Bash') // This didn't work
   .withHandler(async (context) => {
     // Logic here
@@ -294,12 +308,12 @@ if (import.meta.main) main();
 ```
 
 **After**:
+
 ```typescript
-#!/usr/bin/env bun  
+#!/usr/bin/env bun
 import { HookBuilder, runClaudeHook, HookResults } from '@/hooks-core';
 
-const bashSecurityHook = HookBuilder
-  .forPreToolUse()
+const bashSecurityHook = HookBuilder.forPreToolUse()
   .forTool('Bash') // Now works correctly!
   .withHandler(async (context) => {
     console.log(`🔐 Bash security check for: ${context.cwd}`);
@@ -313,7 +327,7 @@ runClaudeHook(async (context) => {
   if (context.toolName === 'Bash') {
     return await bashSecurityHook.handler(context);
   }
-  
+
   return HookResults.success('No applicable security checks');
 });
 ```
@@ -331,7 +345,7 @@ Create a test JSON file:
   "transcript_path": "/tmp/test-transcript.md",
   "cwd": "/tmp/test-workspace",
   "hook_event_name": "PreToolUse",
-  "tool_name": "Bash", 
+  "tool_name": "Bash",
   "tool_input": {
     "command": "echo 'Hello World'"
   }
@@ -362,7 +376,7 @@ runClaudeHook(async (context) => {
   console.log(`  CWD: ${context.cwd}`);
   console.log(`  Tool Input:`, context.toolInput);
   console.log(`  Tool Response:`, context.toolResponse || 'N/A');
-  
+
   return HookResults.success('Context validation complete');
 });
 ```
@@ -374,10 +388,10 @@ runClaudeHook(async (context) => {
 ```typescript
 // ❌ Wrong - old property names
 console.log(context.workspacePath); // undefined!
-console.log(context.toolOutput);    // undefined!
+console.log(context.toolOutput); // undefined!
 
-// ✅ Correct - new property names  
-console.log(context.cwd);          // Working directory
+// ✅ Correct - new property names
+console.log(context.cwd); // Working directory
 console.log(context.toolResponse); // Tool execution result
 ```
 
@@ -393,8 +407,8 @@ return {
   ...result,
   metadata: {
     duration: executionTime,
-    timestamp: new Date().toISOString()
-  }
+    timestamp: new Date().toISOString(),
+  },
 };
 ```
 

@@ -26,6 +26,7 @@ Claude Code uses a hierarchical settings system with the following precedence or
 ### Settings File Locations by Platform
 
 #### macOS
+
 ```
 Enterprise: /Library/Application Support/ClaudeCode/managed-settings.json
 User:       ~/.claude/settings.json
@@ -34,6 +35,7 @@ Local:      .claude/settings.local.json
 ```
 
 #### Windows
+
 ```
 Enterprise: %ProgramData%\ClaudeCode\managed-settings.json
 User:       %USERPROFILE%\.claude\settings.json
@@ -42,6 +44,7 @@ Local:      .claude\settings.local.json
 ```
 
 #### Linux
+
 ```
 Enterprise: /etc/claude-code/managed-settings.json
 User:       ~/.claude/settings.json
@@ -64,7 +67,9 @@ Local:      .claude/settings.local.json
       "<ToolName>": {
         "command": "<command>",
         "timeoutMs": 5000,
-        "filters": { /* filter configuration */ }
+        "filters": {
+          /* filter configuration */
+        }
       }
     }
   }
@@ -74,6 +79,7 @@ Local:      .claude/settings.local.json
 ### Hook Events
 
 Available hook events:
+
 - `PreToolUse`: Before tool execution
 - `PostToolUse`: After successful tool execution
 - `UserPromptSubmit`: When user submits a prompt
@@ -84,6 +90,7 @@ Available hook events:
 ### Tool Names
 
 Common tool names for hooks (Claude Code v0.4+):
+
 - `Bash`: Shell command execution
 - `Edit`: File editing
 - `Write`: File writing
@@ -105,6 +112,7 @@ Common tool names for hooks (Claude Code v0.4+):
 ### Configuration Options
 
 #### Command Options
+
 - **command** (string): The shell command to execute
 - **timeoutMs** (number): Maximum execution time in milliseconds (default: 60000)
 - **detached** (boolean): Whether to run asynchronously without waiting (default: false)
@@ -113,14 +121,15 @@ Common tool names for hooks (Claude Code v0.4+):
 > **Timeout Behavior**: The timeout is per hook invocation, not per command. When `detached: true`, Claude Code doesn't wait for completion and `TOOL_OUTPUT` may not be available.
 
 #### Filter Patterns
+
 ```json
 {
   "filters": {
-    "file_path": "*.ts",           // File path patterns
-    "content": ".*test.*",         // Content patterns
-    "command": "npm.*",            // Command patterns
-    "environment": "production",   // Environment conditions
-    "custom_field": "value"        // Custom field matching
+    "file_path": "*.ts", // File path patterns
+    "content": ".*test.*", // Content patterns
+    "command": "npm.*", // Command patterns
+    "environment": "production", // Environment conditions
+    "custom_field": "value" // Custom field matching
   }
 }
 ```
@@ -133,9 +142,10 @@ When multiple hooks match the same event, **all matching hooks execute in parall
 {
   "hooks": {
     "PreToolUse": {
-      "*": "bun run hooks/universal-check.ts",     // Runs for all tools
-      "Bash": "bun run hooks/bash-validator.ts",  // ALSO runs for Bash
-      "Write": [                                   // Multiple hooks for Write
+      "*": "bun run hooks/universal-check.ts", // Runs for all tools
+      "Bash": "bun run hooks/bash-validator.ts", // ALSO runs for Bash
+      "Write": [
+        // Multiple hooks for Write
         "bun run hooks/permission-check.ts",
         "bun run hooks/backup-file.ts"
       ]
@@ -151,6 +161,7 @@ When multiple hooks match the same event, **all matching hooks execute in parall
 ### 1. Global Hook Configuration
 
 `~/.claude/settings.json`:
+
 ```json
 {
   "hooks": {
@@ -164,6 +175,7 @@ When multiple hooks match the same event, **all matching hooks execute in parall
 ### 2. Tool-Specific Hooks
 
 `.claude/settings.json`:
+
 ```json
 {
   "hooks": {
@@ -241,6 +253,7 @@ When multiple hooks match the same event, **all matching hooks execute in parall
 ### 4. Development vs Production Configuration
 
 Development (`.claude/settings.local.json`):
+
 ```json
 {
   "hooks": {
@@ -261,6 +274,7 @@ Development (`.claude/settings.local.json`):
 ```
 
 Production (`.claude/settings.json`):
+
 ```json
 {
   "hooks": {
@@ -306,6 +320,7 @@ Production (`.claude/settings.json`):
 ```
 
 Corresponding TypeScript hook (`scripts/conditional-hook.ts`):
+
 ```typescript
 #!/usr/bin/env bun
 
@@ -343,6 +358,7 @@ if (isProduction && strictMode) {
 ```
 
 Multi-stage hook (`scripts/multi-stage-pre-hook.ts`):
+
 ```typescript
 #!/usr/bin/env bun
 
@@ -358,24 +374,24 @@ const stages: Stage[] = [
   {
     name: 'Security Check',
     command: ['bun', 'run', 'scripts/security-check.ts'],
-    required: true
+    required: true,
   },
   {
     name: 'Permission Check',
     command: ['bun', 'run', 'scripts/permission-check.ts'],
-    required: true
+    required: true,
   },
   {
     name: 'Style Check',
     command: ['bun', 'run', 'scripts/style-check.ts'],
-    required: false
-  }
+    required: false,
+  },
 ];
 
 async function runStage(stage: Stage): Promise<boolean> {
   return new Promise((resolve) => {
     const process = spawn(stage.command[0], stage.command.slice(1), {
-      stdio: 'inherit'
+      stdio: 'inherit',
     });
 
     process.on('close', (code) => {
@@ -389,13 +405,13 @@ async function runStage(stage: Stage): Promise<boolean> {
 async function main() {
   for (const stage of stages) {
     const success = await runStage(stage);
-    
+
     if (!success && stage.required) {
       console.error(`Required stage "${stage.name}" failed. Blocking operation.`);
       process.exit(1);
     }
   }
-  
+
   console.log('All stages completed successfully');
   process.exit(0);
 }
@@ -419,6 +435,7 @@ main();
 ```
 
 Dynamic hook loader (`scripts/dynamic-hook-loader.ts`):
+
 ```typescript
 #!/usr/bin/env bun
 
@@ -433,7 +450,7 @@ const toolHookPath = join(hookDir, `${toolName?.toLowerCase()}-pre.ts`);
 
 if (existsSync(toolHookPath)) {
   console.log(`Loading tool-specific hook: ${toolHookPath}`);
-  
+
   // Dynamic import and execution
   const { default: hookHandler } = await import(toolHookPath);
   await hookHandler();
@@ -460,6 +477,7 @@ if (existsSync(toolHookPath)) {
 ```
 
 Environment setup hook (`scripts/environment-setup.ts`):
+
 ```typescript
 #!/usr/bin/env bun
 
@@ -473,31 +491,31 @@ const environments: Record<string, EnvironmentConfig> = {
   development: {
     name: 'Development',
     hooks: {
-      'PreToolUse': {
-        'Bash': 'echo "Dev mode: relaxed validation"'
-      }
+      PreToolUse: {
+        Bash: 'echo "Dev mode: relaxed validation"',
+      },
     },
-    validators: ['basic-safety']
+    validators: ['basic-safety'],
   },
   staging: {
     name: 'Staging',
     hooks: {
-      'PreToolUse': {
-        'Bash': 'bun run scripts/staging-validation.ts'
-      }
+      PreToolUse: {
+        Bash: 'bun run scripts/staging-validation.ts',
+      },
     },
-    validators: ['basic-safety', 'performance-check']
+    validators: ['basic-safety', 'performance-check'],
   },
   production: {
     name: 'Production',
     hooks: {
-      'PreToolUse': {
-        'Bash': 'bun run scripts/production-validation.ts',
-        'Write': 'bun run scripts/production-file-check.ts'
-      }
+      PreToolUse: {
+        Bash: 'bun run scripts/production-validation.ts',
+        Write: 'bun run scripts/production-file-check.ts',
+      },
     },
-    validators: ['basic-safety', 'security-audit', 'compliance-check']
-  }
+    validators: ['basic-safety', 'security-audit', 'compliance-check'],
+  },
 };
 
 function detectEnvironment(): string {
@@ -505,17 +523,17 @@ function detectEnvironment(): string {
   if (process.env.NODE_ENV) {
     return process.env.NODE_ENV;
   }
-  
+
   // Check for deployment indicators
   if (process.env.VERCEL || process.env.NETLIFY) {
     return 'production';
   }
-  
+
   // Check git branch
   try {
     const { execSync } = require('child_process');
     const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
-    
+
     if (branch === 'main' || branch === 'master') {
       return 'production';
     } else if (branch === 'staging' || branch === 'develop') {
@@ -524,7 +542,7 @@ function detectEnvironment(): string {
   } catch (error) {
     // Git not available or not a git repository
   }
-  
+
   return 'development';
 }
 
@@ -559,6 +577,7 @@ process.env.CLAUDE_VALIDATORS = config.validators.join(',');
 ```
 
 Workspace configuration (`scripts/workspace-config.ts`):
+
 ```typescript
 #!/usr/bin/env bun
 
@@ -574,54 +593,54 @@ interface WorkspaceConfig {
 
 function detectWorkspaceType(workspacePath: string): WorkspaceConfig {
   const packageJsonPath = join(workspacePath, 'package.json');
-  
+
   if (!existsSync(packageJsonPath)) {
     return {
       type: 'application',
       strictMode: false,
-      customRules: []
+      customRules: [],
     };
   }
 
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-  
+
   // Detect monorepo
   if (packageJson.workspaces || existsSync(join(workspacePath, 'turbo.json'))) {
     return {
       type: 'monorepo',
       framework: detectFramework(packageJson),
       strictMode: true,
-      customRules: ['monorepo-validation', 'workspace-consistency']
+      customRules: ['monorepo-validation', 'workspace-consistency'],
     };
   }
-  
+
   // Detect library
   if (packageJson.main || packageJson.exports) {
     return {
       type: 'library',
       framework: detectFramework(packageJson),
       strictMode: true,
-      customRules: ['api-stability', 'breaking-change-detection']
+      customRules: ['api-stability', 'breaking-change-detection'],
     };
   }
-  
+
   return {
     type: 'application',
     framework: detectFramework(packageJson),
     strictMode: false,
-    customRules: []
+    customRules: [],
   };
 }
 
 function detectFramework(packageJson: any): string | undefined {
   const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
-  
+
   if (dependencies.next) return 'nextjs';
   if (dependencies.vite) return 'vite';
   if (dependencies.react) return 'react';
   if (dependencies['@angular/core']) return 'angular';
   if (dependencies.vue) return 'vue';
-  
+
   return undefined;
 }
 
@@ -655,7 +674,7 @@ const HookConfigSchema = z.object({
   timeoutMs: z.number().positive().optional(),
   detached: z.boolean().optional(),
   filters: z.record(z.string()).optional(),
-  environment: z.record(z.string()).optional()
+  environment: z.record(z.string()).optional(),
 });
 
 const HooksSchema = z.record(
@@ -664,8 +683,8 @@ const HooksSchema = z.record(
     z.string(),
     z.record(z.string()),
     z.record(HookConfigSchema),
-    z.record(z.array(HookConfigSchema))
-  ])
+    z.record(z.array(HookConfigSchema)),
+  ]),
 );
 
 const SettingsSchema = z.object({
@@ -700,19 +719,18 @@ function testHookConfiguration(configPath: string): void {
 
   try {
     const config = JSON.parse(readFileSync(configPath, 'utf-8'));
-    
+
     if (!validateSettings(config)) {
       console.error(`Invalid configuration: ${configPath}`);
       process.exit(1);
     }
-    
+
     console.log(`✅ Valid configuration: ${configPath}`);
-    
+
     // Test hook commands
     if (config.hooks) {
       testHookCommands(config.hooks);
     }
-    
   } catch (error) {
     console.error(`Failed to parse config: ${configPath}`, error);
     process.exit(1);
@@ -753,7 +771,7 @@ function testCommand(command: string, context: string): void {
 const configFiles = [
   '.claude/settings.json',
   '.claude/settings.local.json',
-  join(process.env.HOME || '', '.claude/settings.json')
+  join(process.env.HOME || '', '.claude/settings.json'),
 ];
 
 configFiles.forEach(testHookConfiguration);

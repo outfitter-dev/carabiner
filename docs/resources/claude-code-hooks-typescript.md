@@ -73,7 +73,7 @@ Create `hooks/lib/types.ts`:
 
 ```typescript
 // Hook event types
-export type HookEvent = 
+export type HookEvent =
   | 'PreToolUse'
   | 'PostToolUse'
   | 'UserPromptSubmit'
@@ -100,11 +100,11 @@ export type ToolName =
 // Environment variables provided by Claude Code (v0.4.x)
 export interface HookEnvironment {
   CLAUDE_SESSION_ID?: string;
-  CLAUDE_TOOL_NAME?: string;        // Empty in SessionStart
+  CLAUDE_TOOL_NAME?: string; // Empty in SessionStart
   CLAUDE_PROJECT_DIR?: string;
-  TOOL_INPUT?: string;              // JSON string of tool parameters
-  TOOL_OUTPUT?: string;             // Only in PostToolUse, ≤32kB, not in detached hooks
-  USER_PROMPT?: string;             // Only in UserPromptSubmit
+  TOOL_INPUT?: string; // JSON string of tool parameters
+  TOOL_OUTPUT?: string; // Only in PostToolUse, ≤32kB, not in detached hooks
+  USER_PROMPT?: string; // Only in UserPromptSubmit
 }
 
 // Parsed tool input types
@@ -132,7 +132,7 @@ export interface ReadToolInput {
   offset?: number;
 }
 
-export type ToolInput = 
+export type ToolInput =
   | BashToolInput
   | WriteToolInput
   | EditToolInput
@@ -180,7 +180,7 @@ export function parseHookEnvironment(): HookEnvironment {
 
 export function parseToolInput(inputStr?: string): ToolInput {
   if (!inputStr) return {};
-  
+
   try {
     return JSON.parse(inputStr) as ToolInput;
   } catch (error) {
@@ -191,7 +191,7 @@ export function parseToolInput(inputStr?: string): ToolInput {
 
 export function createHookContext(event: HookEvent): HookContext {
   const env = parseHookEnvironment();
-  
+
   return {
     event,
     sessionId: env.CLAUDE_SESSION_ID || '',
@@ -210,13 +210,17 @@ export function isBashToolInput(input: ToolInput): input is BashToolInput {
 }
 
 export function isWriteToolInput(input: ToolInput): input is WriteToolInput {
-  return typeof input === 'object' && input !== null && 
-         'file_path' in input && 'content' in input;
+  return typeof input === 'object' && input !== null && 'file_path' in input && 'content' in input;
 }
 
 export function isEditToolInput(input: ToolInput): input is EditToolInput {
-  return typeof input === 'object' && input !== null && 
-         'file_path' in input && 'old_string' in input && 'new_string' in input;
+  return (
+    typeof input === 'object' &&
+    input !== null &&
+    'file_path' in input &&
+    'old_string' in input &&
+    'new_string' in input
+  );
 }
 
 export function isReadToolInput(input: ToolInput): input is ReadToolInput {
@@ -243,28 +247,24 @@ export class ValidationError extends Error {
 export function validateBashCommand(command: string): void {
   // Dangerous patterns to block
   const dangerousPatterns = [
-    /rm\s+-rf\s+(\/|\$HOME|\~)/,  // Dangerous rm commands
-    /sudo\s+(rm|dd|mkfs)/,        // Dangerous sudo commands
-    />\s*\/dev\/(sda|sdb|hda)/,   // Direct disk writes
-    /chmod\s+777/,                // Overly permissive permissions
-    /curl.*\|\s*(sh|bash)/,       // Pipe curl to shell
-    /wget.*\|\s*(sh|bash)/,       // Pipe wget to shell
+    /rm\s+-rf\s+(\/|\$HOME|\~)/, // Dangerous rm commands
+    /sudo\s+(rm|dd|mkfs)/, // Dangerous sudo commands
+    />\s*\/dev\/(sda|sdb|hda)/, // Direct disk writes
+    /chmod\s+777/, // Overly permissive permissions
+    /curl.*\|\s*(sh|bash)/, // Pipe curl to shell
+    /wget.*\|\s*(sh|bash)/, // Pipe wget to shell
   ];
 
-  const blocked = dangerousPatterns.find(pattern => pattern.test(command));
+  const blocked = dangerousPatterns.find((pattern) => pattern.test(command));
   if (blocked) {
     throw new ValidationError(`Blocked dangerous command pattern: ${blocked.source}`);
   }
 
   // Additional checks for production environment
   if (process.env.NODE_ENV === 'production') {
-    const productionBlocked = [
-      /npm\s+publish/,
-      /git\s+push.*origin.*main/,
-      /docker\s+push/,
-    ];
+    const productionBlocked = [/npm\s+publish/, /git\s+push.*origin.*main/, /docker\s+push/];
 
-    const prodBlocked = productionBlocked.find(pattern => pattern.test(command));
+    const prodBlocked = productionBlocked.find((pattern) => pattern.test(command));
     if (prodBlocked) {
       throw new ValidationError(`Blocked production command: ${prodBlocked.source}`);
     }
@@ -274,7 +274,7 @@ export function validateBashCommand(command: string): void {
 // File path validation
 export function validateFilePath(filePath: string, workspacePath: string): void {
   const resolved = resolve(workspacePath, filePath);
-  
+
   // Ensure file is within workspace
   if (!resolved.startsWith(workspacePath)) {
     throw new ValidationError(`File path outside workspace: ${filePath}`);
@@ -289,7 +289,7 @@ export function validateFilePath(filePath: string, workspacePath: string): void 
     /\.pem$/,
   ];
 
-  const sensitive = sensitivePatterns.find(pattern => pattern.test(filePath));
+  const sensitive = sensitivePatterns.find((pattern) => pattern.test(filePath));
   if (sensitive) {
     throw new ValidationError(`Cannot modify sensitive file: ${filePath}`);
   }
@@ -298,7 +298,7 @@ export function validateFilePath(filePath: string, workspacePath: string): void 
 // File content validation
 export function validateFileContent(content: string, filePath: string): void {
   const ext = extname(filePath);
-  
+
   // Check for secrets in content
   const secretPatterns = [
     /api[_-]?key\s*[:=]\s*["']?[a-zA-Z0-9]{20,}["']?/i,
@@ -307,7 +307,7 @@ export function validateFileContent(content: string, filePath: string): void {
     /token\s*[:=]\s*["']?[a-zA-Z0-9]{20,}["']?/i,
   ];
 
-  const foundSecret = secretPatterns.find(pattern => pattern.test(content));
+  const foundSecret = secretPatterns.find((pattern) => pattern.test(content));
   if (foundSecret) {
     throw new ValidationError('Content contains potential secrets');
   }
@@ -337,18 +337,18 @@ import type { HookResult } from './lib/types.ts';
 
 async function handlePreToolUse(): Promise<HookResult> {
   const context = createHookContext('PreToolUse');
-  
+
   console.log(`PreToolUse hook triggered for: ${context.toolName}`);
 
   try {
     switch (context.toolName) {
       case 'Bash':
         return await handleBashPreHook(context);
-      
+
       case 'Write':
       case 'Edit':
         return await handleFilePreHook(context);
-      
+
       default:
         return { success: true, message: `No validation needed for ${context.toolName}` };
     }
@@ -360,7 +360,7 @@ async function handlePreToolUse(): Promise<HookResult> {
         message: error.message,
       };
     }
-    
+
     console.error('Unexpected error in PreToolUse hook:', error);
     return {
       success: false,
@@ -376,7 +376,7 @@ async function handleBashPreHook(context: HookContext): Promise<HookResult> {
   }
 
   validateBashCommand(context.toolInput.command);
-  
+
   return {
     success: true,
     message: `Bash command validated: ${context.toolInput.command.slice(0, 50)}...`,
@@ -389,7 +389,7 @@ async function handleFilePreHook(context: HookContext): Promise<HookResult> {
   }
 
   validateFilePath(context.toolInput.file_path, context.workspacePath);
-  
+
   return {
     success: true,
     message: `File operation validated: ${context.toolInput.file_path}`,
@@ -399,12 +399,12 @@ async function handleFilePreHook(context: HookContext): Promise<HookResult> {
 // Main execution
 async function main(): Promise<void> {
   const result = await handlePreToolUse();
-  
+
   if (!result.success) {
     console.error(`Hook failed: ${result.message}`);
     process.exit(result.block ? 1 : 0);
   }
-  
+
   console.log(`Hook succeeded: ${result.message || 'OK'}`);
   process.exit(0);
 }
@@ -435,7 +435,7 @@ import type { HookResult, HookContext } from './lib/types.ts';
 
 async function handlePostToolUse(): Promise<HookResult> {
   const context = createHookContext('PostToolUse');
-  
+
   console.log(`PostToolUse hook triggered for: ${context.toolName}`);
 
   try {
@@ -443,10 +443,10 @@ async function handlePostToolUse(): Promise<HookResult> {
       case 'Write':
       case 'Edit':
         return await handleFilePostHook(context);
-      
+
       case 'Bash':
         return await handleBashPostHook(context);
-      
+
       default:
         return { success: true, message: `No post-processing for ${context.toolName}` };
     }
@@ -501,7 +501,7 @@ async function handleBashPostHook(context: HookContext): Promise<HookResult> {
   // Log the command execution for audit trail
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] Bash command completed: ${context.toolInput.command}`);
-  
+
   return {
     success: true,
     message: 'Bash command logged',
@@ -570,12 +570,12 @@ async function lintFile(filePath: string): Promise<void> {
 // Main execution
 async function main(): Promise<void> {
   const result = await handlePostToolUse();
-  
+
   if (!result.success) {
     console.error(`Hook failed: ${result.message}`);
     process.exit(1);
   }
-  
+
   console.log(`Hook completed: ${result.message || 'OK'}`);
   process.exit(0);
 }
@@ -605,17 +605,17 @@ import type { HookResult } from './lib/types.ts';
 
 async function handleSessionStart(): Promise<HookResult> {
   const context = createHookContext('SessionStart');
-  
+
   console.log(`Session started: ${context.sessionId}`);
   console.log(`Workspace: ${context.workspacePath}`);
 
   try {
     // Load project context
     await loadProjectContext(context.workspacePath);
-    
+
     // Display project information
     await displayProjectInfo(context.workspacePath);
-    
+
     return {
       success: true,
       message: 'Session initialized successfully',
@@ -630,12 +630,7 @@ async function handleSessionStart(): Promise<HookResult> {
 }
 
 async function loadProjectContext(workspacePath: string): Promise<void> {
-  const contextFiles = [
-    'CLAUDE.md',
-    'README.md',
-    '.claude/context.md',
-    'docs/CONTRIBUTING.md',
-  ];
+  const contextFiles = ['CLAUDE.md', 'README.md', '.claude/context.md', 'docs/CONTRIBUTING.md'];
 
   for (const file of contextFiles) {
     const filePath = join(workspacePath, file);
@@ -651,12 +646,14 @@ async function displayProjectInfo(workspacePath: string): Promise<void> {
   if (existsSync(packageJsonPath)) {
     try {
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-      console.log(`📦 Project: ${packageJson.name || 'Unknown'} v${packageJson.version || '0.0.0'}`);
-      
+      console.log(
+        `📦 Project: ${packageJson.name || 'Unknown'} v${packageJson.version || '0.0.0'}`,
+      );
+
       if (packageJson.description) {
         console.log(`📝 Description: ${packageJson.description}`);
       }
-      
+
       // Show available scripts
       if (packageJson.scripts) {
         const scripts = Object.keys(packageJson.scripts);
@@ -693,12 +690,12 @@ async function displayProjectInfo(workspacePath: string): Promise<void> {
 // Main execution
 async function main(): Promise<void> {
   const result = await handleSessionStart();
-  
+
   if (!result.success) {
     console.error(`Hook failed: ${result.message}`);
     process.exit(1);
   }
-  
+
   console.log(`Hook completed: ${result.message || 'OK'}`);
   process.exit(0);
 }
@@ -735,11 +732,11 @@ export class HookChain {
   async execute(context: HookContext): Promise<HookResult> {
     for (const handler of this.handlers) {
       const result = await handler(context);
-      
+
       if (!result.success && result.block) {
         return result; // Stop chain on blocking failure
       }
-      
+
       if (!result.success) {
         console.warn(`Non-blocking hook failure: ${result.message}`);
       }
@@ -750,10 +747,7 @@ export class HookChain {
 }
 
 // Example usage in a hook
-const chain = new HookChain()
-  .add(validateSecurity)
-  .add(checkPermissions)
-  .add(logActivity);
+const chain = new HookChain().add(validateSecurity).add(checkPermissions).add(logActivity);
 
 const result = await chain.execute(context);
 ```
@@ -778,7 +772,7 @@ export interface HookConfig {
 
 export function loadHookConfig(workspacePath: string): HookConfig {
   const configPath = join(workspacePath, '.claude', 'hooks.json');
-  
+
   const defaultConfig: HookConfig = {
     enabled: true,
     rules: {
@@ -845,7 +839,7 @@ describe('PreToolUse Hook', () => {
     process.env.CLAUDE_TOOL_NAME = 'Write';
     process.env.TOOL_INPUT = JSON.stringify({
       file_path: 'test.ts',
-      content: 'console.log("hello");'
+      content: 'console.log("hello");',
     });
 
     const result = await handlePreToolUse();
@@ -866,7 +860,7 @@ import { createHookContext } from './lib/context.ts';
 // Debug utility to inspect hook environment
 function debugHook(): void {
   console.log('=== HOOK DEBUG INFO ===');
-  
+
   // Environment variables
   console.log('Environment Variables:');
   Object.entries(process.env)

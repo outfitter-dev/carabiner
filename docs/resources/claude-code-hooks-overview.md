@@ -1,6 +1,7 @@
 # Claude Code Hooks: Complete Guide
 
-> **Sources**: 
+> **Sources**:
+>
 > - [Claude Code Hooks Documentation](https://docs.anthropic.com/en/docs/claude-code/hooks)
 > - [Claude Code Settings Documentation](https://docs.anthropic.com/en/docs/claude-code/settings)
 
@@ -83,10 +84,12 @@ Claude Code hooks are event-driven commands that execute automatically at specif
    - **Common use**: Logging, state persistence
 
 6. **SubagentStop**: Executes when a subagent finishes responding
+
    - **Purpose**: Handle subagent completion
    - **Common use**: Subagent result processing
 
 7. **Notification**: Executes on certain system notifications
+
    - **Purpose**: Handle system-level events
    - **Common use**: Status monitoring, alerts
 
@@ -162,15 +165,15 @@ Claude Code provides environment variables to hooks:
 
 ```typescript
 // Available in most hooks (context-dependent)
-process.env.CLAUDE_SESSION_ID;      // Current session identifier
-process.env.CLAUDE_TOOL_NAME;       // Name of the tool (empty in SessionStart)
-process.env.CLAUDE_PROJECT_DIR;  // Current workspace path
+process.env.CLAUDE_SESSION_ID; // Current session identifier
+process.env.CLAUDE_TOOL_NAME; // Name of the tool (empty in SessionStart)
+process.env.CLAUDE_PROJECT_DIR; // Current workspace path
 
-// Tool-specific variables  
-process.env.TOOL_INPUT;   // Tool input parameters (JSON)
-process.env.TOOL_OUTPUT;  // Tool output (PostToolUse only, not in async hooks)
-process.env.USER_PROMPT;  // User's prompt text (UserPromptSubmit only)
-process.env.FILE_PATH;    // File path for file operations
+// Tool-specific variables
+process.env.TOOL_INPUT; // Tool input parameters (JSON)
+process.env.TOOL_OUTPUT; // Tool output (PostToolUse only, not in async hooks)
+process.env.USER_PROMPT; // User's prompt text (UserPromptSubmit only)
+process.env.FILE_PATH; // File path for file operations
 ```
 
 > **Variable Availability**: Not all variables are available in all hook contexts. For example, `CLAUDE_TOOL_NAME` is empty during `SessionStart` and `USER_PROMPT` is only available in `UserPromptSubmit` hooks.
@@ -342,7 +345,8 @@ main().catch((error) => {
 
 ## Security Considerations
 
-> **🚨 CRITICAL SECURITY WARNING**: 
+> **🚨 CRITICAL SECURITY WARNING**:
+>
 > - Claude Code hooks execute shell commands **automatically** with the same permissions as the Claude Code process
 > - On macOS, this often includes **full disk access**
 > - These scripts can **delete files, access sensitive data, and modify your system**
@@ -436,8 +440,8 @@ function sanitizeCommand(command: string): boolean {
 {
   "hooks": {
     "PreToolUse": {
-      "*": "bun run hooks/universal-validator.ts",  // Matches any tool not explicitly listed
-      "Write": "bun run hooks/write-specific.ts"    // Still runs for Write tool
+      "*": "bun run hooks/universal-validator.ts", // Matches any tool not explicitly listed
+      "Write": "bun run hooks/write-specific.ts" // Still runs for Write tool
     }
   }
 }
