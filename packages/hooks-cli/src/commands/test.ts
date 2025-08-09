@@ -41,13 +41,13 @@ export class TestCommand extends BaseCommand {
     }
 
     const pattern = positionals[0] || 'hooks/test/';
-    const watchMode = values.watch;
-    const coverage = values.coverage;
-    const timeout = values.timeout
-      ? Number.parseInt(values.timeout, 10)
+    const watchMode = this.getBooleanValue(values.watch);
+    const coverage = this.getBooleanValue(values.coverage);
+    const timeout = this.getStringValue(values.timeout)
+      ? Number.parseInt(this.getStringValue(values.timeout), 10)
       : undefined;
-    const verbose = values.verbose || config.verbose;
-    const bail = values.bail;
+    const verbose = this.getBooleanValue(values.verbose) || config.verbose;
+    const bail = this.getBooleanValue(values.bail);
     if (watchMode) {
       // TODO: Implement watch mode
     }
@@ -114,9 +114,7 @@ export class TestCommand extends BaseCommand {
     }
 
     if (verbose) {
-      for (const _file of testFiles) {
-        // TODO: Display test file information
-      }
+      // TODO: Display test file information
     }
 
     // Build bun test command
@@ -186,8 +184,11 @@ export class TestCommand extends BaseCommand {
           files.push(fullPath.replace(`${testDir}/`, ''));
         }
       }
-    } catch (_error) {
-      // Directory doesn't exist or can't be read
+    } catch (error) {
+      // Directory doesn't exist or can't be read - return empty array
+      if (error instanceof Error) {
+        // TODO: Log error if needed
+      }
     }
 
     return files;

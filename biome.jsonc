@@ -25,5 +25,28 @@
       "*.js",
       "*.json"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["packages/hooks-cli/src/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off",
+            "noExplicitAny": "off"
+          },
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "off"
+          },
+          "nursery": {
+            "noAwaitInLoop": "off",
+            "noBitwiseOperators": "off"
+          }
+        }
+      }
+    }
+  ]
 }

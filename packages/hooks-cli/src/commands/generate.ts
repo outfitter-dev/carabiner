@@ -7,6 +7,13 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { BaseCommand, type CliConfig } from '../cli';
 
+// Regex patterns at top level
+const _SESSION_ID_REGEX = /^[a-zA-Z0-9-]+$/;
+const _CURL_INJECTION_REGEX = /\\$\\(curl/;
+const _BASE64_DECODE_REGEX = /base64.*decode/;
+const _EVAL_SHELL_REGEX = /eval.*\\$/;
+const WORD_SPLIT_REGEX = /[-_\s]+/;
+
 export class GenerateCommand extends BaseCommand {
   name = 'generate';
   description = 'Generate new hook files and templates';
@@ -41,9 +48,9 @@ export class GenerateCommand extends BaseCommand {
       );
     }
 
-    const useTypeScript = !values.javascript;
-    const template = values.template || 'basic';
-    const force = values.force;
+    const useTypeScript = !this.getBooleanValue(values.javascript);
+    const template = this.getStringValue(values.template, 'basic');
+    const force = this.getBooleanValue(values.force);
 
     try {
       switch (type.toLowerCase()) {
@@ -93,7 +100,9 @@ export class GenerateCommand extends BaseCommand {
   /**
    * Show additional help for generate command
    */
-  private showGenerateHelp(): void {}
+  private showGenerateHelp(): void {
+    // TODO: Display generate-specific help and examples
+  }
 
   /**
    * Generate a new hook file
@@ -486,9 +495,9 @@ async function performSecurityChecks(context: any): Promise<void> {
   // Example: Check for suspicious patterns
   if (context.toolName === 'Bash' && context.toolInput?.command) {
     const suspiciousPatterns = [
-      /\\$\\(curl/,  // Command injection via curl
-      /base64.*decode/,  // Base64 decoding
-      /eval.*\\$/,  // Shell evaluation
+      CURL_INJECTION_REGEX,  // Command injection via curl
+      BASE64_DECODE_REGEX,  // Base64 decoding
+      EVAL_SHELL_REGEX,  // Shell evaluation
     ];
 
     for (const pattern of suspiciousPatterns) {
@@ -564,9 +573,9 @@ async function performSecurityChecks(context) {
   // Example: Check for suspicious patterns
   if (context.toolName === 'Bash' && context.toolInput?.command) {
     const suspiciousPatterns = [
-      /\\$\\(curl/,  // Command injection via curl
-      /base64.*decode/,  // Base64 decoding
-      /eval.*\\$/,  // Shell evaluation
+      CURL_INJECTION_REGEX,  // Command injection via curl
+      BASE64_DECODE_REGEX,  // Base64 decoding
+      EVAL_SHELL_REGEX,  // Shell evaluation
     ];
 
     for (const pattern of suspiciousPatterns) {
@@ -650,7 +659,7 @@ export class ${this.pascalCase(name)}Validator {
     warnings: Array<{ field?: string; message: string; code?: string }>
   ): Promise<void> {
     // Example validation: Check session ID format
-    if (!/^[a-zA-Z0-9-]+$/.test(context.sessionId)) {
+    if (!SESSION_ID_REGEX.test(context.sessionId)) {
       errors.push({
         field: 'sessionId',
         message: 'Session ID must be alphanumeric with dashes only',
@@ -731,7 +740,7 @@ class ${this.pascalCase(name)}Validator {
    */
   static async performValidation(context, errors, warnings) {
     // Example validation: Check session ID format
-    if (!/^[a-zA-Z0-9-]+$/.test(context.sessionId)) {
+    if (!SESSION_ID_REGEX.test(context.sessionId)) {
       errors.push({
         field: 'sessionId',
         message: 'Session ID must be alphanumeric with dashes only',
@@ -1078,7 +1087,7 @@ describe('${name} hook tests', () => {
    */
   private pascalCase(str: string): string {
     return str
-      .split(/[-_\s]+/)
+      .split(WORD_SPLIT_REGEX)
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join('');
   }

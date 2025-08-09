@@ -8,6 +8,10 @@ import { join } from 'node:path';
 import { loadConfig } from '@claude-code/hooks-config';
 import { BaseCommand, type CliConfig } from '../cli';
 
+// Regex patterns at top level
+const HOOK_FILE_REGEX = /\.(ts|js)$/;
+const BUN_RUN_REGEX = /bun run (.+?)(\s|$)/;
+
 export class ValidateCommand extends BaseCommand {
   name = 'validate';
   description = 'Validate hook configuration and files';
@@ -34,10 +38,10 @@ export class ValidateCommand extends BaseCommand {
       return;
     }
 
-    const validateConfig = !values.hooks;
-    const validateHooks = !values.config;
-    const autoFix = values.fix;
-    const verbose = values.verbose || config.verbose;
+    const validateConfig = !this.getBooleanValue(values.hooks);
+    const validateHooks = !this.getBooleanValue(values.config);
+    const autoFix = this.getBooleanValue(values.fix);
+    const verbose = this.getBooleanValue(values.verbose) || config.verbose;
 
     let hasErrors = false;
 
@@ -66,9 +70,11 @@ export class ValidateCommand extends BaseCommand {
 
       if (hasErrors) {
         if (!autoFix) {
+          // TODO: Show suggestion to use --fix
         }
         process.exit(1);
       } else {
+        // TODO: Show success message
       }
     } catch (error) {
       throw new Error(
@@ -112,12 +118,14 @@ export class ValidateCommand extends BaseCommand {
       }
 
       if (verbose) {
+        // TODO: Log configuration found
       }
 
       // Load and validate configuration
       const config = await loadConfig(workspacePath, { validate: true });
 
       if (verbose) {
+        // TODO: Log configuration loaded successfully
       }
 
       // Validate Claude settings
@@ -127,16 +135,20 @@ export class ValidateCommand extends BaseCommand {
 
         if (!settings.hooks) {
           if (autoFix) {
+            // TODO: Implement auto-fix for missing hooks section
           } else {
+            // TODO: Log error about missing hooks section
           }
+          errors++;
         } else if (verbose) {
+          // TODO: Log Claude settings validation passed
         }
       } else {
         errors++;
       }
 
       // Validate hook commands exist
-      errors += await this.validateHookCommands(
+      errors += this.validateHookCommands(
         config,
         workspacePath,
         verbose,
@@ -152,12 +164,12 @@ export class ValidateCommand extends BaseCommand {
   /**
    * Validate hook commands exist
    */
-  private async validateHookCommands(
+  private validateHookCommands(
     config: any,
     workspacePath: string,
     verbose: boolean,
     autoFix: boolean
-  ): Promise<number> {
+  ): number {
     let errors = 0;
 
     // Check each configured hook
@@ -172,7 +184,7 @@ export class ValidateCommand extends BaseCommand {
       if (eventConfig && typeof eventConfig === 'object') {
         if ('command' in eventConfig) {
           // Single hook config
-          errors += await this.validateCommand(
+          errors += this.validateCommand(
             eventConfig as any,
             event,
             '',
@@ -188,7 +200,7 @@ export class ValidateCommand extends BaseCommand {
               typeof toolConfig === 'object' &&
               'command' in toolConfig
             ) {
-              errors += await this.validateCommand(
+              errors += this.validateCommand(
                 toolConfig as any,
                 event,
                 tool,
@@ -208,25 +220,26 @@ export class ValidateCommand extends BaseCommand {
   /**
    * Validate a specific hook command
    */
-  private async validateCommand(
+  private validateCommand(
     hookConfig: { command: string; enabled?: boolean },
     event: string,
     tool: string,
     workspacePath: string,
     verbose: boolean,
     autoFix: boolean
-  ): Promise<number> {
+  ): number {
     const _hookName = tool ? `${event}:${tool}` : event;
 
     if (hookConfig.enabled === false) {
       if (verbose) {
+        // TODO: Log hook is disabled, skipping validation
       }
       return 0;
     }
 
     // Extract file path from command
     const command = hookConfig.command;
-    const bunRunMatch = command.match(/bun run (.+?)(\s|$)/);
+    const bunRunMatch = command.match(BUN_RUN_REGEX);
 
     if (bunRunMatch?.[1]) {
       const scriptPath = bunRunMatch[1];
@@ -234,13 +247,17 @@ export class ValidateCommand extends BaseCommand {
 
       if (!existsSync(fullPath)) {
         if (autoFix) {
+          // TODO: Implement auto-generation of missing hook files
+        } else {
+          // TODO: Log hook file not found
         }
-
         return 1;
       }
       if (verbose) {
+        // TODO: Log hook file exists
       }
     } else if (verbose) {
+      // TODO: Log non-standard command format
     }
 
     return 0;
@@ -263,13 +280,16 @@ export class ValidateCommand extends BaseCommand {
     }
 
     if (verbose) {
+      // TODO: Log validating hook files
     }
 
     // Find all hook files
     const hookFiles = await this.findHookFiles(hooksDir);
 
     if (hookFiles.length === 0) {
+      // TODO: Log no hook files found
     } else if (verbose) {
+      // TODO: Log found X hook files to validate
     }
 
     // Validate each hook file
@@ -298,14 +318,17 @@ export class ValidateCommand extends BaseCommand {
       for (const entry of entries) {
         if (
           entry.isFile() &&
-          /\.(ts|js)$/.test(entry.name) &&
+          HOOK_FILE_REGEX.test(entry.name) &&
           !entry.name.includes('.test.')
         ) {
           files.push(join(hooksDir, entry.name));
         }
       }
-    } catch (_error) {
+    } catch (error) {
       // Directory doesn't exist or can't be read
+      if (error instanceof Error) {
+        // TODO: Log could not read hooks directory
+      }
     }
 
     return files;
@@ -341,6 +364,7 @@ export class ValidateCommand extends BaseCommand {
             const { chmod } = await import('node:fs/promises');
             await chmod(filePath, stats.mode | 0o755);
           } else {
+            errors++;
           }
         }
       }
@@ -362,6 +386,7 @@ export class ValidateCommand extends BaseCommand {
         content.includes('import');
 
       if (!hasImports) {
+        errors++;
       }
 
       // Check for main execution block
@@ -370,11 +395,14 @@ export class ValidateCommand extends BaseCommand {
         content.includes('require.main === module');
 
       if (!hasMainBlock) {
+        errors++;
       }
 
       if (verbose && errors === 0) {
+        // TODO: Log hook file validated
       }
     } catch (_error) {
+      // TODO: Log failed to validate hook file
       errors++;
     }
 

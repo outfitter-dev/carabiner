@@ -34,9 +34,9 @@ export class InitCommand extends BaseCommand {
       return;
     }
 
-    const useTypeScript = !values.javascript;
-    const template = values.template || 'basic';
-    const force = values.force;
+    const useTypeScript = !this.getBooleanValue(values.javascript);
+    const template = this.getStringValue(values.template, 'basic');
+    const force = this.getBooleanValue(values.force);
 
     try {
       await this.createDirectoryStructure(config.workspacePath, force);
@@ -65,12 +65,15 @@ export class InitCommand extends BaseCommand {
   ): Promise<void> {
     const directories = ['.claude', 'hooks', 'hooks/lib', 'hooks/test'];
 
-    for (const dir of directories) {
+    // Create directories in parallel
+    const dirCreationPromises = directories.map(async (dir) => {
       const dirPath = join(workspacePath, dir);
       if (!existsSync(dirPath)) {
         await mkdir(dirPath, { recursive: true });
       }
-    }
+    });
+
+    await Promise.all(dirCreationPromises);
   }
 
   /**
@@ -304,12 +307,15 @@ module.exports = { HookUtils };
       },
     ];
 
-    for (const hook of hooks) {
+    // Write hook files in parallel
+    const hookWritePromises = hooks.map(async (hook) => {
       const filePath = join(hooksDir, `${hook.name}.${extension}`);
       if (!existsSync(filePath) || force) {
         await writeFile(filePath, hook.content);
       }
-    }
+    });
+
+    await Promise.all(hookWritePromises);
   }
 
   /**
