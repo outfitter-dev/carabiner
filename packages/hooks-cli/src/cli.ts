@@ -254,6 +254,7 @@ export abstract class BaseCommand implements Command {
       const result = parseArgs({
         args,
         allowPositionals: true,
+        // biome-ignore lint/suspicious/noExplicitAny: parseArgs requires flexible options type
         options: options as any,
       });
       return {

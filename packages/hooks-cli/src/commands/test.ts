@@ -168,26 +168,42 @@ export class TestCommand extends BaseCommand {
   /**
    * Find all test files in directory
    */
-  private async findTestFiles(testDir: string): Promise<string[]> {
+  private findTestFiles(testDir: string): Promise<string[]> {
+    return this.findTestFilesRecursive(testDir, testDir);
+  }
+
+  /**
+   * Recursively find test files in directories
+   */
+  private async findTestFilesRecursive(
+    currentDir: string,
+    baseDir: string
+  ): Promise<string[]> {
     const { readdir } = await import('node:fs/promises');
+    const { join: pathJoin } = await import('node:path');
     const files: string[] = [];
 
     try {
-      const entries = await readdir(testDir, {
-        recursive: true,
-        withFileTypes: true,
-      });
+      const entries = await readdir(currentDir, { withFileTypes: true });
 
       for (const entry of entries) {
+        const fullPath = pathJoin(currentDir, entry.name);
+
         if (entry.isFile() && TEST_FILE_PATTERN.test(entry.name)) {
-          const fullPath = join(entry.path || testDir, entry.name);
-          files.push(fullPath.replace(`${testDir}/`, ''));
+          // Add relative path from base directory
+          const relativePath = fullPath.replace(`${baseDir}/`, '');
+          files.push(relativePath);
+        } else if (entry.isDirectory()) {
+          // Recursively search subdirectories
+          // biome-ignore lint/nursery/noAwaitInLoop: recursive directory traversal requires sequential processing
+          const subFiles = await this.findTestFilesRecursive(fullPath, baseDir);
+          files.push(...subFiles);
         }
       }
     } catch (error) {
       // Directory doesn't exist or can't be read - return empty array
       if (error instanceof Error) {
-        // TODO: Log error if needed
+        // Silently handle missing directories
       }
     }
 

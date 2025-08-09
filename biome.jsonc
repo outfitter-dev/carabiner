@@ -32,18 +32,7 @@
       "linter": {
         "rules": {
           "suspicious": {
-            "noConsole": "off",
-            "noExplicitAny": "off"
-          },
-          "complexity": {
-            "noExcessiveCognitiveComplexity": "off"
-          },
-          "correctness": {
-            "noUnusedVariables": "off"
-          },
-          "nursery": {
-            "noAwaitInLoop": "off",
-            "noBitwiseOperators": "off"
+            "noConsole": "off"
           }
         }
       }

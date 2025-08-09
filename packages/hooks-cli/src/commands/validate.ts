@@ -86,6 +86,7 @@ export class ValidateCommand extends BaseCommand {
   /**
    * Validate configuration files
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: configuration validation requires complex logic
   private async validateConfiguration(
     workspacePath: string,
     verbose: boolean,
@@ -164,7 +165,9 @@ export class ValidateCommand extends BaseCommand {
   /**
    * Validate hook commands exist
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: hook validation requires complex nested logic
   private validateHookCommands(
+    // biome-ignore lint/suspicious/noExplicitAny: configuration structure is dynamic
     config: any,
     workspacePath: string,
     verbose: boolean,
@@ -185,6 +188,7 @@ export class ValidateCommand extends BaseCommand {
         if ('command' in eventConfig) {
           // Single hook config
           errors += this.validateCommand(
+            // biome-ignore lint/suspicious/noExplicitAny: event config structure varies
             eventConfig as any,
             event,
             '',
@@ -201,6 +205,7 @@ export class ValidateCommand extends BaseCommand {
               'command' in toolConfig
             ) {
               errors += this.validateCommand(
+                // biome-ignore lint/suspicious/noExplicitAny: tool config structure varies
                 toolConfig as any,
                 event,
                 tool,
@@ -294,6 +299,7 @@ export class ValidateCommand extends BaseCommand {
 
     // Validate each hook file
     for (const filePath of hookFiles) {
+      // biome-ignore lint/nursery/noAwaitInLoop: sequential validation is required for proper error handling
       errors += await this.validateHookFile(
         filePath,
         workspacePath,
@@ -337,6 +343,7 @@ export class ValidateCommand extends BaseCommand {
   /**
    * Validate a single hook file
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: file validation requires extensive checks
   private async validateHookFile(
     filePath: string,
     workspacePath: string,
@@ -358,10 +365,12 @@ export class ValidateCommand extends BaseCommand {
 
       // On Unix systems, check if file is executable
       if (process.platform !== 'win32') {
+        // biome-ignore lint/nursery/noBitwiseOperators: file permission checking requires bitwise operations
         const isExecutable = Boolean(stats.mode & 0o111);
         if (!isExecutable) {
           if (autoFix) {
             const { chmod } = await import('node:fs/promises');
+            // biome-ignore lint/nursery/noBitwiseOperators: file permission setting requires bitwise operations
             await chmod(filePath, stats.mode | 0o755);
           } else {
             errors++;
@@ -373,10 +382,14 @@ export class ValidateCommand extends BaseCommand {
       const content = await readFile(filePath, 'utf-8');
 
       // Check for shebang
-      if (!content.startsWith('#!') && autoFix) {
-        const fixedContent = `#!/usr/bin/env bun\n\n${content}`;
-        const { writeFile } = await import('node:fs/promises');
-        await writeFile(filePath, fixedContent);
+      if (!content.startsWith('#!')) {
+        if (autoFix) {
+          const fixedContent = `#!/usr/bin/env bun\n\n${content}`;
+          const { writeFile } = await import('node:fs/promises');
+          await writeFile(filePath, fixedContent);
+        } else {
+          errors++;
+        }
       }
 
       // Check for basic imports (TypeScript/JavaScript)
