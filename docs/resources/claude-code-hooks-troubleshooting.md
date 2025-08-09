@@ -185,11 +185,11 @@ const toolInput = process.env.TOOL_INPUT;
 #### Handle Missing Variables
 ```typescript
 // ❌ No fallback handling
-const workspacePath = process.env.CLAUDE_WORKSPACE_PATH;
+const workspacePath = process.env.CLAUDE_PROJECT_DIR;
 const files = fs.readdirSync(workspacePath); // Crashes if undefined
 
 // ✅ Proper fallback handling
-const workspacePath = process.env.CLAUDE_WORKSPACE_PATH || process.cwd();
+const workspacePath = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 if (!fs.existsSync(workspacePath)) {
   console.error('Invalid workspace path');
   process.exit(1);
@@ -307,7 +307,7 @@ function traceHookExecution(command: string[], hookType: string, toolName: strin
     command: command.join(' '),
     environment: {
       CLAUDE_SESSION_ID: process.env.CLAUDE_SESSION_ID,
-      CLAUDE_WORKSPACE_PATH: process.env.CLAUDE_WORKSPACE_PATH,
+      CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
       TOOL_INPUT: process.env.TOOL_INPUT
     }
   });
@@ -404,7 +404,7 @@ async function runHookTest(testCase: HookTestCase, hookScript: string): Promise<
       ...process.env,
       CLAUDE_TOOL_NAME: testCase.toolName,
       CLAUDE_SESSION_ID: 'test-session',
-      CLAUDE_WORKSPACE_PATH: process.cwd(),
+      CLAUDE_PROJECT_DIR: process.cwd(),
       ...testCase.environment
     };
 
@@ -701,9 +701,11 @@ function vulnerableHook(userInput: string) {
 }
 
 // ✅ Safe parameter handling
+import { spawn } from 'node:child_process';
 function safeHook(userInput: string) {
   const sanitized = sanitizeInput(userInput);
-  exec('echo', [sanitized]); // Safe parameter passing
+  const child = spawn('echo', [sanitized], { stdio: 'inherit' });
+  child.on('close', (code) => process.exit(code ?? 0));
 }
 ```
 
@@ -712,7 +714,7 @@ function safeHook(userInput: string) {
 ```typescript
 function protectFileSystem(filePath: string): boolean {
   const resolved = path.resolve(filePath);
-  const workspace = path.resolve(process.env.CLAUDE_WORKSPACE_PATH || '');
+  const workspace = path.resolve(process.env.CLAUDE_PROJECT_DIR || '');
   
   // Prevent path traversal
   if (!resolved.startsWith(workspace)) {

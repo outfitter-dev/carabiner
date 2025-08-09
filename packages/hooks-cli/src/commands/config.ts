@@ -4,7 +4,7 @@
 
 import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { ConfigManager } from '@claude-code/hooks-config';
 import type { HookEvent, ToolName } from '@claude-code/hooks-core';
 import { BaseCommand, type CliConfig } from '../cli';
@@ -76,9 +76,12 @@ export class ConfigCommand extends BaseCommand {
           throw new Error(`Unknown config action: ${action}`);
       }
     } catch (error) {
-      throw new Error(
-        `Config command failed: ${error instanceof Error ? error.message : error}`
-      );
+      if (error instanceof Error) {
+        throw new Error(`Config command failed: ${error.message}`, {
+          cause: error,
+        });
+      }
+      throw new Error(`Config command failed: ${String(error)}`);
     }
   }
 
@@ -188,7 +191,7 @@ Examples:
   private shouldSkipConfigEntry(event: string): boolean {
     return (
       event.startsWith('$') ||
-      ['templates', 'variables', 'environments'].includes(event)
+      ['extends', 'templates', 'variables', 'environments'].includes(event)
     );
   }
 
@@ -204,7 +207,11 @@ Examples:
     ) {
       process.stdout.write('Variables:\n');
       for (const [key, value] of Object.entries(variables)) {
-        process.stdout.write(`  ${key}: ${value}\n`);
+        const rendered =
+          value !== null && typeof value === 'object'
+            ? JSON.stringify(value)
+            : String(value);
+        process.stdout.write(`  ${key}: ${rendered}\n`);
       }
     }
   }
@@ -239,8 +246,9 @@ Examples:
           `${indent}Detached: ${config.detached ? 'yes' : 'no'}\n`
         );
       }
-      if (config.timeout) {
-        process.stdout.write(`${indent}Timeout: ${config.timeout}ms\n`);
+      const timeout = (config as Record<string, unknown>).timeout;
+      if (typeof timeout === 'number') {
+        process.stdout.write(`${indent}Timeout: ${timeout}ms\n`);
       }
     }
   }
@@ -252,7 +260,8 @@ Examples:
     try {
       const config = await configManager.load({ validate: true });
       const warnings = this.performConfigValidation(
-        config as Record<string, unknown>
+        config as Record<string, unknown>,
+        configManager.getWorkspacePath()
       );
 
       if (warnings > 0) {
@@ -265,7 +274,12 @@ Examples:
           '✅ Configuration validation passed with no warnings\n'
         );
       }
-    } catch (_error) {
+    } catch (error) {
+      process.stderr.write(
+        `❌ Configuration validation failed: ${
+          error instanceof Error ? error.message : String(error)
+        }\n`
+      );
       process.exit(1);
     }
   }
@@ -273,7 +287,10 @@ Examples:
   /**
    * Perform configuration validation and return warning count
    */
-  private performConfigValidation(config: Record<string, unknown>): number {
+  private performConfigValidation(
+    config: Record<string, unknown>,
+    workspacePath: string
+  ): number {
     let warnings = 0;
 
     for (const [event, eventConfig] of Object.entries(config)) {
@@ -284,7 +301,8 @@ Examples:
       if (eventConfig && typeof eventConfig === 'object') {
         warnings += this.validateEventConfig(
           eventConfig as Record<string, unknown>,
-          event
+          event,
+          workspacePath
         );
       }
     }
@@ -297,7 +315,8 @@ Examples:
    */
   private validateEventConfig(
     eventConfig: Record<string, unknown>,
-    event: string
+    event: string,
+    workspacePath: string
   ): number {
     let warnings = 0;
 
@@ -305,12 +324,14 @@ Examples:
       warnings += this.checkHookFile(
         eventConfig as Record<string, unknown>,
         event,
-        ''
+        '',
+        workspacePath
       );
     } else {
       warnings += this.validateToolConfigs(
         eventConfig as Record<string, unknown>,
-        event
+        event,
+        workspacePath
       );
     }
 
@@ -322,7 +343,8 @@ Examples:
    */
   private validateToolConfigs(
     eventConfig: Record<string, unknown>,
-    event: string
+    event: string,
+    workspacePath: string
   ): number {
     let warnings = 0;
 
@@ -335,7 +357,8 @@ Examples:
         warnings += this.checkHookFile(
           toolConfig as Record<string, unknown>,
           event,
-          tool
+          tool,
+          workspacePath
         );
       }
     }
@@ -348,10 +371,11 @@ Examples:
    */
   private checkHookFile(
     hookConfig: Record<string, unknown>,
-    event: string,
-    tool: string
+    _event: string,
+    _tool: string,
+    workspacePath: string
   ): number {
-    const _hookName = tool ? `${event}:${tool}` : event;
+    // const _hookName = _tool ? `${_event}:${_tool}` : _event;
 
     // Extract file path from bun run command
     const command = hookConfig.command;
@@ -363,8 +387,11 @@ Examples:
 
     if (bunRunMatch?.[1]) {
       const scriptPath = bunRunMatch[1];
+      const resolved = isAbsolute(scriptPath)
+        ? scriptPath
+        : join(workspacePath, scriptPath);
 
-      if (!existsSync(scriptPath)) {
+      if (!existsSync(resolved)) {
         return 1;
       }
     }
@@ -379,7 +406,7 @@ Examples:
     configManager: ConfigManager,
     outputPath?: string
   ): Promise<void> {
-    const _config = await configManager.load();
+    await configManager.load();
     const settings = configManager.generateClaudeSettings();
 
     const outputFile =
@@ -495,11 +522,24 @@ Examples:
     format?: string
   ): Promise<void> {
     const config = await configManager.load();
-    const exportFormat = (format || 'json') as 'json' | 'js' | 'ts';
+
+    // Validate format
+    const allowedFormats = new Set(['json', 'js', 'ts'] as const);
+    const chosen = (format ?? 'json').toLowerCase();
+    if (!allowedFormats.has(chosen as 'json' | 'js' | 'ts')) {
+      throw new Error(
+        `Unsupported export format: ${format}. Use one of: json | js | ts.`
+      );
+    }
+    const exportFormat = chosen as 'json' | 'js' | 'ts';
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const defaultOutput = `hooks-config-${timestamp}.${exportFormat}`;
-    const _outputFile = outputPath || defaultOutput;
+    const outputFile = outputPath || defaultOutput;
 
+    // TODO: ConfigManager.save needs to support custom output path
+    // For now, we use the current save method but should enhance it
     await configManager.save(config, exportFormat);
+    process.stdout.write(`Configuration would be exported to ${outputFile}\n`);
   }
 }

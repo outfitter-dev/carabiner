@@ -89,7 +89,7 @@ This index provides an organized overview of Claude Code hooks documentation and
 |----------|-------------|-------------|
 | `CLAUDE_SESSION_ID` | All hooks | Current session identifier |
 | `CLAUDE_TOOL_NAME` | Most hooks | Tool being used (empty in SessionStart) |
-| `CLAUDE_WORKSPACE_PATH` | All hooks | Current workspace path |
+| `CLAUDE_PROJECT_DIR` | All hooks (v0.3+) | Current workspace path |
 | `TOOL_INPUT` | Tool hooks | JSON string of tool parameters |
 | `TOOL_OUTPUT` | PostToolUse only | Tool output (≤32kB, not available in detached hooks) |
 | `USER_PROMPT` | UserPromptSubmit only | User's prompt text |

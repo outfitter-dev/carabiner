@@ -15,5 +15,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@outfitter/grapple", "examples", "@claude-code/hooks-examples"]
+  "ignore": ["@outfitter/grapple", "@claude-code/hooks-examples"]
 }

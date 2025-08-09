@@ -166,7 +166,7 @@ const universalHook = HookBuilder
 // ❌ Parsed environment variables manually
 const toolInput = JSON.parse(process.env.TOOL_INPUT || '{}');
 const sessionId = process.env.CLAUDE_SESSION_ID || '';
-const workspacePath = process.env.CLAUDE_WORKSPACE_PATH || '';
+const workspacePath = process.env.CLAUDE_PROJECT_DIR || '';
 ```
 
 **After (Structured JSON Input)**:

@@ -7,7 +7,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 // Regex for test file detection
-const TEST_FILE_PATTERN = /\.test\.(ts|js)$/;
+// Matches *.test.* or *.spec.* across ts/tsx/js/jsx
+const TEST_FILE_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx)$/;
 
 import { BaseCommand, type CliConfig } from '../cli';
 
@@ -104,12 +105,16 @@ export class TestCommand extends BaseCommand {
     // Check if test directory exists
     const testDir = join(workspacePath, 'hooks/test');
     if (!existsSync(testDir)) {
+      process.stdout.write('No tests directory found at hooks/test.\n');
       return;
     }
 
     // Check if tests exist
     const testFiles = await this.findTestFiles(testDir);
     if (testFiles.length === 0) {
+      process.stdout.write(
+        'No test files found (expected *.test.* or *.spec.* files).\n'
+      );
       return;
     }
 

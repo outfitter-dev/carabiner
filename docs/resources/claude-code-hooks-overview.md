@@ -164,7 +164,7 @@ Claude Code provides environment variables to hooks:
 // Available in most hooks (context-dependent)
 process.env.CLAUDE_SESSION_ID;      // Current session identifier
 process.env.CLAUDE_TOOL_NAME;       // Name of the tool (empty in SessionStart)
-process.env.CLAUDE_WORKSPACE_PATH;  // Current workspace path
+process.env.CLAUDE_PROJECT_DIR;  // Current workspace path
 
 // Tool-specific variables  
 process.env.TOOL_INPUT;   // Tool input parameters (JSON)
@@ -211,7 +211,7 @@ function parseHookContext(): HookContext {
   return {
     sessionId: process.env.CLAUDE_SESSION_ID || '',
     toolName: process.env.CLAUDE_TOOL_NAME || '',
-    workspacePath: process.env.CLAUDE_WORKSPACE_PATH || '',
+    workspacePath: process.env.CLAUDE_PROJECT_DIR || '',
     toolInput,
   };
 }
@@ -291,7 +291,7 @@ function parseContext(): PostHookContext {
     toolName: process.env.CLAUDE_TOOL_NAME || '',
     toolInput: JSON.parse(process.env.TOOL_INPUT || '{}'),
     toolOutput: process.env.TOOL_OUTPUT || '',
-    workspacePath: process.env.CLAUDE_WORKSPACE_PATH || process.cwd(),
+    workspacePath: process.env.CLAUDE_PROJECT_DIR || process.cwd(),
   };
 }
 

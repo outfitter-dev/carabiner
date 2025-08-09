@@ -4,13 +4,13 @@
 
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { loadConfig } from '@claude-code/hooks-config';
 import { BaseCommand, type CliConfig } from '../cli';
 
 // Regex patterns at top level
 const HOOK_FILE_REGEX = /\.(ts|js)$/;
-const BUN_RUN_REGEX = /bun run (.+?)(\s|$)/;
+const BUN_RUN_REGEX = /bun\s+run\s+(?:-S\s+)?(?:"([^"]+)"|'([^']+)'|(\S+))/;
 
 export class ValidateCommand extends BaseCommand {
   name = 'validate';
@@ -18,17 +18,17 @@ export class ValidateCommand extends BaseCommand {
   usage = 'validate [options]';
   options = {
     '--config, -c': 'Validate configuration only',
-    '--hooks, -h': 'Validate hook files only',
+    '--hooks, -k': 'Validate hook files only',
     '--fix': 'Automatically fix issues where possible',
     '--verbose, -v': 'Show detailed validation output',
-    '--help': 'Show help',
+    '--help, -h': 'Show help',
   };
 
   async execute(args: string[], config: CliConfig): Promise<void> {
     const { values } = this.parseArgs(args, {
-      help: { type: 'boolean' },
+      help: { type: 'boolean', short: 'h' },
       config: { type: 'boolean', short: 'c' },
-      hooks: { type: 'boolean', short: 'h' },
+      hooks: { type: 'boolean', short: 'k' },
       fix: { type: 'boolean' },
       verbose: { type: 'boolean', short: 'v' },
     });
@@ -70,16 +70,17 @@ export class ValidateCommand extends BaseCommand {
 
       if (hasErrors) {
         if (!autoFix) {
-          // TODO: Show suggestion to use --fix
+          process.stderr.write(
+            'Validation found issues. Re-run with --fix to attempt automatic remediation.\n'
+          );
         }
         process.exit(1);
-      } else {
-        // TODO: Show success message
+      } else if (verbose) {
+        process.stdout.write('Validation passed.\n');
       }
     } catch (error) {
-      throw new Error(
-        `Validation failed: ${error instanceof Error ? error.message : error}`
-      );
+      const message = `Validation failed: ${error instanceof Error ? error.message : String(error)}`;
+      throw new Error(message, { cause: error as unknown });
     }
   }
 
@@ -244,10 +245,9 @@ export class ValidateCommand extends BaseCommand {
 
     // Extract file path from command
     const command = hookConfig.command;
-    const bunRunMatch = command.match(BUN_RUN_REGEX);
-
-    if (bunRunMatch?.[1]) {
-      const scriptPath = bunRunMatch[1];
+    const match = command.match(BUN_RUN_REGEX);
+    const scriptPath = match?.[1] ?? match?.[2] ?? match?.[3];
+    if (scriptPath) {
       const fullPath = join(workspacePath, scriptPath);
 
       if (!existsSync(fullPath)) {
@@ -325,7 +325,9 @@ export class ValidateCommand extends BaseCommand {
         if (
           entry.isFile() &&
           HOOK_FILE_REGEX.test(entry.name) &&
-          !entry.name.includes('.test.')
+          !entry.name.endsWith('.d.ts') &&
+          !entry.name.includes('.test.') &&
+          !entry.name.includes('.spec.')
         ) {
           files.push(join(hooksDir, entry.name));
         }
@@ -350,7 +352,7 @@ export class ValidateCommand extends BaseCommand {
     verbose: boolean,
     autoFix: boolean
   ): Promise<number> {
-    const _relativePath = filePath.replace(`${workspacePath}/`, '');
+    const _relativePath = relative(workspacePath, filePath);
     let errors = 0;
 
     try {

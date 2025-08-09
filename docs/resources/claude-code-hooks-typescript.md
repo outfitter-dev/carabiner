@@ -101,7 +101,7 @@ export type ToolName =
 export interface HookEnvironment {
   CLAUDE_SESSION_ID?: string;
   CLAUDE_TOOL_NAME?: string;        // Empty in SessionStart
-  CLAUDE_WORKSPACE_PATH?: string;
+  CLAUDE_PROJECT_DIR?: string;
   TOOL_INPUT?: string;              // JSON string of tool parameters
   TOOL_OUTPUT?: string;             // Only in PostToolUse, ≤32kB, not in detached hooks
   USER_PROMPT?: string;             // Only in UserPromptSubmit
@@ -171,7 +171,7 @@ export function parseHookEnvironment(): HookEnvironment {
   return {
     CLAUDE_SESSION_ID: process.env.CLAUDE_SESSION_ID,
     CLAUDE_TOOL_NAME: process.env.CLAUDE_TOOL_NAME,
-    CLAUDE_WORKSPACE_PATH: process.env.CLAUDE_WORKSPACE_PATH,
+    CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
     TOOL_INPUT: process.env.TOOL_INPUT,
     TOOL_OUTPUT: process.env.TOOL_OUTPUT,
     USER_PROMPT: process.env.USER_PROMPT,
@@ -196,7 +196,7 @@ export function createHookContext(event: HookEvent): HookContext {
     event,
     sessionId: env.CLAUDE_SESSION_ID || '',
     toolName: env.CLAUDE_TOOL_NAME || '',
-    workspacePath: env.CLAUDE_WORKSPACE_PATH || process.cwd(),
+    workspacePath: env.CLAUDE_PROJECT_DIR || process.cwd(),
     toolInput: parseToolInput(env.TOOL_INPUT),
     toolOutput: env.TOOL_OUTPUT,
     userPrompt: env.USER_PROMPT,
@@ -821,7 +821,7 @@ describe('PreToolUse Hook', () => {
   beforeEach(() => {
     // Set up test environment
     process.env.CLAUDE_SESSION_ID = 'test-session';
-    process.env.CLAUDE_WORKSPACE_PATH = process.cwd();
+    process.env.CLAUDE_PROJECT_DIR = process.cwd();
   });
 
   test('should validate safe bash commands', async () => {

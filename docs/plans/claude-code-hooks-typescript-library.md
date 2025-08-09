@@ -258,14 +258,14 @@ const mockContext = createMockContext('PreToolUse', {
 {
   "name": "@claude-code/hooks",
   "exports": {
-    ".": "./packages/core/dist/index.js",
-    "./core": "./packages/core/dist/index.js", 
-    "./validators": "./packages/validators/dist/index.js",
-    "./config": "./packages/config/dist/index.js",
-    "./testing": "./packages/testing/dist/index.js"
+    ".": "./packages/hooks-core/dist/index.js",
+    "./core": "./packages/hooks-core/dist/index.js", 
+    "./validators": "./packages/hooks-validators/dist/index.js",
+    "./config": "./packages/hooks-config/dist/index.js",
+    "./testing": "./packages/hooks-testing/dist/index.js"
   },
   "bin": {
-    "claude-hooks": "./packages/cli/bin/cli.js"
+    "claude-hooks": "./packages/hooks-cli/bin/cli.js"
   }
 }
 ```

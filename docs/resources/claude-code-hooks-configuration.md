@@ -625,7 +625,7 @@ function detectFramework(packageJson: any): string | undefined {
   return undefined;
 }
 
-const workspacePath = process.env.CLAUDE_WORKSPACE_PATH || process.cwd();
+const workspacePath = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 const config = detectWorkspaceType(workspacePath);
 
 console.log(`Workspace type: ${config.type}`);
