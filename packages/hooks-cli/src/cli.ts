@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 /**
  * Claude Code hooks CLI
@@ -94,7 +94,7 @@ export class ClaudeHooksCli {
 
       // Handle global options
       if (values.help) {
-        this.showHelp();
+        await this.showHelp();
         process.exit(0);
       }
 

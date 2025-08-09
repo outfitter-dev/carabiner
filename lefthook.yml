@@ -1,7 +1,23 @@
 pre-commit:
   parallel: true
-  commands: {}
+  commands:
+    biome:
+      glob: '*.{ts,tsx,js,jsx}'
+      run: 'bunx biome check --write {staged_files}'
+    prettier:
+      glob: '*.{astro,md,json,yml,yaml}'
+      run: 'bunx prettier --write {staged_files}'
+    stylelint:
+      glob: '*.{css,pcss}'
+      run: 'bunx stylelint --fix {staged_files}'
 
 pre-push:
   parallel: true
-  commands: {}
+  commands:
+    build:
+      run: 'bun run build'
+    typecheck:
+      run: 'bun run typecheck'
+    test:
+      tags: [optional]
+      run: 'bun run test'

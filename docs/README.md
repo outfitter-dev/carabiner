@@ -5,48 +5,33 @@ Welcome to the comprehensive documentation for the Claude Code Hooks TypeScript 
 ## 📚 Documentation Structure
 
 ### [Getting Started](./guides/getting-started.md)
+
 - Installation and setup
 - First hook creation
 - Basic concepts and terminology
 
 ### [Core Concepts](./guides/core-concepts.md)
+
 - Hook events and lifecycle
 - Tool scoping and targeting
 - Runtime architecture changes
 
-### [Development Guide](./guides/development-guide.md)
-- Building hooks with different APIs
-- Testing and debugging strategies  
-- Performance optimization
+### [Migration Guide](./migration-guide.md)
 
-### [Configuration Management](./guides/configuration.md)
-- Settings hierarchy and management
-- Environment-specific configurations
-- Template usage and customization
+- Upgrading from legacy hooks
+- Runtime changes and improvements
 
-### [Security Best Practices](./guides/security.md)
-- Security validation patterns
-- Environment-specific rules
-- Common vulnerabilities and mitigations
+### Resources
 
-### [API Reference](./api/)
-- [Core Package API](./api/hooks-core.md)
-- [Configuration API](./api/hooks-config.md)
-- [Validation API](./api/hooks-validators.md)
-- [CLI API](./api/hooks-cli.md)
-- [Testing API](./api/hooks-testing.md)
+- [Configuration Reference](./resources/claude-code-hooks-configuration.md) - Complete configuration options
+- [Hook Overview](./resources/claude-code-hooks-overview.md) - Hook system overview
+- [TypeScript Integration](./resources/claude-code-hooks-typescript.md) - TypeScript usage patterns
+- [Troubleshooting](./resources/claude-code-hooks-troubleshooting.md) - Common issues and solutions
+- [Feature Index](./resources/claude-code-hooks-index.md) - Complete feature reference
 
-### [Examples](./examples/)
-- [Function-Based Hooks](./examples/function-based.md)
-- [Builder Pattern Hooks](./examples/builder-pattern.md)
-- [Declarative Configuration](./examples/declarative.md)
-- [Advanced Patterns](./examples/advanced.md)
+### Planning Documents
 
-### [Troubleshooting](./troubleshooting/)
-- [Common Issues](./troubleshooting/common-issues.md)
-- [Debugging Guide](./troubleshooting/debugging.md)
-- [Performance Issues](./troubleshooting/performance.md)
-- [Migration Guide](./troubleshooting/migration.md)
+- [TypeScript Library Plan](./plans/claude-code-hooks-typescript-library.md) - Project planning and architecture
 
 ## 🚀 Quick Start
 
@@ -77,15 +62,15 @@ import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
 
 runClaudeHook(async (context) => {
   console.log(`🔍 Validating ${context.toolName} usage`);
-  
+
   if (context.toolName === 'Bash') {
     const { command } = context.toolInput as { command: string };
-    
+
     if (command.includes('rm -rf /')) {
       return HookResults.block('Dangerous command blocked!');
     }
   }
-  
+
   return HookResults.success('Validation passed');
 });
 ```
@@ -116,20 +101,25 @@ The Claude Code Hooks library is organized into focused packages:
 ## 🎯 Key Features
 
 ### ✅ New Stdin-Based Runtime
+
 **Fixed**: Hooks now properly read JSON input from Claude Code via stdin, replacing the broken environment variable approach.
 
 ### ✅ Tool Scoping Works
+
 **Fixed**: Hooks can now properly target specific tools or run universally, as originally designed.
 
 ### ✅ Type Safety
+
 Full TypeScript strict mode with comprehensive type checking for all hook contexts and tool inputs.
 
 ### ✅ Multiple APIs
+
 - **Function-based**: Simple and direct
 - **Builder pattern**: Fluent interface for complex hooks
 - **Declarative**: Configuration-driven approach
 
 ### ✅ Production Ready
+
 - Comprehensive error handling
 - Performance optimization
 - Security validation
@@ -140,18 +130,21 @@ Full TypeScript strict mode with comprehensive type checking for all hook contex
 This documentation follows these principles:
 
 ### Writing Style
+
 - **Active voice**: "Create a hook" instead of "A hook can be created"
 - **Concise sentences**: Clear, direct explanations
 - **Practical examples**: Every concept includes working code
 - **Explain the why**: Context and reasoning, not just instructions
 
 ### Code Examples
+
 - **Complete and runnable**: Examples work as-is
 - **Type-safe**: Full TypeScript with proper types
 - **Real-world focused**: Practical scenarios, not toy examples
 - **Error handling**: Proper error handling patterns included
 
 ### Structure
+
 - **Progressive disclosure**: Simple concepts first, advanced topics later
 - **Cross-references**: Links between related concepts
 - **Searchable**: Clear headings and consistent terminology
@@ -194,21 +187,24 @@ This documentation follows these principles:
 
 ### Migration from v1.x
 
-See the [Migration Guide](./troubleshooting/migration.md) for detailed information on upgrading from previous versions.
+See the [Migration Guide](./migration-guide.md) for detailed information on upgrading from previous versions.
 
 ## 📞 Getting Help
 
 ### Documentation Issues
+
 - **Missing information**: File an issue describing what's missing
 - **Incorrect information**: Submit a PR with corrections
 - **Unclear explanations**: Suggest improvements in issues
 
 ### Code Issues
+
 - **Bug reports**: Use the issue template with reproduction steps
 - **Feature requests**: Describe the use case and proposed API
 - **Questions**: Start with discussions before filing issues
 
 ### Community Resources
+
 - **GitHub Discussions**: Ask questions and share patterns
 - **Issue Tracker**: Report bugs and request features
 - **Contributing Guide**: Learn how to contribute code and documentation
@@ -218,19 +214,22 @@ See the [Migration Guide](./troubleshooting/migration.md) for detailed informati
 Choose your path based on your experience level:
 
 ### New to Claude Code Hooks
+
 1. Read [Getting Started](./guides/getting-started.md)
-2. Try the [Basic Examples](./examples/function-based.md)
-3. Follow the [Development Guide](./guides/development-guide.md)
+2. Try the [Examples](../packages/examples/README.md)
+3. Explore the [Core Concepts](./guides/core-concepts.md)
 
 ### Experienced Developer
-1. Check [Migration Guide](./troubleshooting/migration.md) for v2.0 changes
-2. Review [Advanced Patterns](./examples/advanced.md)
-3. Explore [API Reference](./api/)
+
+1. Check [Migration Guide](./migration-guide.md) for v2.0 changes
+2. Review [Configuration Reference](./resources/claude-code-hooks-configuration.md)
+3. Explore the [TypeScript Integration Guide](./resources/claude-code-hooks-typescript.md)
 
 ### Contributor
-1. Read the [Contributing Guide](../CONTRIBUTING.md)
-2. Check [Architecture Documentation](./guides/architecture.md)
-3. Review [Testing Strategies](./guides/testing.md)
+
+1. Review the package structure and examples
+2. Check [Project Planning](./plans/claude-code-hooks-typescript-library.md)
+3. Explore the [Troubleshooting Guide](./resources/claude-code-hooks-troubleshooting.md)
 
 ---
 

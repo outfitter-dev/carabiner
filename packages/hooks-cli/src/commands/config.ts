@@ -74,7 +74,19 @@ export class ConfigCommand extends BaseCommand {
   /**
    * Show additional help for config command
    */
-  private showConfigHelp(): void {}
+  private showConfigHelp(): void {
+    console.log(`
+Configuration commands:
+  show           Display current configuration
+  validate       Validate configuration files
+  export         Export configuration to a file
+
+Examples:
+  claude-hooks config show
+  claude-hooks config validate
+  claude-hooks config export --format yaml --output my-config.yaml
+`);
+  }
 
   /**
    * Show current configuration
@@ -85,6 +97,7 @@ export class ConfigCommand extends BaseCommand {
   ): Promise<void> {
     const config = await configManager.load();
     if (config.extends && config.extends.length > 0) {
+      console.log('Extends:', config.extends.join(', '));
     }
 
     // Show hook configurations
@@ -99,12 +112,12 @@ export class ConfigCommand extends BaseCommand {
       if (eventConfig && typeof eventConfig === 'object') {
         if ('command' in eventConfig) {
           // Single hook config
-          this.displayHookConfig(eventConfig as any, '  ', verbose);
+          this.displayHookConfig(eventConfig as Record<string, unknown>, '  ', verbose);
         } else {
           // Tool-specific configs
           for (const [_tool, toolConfig] of Object.entries(eventConfig)) {
             if (toolConfig && typeof toolConfig === 'object') {
-              this.displayHookConfig(toolConfig as any, '    ', verbose);
+              this.displayHookConfig(toolConfig as Record<string, unknown>, '    ', verbose);
             }
           }
         }
@@ -113,13 +126,17 @@ export class ConfigCommand extends BaseCommand {
 
     // Show variables if any
     if (config.variables && Object.keys(config.variables).length > 0) {
-      for (const [_key, _value] of Object.entries(config.variables)) {
+      console.log('Variables:');
+      for (const [key, value] of Object.entries(config.variables)) {
+        console.log(`  ${key}: ${value}`);
       }
     }
 
     // Show environment overrides if verbose
     if (verbose && config.environments) {
-      for (const [_env, _overrides] of Object.entries(config.environments)) {
+      console.log('Environment overrides:');
+      for (const [env, overrides] of Object.entries(config.environments)) {
+        console.log(`  ${env}: ${JSON.stringify(overrides)}`);
       }
     }
   }
@@ -128,13 +145,20 @@ export class ConfigCommand extends BaseCommand {
    * Display hook configuration details
    */
   private displayHookConfig(
-    config: any,
-    _indent: string,
+    config: Record<string, unknown>,
+    indent: string,
     verbose: boolean
   ): void {
-    const _status = config.enabled !== false ? '✅ enabled' : '❌ disabled';
+    const status = config.enabled !== false ? '✅ enabled' : '❌ disabled';
+    console.log(`${indent}Status: ${status}`);
 
-    if (verbose && config.detached !== undefined) {
+    if (verbose) {
+      if (config.detached !== undefined) {
+        console.log(`${indent}Detached: ${config.detached ? 'yes' : 'no'}`);
+      }
+      if (config.timeout) {
+        console.log(`${indent}Timeout: ${config.timeout}ms`);
+      }
     }
   }
 
@@ -159,7 +183,7 @@ export class ConfigCommand extends BaseCommand {
 
         if (eventConfig && typeof eventConfig === 'object') {
           if ('command' in eventConfig) {
-            warnings += this.checkHookFile(eventConfig as any, event, '');
+            warnings += this.checkHookFile(eventConfig as Record<string, unknown>, event, '');
           } else {
             for (const [tool, toolConfig] of Object.entries(eventConfig)) {
               if (
@@ -167,7 +191,7 @@ export class ConfigCommand extends BaseCommand {
                 typeof toolConfig === 'object' &&
                 'command' in toolConfig
               ) {
-                warnings += this.checkHookFile(toolConfig as any, event, tool);
+                warnings += this.checkHookFile(toolConfig as Record<string, unknown>, event, tool);
               }
             }
           }
@@ -184,7 +208,7 @@ export class ConfigCommand extends BaseCommand {
   /**
    * Check if hook file exists
    */
-  private checkHookFile(hookConfig: any, event: string, tool: string): number {
+  private checkHookFile(hookConfig: Record<string, unknown>, event: string, tool: string): number {
     const _hookName = tool ? `${event}:${tool}` : event;
 
     // Extract file path from bun run command
@@ -238,7 +262,7 @@ export class ConfigCommand extends BaseCommand {
     }
     const [event, tool] = hookId.split(':');
 
-    await configManager.toggleHook(event as any, tool as any, true);
+    await configManager.toggleHook(event as Record<string, unknown>, tool as Record<string, unknown>, true);
   }
 
   /**
@@ -260,7 +284,7 @@ export class ConfigCommand extends BaseCommand {
     }
     const [event, tool] = hookId.split(':');
 
-    await configManager.toggleHook(event as any, tool as any, false);
+    await configManager.toggleHook(event as Record<string, unknown>, tool as Record<string, unknown>, false);
   }
 
   /**
@@ -287,12 +311,12 @@ export class ConfigCommand extends BaseCommand {
       throw new Error('Timeout must be a positive number');
     }
 
-    const hookConfig = configManager.getHookConfig(event as any, tool as any);
+    const hookConfig = configManager.getHookConfig(event as Record<string, unknown>, tool as Record<string, unknown>);
     if (!hookConfig) {
       throw new Error(`Hook not found: ${hookId}`);
     }
 
-    await configManager.setHookConfig(event as any, tool as any, {
+    await configManager.setHookConfig(event as Record<string, unknown>, tool as Record<string, unknown>, {
       ...hookConfig,
       timeout,
     });

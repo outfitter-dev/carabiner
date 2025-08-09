@@ -23,10 +23,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bun run build:clean && bun run build:tsc && bun run build:chmod",
+    "build": "bun run build:clean && bun run build:tsc",
     "build:clean": "rm -rf dist",
     "build:tsc": "tsc --project tsconfig.build.json",
-    "build:chmod": "chmod +x dist/cli.js",
     "dev": "tsc --watch --project tsconfig.build.json",
     "test": "bun test",
     "typecheck": "tsc --noEmit",

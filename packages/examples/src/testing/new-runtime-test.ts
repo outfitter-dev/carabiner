@@ -16,19 +16,24 @@ import {
   runClaudeHook,
 } from '@claude-code/hooks-core';
 
+function hasCommand(input: unknown): input is { command: string } {
+  return (
+    typeof input === 'object' &&
+    input !== null &&
+    typeof (input as Record<string, unknown>).command === 'string'
+  );
+}
+
 /**
  * Example hook handler that works with the new runtime
  */
 async function exampleHook(context: HookContext): Promise<HookResult> {
-  if (context.matcher) {
-  }
+  // Example: access matcher info if provided
+  // if (context.matcher) { /* ... */ }
 
   // Access tool input with full type safety
-  if (
-    (context.event === 'PreToolUse' || context.event === 'PostToolUse') &&
-    context.event === 'PostToolUse' &&
-    context.toolResponse
-  ) {
+  if (context.event === 'PostToolUse' && context.toolResponse) {
+    // Example: inspect toolResponse here
   }
 
   if (context.event === 'UserPromptSubmit' && context.userPrompt) {
@@ -63,7 +68,7 @@ export async function testNewRuntime(): Promise<void> {
   const context = createHookContext(preToolUseInput);
 
   // Execute hook
-  const _result = await exampleHook(context);
+  await exampleHook(context);
 }
 
 /**
@@ -71,11 +76,13 @@ export async function testNewRuntime(): Promise<void> {
  */
 async function exampleHookScript(context: HookContext): Promise<HookResult> {
   // This is what goes in actual hook scripts
-  if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
-    const toolInput = context.toolInput as any;
-    if (toolInput.command?.includes('rm -rf')) {
-      return HookResults.block('Dangerous command blocked for safety');
-    }
+  if (
+    context.event === 'PreToolUse' &&
+    context.toolName === 'Bash' &&
+    hasCommand(context.toolInput) &&
+    context.toolInput.command.includes('rm -rf')
+  ) {
+    return HookResults.block('Dangerous command blocked for safety');
   }
 
   return HookResults.success('Hook validation passed');

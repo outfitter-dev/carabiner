@@ -27,8 +27,8 @@ async function handlePostToolUse(
   context: HookContext<'PostToolUse'>
 ): Promise<HookResult> {
   // Access tool response from new context structure
-  if (context.toolResponse) {
-  }
+  // Example: process tool response if available
+  // if (context.toolResponse) { /* ... */ }
 
   const startTime = Date.now();
 
@@ -489,7 +489,7 @@ async function runCommand(
   cwd: string
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const process = spawn(command, args, {
+    const child = spawn(command, args, {
       cwd,
       stdio: 'pipe',
     });
@@ -497,15 +497,15 @@ async function runCommand(
     let stdout = '';
     let stderr = '';
 
-    process.stdout?.on('data', (data) => {
+    child.stdout?.on('data', (data) => {
       stdout += data.toString();
     });
 
-    process.stderr?.on('data', (data) => {
+    child.stderr?.on('data', (data) => {
       stderr += data.toString();
     });
 
-    process.on('close', (code) => {
+    child.on('close', (code) => {
       if (code === 0) {
         resolve(stdout);
       } else {

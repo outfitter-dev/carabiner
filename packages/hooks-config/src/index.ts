@@ -19,5 +19,6 @@ export {
   saveConfig,
 } from './config';
 
-// Version export
-export const VERSION = '0.1.0';
+// Version export (derived from package.json)
+import pkg from '../package.json' with { type: 'json' };
+export const VERSION = pkg.version as string;

@@ -64,7 +64,7 @@ async function handleBashValidation(
 
   // Apply security validation
   validateHookSecurity(context, {
-    env: (Bun.env.NODE_ENV as any) || 'development',
+    env: (Bun.env.NODE_ENV as string) || 'development',
     strictMode: false,
   });
 
@@ -106,7 +106,7 @@ async function handleWriteValidation(
 
   // Apply security validation
   validateHookSecurity(context, {
-    env: (Bun.env.NODE_ENV as any) || 'development',
+    env: (Bun.env.NODE_ENV as string) || 'development',
   });
 
   // Custom validation for write operations
@@ -144,7 +144,7 @@ async function handleEditValidation(
 
   // Apply security validation
   validateHookSecurity(context, {
-    env: (Bun.env.NODE_ENV as any) || 'development',
+    env: (Bun.env.NODE_ENV as string) || 'development',
   });
 
   // Custom validation for edit operations
@@ -159,8 +159,9 @@ async function handleEditValidation(
   }
 
   // Warn about large replacements
-  if (old_string.length > 10_000 || new_string.length > 10_000) {
-  }
+  // if (old_string.length > 10_000 || new_string.length > 10_000) {
+  //   console.warn('Large replacement detected');
+  // }
   return HookResults.success('Edit validation passed', {
     filePath: file_path,
     replaceAll: replace_all,
@@ -221,6 +222,10 @@ async function validateBashCommand(
 
   for (const pattern of packageInstallPatterns) {
     if (pattern.test(command) && !command.includes('--dry-run')) {
+      return {
+        allowed: false,
+        reason: 'Package install requires --dry-run flag',
+      };
     }
   }
 
@@ -249,8 +254,9 @@ async function validateFileWrite(
   }
 
   // Example: Warn about overwriting package.json
-  if (filePath.endsWith('package.json')) {
-  }
+  // if (filePath.endsWith('package.json')) {
+  //   console.warn('Modifying package.json');
+  // }
 
   return { allowed: true };
 }

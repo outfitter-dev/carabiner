@@ -63,5 +63,6 @@ export {
 // Export all types
 export type * from './types';
 
-// Version export - updated for new stdin-based runtime
-export const VERSION = '0.2.0';
+// Version export (derived from package.json)
+import pkg from '../package.json' with { type: 'json' };
+export const VERSION = pkg.version as string;
