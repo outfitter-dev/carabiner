@@ -245,8 +245,11 @@ export abstract class BaseCommand implements Command {
    */
   protected parseArgs(
     args: string[],
-    options: Record<string, { type: 'boolean' | 'string'; short?: string }>
-  ): { values: Record<string, string | boolean | undefined>; positionals: string[] } {
+    options: Record<string, unknown>
+  ): {
+    values: Record<string, string | boolean | undefined>;
+    positionals: string[];
+  } {
     try {
       return parseArgs({
         args,
