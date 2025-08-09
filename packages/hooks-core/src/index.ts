@@ -64,5 +64,5 @@ export {
 export type * from './types';
 
 // Version export (derived from package.json)
-import pkg from '../package.json' with { type: 'json' };
-export const VERSION = pkg.version as string;
+import * as pkg from '../package.json';
+export const VERSION = (pkg as any).version as string;

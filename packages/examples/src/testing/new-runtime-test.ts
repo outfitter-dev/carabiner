@@ -27,7 +27,7 @@ function hasCommand(input: unknown): input is { command: string } {
 /**
  * Example hook handler that works with the new runtime
  */
-async function exampleHook(context: HookContext): Promise<HookResult> {
+function exampleHook(context: HookContext): HookResult {
   // Example: access matcher info if provided
   // if (context.matcher) { /* ... */ }
 
@@ -76,14 +76,14 @@ export async function testNewRuntime(): Promise<void> {
   const context = createHookContext(preToolUseInput);
 
   // Execute hook
-  const result = await exampleHook(context);
-  console.log('[exampleHook]', JSON.stringify(result, null, 2));
+  const result = exampleHook(context);
+  process.stdout.write(`[exampleHook] ${JSON.stringify(result, null, 2)}\n`);
 }
 
 /**
  * Example of using runClaudeHook for actual hook scripts
  */
-async function exampleHookScript(context: HookContext): Promise<HookResult> {
+function exampleHookScript(context: HookContext): HookResult {
   // This is what goes in actual hook scripts
   if (
     context.event === 'PreToolUse' &&
@@ -101,7 +101,10 @@ async function exampleHookScript(context: HookContext): Promise<HookResult> {
 if (import.meta.main) {
   // For testing, run our test function
   if (process.argv.includes('--test')) {
-    testNewRuntime().catch(console.error);
+    testNewRuntime().catch((error) => {
+      process.stderr.write(`Error: ${error}\n`);
+      process.exit(1);
+    });
   } else {
     // For actual hook execution, use the new runtime
     runClaudeHook(exampleHookScript, {
