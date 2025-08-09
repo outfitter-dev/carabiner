@@ -276,6 +276,38 @@ export abstract class BaseCommand implements Command {
   }
 
   /**
+   * Get boolean value from parsed args with fallback
+   */
+  protected getBooleanValue(
+    value: string | boolean | undefined,
+    defaultValue = false
+  ): boolean {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return defaultValue;
+  }
+
+  /**
+   * Get string value from parsed args with fallback
+   */
+  protected getStringValue(
+    value: string | boolean | undefined,
+    defaultValue = ''
+  ): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (typeof value === 'boolean') {
+      return value.toString();
+    }
+    return defaultValue;
+  }
+
+  /**
    * Check if workspace is a Claude Code hooks project
    */
   protected isHooksProject(workspacePath: string): boolean {
