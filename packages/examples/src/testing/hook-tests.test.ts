@@ -4,8 +4,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { executeHook, HookBuilder, HookResults } from '@/hooks-core';
 import type { HookHandler } from '@/hooks-core';
+import { executeHook, HookBuilder, HookResults } from '@/hooks-core';
 import {
   createMockContext,
   createMockContextFor,
@@ -517,5 +517,5 @@ suite(
   }
 );
 
-// Export test runner for potential external execution
-export { testRunner };
+// Test runner would be exported here in a real implementation
+// export { testRunner };
