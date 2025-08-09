@@ -10,7 +10,7 @@ import type { HookEvent, ToolName } from '@claude-code/hooks-core';
 import { BaseCommand, type CliConfig } from '../cli';
 
 // Regex constants for better performance
-const BUN_RUN_REGEX = /bun run (.+?)(\s|$)/;
+const BUN_RUN_REGEX = /bun run ["']?(.+?)["']?(?:\s|$)/;
 
 export class ConfigCommand extends BaseCommand {
   name = 'config';
