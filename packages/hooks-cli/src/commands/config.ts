@@ -51,7 +51,7 @@ export class ConfigCommand extends BaseCommand {
           await this.validateConfig(configManager);
           break;
         case 'generate-settings':
-          await this.generateClaudeSettings(configManager, values.output);
+          await this.generateClaudeSettings(configManager, this.getStringValue(values.output));
           break;
         case 'enable':
           await this.enableHook(configManager, positionals.slice(1));
@@ -63,7 +63,7 @@ export class ConfigCommand extends BaseCommand {
           await this.setTimeout(configManager, positionals.slice(1));
           break;
         case 'export':
-          await this.exportConfig(configManager, values.output, values.format);
+          await this.exportConfig(configManager, this.getStringValue(values.output), this.getStringValue(values.format));
           break;
         default:
           throw new Error(`Unknown config action: ${action}`);

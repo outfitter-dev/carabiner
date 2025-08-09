@@ -8,10 +8,10 @@ import { join } from 'node:path';
 import { BaseCommand, type CliConfig } from '../cli';
 
 // Regex patterns at top level
-const _SESSION_ID_REGEX = /^[a-zA-Z0-9-]+$/;
-const _CURL_INJECTION_REGEX = /\\$\\(curl/;
-const _BASE64_DECODE_REGEX = /base64.*decode/;
-const _EVAL_SHELL_REGEX = /eval.*\\$/;
+const SESSION_ID_REGEX = /^[a-zA-Z0-9-]+$/;
+const CURL_INJECTION_REGEX = /\$\(curl/;
+const BASE64_DECODE_REGEX = /base64.*decode/;
+const EVAL_SHELL_REGEX = /eval.*\$/;
 const WORD_SPLIT_REGEX = /[-_\s]+/;
 
 export class GenerateCommand extends BaseCommand {

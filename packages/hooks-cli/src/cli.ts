@@ -251,11 +251,15 @@ export abstract class BaseCommand implements Command {
     positionals: string[];
   } {
     try {
-      return parseArgs({
+      const result = parseArgs({
         args,
         allowPositionals: true,
-        options,
+        options: options as any,
       });
+      return {
+        values: result.values as Record<string, string | boolean | undefined>,
+        positionals: result.positionals,
+      };
     } catch (error) {
       throw new Error(
         `Invalid arguments: ${error instanceof Error ? error.message : error}`
