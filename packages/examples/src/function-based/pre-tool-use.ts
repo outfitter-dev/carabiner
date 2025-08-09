@@ -64,7 +64,7 @@ async function handleBashValidation(
 
   // Apply security validation
   validateHookSecurity(context, {
-    env: (Bun.env.NODE_ENV as string) || 'development',
+    env: (Bun.env.NODE_ENV as 'production' | 'development' | 'test') || 'development',
     strictMode: false,
   });
 
@@ -106,7 +106,7 @@ async function handleWriteValidation(
 
   // Apply security validation
   validateHookSecurity(context, {
-    env: (Bun.env.NODE_ENV as string) || 'development',
+    env: (Bun.env.NODE_ENV as 'production' | 'development' | 'test') || 'development',
   });
 
   // Custom validation for write operations
@@ -144,7 +144,7 @@ async function handleEditValidation(
 
   // Apply security validation
   validateHookSecurity(context, {
-    env: (Bun.env.NODE_ENV as string) || 'development',
+    env: (Bun.env.NODE_ENV as 'production' | 'development' | 'test') || 'development',
   });
 
   // Custom validation for edit operations
