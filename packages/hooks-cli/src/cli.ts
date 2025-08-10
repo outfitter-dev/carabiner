@@ -8,6 +8,7 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import pino from 'pino';
 // Import commands dynamically to avoid circular dependencies
 
 /**
@@ -37,6 +38,7 @@ interface Command {
 export class ClaudeHooksCli {
   private commands: Map<string, Command> = new Map();
   private config: CliConfig;
+  private logger: pino.Logger;
 
   constructor() {
     this.config = {
@@ -45,6 +47,27 @@ export class ClaudeHooksCli {
       verbose: false,
       debug: false,
     };
+
+    // Initialize logger
+    let logLevel: string;
+    if (this.config.debug) {
+      logLevel = 'debug';
+    } else if (this.config.verbose) {
+      logLevel = 'info';
+    } else {
+      logLevel = 'warn';
+    }
+    this.logger = pino({
+      level: logLevel,
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'SYS:standard',
+          ignore: 'pid,hostname',
+        },
+      },
+    });
 
     // Commands will be registered lazily
   }
@@ -102,9 +125,11 @@ export class ClaudeHooksCli {
     // Update config based on parsed options
     if (values.verbose) {
       this.config.verbose = true;
+      this.logger.level = 'info';
     }
     if (values.debug) {
       this.config.debug = true;
+      this.logger.level = 'debug';
     }
     if (values.workspace) {
       this.config.workspacePath = resolve(values.workspace);
@@ -163,12 +188,14 @@ export class ClaudeHooksCli {
     console.log('  --debug         Enable debug output');
     console.log('  -w, --workspace Set workspace path\n');
     console.log('Commands:');
-    
+
     for (const command of this.commands.values()) {
       console.log(`  ${command.name.padEnd(12)} ${command.description}`);
     }
-    
-    console.log('\nRun "claude-hooks <command> --help" for command-specific help');
+
+    console.log(
+      '\nRun "claude-hooks <command> --help" for command-specific help'
+    );
   }
 
   /**
@@ -182,56 +209,65 @@ export class ClaudeHooksCli {
   }
 
   /**
-   * Log message
+   * Log message (user-facing output)
    */
   log(message: string): void {
+    // User-facing output uses console
     console.log(message);
   }
 
   /**
-   * Log verbose message
+   * Log verbose message (internal logging)
    */
   verbose(message: string): void {
-    if (this.config.verbose) {
-      console.log(`[VERBOSE] ${message}`);
-    }
+    this.logger.info(message);
   }
 
   /**
-   * Log debug message
+   * Log debug message (internal logging)
    */
   debug(message: string): void {
-    if (this.config.debug) {
-      console.debug(`[DEBUG] ${message}`);
-    }
+    this.logger.debug(message);
   }
 
   /**
-   * Log error message
+   * Log error message (user-facing)
    */
   error(message: string): void {
+    // User-facing errors use console
     console.error(`[ERROR] ${message}`);
+    // Also log internally
+    this.logger.error(message);
   }
 
   /**
-   * Log warning message
+   * Log warning message (user-facing)
    */
   warn(message: string): void {
+    // User-facing warnings use console
     console.warn(`[WARN] ${message}`);
+    // Also log internally
+    this.logger.warn(message);
   }
 
   /**
-   * Log success message
+   * Log success message (user-facing)
    */
   success(message: string): void {
+    // User-facing success uses console
     console.log(`✅ ${message}`);
+    // Also log internally
+    this.logger.info({ type: 'success' }, message);
   }
 
   /**
-   * Log info message
+   * Log info message (user-facing)
    */
   info(message: string): void {
+    // User-facing info uses console
     console.info(`ℹ️  ${message}`);
+    // Also log internally
+    this.logger.info(message);
   }
 }
 
@@ -280,7 +316,7 @@ export abstract class BaseCommand implements Command {
   protected showHelp(): void {
     console.log(`\nUsage: claude-hooks ${this.name} ${this.usage}\n`);
     console.log(this.description);
-    
+
     if (Object.keys(this.options).length > 0) {
       console.log('\nOptions:');
       for (const [option, desc] of Object.entries(this.options)) {

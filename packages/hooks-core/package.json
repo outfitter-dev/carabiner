@@ -50,5 +50,9 @@
   },
   "peerDependencies": {
     "type-fest": "^4.0.0"
+  },
+  "dependencies": {
+    "pino": "^9.8.0",
+    "pino-pretty": "^13.1.1"
   }
 }

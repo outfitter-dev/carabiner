@@ -40,9 +40,11 @@
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@claude-code/hooks-core": "workspace:*",
     "@claude-code/hooks-config": "workspace:*",
-    "@claude-code/hooks-validators": "workspace:*"
+    "@claude-code/hooks-core": "workspace:*",
+    "@claude-code/hooks-validators": "workspace:*",
+    "pino": "^9.8.0",
+    "pino-pretty": "^13.1.1"
   },
   "devDependencies": {
     "@types/bun": "^1.2.19",

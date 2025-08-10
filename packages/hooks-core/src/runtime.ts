@@ -4,6 +4,7 @@
  * Updated to match the actual Claude Code hooks API
  */
 
+import { runtimeLogger } from './logger';
 import type {
   ClaudeHookInputVariant,
   ClaudeHookOutput,
@@ -286,12 +287,7 @@ export async function executeHook(
   options: HookExecutionOptions = {}
 ): Promise<HookResult> {
   const startTime = Date.now();
-  const {
-    timeout = 30_000,
-    throwOnError = false,
-    captureOutput = false,
-    logLevel = 'info',
-  } = options;
+  const { timeout = 30_000, throwOnError = false } = options;
 
   try {
     // Create timeout promise
@@ -320,9 +316,15 @@ export async function executeHook(
     const duration = Date.now() - startTime;
 
     if (error instanceof HookTimeoutError) {
-      if (logLevel !== 'error') {
-      }
-    } else if (logLevel !== 'error') {
+      runtimeLogger.error(
+        { timeout, context },
+        `Hook execution timed out after ${timeout}ms`
+      );
+    } else {
+      runtimeLogger.error(
+        { error, context },
+        `Hook execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     if (throwOnError) {
@@ -357,17 +359,29 @@ export function outputHookResult(
 ): never {
   if (mode === 'json') {
     // Structured JSON output for advanced control
-    const _claudeOutput: ClaudeHookOutput = {
-      action: result.success ? 'continue' : result.block ? 'block' : 'continue',
+    let action: 'continue' | 'block';
+    if (result.success) {
+      action = 'continue';
+    } else if (result.block) {
+      action = 'block';
+    } else {
+      action = 'continue';
+    }
+    const claudeOutput: ClaudeHookOutput = {
+      action,
       message: result.message,
       data: result.data,
     };
+    // Must use console.log for Claude Code communication protocol
+    console.log(JSON.stringify(claudeOutput));
     process.exit(0); // Always exit 0 for JSON mode, let JSON control behavior
   } else {
-    // Traditional exit code mode
+    // Traditional exit code mode - must use console for Claude Code communication
     if (result.message) {
       if (result.success) {
+        console.log(result.message);
       } else {
+        console.error(result.message);
       }
     }
 
@@ -508,69 +522,43 @@ export function validateHookContext(context: HookContext): void {
  * Context creation helpers for testing
  */
 export function createBashContext(
-  event: HookEvent,
+  hookEvent: HookEvent,
   command?: string
-): HookContext<typeof event, 'Bash'> {
+): HookContext<typeof hookEvent, 'Bash'> {
   const mockInput: ClaudeToolHookInput = {
     session_id: 'test-session',
     transcript_path: '/tmp/transcript.md',
     cwd: process.cwd(),
-    hook_event_name: event as 'PreToolUse' | 'PostToolUse',
+    hook_event_name: hookEvent as 'PreToolUse' | 'PostToolUse',
     tool_name: 'Bash',
     tool_input: { command: command || 'echo test' },
   };
 
-  return createHookContext(mockInput) as HookContext<typeof event, 'Bash'>;
+  return createHookContext(mockInput) as HookContext<typeof hookEvent, 'Bash'>;
 }
 
 export function createFileContext(
-  event: HookEvent,
+  hookEvent: HookEvent,
   toolName: 'Write' | 'Edit' | 'Read',
   filePath?: string
-): HookContext<typeof event, typeof toolName> {
+): HookContext<typeof hookEvent, typeof toolName> {
   const mockInput: ClaudeToolHookInput = {
     session_id: 'test-session',
     transcript_path: '/tmp/transcript.md',
     cwd: process.cwd(),
-    hook_event_name: event as 'PreToolUse' | 'PostToolUse',
+    hook_event_name: hookEvent as 'PreToolUse' | 'PostToolUse',
     tool_name: toolName,
     tool_input: { file_path: filePath || '/tmp/test.txt' },
   };
 
   return createHookContext(mockInput) as HookContext<
-    typeof event,
+    typeof hookEvent,
     typeof toolName
   >;
 }
 
-/**
- * Logging utilities for hooks
- */
-export const HookLogger = {
-  info(_event: HookEvent, _toolName: ToolName, _message: string): void {},
-
-  warn(_event: HookEvent, _toolName: ToolName, _message: string): void {},
-
-  error(
-    _event: HookEvent,
-    _toolName: ToolName,
-    _message: string,
-    error?: Error
-  ): void {
-    if (error) {
-    }
-  },
-
-  debug(
-    _event: HookEvent,
-    _toolName: ToolName,
-    _message: string,
-    data?: any
-  ): void {
-    if (Bun.env.DEBUG && data) {
-    }
-  },
-};
+// HookLogger is now exported from logger.ts with proper pino implementation
+export { HookLogger } from './logger';
 
 /**
  * Process exit utilities for hook scripts - deprecated, use outputHookResult instead

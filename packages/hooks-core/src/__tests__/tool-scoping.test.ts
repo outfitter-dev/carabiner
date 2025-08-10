@@ -28,7 +28,7 @@ function createMockContext(
       tool_name: options.toolName || 'Bash',
       tool_input: { command: 'echo test' },
     },
-  } as any;
+  };
 }
 
 describe('Tool Scoping Fix - Registry Core', () => {
@@ -145,22 +145,22 @@ describe('Tool Scoping Fix - Registry Core', () => {
   test('hook priority works correctly with mixed universal and tool-specific hooks', async () => {
     const results: string[] = [];
 
-    const universalLow = mock().mockImplementation(async () => {
+    const universalLow = mock().mockImplementation(() => {
       results.push('universal-low');
       return { success: true };
     });
 
-    const universalHigh = mock().mockImplementation(async () => {
+    const universalHigh = mock().mockImplementation(() => {
       results.push('universal-high');
       return { success: true };
     });
 
-    const bashLow = mock().mockImplementation(async () => {
+    const bashLow = mock().mockImplementation(() => {
       results.push('bash-low');
       return { success: true };
     });
 
-    const bashHigh = mock().mockImplementation(async () => {
+    const bashHigh = mock().mockImplementation(() => {
       results.push('bash-high');
       return { success: true };
     });
@@ -289,11 +289,13 @@ describe('Tool Scoping Fix - Function-Based API', () => {
 
   test('createHook throws error when tool specified without handler', () => {
     expect(() => {
-      createHook.preToolUse('Bash' as any);
+      // @ts-expect-error Testing error case
+      createHook.preToolUse('Bash');
     }).toThrow('Handler is required when tool is specified');
 
     expect(() => {
-      createHook.postToolUse('Write' as any);
+      // @ts-expect-error Testing error case
+      createHook.postToolUse('Write');
     }).toThrow('Handler is required when tool is specified');
   });
 });
@@ -309,13 +311,13 @@ describe('Tool Scoping Fix - Integration Tests', () => {
     const logs: string[] = [];
 
     // Universal logging hook (logs all tools)
-    const universalLogger = createHook.preToolUse(async (context) => {
+    const universalLogger = createHook.preToolUse((context) => {
       logs.push(`[UNIVERSAL] ${context.event} for ${context.toolName}`);
       return { success: true };
     });
 
     // Bash-specific enhanced logging
-    const bashLogger = createHook.preToolUse('Bash', async (context) => {
+    const bashLogger = createHook.preToolUse('Bash', (context) => {
       logs.push(`[BASH-SPECIFIC] Enhanced logging for ${context.toolName}`);
       return { success: true };
     });
@@ -344,25 +346,22 @@ describe('Tool Scoping Fix - Integration Tests', () => {
     const _results: HookResult[] = [];
 
     // Universal hook (allows all)
-    const universalHook = createHook.preToolUse(async () => {
+    const universalHook = createHook.preToolUse(() => {
       return { success: true, message: 'Universal validation passed' };
     });
 
     // Bash-specific security hook (blocks rm -rf)
-    const bashSecurityHook = createHook.preToolUse(
-      'Bash',
-      async (context: any) => {
-        const command = context.toolInput?.command || '';
-        if (command.includes('rm -rf')) {
-          return {
-            success: false,
-            block: true,
-            message: 'Dangerous command blocked',
-          };
-        }
-        return { success: true, message: 'Bash security check passed' };
+    const bashSecurityHook = createHook.preToolUse('Bash', (context) => {
+      const command = context.toolInput?.command || '';
+      if (command.includes('rm -rf')) {
+        return {
+          success: false,
+          block: true,
+          message: 'Dangerous command blocked',
+        };
       }
-    );
+      return { success: true, message: 'Bash security check passed' };
+    });
 
     registry.register(universalHook);
     registry.register(bashSecurityHook);
@@ -402,7 +401,7 @@ describe('Tool Scoping Fix - Integration Tests', () => {
 
     // Universal performance monitor
     registry.register(
-      createHook.preToolUse(async () => {
+      createHook.preToolUse(() => {
         universalExecutions++;
         return { success: true };
       })
@@ -410,7 +409,7 @@ describe('Tool Scoping Fix - Integration Tests', () => {
 
     // Bash-specific monitor
     registry.register(
-      createHook.preToolUse('Bash', async () => {
+      createHook.preToolUse('Bash', () => {
         bashExecutions++;
         return { success: true };
       })
@@ -418,7 +417,7 @@ describe('Tool Scoping Fix - Integration Tests', () => {
 
     // Write-specific monitor
     registry.register(
-      createHook.preToolUse('Write', async () => {
+      createHook.preToolUse('Write', () => {
         writeExecutions++;
         return { success: true };
       })
@@ -456,7 +455,7 @@ describe('Tool Scoping Fix - Error Scenarios', () => {
 
     // Universal hook
     registry.register(
-      createHook.preToolUse(async () => {
+      createHook.preToolUse(() => {
         results.push('universal');
         return { success: true };
       })
@@ -464,7 +463,7 @@ describe('Tool Scoping Fix - Error Scenarios', () => {
 
     // Bash hook that blocks
     registry.register(
-      createHook.preToolUse('Bash', async () => {
+      createHook.preToolUse('Bash', () => {
         results.push('bash-blocker');
         return { success: false, block: true, message: 'Blocked by bash hook' };
       })
@@ -472,7 +471,7 @@ describe('Tool Scoping Fix - Error Scenarios', () => {
 
     // Another bash hook (should not execute due to blocking)
     registry.register(
-      createHook.preToolUse('Bash', async () => {
+      createHook.preToolUse('Bash', () => {
         results.push('bash-after-blocker');
         return { success: true };
       })
@@ -492,7 +491,7 @@ describe('Tool Scoping Fix - Error Scenarios', () => {
 
     // Universal hook that throws
     registry.register(
-      createHook.preToolUse(async () => {
+      createHook.preToolUse(() => {
         results.push('universal-error');
         throw new Error('Universal hook error');
       })
@@ -500,7 +499,7 @@ describe('Tool Scoping Fix - Error Scenarios', () => {
 
     // Bash hook that should still execute despite universal error
     registry.register(
-      createHook.preToolUse('Bash', async () => {
+      createHook.preToolUse('Bash', () => {
         results.push('bash-after-error');
         return { success: true };
       })

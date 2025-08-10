@@ -36,6 +36,24 @@
           }
         }
       }
+    },
+    {
+      "includes": ["packages/hooks-core/src/runtime.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          },
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "warn",
+              "options": {
+                "maxAllowedComplexity": 20
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }
