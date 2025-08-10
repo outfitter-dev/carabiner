@@ -366,7 +366,7 @@ export class ConfigManager {
         typeof currentConfig[event] !== 'object' ||
         'command' in currentConfig[event]!
       ) {
-        (currentConfig as any)[event] = {};
+        (currentConfig as Record<string, unknown>)[event] = {};
       }
       const eventConfig = currentConfig[event] as Record<
         string,
@@ -375,7 +375,7 @@ export class ConfigManager {
       eventConfig[toolOrConfig] = config;
     } else if (typeof toolOrConfig === 'object' && 'command' in toolOrConfig) {
       // Setting event-level config
-      (currentConfig as any)[event] = toolOrConfig;
+      (currentConfig as Record<string, unknown>)[event] = toolOrConfig;
     }
 
     await this.updateConfig(currentConfig);
@@ -416,9 +416,9 @@ export class ConfigManager {
   /**
    * Generate Claude settings.json from hook configuration
    */
-  generateClaudeSettings(): Record<string, any> {
+  generateClaudeSettings(): Record<string, unknown> {
     const config = this.getConfig();
-    const settings: Record<string, any> = { hooks: {} };
+    const settings: Record<string, unknown> = { hooks: {} };
 
     for (const [event, eventConfig] of Object.entries(config)) {
       if (
@@ -456,8 +456,8 @@ export class ConfigManager {
   /**
    * Process hook config for Claude settings
    */
-  private processHookConfig(config: ToolHookConfig): Record<string, any> {
-    const processed: Record<string, any> = {
+  private processHookConfig(config: ToolHookConfig): Record<string, unknown> {
+    const processed: Record<string, unknown> = {
       command: this.interpolateVariables(config.command),
     };
 
@@ -600,19 +600,22 @@ export class ConfigManager {
       return config;
     }
 
-    return this.deepMerge(config, envOverrides as any);
+    return this.deepMerge(config, envOverrides as ExtendedHookConfiguration);
   }
 
   /**
    * Deep merge objects
    */
-  private deepMerge<T extends Record<string, any>>(
+  private deepMerge<T extends Record<string, unknown>>(
     target: T,
     source: Partial<T>
   ): T {
     const result = { ...target };
 
     for (const key in source) {
+      if (!Object.hasOwn(source, key)) {
+        continue;
+      }
       const targetValue = result[key];
       const sourceValue = source[key];
 
@@ -627,7 +630,7 @@ export class ConfigManager {
         ) {
           result[key] = this.deepMerge(targetValue, sourceValue);
         } else {
-          result[key] = sourceValue as any;
+          result[key] = sourceValue as T[Extract<keyof T, string>];
         }
       }
     }
@@ -722,11 +725,11 @@ export default config;
   /**
    * Validate event configuration
    */
-  private validateEventConfig(event: string, config: any): void {
-    if ('command' in config) {
+  private validateEventConfig(event: string, config: unknown): void {
+    if (config && typeof config === 'object' && 'command' in config) {
       // Single hook config
       this.validateToolHookConfig(config, `${event} hook`);
-    } else {
+    } else if (config && typeof config === 'object') {
       // Tool-specific configs
       for (const [tool, toolConfig] of Object.entries(config)) {
         if (toolConfig && typeof toolConfig === 'object') {
@@ -739,8 +742,17 @@ export default config;
   /**
    * Validate tool hook configuration
    */
-  private validateToolHookConfig(config: any, context: string): void {
-    if (!config.command || typeof config.command !== 'string') {
+  private validateToolHookConfig(config: unknown, context: string): void {
+    if (!config || typeof config !== 'object') {
+      throw new ConfigError(
+        `${context}: config must be an object`,
+        'INVALID_CONFIG'
+      );
+    }
+
+    const hookConfig = config as Record<string, unknown>;
+
+    if (!hookConfig.command || typeof hookConfig.command !== 'string') {
       throw new ConfigError(
         `${context}: command is required and must be a string`,
         'INVALID_COMMAND'
@@ -748,8 +760,8 @@ export default config;
     }
 
     if (
-      config.timeout !== undefined &&
-      (typeof config.timeout !== 'number' || config.timeout < 0)
+      hookConfig.timeout !== undefined &&
+      (typeof hookConfig.timeout !== 'number' || hookConfig.timeout < 0)
     ) {
       throw new ConfigError(
         `${context}: timeout must be a positive number`,
@@ -757,14 +769,20 @@ export default config;
       );
     }
 
-    if (config.enabled !== undefined && typeof config.enabled !== 'boolean') {
+    if (
+      hookConfig.enabled !== undefined &&
+      typeof hookConfig.enabled !== 'boolean'
+    ) {
       throw new ConfigError(
         `${context}: enabled must be a boolean`,
         'INVALID_ENABLED'
       );
     }
 
-    if (config.detached !== undefined && typeof config.detached !== 'boolean') {
+    if (
+      hookConfig.detached !== undefined &&
+      typeof hookConfig.detached !== 'boolean'
+    ) {
       throw new ConfigError(
         `${context}: detached must be a boolean`,
         'INVALID_DETACHED'
@@ -779,7 +797,9 @@ export default config;
     for (const callback of this.watchCallbacks) {
       try {
         callback(config);
-      } catch (_error) {}
+      } catch (_error) {
+        // Ignore errors in watchers
+      }
     }
   }
 }

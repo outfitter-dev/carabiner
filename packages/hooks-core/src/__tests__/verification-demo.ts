@@ -23,7 +23,7 @@ function createMockContext(event: 'PreToolUse', toolName: string) {
       tool_name: toolName,
       tool_input: { command: 'echo demo' },
     },
-  } as any;
+  } as Record<string, unknown>;
 }
 
 async function demonstrateToolScopingFix() {

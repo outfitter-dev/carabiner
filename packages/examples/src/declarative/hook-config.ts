@@ -53,7 +53,7 @@ const developmentHooks: DeclarativeHookConfig[] = [
     event: 'PostToolUse',
     tool: 'Write',
     handler: async (context) => {
-      const filePath = (context.toolInput as any)?.file_path;
+      const filePath = (context.toolInput as { file_path?: string })?.file_path;
       if (!filePath) {
         return HookResults.success('No file to format');
       }
@@ -260,7 +260,7 @@ const universalHooks: DeclarativeHookConfig[] = [
     event: 'PreToolUse',
     tool: 'Bash', // This hook ONLY runs for Bash commands
     handler: async (context) => {
-      const command = (context.toolInput as any)?.command;
+      const command = (context.toolInput as Record<string, unknown>)?.command;
       if (command) {
         // Monitor command patterns
         const suspiciousPatterns = [
@@ -379,7 +379,8 @@ async function runDeclarativeHooks(context: HookContext): Promise<HookResult> {
     )
     .sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-  const results = [];
+  const results: Array<{ type: string; success: boolean; message: string }> =
+    [];
 
   for (const hookConfig of relevantHooks) {
     try {
@@ -494,7 +495,7 @@ async function displayDevInfo(cwd: string): Promise<void> {
 async function performProductionChecks(context: HookContext): Promise<void> {
   // Check for production-specific restrictions
   if (context.toolName === 'Bash') {
-    const command = (context.toolInput as any)?.command;
+    const command = (context.toolInput as Record<string, unknown>)?.command;
     if (command) {
       const productionBlockedPatterns = [
         /rm\s+-rf/,
@@ -518,7 +519,7 @@ async function performProductionChecks(context: HookContext): Promise<void> {
   // Check workspace restrictions
   const restrictedPaths = ['node_modules', '.git', 'dist', 'build'];
   if (context.toolName === 'Write' || context.toolName === 'Edit') {
-    const filePath = (context.toolInput as any)?.file_path;
+    const filePath = (context.toolInput as Record<string, unknown>)?.file_path;
     if (filePath && restrictedPaths.some((path) => filePath.includes(path))) {
       throw new ValidationError(
         `Production write access denied to: ${filePath}`
@@ -546,7 +547,7 @@ async function validateProductionSession(
   return { valid: true };
 }
 
-async function auditLog(_entry: Record<string, any>): Promise<void> {}
+async function auditLog(_entry: Record<string, unknown>): Promise<void> {}
 
 /**
  * Main execution using proper stdin-based runtime

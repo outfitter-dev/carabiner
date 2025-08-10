@@ -77,16 +77,16 @@ jobs:
       - name: Version packages
         run: |
           bump_type="${{ steps.version.outputs.bump }}"
-          
+
           # Update root package.json
           current_version=$(node -p "require('./package.json').version")
-          
+
           # Calculate new version
           IFS='.' read -ra VERSION_PARTS <<< "$current_version"
           major=${VERSION_PARTS[0]}
           minor=${VERSION_PARTS[1]}
           patch=${VERSION_PARTS[2]}
-          
+
           case $bump_type in
             major)
               major=$((major + 1))
@@ -105,14 +105,14 @@ jobs:
               new_version="$major.$minor.$patch-beta.0"
               ;;
           esac
-          
+
           if [[ "$bump_type" != "prerelease" ]]; then
             new_version="$major.$minor.$patch"
           fi
-          
+
           echo "New version: $new_version"
           echo "new_version=$new_version" >> $GITHUB_ENV
-          
+
           # Update all package versions
           for pkg in packages/*/package.json apps/*/package.json; do
             if [ -f "$pkg" ]; then
@@ -124,7 +124,7 @@ jobs:
               "
             fi
           done
-          
+
           # Update root package.json
           node -e "
             const fs = require('fs');
@@ -141,25 +141,25 @@ jobs:
           echo "" >> CHANGELOG_TEMP.md
           echo "## v${{ env.new_version }} - $(date +%Y-%m-%d)" >> CHANGELOG_TEMP.md
           echo "" >> CHANGELOG_TEMP.md
-          
+
           # Group commits by type
           echo "### Features" >> CHANGELOG_TEMP.md
           git log --format='* %s (%h)' $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | grep -E '^.*feat(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
-          
+
           echo "" >> CHANGELOG_TEMP.md
           echo "### Bug Fixes" >> CHANGELOG_TEMP.md
           git log --format='* %s (%h)' $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | grep -E '^.*fix(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
-          
+
           echo "" >> CHANGELOG_TEMP.md
           echo "### Other Changes" >> CHANGELOG_TEMP.md
           git log --format='* %s (%h)' $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | grep -vE '^.*(feat|fix)(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
-          
+
           # Prepend to existing changelog
           if [ -f CHANGELOG.md ]; then
             echo "" >> CHANGELOG_TEMP.md
             tail -n +2 CHANGELOG.md >> CHANGELOG_TEMP.md
           fi
-          
+
           mv CHANGELOG_TEMP.md CHANGELOG.md
 
       - name: Commit version bump
@@ -168,7 +168,7 @@ jobs:
           git commit -m "chore(release): v${{ env.new_version }}
 
           🚀 Automated release v${{ env.new_version }}
-          
+
           Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
 
       - name: Push changes
@@ -192,7 +192,7 @@ jobs:
         run: |
           # Configure npm
           echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-          
+
           # Publish packages
           for pkg in packages/*/package.json; do
             dir=$(dirname "$pkg")

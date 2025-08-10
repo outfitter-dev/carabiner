@@ -124,7 +124,7 @@ async function handleWritePostProcessing(
     );
   }
 
-  const { file_path, content } = context.toolInput;
+  const { file_path } = context.toolInput;
 
   const actions: string[] = [];
 
@@ -521,7 +521,7 @@ async function runCommand(
 if (import.meta.main) {
   // The new runtime automatically reads JSON from stdin,
   // creates context, and calls our handler
-  runClaudeHook(handlePostToolUse as any, {
+  runClaudeHook(handlePostToolUse, {
     outputMode: 'exit-code',
     logLevel: 'info',
   });

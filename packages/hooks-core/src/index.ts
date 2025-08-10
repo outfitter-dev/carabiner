@@ -64,5 +64,8 @@ export {
 export type * from './types';
 
 // Version export (derived from package.json)
-import * as pkg from '../package.json';
-export const VERSION = (pkg as any).version as string;
+import type { PackageJson } from 'type-fest';
+import pkgJson from '../package.json' with { type: 'json' };
+
+const pkg = pkgJson as PackageJson;
+export const VERSION = pkg.version || '0.0.0';

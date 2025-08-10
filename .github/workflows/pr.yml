@@ -34,7 +34,7 @@ jobs:
         run: |
           # Get all commits in this PR
           commits=$(git log --format='%s' origin/${{ github.base_ref }}..HEAD)
-          
+
           # Check each commit message follows conventional commits
           while IFS= read -r commit; do
             if ! echo "$commit" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|chore|build|ci|revert)(\(.+\))?: .+'; then
@@ -130,25 +130,25 @@ jobs:
             const baseSize = ${{ steps.base-size.outputs.total_size }};
             const diff = prSize - baseSize;
             const percentChange = baseSize > 0 ? ((diff / baseSize) * 100).toFixed(2) : 0;
-            
+
             const formatBytes = (bytes) => {
               const sizes = ['B', 'KB', 'MB', 'GB'];
               if (bytes === 0) return '0 B';
               const i = Math.floor(Math.log(bytes) / Math.log(1024));
               return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
             };
-            
+
             const emoji = diff > 0 ? '📈' : diff < 0 ? '📉' : '✅';
             const message = `
             ${emoji} **Bundle Size Report**
-            
+
             | Metric | Size |
             |--------|------|
             | Base | ${formatBytes(baseSize)} |
             | PR | ${formatBytes(prSize)} |
             | Diff | ${diff > 0 ? '+' : ''}${formatBytes(Math.abs(diff))} (${percentChange}%) |
             `;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -164,5 +164,5 @@ jobs:
       - name: Label based on files changed
         uses: actions/labeler@v5
         with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
           configuration-path: .github/labeler.yml

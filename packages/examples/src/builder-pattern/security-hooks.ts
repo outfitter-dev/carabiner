@@ -118,12 +118,12 @@ const fileAccessControlHook = HookBuilder.forPreToolUse()
   .withMiddleware(
     middleware.validation((context) => {
       // Validate that we have file path information
-      const input = context.toolInput as any;
+      const input = context.toolInput as Record<string, unknown>;
       return Boolean(input.file_path);
     }, 'File path is required for file operations')
   )
   .withHandler(async (context) => {
-    const filePath = (context.toolInput as any).file_path;
+    const filePath = (context.toolInput as Record<string, unknown>).file_path;
 
     // Check file access permissions
     const accessCheck = await checkFileAccess(
@@ -155,7 +155,7 @@ const commandMonitoringHook = createHook.preToolUse('Bash', async (context) => {
     typeof context.toolInput === 'object' &&
     'command' in context.toolInput
   ) {
-    const command = (context.toolInput as any).command;
+    const command = (context.toolInput as Record<string, unknown>).command;
 
     // Monitor for suspicious command patterns
     const suspiciousPatterns = [
@@ -166,13 +166,9 @@ const commandMonitoringHook = createHook.preToolUse('Bash', async (context) => {
     ];
 
     for (const { pattern, description } of suspiciousPatterns) {
-      if (pattern.test(command)) {
-        // In production, you might want to block these
-        if (Bun.env.NODE_ENV === 'production') {
-          return HookResults.block(
-            `Blocked suspicious command: ${description}`
-          );
-        }
+      if (pattern.test(command) && Bun.env.NODE_ENV === 'production') {
+        // In production, block these suspicious commands
+        return HookResults.block(`Blocked suspicious command: ${description}`);
       }
     }
   }
@@ -209,8 +205,8 @@ async function performAdvancedSecurityChecks(
   // Check for signs of potential code injection
   if (context.toolName === 'Write' || context.toolName === 'Edit') {
     const content =
-      (context.toolInput as any).content ||
-      (context.toolInput as any).new_string;
+      (context.toolInput as Record<string, unknown>).content ||
+      (context.toolInput as Record<string, unknown>).new_string;
 
     if (content && typeof content === 'string') {
       await validateCodeContent(content);
@@ -403,7 +399,7 @@ async function runSecurityPipeline(context: HookContext): Promise<HookResult> {
 
   // After type guard, narrow the context type
   const preToolContext = context as HookContext<'PreToolUse', ToolName>;
-  const results = [];
+  const results: string[] = [];
 
   // Universal security check (runs for ALL tools)
   const universalResult = await universalSecurityHook.handler(preToolContext);

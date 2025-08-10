@@ -50,7 +50,11 @@ export class HookRegistry {
     if (insertIndex === -1) {
       hooks.push(entry as unknown as HookRegistryEntry<HookEvent>);
     } else {
-      hooks.splice(insertIndex, 0, entry as unknown as HookRegistryEntry<HookEvent>);
+      hooks.splice(
+        insertIndex,
+        0,
+        entry as unknown as HookRegistryEntry<HookEvent>
+      );
     }
   }
 
@@ -105,7 +109,7 @@ export class HookRegistry {
       const start = Date.now();
 
       try {
-        const result = await executeHook(hookEntry.handler as any, context);
+        const result = await executeHook(hookEntry.handler, context);
         results.push(result);
 
         // Update stats

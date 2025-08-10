@@ -11,6 +11,9 @@ import {
   isWriteToolInput,
 } from '@claude-code/hooks-core';
 
+// Regex patterns defined at module level for performance
+const DYNAMIC_REQUIRE_PATTERN = /require\s*\(\s*[^"'][^)]*[^"']\s*\)/;
+
 /**
  * Security validation error
  */
@@ -343,7 +346,7 @@ export function validateFileContent(
     }
 
     // Check for dynamic requires with user input
-    if (/require\s*\(\s*[^"'][^)]*[^"']\s*\)/.test(content)) {
+    if (DYNAMIC_REQUIRE_PATTERN.test(content)) {
       throw new SecurityValidationError(
         'Dynamic require() with potential user input detected',
         'dangerousCode',
@@ -450,7 +453,7 @@ export function validateHookSecurity(
           typeof context.toolInput === 'object' &&
           context.toolInput !== null
         ) {
-          const input = context.toolInput as any;
+          const input = context.toolInput as Record<string, unknown>;
 
           if (input.file_path && typeof input.file_path === 'string') {
             validateFilePath(input.file_path, context.cwd, options);

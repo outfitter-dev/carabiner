@@ -319,7 +319,7 @@ function estimateCommandDuration(command: string): number {
 if (import.meta.main) {
   // The new runtime automatically reads JSON from stdin,
   // creates context, and calls our handler
-  runClaudeHook(handlePreToolUse as any, {
+  runClaudeHook(handlePreToolUse, {
     outputMode: 'exit-code', // Use traditional exit codes
     logLevel: 'info',
   });

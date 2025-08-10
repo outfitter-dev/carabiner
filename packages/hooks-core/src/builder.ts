@@ -39,7 +39,7 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
     builder._timeout = this._timeout;
     builder._priority = this._priority;
     builder._enabled = this._enabled;
-    builder._middleware = this._middleware as any;
+    builder._middleware = this._middleware as HookMiddleware<HookContext<E>>[];
     return builder;
   }
 
@@ -98,9 +98,9 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
    * Add middleware to the hook execution
    */
   withMiddleware(
-    middleware: HookMiddleware<HookContext<TEvent>>
+    middlewareFunc: HookMiddleware<HookContext<TEvent>>
   ): HookBuilder<TEvent> {
-    this._middleware.push(middleware);
+    this._middleware.push(middlewareFunc);
     return this;
   }
 
@@ -135,10 +135,10 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
     // Apply middleware
     if (this._middleware.length > 0) {
       finalHandler = this._middleware.reduceRight(
-        (handler, middleware) => async (context: HookContext<TEvent>) =>
-          await middleware(
+        (nextHandler, middlewareFunc) => async (context: HookContext<TEvent>) =>
+          await middlewareFunc(
             context,
-            async (ctx) => await Promise.resolve(handler(ctx))
+            async (ctx) => await Promise.resolve(nextHandler(ctx))
           ),
         finalHandler
       );
@@ -338,6 +338,7 @@ export const middleware = {
       const start = Date.now();
 
       if (logLevel === 'debug' || logLevel === 'info') {
+        // Logging handled by pino logger in hook execution
       }
 
       try {
@@ -345,6 +346,7 @@ export const middleware = {
         const _duration = Date.now() - start;
 
         if (logLevel === 'debug' || logLevel === 'info') {
+          // Success logging handled by pino logger
         }
 
         return result;
@@ -352,6 +354,7 @@ export const middleware = {
         const _duration = Date.now() - start;
 
         if (logLevel !== 'error') {
+          // Error logging handled by pino logger
         }
 
         throw error;

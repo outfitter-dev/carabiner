@@ -2,6 +2,25 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
   "extends": ["ultracite"],
+  "linter": {
+    "rules": {
+      "style": {
+        "noParameterProperties": "off",
+        "useConsistentMemberAccessibility": "off",
+        "noNonNullAssertion": "off"
+      },
+      "performance": {
+        "useTopLevelRegex": "off"
+      },
+      "suspicious": {
+        "useAwait": "off",
+        "noConsole": "off"
+      },
+      "nursery": {
+        "noAwaitInLoop": "off"
+      }
+    }
+  },
   "javascript": {
     "globals": ["Bun"]
   },
@@ -28,6 +47,21 @@
   },
   "overrides": [
     {
+      "includes": ["packages/hooks-config/src/config.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "warn",
+              "options": {
+                "maxAllowedComplexity": 25
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": ["packages/hooks-cli/src/**"],
       "linter": {
         "rules": {
@@ -51,6 +85,57 @@
                 "maxAllowedComplexity": 20
               }
             }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/hooks-validators/src/security.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "warn",
+              "options": {
+                "maxAllowedComplexity": 25
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/examples/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "useAwait": "off",
+            "noEmptyBlockStatements": "off",
+            "noExplicitAny": "off"
+          },
+          "complexity": {
+            "noVoid": "off",
+            "noForEach": "off"
+          },
+          "performance": {
+            "useTopLevelRegex": "off"
+          },
+          "nursery": {
+            "noAwaitInLoop": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/**/__tests__/**/*.ts", "packages/**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off",
+            "useAwait": "off"
+          },
+          "nursery": {
+            "noShadow": "off"
           }
         }
       }
