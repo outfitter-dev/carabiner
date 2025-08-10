@@ -110,7 +110,10 @@ export class HookRegistry {
       const start = Date.now();
 
       try {
-        const result = await executeHook(hookEntry.handler as HookHandler, context);
+        const result = await executeHook(
+          hookEntry.handler as HookHandler,
+          context
+        );
         results.push(result);
 
         // Update stats
