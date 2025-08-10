@@ -2,13 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Base instructions: @.agent/prompts/CORE.md
+
 ## Repository Overview
 
 This is a modern TypeScript monorepo starter template built with Bun, Turbo, and Ultracite. It provides a foundation for scalable development with strict type safety and automated quality gates.
 
 ## Important Rules
 
-@docs/agents/rules/IMPORTANT.md
+@.agent/rules/IMPORTANT.md
 
 ## Important Patterns
 
