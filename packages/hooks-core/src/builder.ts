@@ -39,7 +39,7 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
     builder._timeout = this._timeout;
     builder._priority = this._priority;
     builder._enabled = this._enabled;
-    builder._middleware = this._middleware as HookMiddleware<HookContext<E>>[];
+    builder._middleware = this._middleware as unknown as HookMiddleware<HookContext<E>>[];
     return builder;
   }
 

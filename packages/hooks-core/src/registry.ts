@@ -9,6 +9,7 @@ import type {
   HookContext,
   HookEvent,
   HookExecutionStats,
+  HookHandler,
   HookRegistryEntry,
   HookResult,
   ToolName,
@@ -109,7 +110,7 @@ export class HookRegistry {
       const start = Date.now();
 
       try {
-        const result = await executeHook(hookEntry.handler, context);
+        const result = await executeHook(hookEntry.handler as HookHandler, context);
         results.push(result);
 
         // Update stats
