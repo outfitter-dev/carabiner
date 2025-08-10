@@ -54,10 +54,12 @@ Create `hooks/security-check.ts`:
 
 ```typescript
 #!/usr/bin/env bun
+import pino from 'pino';
 import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
+const logger = pino({ level: process.env.LOG_LEVEL ?? 'info' }, pino.destination(2));
 
 runClaudeHook(async (context) => {
-  console.log(`🔍 Security check for ${context.toolName}`);
+  logger.info({ tool: context.toolName }, 'Security check');
   
   // Only validate Bash commands
   if (context.toolName === 'Bash') {
@@ -76,7 +78,7 @@ runClaudeHook(async (context) => {
       }
     }
     
-    console.log(`✅ Bash command allowed: ${command}`);
+    logger.debug({ command }, 'Bash command allowed');
   }
   
   return HookResults.success('Security check passed');
@@ -98,7 +100,7 @@ Create `.claude/settings.json`:
   "hooks": {
     "PreToolUse": {
       "*": {
-        "command": "bun run hooks/security-check.ts",
+        "command": "hooks/security-check.ts",
         "timeout": 5000
       }
     }

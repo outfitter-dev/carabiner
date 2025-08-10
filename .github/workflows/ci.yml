@@ -178,7 +178,8 @@ jobs:
                 "${{ needs.typecheck.result }}" != "success" || \
                 "${{ needs.test.result }}" != "success" || \
                 "${{ needs.build.result }}" != "success" || \
-                "${{ needs.validate-packages.result }}" != "success" ]]; then
+                "${{ needs.validate-packages.result }}" != "success" || \
+                "${{ needs.security.result }}" != "success" ]]; then
             echo "One or more required checks failed"
             exit 1
           fi

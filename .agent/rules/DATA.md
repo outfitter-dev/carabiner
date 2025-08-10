@@ -196,6 +196,10 @@ class MemoryCache<T> {
     return item.value;
   }
 
+  delete(key: string): void {
+    this.cache.delete(key);
+  }
+
   // Auto-cleanup expired entries
   startCleanup(intervalMs = 60000) {
     setInterval(() => {

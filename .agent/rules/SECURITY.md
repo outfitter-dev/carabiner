@@ -212,12 +212,17 @@ grep -r "sk_" dist/
 ### Essential Headers
 
 ```typescript
-// Security headers middleware
+// Security headers middleware (example)
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  res.setHeader('X-Frame-Options', 'DENY'); // or use CSP frame-ancestors
+  res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'geolocation=()'); // tailor to your needs
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"
+  );
   next();
 });
 ```

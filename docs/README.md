@@ -62,10 +62,12 @@ claude-hooks init --template security
 
 ```typescript
 #!/usr/bin/env bun
+import pino from 'pino';
 import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
+const logger = pino({ level: process.env.LOG_LEVEL ?? 'info' }, pino.destination(2)); // stderr
 
 runClaudeHook(async (context) => {
-  console.log(`🔍 Validating ${context.toolName} usage`);
+  logger.info({ tool: context.toolName }, 'Validating tool usage');
 
   if (context.toolName === 'Bash') {
     const { command } = context.toolInput as { command: string };

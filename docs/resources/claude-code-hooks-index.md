@@ -47,14 +47,13 @@ This index provides an organized overview of Claude Code hooks documentation and
 
 | Event | Description | Exit Code Behavior | Context Variables |
 | --- | --- | --- | --- |
-| `PreToolUse` | Before tool execution | Any non-zero exit blocks tool, shows stderr | All except during SessionStart |
-| `PostToolUse` | After successful tool execution | Non-zero = failed, no blocking | `TOOL_OUTPUT` available |
-| `UserPromptSubmit` | When user submits prompt | Non-zero = failed, no blocking | `USER_PROMPT` available |
-| `SessionStart` | New session initialization | Non-zero = failed, no blocking | `CLAUDE_TOOL_NAME` empty |
-| `Stop` | Claude Code finishes responding | Non-zero = failed, no blocking | Standard context |
-| `SubagentStop` | Subagent finishes responding | Non-zero = failed, no blocking | Standard context |
-| `Notification` | System notifications | Non-zero = failed, no blocking | Context-dependent |
-| `PreCompact` | Before context compaction | Non-zero = failed, no blocking | Standard context |
+| `PreToolUse` | Before tool execution | Exit 0: success; Exit 2: blocks tool, stderr to Claude; Other: non-blocking, stderr to user | Tool context available |
+| `PostToolUse` | After tool execution | Exit 0: success; Exit 2: stderr to Claude (tool already ran); Other: non-blocking, stderr to user | `CLAUDE_TOOL_OUTPUT` available |
+| `UserPromptSubmit` | When user submits prompt | Exit 0: stdout added to context; Exit 2: blocks prompt, erases it, stderr to user; Other: non-blocking | `CLAUDE_NOTIFICATION` available |
+| `Stop` | Claude Code finishes responding | Exit 0: success; Exit 2: blocks stoppage, stderr to Claude; Other: non-blocking, stderr to user | Standard context |
+| `SubagentStop` | Subagent finishes responding | Exit 0: success; Exit 2: blocks stoppage, stderr to subagent; Other: non-blocking, stderr to user | Standard context |
+| `Notification` | System notifications | Exit 0: success; Exit 2 and others: stderr to user only; No blocking | `CLAUDE_NOTIFICATION` available |
+| `PreCompact` | Before context compaction | Exit 0: success; Exit 2 and others: stderr to user only; No blocking | Standard context |
 
 > **Note**: All matching hooks run **in parallel** by default.
 
@@ -90,14 +89,18 @@ This index provides an organized overview of Claude Code hooks documentation and
 
 ### Environment Variables
 
-| Variable | Availability | Description |
-| --- | --- | --- |
-| `CLAUDE_SESSION_ID` | All hooks | Current session identifier |
-| `CLAUDE_TOOL_NAME` | Most hooks | Tool being used (empty in SessionStart) |
-| `CLAUDE_PROJECT_DIR` | All hooks (v0.3+) | Current workspace path |
-| `TOOL_INPUT` | Tool hooks | JSON string of tool parameters |
-| `TOOL_OUTPUT` | PostToolUse only | Tool output (≤32kB, not available in detached hooks) |
-| `USER_PROMPT` | UserPromptSubmit only | User's prompt text |
+| Variable               | Availability                          | Description                                           |
+|------------------------|---------------------------------------|-------------------------------------------------------|
+| CLAUDE_EVENT_TYPE      | All hook events                       | Type of the event (e.g. PreToolUse, Notification)     |
+| CLAUDE_SESSION_ID      | All hook events                       | Current session identifier                            |
+| CLAUDE_WORKING_DIR     | All hook events                       | Working directory                                     |
+| CLAUDE_PROJECT_DIR     | Commands spawned by Claude Code       | Project directory (workspace path)                    |
+| CLAUDE_TOOL_NAME       | PreToolUse, PostToolUse               | Name of the tool invoked                              |
+| CLAUDE_TOOL_INPUT      | PreToolUse, PostToolUse               | JSON string of tool parameters                        |
+| CLAUDE_TOOL_OUTPUT     | PostToolUse                           | Tool output (≤ 32 kB; not available in detached hooks)|
+| CLAUDE_TOOL_DURATION   | PostToolUse                           | Duration of tool execution (ms)                       |
+| CLAUDE_FILE_PATHS      | PreToolUse, PostToolUse (file tools)  | Space-separated list of relevant file paths           |
+| CLAUDE_NOTIFICATION    | Notification                          | Notification message content                          |
 
 ## Configuration Template
 
