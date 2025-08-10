@@ -1,0 +1,214 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  packages: write
+
+env:
+  BUN_VERSION: '1.1.38'
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run tests
+        run: bun run test:ci
+
+      - name: Build packages
+        run: bun run build
+
+      - name: Determine version bump
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "bump=${{ github.event.inputs.release-type }}" >> $GITHUB_OUTPUT
+          else
+            # Analyze commit messages to determine version bump
+            commits=$(git log --format='%s' $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git log --format='%s')
+            
+            if echo "$commits" | grep -qE '^(feat|feature)(\(.+\))?!:'; then
+              echo "bump=major" >> $GITHUB_OUTPUT
+            elif echo "$commits" | grep -qE '^(feat|feature)(\(.+\))?:'; then
+              echo "bump=minor" >> $GITHUB_OUTPUT
+            else
+              echo "bump=patch" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Version packages
+        run: |
+          bump_type="${{ steps.version.outputs.bump }}"
+          
+          # Update root package.json
+          current_version=$(node -p "require('./package.json').version")
+          
+          # Calculate new version
+          IFS='.' read -ra VERSION_PARTS <<< "$current_version"
+          major=${VERSION_PARTS[0]}
+          minor=${VERSION_PARTS[1]}
+          patch=${VERSION_PARTS[2]}
+          
+          case $bump_type in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+            prerelease)
+              patch=$((patch + 1))
+              new_version="$major.$minor.$patch-beta.0"
+              ;;
+          esac
+          
+          if [[ "$bump_type" != "prerelease" ]]; then
+            new_version="$major.$minor.$patch"
+          fi
+          
+          echo "New version: $new_version"
+          echo "new_version=$new_version" >> $GITHUB_ENV
+          
+          # Update all package versions
+          for pkg in packages/*/package.json apps/*/package.json; do
+            if [ -f "$pkg" ]; then
+              node -e "
+                const fs = require('fs');
+                const pkg = JSON.parse(fs.readFileSync('$pkg', 'utf8'));
+                pkg.version = '$new_version';
+                fs.writeFileSync('$pkg', JSON.stringify(pkg, null, 2) + '\\n');
+              "
+            fi
+          done
+          
+          # Update root package.json
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '$new_version';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
+          "
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Generate changelog from commit messages
+          echo "# Changelog" > CHANGELOG_TEMP.md
+          echo "" >> CHANGELOG_TEMP.md
+          echo "## v${{ env.new_version }} - $(date +%Y-%m-%d)" >> CHANGELOG_TEMP.md
+          echo "" >> CHANGELOG_TEMP.md
+          
+          # Group commits by type
+          echo "### Features" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | grep -E '^.*feat(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          
+          echo "" >> CHANGELOG_TEMP.md
+          echo "### Bug Fixes" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | grep -E '^.*fix(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          
+          echo "" >> CHANGELOG_TEMP.md
+          echo "### Other Changes" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | grep -vE '^.*(feat|fix)(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          
+          # Prepend to existing changelog
+          if [ -f CHANGELOG.md ]; then
+            echo "" >> CHANGELOG_TEMP.md
+            tail -n +2 CHANGELOG.md >> CHANGELOG_TEMP.md
+          fi
+          
+          mv CHANGELOG_TEMP.md CHANGELOG.md
+
+      - name: Commit version bump
+        run: |
+          git add .
+          git commit -m "chore(release): v${{ env.new_version }}
+
+          🚀 Automated release v${{ env.new_version }}
+          
+          Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+
+      - name: Push changes
+        run: git push origin main
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.new_version }}
+          release_name: Release v${{ env.new_version }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ steps.version.outputs.bump == 'prerelease' }}
+
+      - name: Publish to NPM
+        if: steps.version.outputs.bump != 'prerelease'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Configure npm
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+          
+          # Publish packages
+          for pkg in packages/*/package.json; do
+            dir=$(dirname "$pkg")
+            if [ -f "$dir/package.json" ]; then
+              cd "$dir"
+              
+              # Check if package is private
+              is_private=$(node -p "require('./package.json').private || false")
+              
+              if [ "$is_private" != "true" ]; then
+                echo "Publishing $(basename $dir)..."
+                npm publish --access public
+              else
+                echo "Skipping private package $(basename $dir)"
+              fi
+              
+              cd - > /dev/null
+            fi
+          done

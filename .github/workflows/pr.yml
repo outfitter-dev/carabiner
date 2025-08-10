@@ -1,0 +1,168 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  BUN_VERSION: '1.1.38'
+
+jobs:
+  validate-pr:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check commit messages
+        run: |
+          # Get all commits in this PR
+          commits=$(git log --format='%s' origin/${{ github.base_ref }}..HEAD)
+          
+          # Check each commit message follows conventional commits
+          while IFS= read -r commit; do
+            if ! echo "$commit" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|chore|build|ci|revert)(\(.+\))?: .+'; then
+              echo "Invalid commit message: $commit"
+              echo "Commit messages must follow Conventional Commits format"
+              exit 1
+            fi
+          done <<< "$commits"
+
+      - name: Check PR title
+        run: |
+          title="${{ github.event.pull_request.title }}"
+          if ! echo "$title" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|chore|build|ci|revert)(\(.+\))?: .+'; then
+            echo "Invalid PR title: $title"
+            echo "PR title must follow Conventional Commits format"
+            exit 1
+          fi
+
+      - name: Check file changes
+        run: |
+          # Check if lockfile was modified without package.json changes
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "bun.lockb"; then
+            if ! git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "package.json"; then
+              echo "Warning: bun.lockb was modified without corresponding package.json changes"
+            fi
+          fi
+
+  size-check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build packages
+        run: bun run build
+
+      - name: Calculate bundle sizes
+        id: pr-size
+        run: |
+          total_size=0
+          for dist in packages/*/dist; do
+            if [ -d "$dist" ]; then
+              size=$(du -sb "$dist" | cut -f1)
+              total_size=$((total_size + size))
+              echo "$(basename $(dirname $dist)): $(numfmt --to=iec $size)"
+            fi
+          done
+          echo "total_size=$total_size" >> $GITHUB_OUTPUT
+          echo "Total: $(numfmt --to=iec $total_size)"
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      - name: Install base dependencies
+        working-directory: base
+        run: bun install --frozen-lockfile
+
+      - name: Build base packages
+        working-directory: base
+        run: bun run build
+
+      - name: Calculate base bundle sizes
+        id: base-size
+        working-directory: base
+        run: |
+          total_size=0
+          for dist in packages/*/dist; do
+            if [ -d "$dist" ]; then
+              size=$(du -sb "$dist" | cut -f1)
+              total_size=$((total_size + size))
+            fi
+          done
+          echo "total_size=$total_size" >> $GITHUB_OUTPUT
+
+      - name: Comment size change
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prSize = ${{ steps.pr-size.outputs.total_size }};
+            const baseSize = ${{ steps.base-size.outputs.total_size }};
+            const diff = prSize - baseSize;
+            const percentChange = baseSize > 0 ? ((diff / baseSize) * 100).toFixed(2) : 0;
+            
+            const formatBytes = (bytes) => {
+              const sizes = ['B', 'KB', 'MB', 'GB'];
+              if (bytes === 0) return '0 B';
+              const i = Math.floor(Math.log(bytes) / Math.log(1024));
+              return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+            };
+            
+            const emoji = diff > 0 ? '📈' : diff < 0 ? '📉' : '✅';
+            const message = `
+            ${emoji} **Bundle Size Report**
+            
+            | Metric | Size |
+            |--------|------|
+            | Base | ${formatBytes(baseSize)} |
+            | PR | ${formatBytes(prSize)} |
+            | Diff | ${diff > 0 ? '+' : ''}${formatBytes(Math.abs(diff))} (${percentChange}%) |
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
+
+  label-pr:
+    name: Auto Label PR
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Label based on files changed
+        uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/labeler.yml
