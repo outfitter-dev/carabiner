@@ -95,6 +95,7 @@ export class ClaudeHooksCli {
     }
 
     if (values.version) {
+      console.log(`claude-hooks version ${this.config.version}`);
       process.exit(0);
     }
 
@@ -136,8 +137,8 @@ export class ClaudeHooksCli {
         `Command failed: ${error instanceof Error ? error.message : error}`
       );
       if (this.config.debug && error instanceof Error && error.stack) {
-        // TODO: Implement debug stack trace display
-        // Debug mode stack trace display not yet implemented
+        console.error('\nStack trace:');
+        console.error(error.stack);
       }
       process.exit(1);
     }
@@ -152,80 +153,85 @@ export class ClaudeHooksCli {
       await this.registerCommands();
     }
 
-    for (const _command of this.commands.values()) {
-      // TODO: Implement help display for available commands
-      // Command list display not yet implemented
+    console.log('Claude Code Hooks CLI');
+    console.log(`Version: ${this.config.version}\n`);
+    console.log('Usage: claude-hooks [options] <command> [command-options]\n');
+    console.log('Options:');
+    console.log('  -h, --help      Show help');
+    console.log('  -v, --version   Show version');
+    console.log('  --verbose       Enable verbose output');
+    console.log('  --debug         Enable debug output');
+    console.log('  -w, --workspace Set workspace path\n');
+    console.log('Commands:');
+    
+    for (const command of this.commands.values()) {
+      console.log(`  ${command.name.padEnd(12)} ${command.description}`);
     }
+    
+    console.log('\nRun "claude-hooks <command> --help" for command-specific help');
   }
 
   /**
    * Show available commands
    */
   private showAvailableCommands(): void {
-    for (const _command of this.commands.values()) {
-      // TODO: Implement available commands display
-      // Commands display not yet implemented
+    console.log('\nAvailable commands:');
+    for (const command of this.commands.values()) {
+      console.log(`  ${command.name.padEnd(12)} ${command.description}`);
     }
   }
 
   /**
    * Log message
    */
-  log(_message: string): void {
-    // TODO: Implement logging
-    // Logging not yet implemented
+  log(message: string): void {
+    console.log(message);
   }
 
   /**
    * Log verbose message
    */
-  verbose(_message: string): void {
+  verbose(message: string): void {
     if (this.config.verbose) {
-      // TODO: Implement verbose logging
-      // Verbose logging not yet implemented
+      console.log(`[VERBOSE] ${message}`);
     }
   }
 
   /**
    * Log debug message
    */
-  debug(_message: string): void {
+  debug(message: string): void {
     if (this.config.debug) {
-      // TODO: Implement debug logging
-      // Debug logging not yet implemented
+      console.debug(`[DEBUG] ${message}`);
     }
   }
 
   /**
    * Log error message
    */
-  error(_message: string): void {
-    // TODO: Implement error logging
-    // Error logging not yet implemented
+  error(message: string): void {
+    console.error(`[ERROR] ${message}`);
   }
 
   /**
    * Log warning message
    */
-  warn(_message: string): void {
-    // TODO: Implement warning logging
-    // Warning logging not yet implemented
+  warn(message: string): void {
+    console.warn(`[WARN] ${message}`);
   }
 
   /**
    * Log success message
    */
-  success(_message: string): void {
-    // TODO: Implement success logging
-    // Success logging not yet implemented
+  success(message: string): void {
+    console.log(`✅ ${message}`);
   }
 
   /**
    * Log info message
    */
-  info(_message: string): void {
-    // TODO: Implement info logging
-    // Info logging not yet implemented
+  info(message: string): void {
+    console.info(`ℹ️  ${message}`);
   }
 }
 
@@ -272,10 +278,13 @@ export abstract class BaseCommand implements Command {
    * Show command help
    */
   protected showHelp(): void {
+    console.log(`\nUsage: claude-hooks ${this.name} ${this.usage}\n`);
+    console.log(this.description);
+    
     if (Object.keys(this.options).length > 0) {
-      for (const [_option, _desc] of Object.entries(this.options)) {
-        // TODO: Implement help display for command options
-        // Command-specific help display not yet implemented
+      console.log('\nOptions:');
+      for (const [option, desc] of Object.entries(this.options)) {
+        console.log(`  ${option.padEnd(20)} ${desc}`);
       }
     }
   }
@@ -348,7 +357,8 @@ async function main(): Promise<void> {
 
 // Run CLI if this file is executed directly
 if (import.meta.main) {
-  main().catch((_error) => {
+  main().catch((error) => {
+    console.error('Fatal error:', error);
     process.exit(1);
   });
 }
