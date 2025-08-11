@@ -462,7 +462,7 @@ export function validateHookSecurity(
           if (input.content && typeof input.content === 'string') {
             validateFileContent(
               input.content,
-              input.file_path || 'unknown',
+              typeof input.file_path === 'string' ? input.file_path : 'unknown',
               options
             );
           }

@@ -310,7 +310,7 @@ export class ConfigManager {
     updates: Partial<ExtendedHookConfiguration>
   ): Promise<ExtendedHookConfiguration> {
     const current = this.getConfig();
-    const updated = this.deepMerge(current, updates);
+    const updated = this.deepMerge<ExtendedHookConfiguration>(current, updates);
 
     if (this.configPath) {
       const format = this.getFormatFromPath(this.configPath);
@@ -419,6 +419,7 @@ export class ConfigManager {
   generateClaudeSettings(): Record<string, unknown> {
     const config = this.getConfig();
     const settings: Record<string, unknown> = { hooks: {} };
+    const hooks = settings.hooks as Record<string, unknown>;
 
     for (const [event, eventConfig] of Object.entries(config)) {
       if (
@@ -431,21 +432,22 @@ export class ConfigManager {
       if (eventConfig && typeof eventConfig === 'object') {
         if ('command' in eventConfig) {
           // Single hook config
-          settings.hooks[event] = this.processHookConfig(eventConfig);
+          hooks[event] = this.processHookConfig(eventConfig);
         } else {
           // Tool-specific configs
-          settings.hooks[event] = {};
+          const eventHooks: Record<string, unknown> = {};
           for (const [tool, toolConfig] of Object.entries(eventConfig)) {
             if (
               toolConfig &&
               typeof toolConfig === 'object' &&
               'command' in toolConfig
             ) {
-              settings.hooks[event][tool] = this.processHookConfig(
+              eventHooks[tool] = this.processHookConfig(
                 toolConfig as ToolHookConfig
               );
             }
           }
+          hooks[event] = eventHooks;
         }
       }
     }
@@ -584,7 +586,7 @@ export class ConfigManager {
   private mergeWithDefaults(
     config: ExtendedHookConfiguration
   ): ExtendedHookConfiguration {
-    return this.deepMerge(DEFAULT_CONFIG, config);
+    return this.deepMerge<ExtendedHookConfiguration>(DEFAULT_CONFIG, config);
   }
 
   /**
@@ -600,13 +602,13 @@ export class ConfigManager {
       return config;
     }
 
-    return this.deepMerge(config, envOverrides as ExtendedHookConfiguration);
+    return this.deepMerge<ExtendedHookConfiguration>(config, envOverrides as ExtendedHookConfiguration);
   }
 
   /**
    * Deep merge objects
    */
-  private deepMerge<T extends Record<string, unknown>>(
+  private deepMerge<T>(
     target: T,
     source: Partial<T>
   ): T {
@@ -628,7 +630,7 @@ export class ConfigManager {
           !Array.isArray(targetValue) &&
           !Array.isArray(sourceValue)
         ) {
-          result[key] = this.deepMerge(targetValue, sourceValue);
+          result[key] = this.deepMerge(targetValue, sourceValue) as T[Extract<keyof T, string>];
         } else {
           result[key] = sourceValue as T[Extract<keyof T, string>];
         }
