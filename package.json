@@ -47,6 +47,7 @@
     "changeset:publish": "bun run build:packages && changeset publish",
     "release:check": "bun run ci:full && bun run lint:packages",
     "verify:build": "bun scripts/verify-build.ts",
+    "verify:imports": "bun scripts/smoke-import.ts",
     "clean": "turbo clean && find packages -name 'dist' -type d -exec rm -rf {} + 2>/dev/null || true"
   },
   "devDependencies": {

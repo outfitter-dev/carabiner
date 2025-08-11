@@ -218,21 +218,14 @@ export class GenerateCommand extends BaseCommand {
     if (useTypeScript) {
       return `#!/usr/bin/env bun
 
-import { createHookContext, exitWithResult, HookResults } from '@claude-code/hooks-core';
-import type { HookResult } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults, type HookContext } from '@claude-code/hooks-core';
 
-/**
- * ${name} hook - Custom hook implementation
- */
-async function handle${this.pascalCase(name)}(): Promise<HookResult> {
-  const context = createHookContext('PreToolUse'); // Change event type as needed
+async function handler(ctx: HookContext) {
+  console.log(\`${name} hook triggered for: \${ctx.toolName}\`);
   
-  console.log(\`${name} hook triggered for: \${context.toolName}\`);
-
   try {
     // Add your custom logic here
     console.log('Executing custom hook logic...');
-
     return HookResults.success('${name} hook completed successfully');
   } catch (error) {
     return HookResults.failure(
@@ -241,35 +234,23 @@ async function handle${this.pascalCase(name)}(): Promise<HookResult> {
   }
 }
 
-// Main execution
 if (import.meta.main) {
-  handle${this.pascalCase(name)}()
-    .then(exitWithResult)
-    .catch((error) => {
-      console.error('Hook execution failed:', error);
-      process.exit(1);
-    });
+  await runClaudeHook(handler, { timeout: 10_000 });
 }
 
-export { handle${this.pascalCase(name)} };
+export { handler };
 `;
     }
     return `#!/usr/bin/env bun
 
-const { createHookContext, exitWithResult, HookResults } = require('@claude-code/hooks-core');
+const { runClaudeHook, HookResults } = require('@claude-code/hooks-core');
 
-/**
- * ${name} hook - Custom hook implementation
- */
-async function handle${this.pascalCase(name)}() {
-  const context = createHookContext('PreToolUse'); // Change event type as needed
+async function handler(ctx) {
+  console.log(\`${name} hook triggered for: \${ctx.toolName}\`);
   
-  console.log(\`${name} hook triggered for: \${context.toolName}\`);
-
   try {
     // Add your custom logic here
     console.log('Executing custom hook logic...');
-
     return HookResults.success('${name} hook completed successfully');
   } catch (error) {
     return HookResults.failure(
@@ -278,17 +259,11 @@ async function handle${this.pascalCase(name)}() {
   }
 }
 
-// Main execution
 if (require.main === module) {
-  handle${this.pascalCase(name)}()
-    .then(exitWithResult)
-    .catch((error) => {
-      console.error('Hook execution failed:', error);
-      process.exit(1);
-    });
+  await runClaudeHook(handler, { timeout: 10_000 });
 }
 
-module.exports = { handle${this.pascalCase(name)} };
+module.exports = { handler };
 `;
   }
 
@@ -302,21 +277,15 @@ module.exports = { handle${this.pascalCase(name)} };
     if (useTypeScript) {
       return `#!/usr/bin/env bun
 
-import { createHookContext, exitWithResult, HookResults } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults, type HookContext } from '@claude-code/hooks-core';
 import { validateHookContext } from '@claude-code/hooks-validators';
-import type { HookResult, HookContext } from '@claude-code/hooks-core';
 
-/**
- * ${name} hook with validation - Custom hook with comprehensive validation
- */
-async function handle${this.pascalCase(name)}(): Promise<HookResult> {
-  const context = createHookContext('PreToolUse'); // Change event type as needed
-  
-  console.log(\`${name} hook triggered for: \${context.toolName}\`);
+async function handler(ctx: HookContext) {
+  console.log(\`${name} hook triggered for: \${ctx.toolName}\`);
 
   try {
     // Validate hook context
-    const validationResult = await validateHookContext(context);
+    const validationResult = await validateHookContext(ctx);
     if (!validationResult.valid) {
       return HookResults.failure(
         \`Validation failed: \${validationResult.errors.map(e => e.message).join(', ')}\`
@@ -324,7 +293,7 @@ async function handle${this.pascalCase(name)}(): Promise<HookResult> {
     }
 
     // Custom validation logic
-    const customValidation = await performCustomValidation(context);
+    const customValidation = await performCustomValidation(ctx);
     if (!customValidation.valid) {
       return HookResults.failure(customValidation.message);
     }
@@ -348,43 +317,32 @@ async function performCustomValidation(context: HookContext): Promise<{ valid: b
     return { valid: false, message: 'Tool name is required' };
   }
 
-  // Example: Validate workspace path
-  if (!context.workspacePath || context.workspacePath === '/') {
-    return { valid: false, message: 'Invalid workspace path' };
+  // Example: Validate environment
+  if (!context.environment?.CLAUDE_PROJECT_DIR) {
+    return { valid: false, message: 'Invalid project environment' };
   }
 
   return { valid: true };
 }
 
-// Main execution
 if (import.meta.main) {
-  handle${this.pascalCase(name)}()
-    .then(exitWithResult)
-    .catch((error) => {
-      console.error('Hook execution failed:', error);
-      process.exit(1);
-    });
+  await runClaudeHook(handler, { timeout: 10_000 });
 }
 
-export { handle${this.pascalCase(name)} };
+export { handler };
 `;
     }
     return `#!/usr/bin/env bun
 
-const { createHookContext, exitWithResult, HookResults } = require('@claude-code/hooks-core');
+const { runClaudeHook, HookResults } = require('@claude-code/hooks-core');
 const { validateHookContext } = require('@claude-code/hooks-validators');
 
-/**
- * ${name} hook with validation - Custom hook with comprehensive validation
- */
-async function handle${this.pascalCase(name)}() {
-  const context = createHookContext('PreToolUse'); // Change event type as needed
-  
-  console.log(\`${name} hook triggered for: \${context.toolName}\`);
+async function handler(ctx) {
+  console.log(\`${name} hook triggered for: \${ctx.toolName}\`);
 
   try {
     // Validate hook context
-    const validationResult = await validateHookContext(context);
+    const validationResult = await validateHookContext(ctx);
     if (!validationResult.valid) {
       return HookResults.failure(
         \`Validation failed: \${validationResult.errors.map(e => e.message).join(', ')}\`
@@ -392,7 +350,7 @@ async function handle${this.pascalCase(name)}() {
     }
 
     // Custom validation logic
-    const customValidation = await performCustomValidation(context);
+    const customValidation = await performCustomValidation(ctx);
     if (!customValidation.valid) {
       return HookResults.failure(customValidation.message);
     }
@@ -416,25 +374,19 @@ async function performCustomValidation(context) {
     return { valid: false, message: 'Tool name is required' };
   }
 
-  // Example: Validate workspace path
-  if (!context.workspacePath || context.workspacePath === '/') {
-    return { valid: false, message: 'Invalid workspace path' };
+  // Example: Validate environment
+  if (!context.environment?.CLAUDE_PROJECT_DIR) {
+    return { valid: false, message: 'Invalid project environment' };
   }
 
   return { valid: true };
 }
 
-// Main execution
 if (require.main === module) {
-  handle${this.pascalCase(name)}()
-    .then(exitWithResult)
-    .catch((error) => {
-      console.error('Hook execution failed:', error);
-      process.exit(1);
-    });
+  await runClaudeHook(handler, { timeout: 10_000 });
 }
 
-module.exports = { handle${this.pascalCase(name)} };
+module.exports = { handler };
 `;
   }
 
@@ -448,17 +400,11 @@ module.exports = { handle${this.pascalCase(name)} };
     if (useTypeScript) {
       return `#!/usr/bin/env bun
 
-import { createHookContext, exitWithResult, HookResults } from '@claude-code/hooks-core';
-import { SecurityValidators, validateHookSecurity } from '@claude-code/hooks-validators';
-import type { HookResult } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults, type HookContext } from '@claude-code/hooks-core';
+import { SecurityValidators } from '@claude-code/hooks-validators';
 
-/**
- * ${name} security hook - Security-focused hook implementation
- */
-async function handle${this.pascalCase(name)}(): Promise<HookResult> {
-  const context = createHookContext('PreToolUse'); // Change event type as needed
-  
-  console.log(\`🔒 ${name} security hook triggered for: \${context.toolName}\`);
+async function handler(ctx: HookContext) {
+  console.log(\`🔒 ${name} security hook triggered for: \${ctx.toolName}\`);
 
   try {
     // Apply security validation based on environment
@@ -466,19 +412,19 @@ async function handle${this.pascalCase(name)}(): Promise<HookResult> {
     
     switch (environment) {
       case 'production':
-        SecurityValidators.production(context);
+        SecurityValidators.production(ctx);
         break;
       case 'development':
-        SecurityValidators.development(context);
+        SecurityValidators.development(ctx);
         break;
       default:
-        SecurityValidators.strict(context);
+        SecurityValidators.strict(ctx);
     }
 
     // Additional custom security checks
-    await performSecurityChecks(context);
+    await performSecurityChecks(ctx);
 
-    return HookResults.success(\`Security validation passed for \${context.toolName}\`);
+    return HookResults.success(\`Security validation passed for \${ctx.toolName}\`);
   } catch (error) {
     return HookResults.block(
       error instanceof Error ? error.message : 'Security validation failed'
@@ -489,20 +435,21 @@ async function handle${this.pascalCase(name)}(): Promise<HookResult> {
 /**
  * Perform additional security checks
  */
-async function performSecurityChecks(context: any): Promise<void> {
+async function performSecurityChecks(context: HookContext): Promise<void> {
   // Add your custom security logic here
   
-  // Example: Check for suspicious patterns
-  if (context.toolName === 'Bash' && context.toolInput?.command) {
+  // Example: Check for suspicious patterns in bash commands
+  if (context.toolName === 'Bash' && 'command' in context.toolInput) {
+    const command = context.toolInput.command as string;
     const suspiciousPatterns = [
-      CURL_INJECTION_REGEX,  // Command injection via curl
-      BASE64_DECODE_REGEX,  // Base64 decoding
-      EVAL_SHELL_REGEX,  // Shell evaluation
+      /curl.*|.*sh/i,     // Piped curl to shell
+      /base64.*-d/i,       // Base64 decoding
+      /eval.*\\$\\(/i,        // Shell evaluation
     ];
 
     for (const pattern of suspiciousPatterns) {
-      if (pattern.test(context.toolInput.command)) {
-        throw new Error(\`Suspicious pattern detected: \${pattern.source}\`);
+      if (pattern.test(command)) {
+        throw new Error(\`Suspicious pattern detected in command\`);
       }
     }
   }
@@ -512,31 +459,20 @@ async function performSecurityChecks(context: any): Promise<void> {
   // Implement rate limiting logic here
 }
 
-// Main execution
 if (import.meta.main) {
-  handle${this.pascalCase(name)}()
-    .then(exitWithResult)
-    .catch((error) => {
-      console.error('Hook execution failed:', error);
-      process.exit(1);
-    });
+  await runClaudeHook(handler, { timeout: 10_000 });
 }
 
-export { handle${this.pascalCase(name)} };
+export { handler };
 `;
     }
     return `#!/usr/bin/env bun
 
-const { createHookContext, exitWithResult, HookResults } = require('@claude-code/hooks-core');
+const { runClaudeHook, HookResults } = require('@claude-code/hooks-core');
 const { SecurityValidators } = require('@claude-code/hooks-validators');
 
-/**
- * ${name} security hook - Security-focused hook implementation
- */
-async function handle${this.pascalCase(name)}() {
-  const context = createHookContext('PreToolUse'); // Change event type as needed
-  
-  console.log(\`🔒 ${name} security hook triggered for: \${context.toolName}\`);
+async function handler(ctx) {
+  console.log(\`🔒 ${name} security hook triggered for: \${ctx.toolName}\`);
 
   try {
     // Apply security validation based on environment
@@ -544,19 +480,19 @@ async function handle${this.pascalCase(name)}() {
     
     switch (environment) {
       case 'production':
-        SecurityValidators.production(context);
+        SecurityValidators.production(ctx);
         break;
       case 'development':
-        SecurityValidators.development(context);
+        SecurityValidators.development(ctx);
         break;
       default:
-        SecurityValidators.strict(context);
+        SecurityValidators.strict(ctx);
     }
 
     // Additional custom security checks
-    await performSecurityChecks(context);
+    await performSecurityChecks(ctx);
 
-    return HookResults.success(\`Security validation passed for \${context.toolName}\`);
+    return HookResults.success(\`Security validation passed for \${ctx.toolName}\`);
   } catch (error) {
     return HookResults.block(
       error instanceof Error ? error.message : 'Security validation failed'
@@ -570,17 +506,17 @@ async function handle${this.pascalCase(name)}() {
 async function performSecurityChecks(context) {
   // Add your custom security logic here
   
-  // Example: Check for suspicious patterns
+  // Example: Check for suspicious patterns in bash commands
   if (context.toolName === 'Bash' && context.toolInput?.command) {
     const suspiciousPatterns = [
-      CURL_INJECTION_REGEX,  // Command injection via curl
-      BASE64_DECODE_REGEX,  // Base64 decoding
-      EVAL_SHELL_REGEX,  // Shell evaluation
+      /curl.*|.*sh/i,     // Piped curl to shell
+      /base64.*-d/i,       // Base64 decoding
+      /eval.*\\$\\(/i,        // Shell evaluation
     ];
 
     for (const pattern of suspiciousPatterns) {
       if (pattern.test(context.toolInput.command)) {
-        throw new Error(\`Suspicious pattern detected: \${pattern.source}\`);
+        throw new Error(\`Suspicious pattern detected in command\`);
       }
     }
   }
@@ -590,17 +526,11 @@ async function performSecurityChecks(context) {
   // Implement rate limiting logic here
 }
 
-// Main execution
 if (require.main === module) {
-  handle${this.pascalCase(name)}()
-    .then(exitWithResult)
-    .catch((error) => {
-      console.error('Hook execution failed:', error);
-      process.exit(1);
-    });
+  await runClaudeHook(handler, { timeout: 10_000 });
 }
 
-module.exports = { handle${this.pascalCase(name)} };
+module.exports = { handler };
 `;
   }
 

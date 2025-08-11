@@ -462,7 +462,7 @@ export class ConfigManager {
     };
 
     if (config.timeout !== undefined) {
-      processed.timeout = config.timeout;
+      processed.timeoutMs = config.timeout;
     }
 
     if (config.detached !== undefined) {
