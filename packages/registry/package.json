@@ -1,0 +1,51 @@
+{
+  "name": "@outfitter/registry",
+  "version": "1.0.0",
+  "description": "Plugin registry system for Claude Code hooks - enables composition of small, focused hooks through a plugin architecture",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist tsconfig.build.tsbuildinfo"
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "plugins",
+    "registry",
+    "composition",
+    "architecture"
+  ],
+  "author": "Outfitter Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/outfitter-dev/grapple",
+    "directory": "packages/registry"
+  },
+  "dependencies": {
+    "@outfitter/execution": "workspace:*",
+    "@outfitter/types": "workspace:*",
+    "@outfitter/schemas": "workspace:*",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "bun-types": "^1.0.25",
+    "typescript": "^5.3.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

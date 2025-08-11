@@ -221,7 +221,7 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'geolocation=()'); // tailor to your needs
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"
+    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'",
   );
   next();
 });

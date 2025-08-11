@@ -89,18 +89,18 @@ This index provides an organized overview of Claude Code hooks documentation and
 
 ### Environment Variables
 
-| Variable               | Availability                          | Description                                           |
-|------------------------|---------------------------------------|-------------------------------------------------------|
-| CLAUDE_EVENT_TYPE      | All hook events                       | Type of the event (e.g. PreToolUse, Notification)     |
-| CLAUDE_SESSION_ID      | All hook events                       | Current session identifier                            |
-| CLAUDE_WORKING_DIR     | All hook events                       | Working directory                                     |
-| CLAUDE_PROJECT_DIR     | Commands spawned by Claude Code       | Project directory (workspace path)                    |
-| CLAUDE_TOOL_NAME       | PreToolUse, PostToolUse               | Name of the tool invoked                              |
-| CLAUDE_TOOL_INPUT      | PreToolUse, PostToolUse               | JSON string of tool parameters                        |
-| CLAUDE_TOOL_OUTPUT     | PostToolUse                           | Tool output (≤ 32 kB; not available in detached hooks)|
-| CLAUDE_TOOL_DURATION   | PostToolUse                           | Duration of tool execution (ms)                       |
-| CLAUDE_FILE_PATHS      | PreToolUse, PostToolUse (file tools)  | Space-separated list of relevant file paths           |
-| CLAUDE_NOTIFICATION    | Notification                          | Notification message content                          |
+| Variable | Availability | Description |
+| --- | --- | --- |
+| CLAUDE_EVENT_TYPE | All hook events | Type of the event (e.g. PreToolUse, Notification) |
+| CLAUDE_SESSION_ID | All hook events | Current session identifier |
+| CLAUDE_WORKING_DIR | All hook events | Working directory |
+| CLAUDE_PROJECT_DIR | Commands spawned by Claude Code | Project directory (workspace path) |
+| CLAUDE_TOOL_NAME | PreToolUse, PostToolUse | Name of the tool invoked |
+| CLAUDE_TOOL_INPUT | PreToolUse, PostToolUse | JSON string of tool parameters |
+| CLAUDE_TOOL_OUTPUT | PostToolUse | Tool output (≤ 32 kB; not available in detached hooks) |
+| CLAUDE_TOOL_DURATION | PostToolUse | Duration of tool execution (ms) |
+| CLAUDE_FILE_PATHS | PreToolUse, PostToolUse (file tools) | Space-separated list of relevant file paths |
+| CLAUDE_NOTIFICATION | Notification | Notification message content |
 
 ## Configuration Template
 
