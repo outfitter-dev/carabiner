@@ -535,11 +535,9 @@ async function performToolSpecificValidation(
       }
       break;
 
-    default: {
-      // Exhaustive check to ensure all tool types are handled
-      const _exhaustiveCheck: never = toolName;
-      throw new Error(`Unhandled tool type: ${String(_exhaustiveCheck)}`);
-    }
+    default:
+      // No additional validation needed for this tool
+      break;
   }
 }
 
