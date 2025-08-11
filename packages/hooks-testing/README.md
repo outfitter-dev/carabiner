@@ -1,11 +1,11 @@
-# @claude-code/hooks-testing
+# @outfitter/hooks-testing
 
 Testing framework, mocks, and utilities for Claude Code hooks.
 
 ## Installation
 
 ```bash
-bun add --dev @claude-code/hooks-testing
+bun add --dev @outfitter/hooks-testing
 ```
 
 ## Usage
@@ -13,8 +13,8 @@ bun add --dev @claude-code/hooks-testing
 ### Quick Start
 
 ```typescript
-import { createMockContext, testHook, TestUtils } from '@claude-code/hooks-testing';
-import { HookResults } from '@claude-code/hooks-core';
+import { createMockContext, testHook, TestUtils } from '@outfitter/hooks-testing';
+import { HookResults } from '@outfitter/hooks-core';
 
 describe('Security Hook', () => {
   test('blocks dangerous commands', async () => {
@@ -45,7 +45,7 @@ describe('Security Hook', () => {
 ### Mock Environment Setup
 
 ```typescript
-import { mockEnv, TestUtils } from '@claude-code/hooks-testing';
+import { mockEnv, TestUtils } from '@outfitter/hooks-testing';
 
 describe('Environment Tests', () => {
   afterEach(() => {
@@ -71,7 +71,7 @@ describe('Environment Tests', () => {
 ### Tool-Specific Testing
 
 ```typescript
-import { createMockContextFor, mockToolInputs } from '@claude-code/hooks-testing';
+import { createMockContextFor, mockToolInputs } from '@outfitter/hooks-testing';
 
 describe('Tool-Specific Hooks', () => {
   test('Bash security validation', async () => {
@@ -220,7 +220,7 @@ Environment variable mocking for testing.
 
 **Example:**
 ```typescript
-import { mockEnv } from '@claude-code/hooks-testing';
+import { mockEnv } from '@outfitter/hooks-testing';
 
 // Setup mock environment
 mockEnv.setup({
@@ -269,7 +269,7 @@ Create Grep tool input.
 
 **Example:**
 ```typescript
-import { mockToolInputs } from '@claude-code/hooks-testing';
+import { mockToolInputs } from '@outfitter/hooks-testing';
 
 const bashInput = mockToolInputs.bash('ls -la', 5000);
 const writeInput = mockToolInputs.write('output.txt', 'Hello World');
@@ -368,7 +368,7 @@ await TestUtils.waitFor(async () => {
 ### Unit Testing Hooks
 
 ```typescript
-import { createMockContext, HookResults } from '@claude-code/hooks-testing';
+import { createMockContext, HookResults } from '@outfitter/hooks-testing';
 
 describe('Universal Security Hook', () => {
   const securityHook = (context) => {
@@ -427,8 +427,8 @@ describe('Universal Security Hook', () => {
 ### Integration Testing
 
 ```typescript
-import { TestUtils, mockEnv } from '@claude-code/hooks-testing';
-import { ConfigManager } from '@claude-code/hooks-config';
+import { TestUtils, mockEnv } from '@outfitter/hooks-testing';
+import { ConfigManager } from '@outfitter/hooks-config';
 
 describe('Hook Integration', () => {
   test('complete hook workflow', async () => {
@@ -467,7 +467,7 @@ describe('Hook Integration', () => {
 ### Performance Testing
 
 ```typescript
-import { TestUtils, createMockContext } from '@claude-code/hooks-testing';
+import { TestUtils, createMockContext } from '@outfitter/hooks-testing';
 
 describe('Hook Performance', () => {
   test('hook executes within timeout', async () => {
@@ -506,7 +506,7 @@ describe('Hook Performance', () => {
 ### Error Handling Tests
 
 ```typescript
-import { createMockContext, TestUtils } from '@claude-code/hooks-testing';
+import { createMockContext, TestUtils } from '@outfitter/hooks-testing';
 
 describe('Error Handling', () => {
   test('handles invalid tool input gracefully', async () => {
@@ -545,7 +545,7 @@ describe('Error Handling', () => {
 ### Parameterized Testing
 
 ```typescript
-import { createMockContextFor } from '@claude-code/hooks-testing';
+import { createMockContextFor } from '@outfitter/hooks-testing';
 
 describe('Security Hook - Dangerous Commands', () => {
   const dangerousCommands = [
@@ -598,7 +598,7 @@ import type {
   HookTestBuilder,
   MockEnvironment,
   TestUtilsType
-} from '@claude-code/hooks-testing';
+} from '@outfitter/hooks-testing';
 
 // Type-safe mock context creation
 const context: MockContextOptions<'PreToolUse', 'Bash'> = {
@@ -617,7 +617,7 @@ const testBuilder: HookTestBuilder = testHook('PreToolUse')
 ### 1. **Always Clean Up**
 
 ```typescript
-import { mockEnv } from '@claude-code/hooks-testing';
+import { mockEnv } from '@outfitter/hooks-testing';
 
 describe('My Tests', () => {
   afterEach(() => {

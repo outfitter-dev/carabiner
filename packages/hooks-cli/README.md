@@ -1,4 +1,4 @@
-# @claude-code/hooks-cli
+# @outfitter/hooks-cli
 
 Command-line tools, scaffolding, and project management for Claude Code hooks.
 
@@ -6,10 +6,10 @@ Command-line tools, scaffolding, and project management for Claude Code hooks.
 
 ```bash
 # Global installation (recommended)
-npm install -g @claude-code/hooks-cli
+npm install -g @outfitter/hooks-cli
 
 # Or use directly with npx
-npx @claude-code/hooks-cli --help
+npx @outfitter/hooks-cli --help
 ```
 
 ## Usage
@@ -315,8 +315,8 @@ claude-hooks validate --security
 Create a `hooks.config.ts` file for advanced configuration:
 
 ```typescript
-import { defineConfig } from '@claude-code/hooks-cli';
-import { templates } from '@claude-code/hooks-config';
+import { defineConfig } from '@outfitter/hooks-cli';
+import { templates } from '@outfitter/hooks-config';
 
 export default defineConfig({
   // Runtime configuration
@@ -460,7 +460,7 @@ Create custom templates in `templates/` directory:
 
 ```typescript
 // templates/my-template.ts
-import { defineTemplate } from '@claude-code/hooks-cli';
+import { defineTemplate } from '@outfitter/hooks-cli';
 
 export default defineTemplate({
   name: 'my-template',
@@ -479,7 +479,7 @@ export default defineTemplate({
     {
       path: 'hooks/custom-validator.ts',
       content: `#!/usr/bin/env bun
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
 
 runClaudeHook(async (context) => {
   console.log(\`Custom validation for \${context.toolName}\`);
@@ -489,7 +489,7 @@ runClaudeHook(async (context) => {
   ],
   
   dependencies: [
-    '@claude-code/hooks-core'
+    '@outfitter/hooks-core'
   ],
   
   postInstall: async (context) => {
@@ -545,9 +545,9 @@ jobs:
       
       - name: Validate hooks
         run: |
-          bunx @claude-code/hooks-cli validate --all
-          bunx @claude-code/hooks-cli test --dry-run
-          bunx @claude-code/hooks-cli build --validate
+          bunx @outfitter/hooks-cli validate --all
+          bunx @outfitter/hooks-cli test --dry-run
+          bunx @outfitter/hooks-cli build --validate
 ```
 
 ### IDE Integration
@@ -573,7 +573,7 @@ The CLI generates TypeScript definitions:
 
 ```typescript
 // types/hooks.d.ts (auto-generated)
-import type { HookContext, HookResult } from '@claude-code/hooks-core';
+import type { HookContext, HookResult } from '@outfitter/hooks-core';
 
 export interface ProjectHookContext extends HookContext {
   // Project-specific context extensions
@@ -677,7 +677,7 @@ claude-hooks generate --type SessionStart --name project-initialization
 For programmatic usage:
 
 ```typescript
-import { CLI, ConfigManager, TemplateEngine } from '@claude-code/hooks-cli';
+import { CLI, ConfigManager, TemplateEngine } from '@outfitter/hooks-cli';
 
 // Programmatic CLI usage
 const cli = new CLI();

@@ -1,11 +1,11 @@
-# @claude-code/hooks-core
+# @outfitter/hooks-core
 
 Core types, runtime utilities, and execution engine for Claude Code hooks TypeScript library.
 
 ## Installation
 
 ```bash
-bun add @claude-code/hooks-core
+bun add @outfitter/hooks-core
 ```
 
 ## Usage
@@ -16,7 +16,7 @@ The simplest way to create hooks using the new stdin-based runtime:
 
 ```typescript
 #!/usr/bin/env bun
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
 
 // Universal hook - runs for all tools
 runClaudeHook(async (context) => {
@@ -44,7 +44,7 @@ Fluent interface for complex hooks with middleware and tool scoping:
 
 ```typescript
 #!/usr/bin/env bun
-import { HookBuilder, middleware, runClaudeHook, HookResults } from '@claude-code/hooks-core';
+import { HookBuilder, middleware, runClaudeHook, HookResults } from '@outfitter/hooks-core';
 
 // Tool-specific hook - ONLY runs for Bash commands
 const bashSecurityHook = HookBuilder
@@ -104,7 +104,7 @@ if (import.meta.main) {
 Configuration-driven approach for managing hooks:
 
 ```typescript
-import { defineHook, HookResults, middleware } from '@claude-code/hooks-core';
+import { defineHook, HookResults, middleware } from '@outfitter/hooks-core';
 
 export const projectHooks = [
   // Universal security check (all tools)
@@ -251,7 +251,7 @@ import type {
   GetToolInput,
   HookHandler,
   HookConfig
-} from '@claude-code/hooks-core';
+} from '@outfitter/hooks-core';
 
 // Type-safe hook handler
 const handler: HookHandler = async (context) => {

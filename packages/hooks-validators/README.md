@@ -1,11 +1,11 @@
-# @claude-code/hooks-validators
+# @outfitter/hooks-validators
 
 Security validators and environment-specific validation rules for Claude Code hooks.
 
 ## Installation
 
 ```bash
-bun add @claude-code/hooks-validators
+bun add @outfitter/hooks-validators
 ```
 
 ## Usage
@@ -14,8 +14,8 @@ bun add @claude-code/hooks-validators
 
 ```typescript
 #!/usr/bin/env bun
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
-import { SecurityValidators } from '@claude-code/hooks-validators';
+import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { SecurityValidators } from '@outfitter/hooks-validators';
 
 runClaudeHook(async (context) => {
   try {
@@ -41,7 +41,7 @@ runClaudeHook(async (context) => {
 ### Tool Input Validation
 
 ```typescript
-import { validateToolInput, ToolSchemas } from '@claude-code/hooks-validators';
+import { validateToolInput, ToolSchemas } from '@outfitter/hooks-validators';
 
 runClaudeHook(async (context) => {
   // Validate tool input structure
@@ -67,7 +67,7 @@ runClaudeHook(async (context) => {
 ### Custom Validation Rules
 
 ```typescript
-import { ValidationRules, validateSchema } from '@claude-code/hooks-validators';
+import { ValidationRules, validateSchema } from '@outfitter/hooks-validators';
 
 const customSchema = {
   file_path: [
@@ -360,7 +360,7 @@ import type {
   SecurityRuleSet,
   SecurityError,
   ToolSchemaType
-} from '@claude-code/hooks-validators';
+} from '@outfitter/hooks-validators';
 
 // Type-safe validation
 const schema: ValidationSchema = {
@@ -428,8 +428,8 @@ if (result.warnings.length > 0) {
 
 ```typescript
 #!/usr/bin/env bun
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
-import { SecurityValidators, validateToolInput } from '@claude-code/hooks-validators';
+import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { SecurityValidators, validateToolInput } from '@outfitter/hooks-validators';
 
 runClaudeHook(async (context) => {
   // Always validate input structure
@@ -475,7 +475,7 @@ runClaudeHook(async (context) => {
 ### Custom Security Rules
 
 ```typescript
-import { SecurityValidators, ValidationRules } from '@claude-code/hooks-validators';
+import { SecurityValidators, ValidationRules } from '@outfitter/hooks-validators';
 
 const customSecurityRules = {
   dangerousCommands: {
@@ -522,8 +522,8 @@ runClaudeHook(async (context) => {
 ### Tool-Specific Validation
 
 ```typescript
-import { isBashToolInput, isWriteToolInput } from '@claude-code/hooks-core';
-import { ValidationRules, validateSchema } from '@claude-code/hooks-validators';
+import { isBashToolInput, isWriteToolInput } from '@outfitter/hooks-core';
+import { ValidationRules, validateSchema } from '@outfitter/hooks-validators';
 
 runClaudeHook(async (context) => {
   if (isBashToolInput(context.toolInput)) {
