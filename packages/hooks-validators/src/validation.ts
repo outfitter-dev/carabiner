@@ -30,7 +30,7 @@ export class ValidationError extends Error {
 /**
  * Validation rule interface
  */
-export interface ValidationRule<T = any> {
+export interface ValidationRule<T = unknown> {
   name: string;
   description: string;
   validate: (value: T, context?: HookContext) => boolean | Promise<boolean>;
@@ -43,7 +43,7 @@ export interface ValidationRule<T = any> {
  * Schema validation interface
  */
 export interface ValidationSchema {
-  [key: string]: ValidationRule | ValidationRule[];
+  [key: string]: ValidationRule<unknown> | ValidationRule<unknown>[];
 }
 
 /**
@@ -71,7 +71,7 @@ export const ValidationRules = {
   /**
    * Required field validation
    */
-  required<T>(fieldName: string): ValidationRule<T> {
+  required(fieldName: string): ValidationRule<unknown> {
     return {
       name: 'required',
       description: `${fieldName} is required`,
@@ -86,7 +86,7 @@ export const ValidationRules = {
   /**
    * String length validation
    */
-  minLength(min: number): ValidationRule<string> {
+  minLength(min: number): ValidationRule<unknown> {
     return {
       name: 'minLength',
       description: `Minimum length of ${min}`,
@@ -96,7 +96,7 @@ export const ValidationRules = {
     };
   },
 
-  maxLength(max: number): ValidationRule<string> {
+  maxLength(max: number): ValidationRule<unknown> {
     return {
       name: 'maxLength',
       description: `Maximum length of ${max}`,
@@ -109,7 +109,7 @@ export const ValidationRules = {
   /**
    * Pattern validation
    */
-  pattern(regex: RegExp, message?: string): ValidationRule<string> {
+  pattern(regex: RegExp, message?: string): ValidationRule<unknown> {
     return {
       name: 'pattern',
       description: `Must match pattern ${regex}`,
@@ -122,7 +122,7 @@ export const ValidationRules = {
   /**
    * File path validation
    */
-  validFilePath(allowNonExistent = false): ValidationRule<string> {
+  validFilePath(allowNonExistent = false): ValidationRule<unknown> {
     return {
       name: 'validFilePath',
       description: 'Must be a valid file path',
@@ -148,7 +148,7 @@ export const ValidationRules = {
   /**
    * File extension validation
    */
-  fileExtension(extensions: string[]): ValidationRule<string> {
+  fileExtension(extensions: string[]): ValidationRule<unknown> {
     return {
       name: 'fileExtension',
       description: `Must have extension: ${extensions.join(', ')}`,
@@ -167,7 +167,7 @@ export const ValidationRules = {
   /**
    * Number validation
    */
-  number(min?: number, max?: number): ValidationRule<any> {
+  number(min?: number, max?: number): ValidationRule<unknown> {
     return {
       name: 'number',
       description: `Must be a number${min !== undefined ? ` >= ${min}` : ''}${max !== undefined ? ` <= ${max}` : ''}`,
@@ -202,22 +202,9 @@ export const ValidationRules = {
   },
 
   /**
-   * Boolean validation
-   */
-  boolean(): ValidationRule<any> {
-    return {
-      name: 'boolean',
-      description: 'Must be a boolean value',
-      validate: (value) => typeof value === 'boolean',
-      message: 'Must be true or false',
-      severity: 'error',
-    };
-  },
-
-  /**
    * Array validation
    */
-  array(minItems?: number, maxItems?: number): ValidationRule<any> {
+  array(minItems?: number, maxItems?: number): ValidationRule<unknown> {
     return {
       name: 'array',
       description: `Must be an array${minItems ? ` with at least ${minItems} items` : ''}${maxItems ? ` with at most ${maxItems} items` : ''}`,
@@ -250,9 +237,22 @@ export const ValidationRules = {
   },
 
   /**
+   * Boolean validation
+   */
+  boolean(): ValidationRule<unknown> {
+    return {
+      name: 'boolean',
+      description: 'Must be a boolean value',
+      validate: (value) => typeof value === 'boolean',
+      message: 'Must be true or false',
+      severity: 'error',
+    };
+  },
+
+  /**
    * Custom validation rule
    */
-  custom<T>(
+  custom<T = unknown>(
     validate: (value: T, context?: HookContext) => boolean | Promise<boolean>,
     message: string | ((value: T, context?: HookContext) => string)
   ): ValidationRule<T> {
@@ -379,47 +379,88 @@ export async function validateRule<T>(
 /**
  * Validate an object against a schema
  */
-export async function validateSchema(
-  data: Record<string, any>,
-  schema: ValidationSchema,
+/**
+ * Validate a single field against its rules
+ */
+async function validateSingleField(
+  fieldName: string,
+  fieldValue: unknown,
+  rules: ValidationRule | ValidationRule[],
   context?: HookContext
-): Promise<ValidationResult> {
+): Promise<{
+  errors: ValidationResult['errors'];
+  warnings: ValidationResult['warnings'];
+}> {
+  const fieldRules = Array.isArray(rules) ? rules : [rules];
   const errors: ValidationResult['errors'] = [];
   const warnings: ValidationResult['warnings'] = [];
 
-  for (const [field, rules] of Object.entries(schema)) {
-    const fieldRules = Array.isArray(rules) ? rules : [rules];
-    const value = data[field];
+  for (const rule of fieldRules) {
+    const result = await validateRule(rule, fieldValue, context);
 
-    for (const rule of fieldRules) {
-      const result = await validateRule(rule, value, context);
+    if (!result.valid) {
+      const error = createValidationError(fieldName, rule, result.message);
 
-      if (!result.valid) {
-        const error = {
-          field,
-          message: result.message || 'Validation failed',
-          code: rule.name,
-          severity: rule.severity || 'error',
-        };
+      if (error.severity === 'warning') {
+        warnings.push(error);
+      } else {
+        errors.push(error);
+      }
 
-        if (error.severity === 'warning') {
-          warnings.push(error);
-        } else {
-          errors.push(error);
-        }
-
-        // Stop on first error for required fields
-        if (rule.required && error.severity === 'error') {
-          break;
-        }
+      // Early exit for required field errors
+      if (rule.required && error.severity === 'error') {
+        break;
       }
     }
   }
 
+  return { errors, warnings };
+}
+
+/**
+ * Create a validation error object
+ */
+function createValidationError(
+  fieldName: string,
+  rule: ValidationRule<unknown>,
+  message?: string
+): ValidationResult['errors'][0] {
   return {
-    valid: errors.length === 0,
-    errors,
-    warnings,
+    field: fieldName,
+    message: message || 'Validation failed',
+    code: rule.name,
+    severity: rule.severity || 'error',
+  };
+}
+
+/**
+ * Validate an object against a schema
+ */
+export async function validateSchema(
+  data: Record<string, unknown>,
+  schema: ValidationSchema,
+  context?: HookContext
+): Promise<ValidationResult> {
+  const allErrors: ValidationResult['errors'] = [];
+  const allWarnings: ValidationResult['warnings'] = [];
+
+  for (const [fieldName, rules] of Object.entries(schema)) {
+    const fieldValue = data[fieldName];
+    const { errors, warnings } = await validateSingleField(
+      fieldName,
+      fieldValue,
+      rules,
+      context
+    );
+
+    allErrors.push(...errors);
+    allWarnings.push(...warnings);
+  }
+
+  return {
+    valid: allErrors.length === 0,
+    errors: allErrors,
+    warnings: allWarnings,
   };
 }
 
@@ -449,7 +490,7 @@ export async function validateToolInput(
 
   // Validate input against schema
   const result = await validateSchema(
-    input as Record<string, any>,
+    input as Record<string, unknown>,
     schema,
     context
   );
@@ -493,6 +534,12 @@ async function performToolSpecificValidation(
         await validateBashOperation(input, result, context);
       }
       break;
+
+    default: {
+      // Exhaustive check to ensure all tool types are handled
+      const _exhaustiveCheck: never = toolName;
+      throw new Error(`Unhandled tool type: ${String(_exhaustiveCheck)}`);
+    }
   }
 }
 

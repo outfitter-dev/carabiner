@@ -602,16 +602,16 @@ export class ConfigManager {
       return config;
     }
 
-    return this.deepMerge<ExtendedHookConfiguration>(config, envOverrides as ExtendedHookConfiguration);
+    return this.deepMerge<ExtendedHookConfiguration>(
+      config,
+      envOverrides as ExtendedHookConfiguration
+    );
   }
 
   /**
    * Deep merge objects
    */
-  private deepMerge<T>(
-    target: T,
-    source: Partial<T>
-  ): T {
+  private deepMerge<T>(target: T, source: Partial<T>): T {
     const result = { ...target };
 
     for (const key in source) {
@@ -630,7 +630,10 @@ export class ConfigManager {
           !Array.isArray(targetValue) &&
           !Array.isArray(sourceValue)
         ) {
-          result[key] = this.deepMerge(targetValue, sourceValue) as T[Extract<keyof T, string>];
+          result[key] = this.deepMerge(targetValue, sourceValue) as T[Extract<
+            keyof T,
+            string
+          >];
         } else {
           result[key] = sourceValue as T[Extract<keyof T, string>];
         }

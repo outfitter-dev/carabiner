@@ -165,7 +165,7 @@ export function createMockContext<
     sessionId = 'test-session-123',
     workspacePath = process.cwd(),
     toolInput = {} as GetToolInput<TTool>,
-    toolOutput,
+    toolOutput: _toolOutput,
     userPrompt,
     environment = {},
   } = options;
@@ -184,7 +184,7 @@ export function createMockContext<
     toolInput,
     userPrompt,
     environment: mockEnvironment,
-    rawInput: {} as any, // Mock raw input
+    rawInput: {} as Record<string, unknown>, // Mock raw input
   };
 }
 
@@ -390,7 +390,7 @@ export const TestUtils = {
    * Assert hook result properties
    */
   assertHookResult(
-    result: any,
+    result: unknown,
     expected: {
       success?: boolean;
       message?: string;
@@ -398,6 +398,19 @@ export const TestUtils = {
       hasData?: boolean;
     }
   ): void {
+    // Type guard for result validation
+    function isValidResult(value: unknown): value is {
+      success?: boolean;
+      message?: string;
+      block?: boolean;
+      data?: unknown;
+    } {
+      return typeof value === 'object' && value !== null;
+    }
+
+    if (!isValidResult(result)) {
+      throw new Error('Result must be an object');
+    }
     if (expected.success !== undefined && result.success !== expected.success) {
       throw new Error(
         `Expected success to be ${expected.success}, got ${result.success}`

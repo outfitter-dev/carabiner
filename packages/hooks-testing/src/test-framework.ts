@@ -82,11 +82,11 @@ export class HookTestRunner {
    * Create a test suite
    */
   suite(config: TestSuiteConfig, suiteFn: () => void): void {
-    const suite = new TestSuite(config);
-    this.suites.push(suite);
+    const newSuite = new TestSuite(config);
+    this.suites.push(newSuite);
 
     const previousSuite = this.currentSuite;
-    this.currentSuite = suite;
+    this.currentSuite = newSuite;
 
     try {
       suiteFn();
@@ -98,12 +98,12 @@ export class HookTestRunner {
   /**
    * Add a test to the current suite
    */
-  test(handler: HookHandler, config: HookTestConfig): void {
+  test(handler: HookHandler, testConfig: HookTestConfig): void {
     if (!this.currentSuite) {
       throw new Error('test() must be called within a suite()');
     }
 
-    this.currentSuite.addTest(handler, config);
+    this.currentSuite.addTest(handler, testConfig);
   }
 
   /**
@@ -112,8 +112,8 @@ export class HookTestRunner {
   async run(): Promise<TestSuiteResult[]> {
     const results: TestSuiteResult[] = [];
 
-    for (const suite of this.suites) {
-      const result = await suite.run();
+    for (const testSuite of this.suites) {
+      const result = await testSuite.run();
       results.push(result);
     }
 
@@ -124,8 +124,8 @@ export class HookTestRunner {
    * Run a specific suite by name
    */
   async runSuite(name: string): Promise<TestSuiteResult | null> {
-    const suite = this.suites.find((s) => s.config.name === name);
-    return suite ? await suite.run() : null;
+    const targetSuite = this.suites.find((s) => s.config.name === name);
+    return targetSuite ? await targetSuite.run() : null;
   }
 
   /**
@@ -171,8 +171,8 @@ export class TestSuite {
   /**
    * Add test to suite
    */
-  addTest(handler: HookHandler, config: HookTestConfig): void {
-    this.tests.push(new HookTest(handler, config));
+  addTest(handler: HookHandler, testConfig: HookTestConfig): void {
+    this.tests.push(new HookTest(handler, testConfig));
   }
 
   /**
@@ -190,13 +190,13 @@ export class TestSuite {
     // Filter tests (skip, only)
     const testsToRun = this.getTestsToRun();
 
-    for (const test of testsToRun) {
+    for (const testCase of testsToRun) {
       // Run beforeEach
       if (this.config.beforeEach) {
         await Promise.resolve(this.config.beforeEach());
       }
 
-      const result = await test.run(this.config.timeout);
+      const result = await testCase.run(this.config.timeout);
       results.push(result);
 
       // Run afterEach
@@ -206,10 +206,10 @@ export class TestSuite {
     }
 
     // Add skipped tests
-    for (const test of this.tests) {
-      if (!testsToRun.includes(test)) {
+    for (const testCase of this.tests) {
+      if (!testsToRun.includes(testCase)) {
         results.push({
-          name: test.config.name,
+          name: testCase.config.name,
           passed: true,
           duration: 0,
           skipped: true,
@@ -335,7 +335,19 @@ export class HookTest {
       for (const [key, expectedValue] of Object.entries(
         this.config.expectedResult
       )) {
-        const actualValue = (result as any)[key];
+        // Type-safe property access with proper type guard
+        function hasProperty<K extends string>(
+          obj: unknown,
+          prop: K
+        ): obj is Record<K, unknown> {
+          return typeof obj === 'object' && obj !== null && prop in obj;
+        }
+
+        if (!hasProperty(result, key)) {
+          throw new Error(`Expected property '${key}' not found in result`);
+        }
+
+        const actualValue = result[key];
         if (actualValue !== expectedValue) {
           throw new Error(
             `Expected ${key} to be ${expectedValue}, got ${actualValue}`
@@ -466,12 +478,16 @@ export async function runTests(): Promise<void> {
   const stats = testRunner.getStats(results);
 
   for (const suiteResult of results) {
-    const _icon = suiteResult.passed ? '✅' : '❌';
+    const icon = suiteResult.passed ? '✅' : '❌';
+    console.log(`${icon} ${suiteResult.name}`);
 
     for (const testResult of suiteResult.tests) {
       if (testResult.skipped) {
+        console.log(`  ⏭️  ${testResult.name} (skipped)`);
       } else if (testResult.passed) {
+        console.log(`  ✅ ${testResult.name} (${testResult.duration}ms)`);
       } else if (testResult.error) {
+        console.log(`  ❌ ${testResult.name}: ${testResult.error.message}`);
       }
     }
   }
