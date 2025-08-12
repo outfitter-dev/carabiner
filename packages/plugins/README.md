@@ -30,6 +30,7 @@ Prevents dangerous git operations like force pushes and hard resets.
     "logBlocked": true
   }
 }
+
 ```
 
 ### 💾 File Backup (`file-backup`)
@@ -55,6 +56,7 @@ Automatically creates backups before file modifications.
     "excludePatterns": ["*.tmp", "**/node_modules/**"]
   }
 }
+
 ```
 
 ### 🛡️ Security Scanner (`security-scanner`)
@@ -88,6 +90,7 @@ Scans for security vulnerabilities in code and operations.
     ]
   }
 }
+
 ```
 
 ### 📊 Performance Monitor (`performance-monitor`)
@@ -113,6 +116,7 @@ Tracks execution time and resource usage.
     "enableProfiling": true
   }
 }
+
 ```
 
 ### 📋 Audit Logger (`audit-logger`)
@@ -139,6 +143,7 @@ Comprehensive logging of all Claude Code operations.
     "rotateFiles": true
   }
 }
+
 ```
 
 ## Quick Start
@@ -326,6 +331,7 @@ Run the test suite:
 
 ```bash
 bun test
+
 ```
 
 Test individual plugins:
@@ -333,6 +339,7 @@ Test individual plugins:
 ```bash
 bun test src/__tests__/git-safety.test.ts
 bun test src/__tests__/security-scanner.test.ts
+
 ```
 
 ## Contributing

@@ -10,7 +10,7 @@ Transform Claude Code hook development from manual shell scripting to **type-saf
 
 - **🛡️ Type Safety**: Compile-time validation with full IntelliSense support
 - **🔧 Multiple APIs**: Function-based, Builder pattern, and Declarative approaches
-- **🔐 Security**: Built-in validators and environment-specific protections  
+- **🔐 Security**: Built-in validators and environment-specific protections
 - **🧪 Testing**: Complete mock framework and testing utilities
 - **⚡ Performance**: Fast, efficient hook execution with proper error handling
 - **🎯 Tool Scoping**: Hooks can target specific tools or run universally
@@ -18,25 +18,30 @@ Transform Claude Code hook development from manual shell scripting to **type-saf
 ## 📦 Installation
 
 ```bash
+
 # Install the core library
+
 npm install @claude-code/hooks-core
 
 # Or install the full suite
+
 npm install @claude-code/hooks-core @claude-code/hooks-validators @claude-code/hooks-testing @claude-code/hooks-cli
+
 ```
 
 ## 🏗️ Architecture
 
 ### Monorepo Structure
 
-```
+```text
 packages/
 ├── hooks-core/           # Core types, runtime utilities, execution engine
-├── hooks-validators/     # Security validators, environment-specific rules  
+├── hooks-validators/     # Security validators, environment-specific rules
 ├── hooks-config/         # Configuration management, settings generation
 ├── hooks-testing/        # Testing framework, mocks, utilities
 ├── hooks-cli/           # CLI tools, scaffolding, project management
 └── examples/            # Real-world hook implementations
+
 ```
 
 ## 🎯 Quick Start
@@ -44,35 +49,40 @@ packages/
 ### 1. Simple Function-Based Hook
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
 
 // This hook runs for ALL tools (universal)
 runClaudeHook(async (context) => {
   console.log(`🔍 Validating ${context.toolName} usage`);
-  
+
   // Access the actual JSON input from Claude Code
   console.log(`Session: ${context.sessionId}`);
   console.log(`Working Directory: ${context.cwd}`);
   console.log(`Tool Input:`, context.toolInput);
-  
+
   // Tool-specific validation
   if (context.toolName === 'Bash') {
     const { command } = context.toolInput as { command: string };
-    
+
     if (command.includes('rm -rf /')) {
       return HookResults.block('Dangerous command blocked!');
     }
   }
-  
+
   return HookResults.success('Validation passed');
 });
+
 ```
 
 ### 2. Builder Pattern with Tool Scoping
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { HookBuilder, middleware, runClaudeHook } from '@claude-code/hooks-core';
 
 // Tool-specific hook - ONLY runs for Bash commands
@@ -85,20 +95,20 @@ const bashSecurityHook = HookBuilder
   .withMiddleware(middleware.timing())
   .withHandler(async (context) => {
     const { command } = context.toolInput as { command: string };
-    
+
     // Bash-specific security checks
     const dangerousPatterns = [
       /rm\s+-rf\s+\//,
       /sudo.*rm/,
       /curl.*\|\s*sh/
     ];
-    
+
     for (const pattern of dangerousPatterns) {
       if (pattern.test(command)) {
         return HookResults.block(`Blocked dangerous command: ${pattern.source}`);
       }
     }
-    
+
     return HookResults.success('Bash security check passed');
   })
   .build();
@@ -122,10 +132,11 @@ if (import.meta.main) {
     } else if (context.event === 'PostToolUse') {
       return await universalAuditHook.handler(context);
     }
-    
+
     return HookResults.success('No applicable hooks');
   });
 }
+
 ```
 
 ### 3. Declarative Configuration
@@ -146,10 +157,10 @@ export const projectHooks = [
     priority: 100,
     middleware: [middleware.logging('info')]
   }),
-  
+
   // Bash-specific monitoring
   defineHook({
-    event: 'PreToolUse', 
+    event: 'PreToolUse',
     tool: 'Bash', // Only for Bash
     handler: async (context) => {
       console.log(`🐚 Bash command monitoring`);
@@ -158,7 +169,7 @@ export const projectHooks = [
     },
     condition: (ctx) => Bun.env.NODE_ENV === 'production'
   }),
-  
+
   // File formatting after writes
   defineHook({
     event: 'PostToolUse',
@@ -166,7 +177,7 @@ export const projectHooks = [
     handler: async (context) => {
       const { file_path } = context.toolInput as { file_path: string };
       console.log(`🎨 Auto-formatting: ${file_path}`);
-      
+
       // Format the file
       await formatFile(file_path);
       return HookResults.success(`Formatted ${file_path}`);
@@ -174,6 +185,7 @@ export const projectHooks = [
     timeout: 30000
   })
 ];
+
 ```
 
 ## 🔧 Claude Code Integration
@@ -185,7 +197,7 @@ Your hooks receive JSON via stdin with this structure:
 ```json
 {
   "session_id": "unique-session-identifier",
-  "transcript_path": "/path/to/conversation.md", 
+  "transcript_path": "/path/to/conversation.md",
   "cwd": "/current/working/directory",
   "hook_event_name": "PreToolUse",
   "tool_name": "Bash",
@@ -195,6 +207,7 @@ Your hooks receive JSON via stdin with this structure:
   },
   "tool_response": "..." // Only present for PostToolUse
 }
+
 ```
 
 ### Hook Events
@@ -221,7 +234,7 @@ const universalHook = HookBuilder
 
 // Tool-specific hook - ONLY for Bash
 const bashHook = HookBuilder
-  .forPreToolUse() 
+  .forPreToolUse()
   .forTool('Bash')  // Scoped to Bash only
   .withHandler(async (context) => {
     // Only runs when context.toolName === 'Bash'
@@ -247,17 +260,18 @@ describe('Security Hook', () => {
       })
       .run(securityHook);
   });
-  
+
   test('allows safe commands', async () => {
     const context = createMockContext('PreToolUse', {
       toolName: 'Bash',
       toolInput: { command: 'ls -la' }
     });
-    
+
     const result = await securityHook.handler(context);
     expect(result.success).toBe(true);
   });
 });
+
 ```
 
 ## 🔐 Security & Validation
@@ -271,35 +285,42 @@ runClaudeHook(async (context) => {
     case 'production':
       SecurityValidators.production(context); // Strict rules
       break;
-    case 'development':  
+    case 'development':
       SecurityValidators.development(context); // Lenient rules
       break;
     default:
       SecurityValidators.strict(context); // Maximum security
   }
-  
+
   return HookResults.success('Security validation passed');
 });
+
 ```
 
 ## 📋 CLI Tools
 
 ```bash
+
 # Initialize hooks in your project
+
 npx @claude-code/hooks-cli init
 
-# Generate hook templates  
+# Generate hook templates
+
 npx @claude-code/hooks-cli generate \
   --type PreToolUse \
   --tool Bash \
   --name security-check
 
 # Build and validate hooks
+
 npx @claude-code/hooks-cli build --output .claude/settings.json
 npx @claude-code/hooks-cli test --hook ./hooks/pre-tool-use.ts
 
 # Development mode with watch
+
 npx @claude-code/hooks-cli dev --watch
+
 ```
 
 ## 📊 Runtime Architecture Changes
@@ -307,24 +328,28 @@ npx @claude-code/hooks-cli dev --watch
 ### ✅ New Stdin-Based Runtime
 
 **Before (Broken)**:
+
 ```typescript
 // ❌ Used environment variables
 const context = createHookContext('PreToolUse');
 const toolInput = JSON.parse(process.env.TOOL_INPUT || '{}');
+
 ```
 
-**After (Working)**:  
+**After (Working)**:
+
 ```typescript
 // ✅ Reads JSON from stdin automatically
 runClaudeHook(async (context) => {
   // All data comes from Claude Code's JSON input
   console.log(context.sessionId);    // From session_id
-  console.log(context.cwd);          // From cwd  
+  console.log(context.cwd);          // From cwd
   console.log(context.toolInput);    // From tool_input
   console.log(context.toolResponse); // From tool_response
-  
+
   return HookResults.success('Processed stdin input');
 });
+
 ```
 
 ### ✅ Tool Scoping Fixed
@@ -332,12 +357,14 @@ runClaudeHook(async (context) => {
 **Before**: All hooks ran for all tools regardless of configuration.
 
 **After**: Proper tool targeting:
+
 ```typescript
 // Only runs for Bash commands
 HookBuilder.forPreToolUse().forTool('Bash').withHandler(handler);
 
 // Runs for all tools
-HookBuilder.forPreToolUse().withHandler(handler); 
+HookBuilder.forPreToolUse().withHandler(handler);
+
 ```
 
 ## 🏆 Production Ready
@@ -352,11 +379,13 @@ HookBuilder.forPreToolUse().withHandler(handler);
 ## 📖 Documentation
 
 ### 🚀 Getting Started
+
 - [📚 Complete Documentation](docs/README.md) - Comprehensive guides and references
 - [🏁 Getting Started Guide](docs/guides/getting-started.md) - Your first hook in minutes
 - [🧠 Core Concepts](docs/guides/core-concepts.md) - Understanding hook architecture
 
 ### 📦 Package Documentation
+
 - [🔧 Core Package](packages/hooks-core/README.md) - Types, runtime, and execution engine
 - [⚙️ Configuration](packages/hooks-config/README.md) - Settings and template management
 - [🔐 Validators](packages/hooks-validators/README.md) - Security and validation rules
@@ -365,6 +394,7 @@ HookBuilder.forPreToolUse().withHandler(handler);
 - [📖 Examples](packages/examples/README.md) - Complete working examples
 
 ### 📋 Quick References
+
 - [🔌 API Reference](docs/api/) - Complete API documentation
 - [🛡️ Security Guide](docs/guides/security.md) - Security best practices
 - [🔧 Troubleshooting](docs/troubleshooting/) - Common issues and solutions
@@ -372,22 +402,29 @@ HookBuilder.forPreToolUse().withHandler(handler);
 ## 🚀 Development
 
 ```bash
+
 # Install dependencies
+
 bun install
 
-# Start development  
+# Start development
+
 bun run dev
 
 # Build all packages
+
 bun run build
 
 # Run tests
+
 bun run test
 
 # Format and lint
+
 bun run format
 bun run lint
 bun run typecheck
+
 ```
 
 ## 🤝 Contributing

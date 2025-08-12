@@ -6,13 +6,13 @@ Understanding these fundamental concepts will help you build effective and maint
 
 Hooks execute at specific points during Claude Code's operation:
 
-```mermaid
+````mermaid
 sequenceDiagram
     participant User
     participant Claude
     participant Hook
     participant Tool
-    
+
     User->>Claude: Submit prompt
     Claude->>Hook: UserPromptSubmit event
     Note over Claude: Claude processes request
@@ -27,11 +27,13 @@ sequenceDiagram
         Claude->>User: Show block message
     end
     Claude->>User: Display response
-```
+
+```text
 
 ### Event Details
 
 #### `PreToolUse`
+
 - **When**: Before any tool execution
 - **Can Block**: ✅ Yes (return `HookResults.block()`)
 - **Use Cases**: Security validation, input sanitization, permission checks
@@ -42,17 +44,19 @@ runClaudeHook(async (context) => {
   // Validate before execution
   if (context.toolName === 'Bash') {
     const { command } = context.toolInput as { command: string };
-    
+
     if (isDangerous(command)) {
       return HookResults.block('Dangerous command blocked');
     }
   }
-  
+
   return HookResults.success('Validation passed');
 });
-```
+
+```text
 
 #### `PostToolUse`
+
 - **When**: After successful tool execution
 - **Can Block**: ❌ No (processing only)
 - **Use Cases**: Result processing, logging, formatting, cleanup
@@ -63,16 +67,17 @@ runClaudeHook(async (context) => {
   // Process results after execution
   if (context.toolName === 'Write') {
     const { file_path } = context.toolInput as { file_path: string };
-    
+
     if (file_path.endsWith('.ts')) {
       await formatTypeScriptFile(file_path);
       console.log(`✅ Formatted ${file_path}`);
     }
   }
-  
+
   return HookResults.success('Post-processing complete');
 });
-```
+
+```text
 
 #### Other Events
 
@@ -83,21 +88,22 @@ runClaudeHook(async (context) => {
       console.log('🚀 New Claude Code session started');
       await initializeSession(context.sessionId);
       break;
-      
+
     case 'UserPromptSubmit':
       console.log(`📝 User submitted: ${context.userPrompt}`);
       await logUserInteraction(context.userPrompt);
       break;
-      
+
     case 'Stop':
       console.log('🛑 Session ending');
       await cleanupSession(context.sessionId);
       break;
   }
-  
+
   return HookResults.success('Event processed');
 });
-```
+
+```text
 
 ## Tool Scoping
 
@@ -123,12 +129,12 @@ Run for **all** tools when no tool is specified:
 // Hook implementation
 runClaudeHook(async (context) => {
   console.log(`🌍 Universal check for ${context.toolName}`);
-  
+
   // Handle all tools
   switch (context.toolName) {
     case 'Bash':
       return validateBashCommand(context.toolInput);
-    case 'Write': 
+    case 'Write':
       return validateFileWrite(context.toolInput);
     case 'Edit':
       return validateFileEdit(context.toolInput);
@@ -136,7 +142,8 @@ runClaudeHook(async (context) => {
       return HookResults.success('No specific validation needed');
   }
 });
-```
+
+```text
 
 ### Tool-Specific Hooks
 
@@ -159,17 +166,18 @@ Target specific tools only:
 runClaudeHook(async (context) => {
   // This ONLY runs when context.toolName === 'Bash'
   const { command, timeout } = context.toolInput as BashToolInput;
-  
+
   console.log(`🐚 Bash-specific validation: ${command}`);
-  
+
   // Bash-specific security checks
   if (command.includes('sudo')) {
     return HookResults.block('sudo commands not allowed');
   }
-  
+
   return HookResults.success('Bash validation passed');
 });
-```
+
+```text
 
 ### Mixed Configuration
 
@@ -185,7 +193,7 @@ You can combine universal and tool-specific hooks:
       },
       "Bash": {
         "command": "bun run hooks/bash-security.ts",
-        "timeout": 10000  
+        "timeout": 10000
       },
       "Write": {
         "command": "bun run hooks/file-validation.ts",
@@ -200,7 +208,8 @@ You can combine universal and tool-specific hooks:
     }
   }
 }
-```
+
+```text
 
 **Execution Order**: When both universal and tool-specific hooks exist for the same event, **both run in parallel**.
 
@@ -217,20 +226,21 @@ interface HookContext<TEvent = HookEvent, TTool = ToolName> {
   sessionId: string;                // Unique session identifier
   transcriptPath: string;           // Path to conversation transcript
   cwd: string;                      // Current working directory
-  
+
   // Tool information (for tool events)
   toolName?: TTool;                 // 'Bash', 'Write', 'Edit', etc.
   toolInput?: GetToolInput<TTool>;  // Tool-specific input parameters
   toolResponse?: string;            // Tool output (PostToolUse only)
-  
+
   // Event-specific data
   userPrompt?: string;              // User's prompt (UserPromptSubmit only)
-  
+
   // Environment
   environment: HookEnvironment;     // Environment variables
   rawInput: any;                    // Original JSON input
 }
-```
+
+```text
 
 ### Tool Input Types
 
@@ -244,7 +254,7 @@ interface BashToolInput {
   description?: string;
 }
 
-// Write tool  
+// Write tool
 interface WriteToolInput {
   file_path: string;
   content: string;
@@ -259,7 +269,8 @@ interface EditToolInput {
 }
 
 // And many more...
-```
+
+```text
 
 ### Type Guards for Safety
 
@@ -274,16 +285,17 @@ runClaudeHook(async (context) => {
     const { command, timeout } = context.toolInput;
     console.log(`Bash command: ${command}`);
   }
-  
+
   if (isWriteToolInput(context.toolInput)) {
     // context.toolInput is now typed as WriteToolInput
     const { file_path, content } = context.toolInput;
     console.log(`Writing to: ${file_path}`);
   }
-  
+
   return HookResults.success('Processed');
 });
-```
+
+```text
 
 ## Hook Results
 
@@ -298,7 +310,8 @@ return HookResults.success('Operation completed successfully', {
   toolsValidated: ['Bash', 'Write'],
   securityLevel: 'high'
 });
-```
+
+```text
 
 ### Failure Result
 
@@ -309,14 +322,16 @@ return HookResults.failure('Warning: suspicious activity detected', {
   riskLevel: 'medium',
   timestamp: new Date().toISOString()
 });
-```
+
+```text
 
 ### Block Result (PreToolUse only)
 
 ```typescript
 // This prevents the tool from executing
 return HookResults.block('Dangerous operation blocked', 'security-violation');
-```
+
+```text
 
 ### Result Properties
 
@@ -328,7 +343,8 @@ interface HookResult {
   block?: boolean;        // true if operation should be blocked
   metadata?: any;         // Optional metadata
 }
-```
+
+```text
 
 ## Runtime Architecture Changes (v2.0)
 
@@ -337,6 +353,7 @@ Understanding the runtime changes is crucial for effective hook development:
 ### ✅ Stdin-Based Input (New)
 
 **How it works:**
+
 1. Claude Code serializes hook context to JSON
 2. JSON is passed to your hook via stdin
 3. `runClaudeHook()` automatically parses and provides typed context
@@ -346,7 +363,7 @@ Understanding the runtime changes is crucial for effective hook development:
 {
   "session_id": "abc123",
   "hook_event_name": "PreToolUse",
-  "tool_name": "Bash", 
+  "tool_name": "Bash",
   "tool_input": {"command": "ls -la"},
   "cwd": "/project",
   "transcript_path": "/tmp/transcript.md"
@@ -360,7 +377,8 @@ runClaudeHook(async (context) => {
   console.log(context.cwd);         // "/project"
   // etc.
 });
-```
+
+```text
 
 ### ✅ Fixed Property Names
 
@@ -370,6 +388,7 @@ runClaudeHook(async (context) => {
 - Metadata is on the **result**, not context
 
 **Migration example:**
+
 ```typescript
 // ❌ Old (v1.x)
 const workingDir = context.workspacePath;
@@ -378,7 +397,8 @@ const output = context.toolOutput;
 // ✅ New (v2.0)
 const workingDir = context.cwd;
 const output = context.toolResponse; // PostToolUse only
-```
+
+```text
 
 ### ✅ Tool Scoping Fixed
 
@@ -397,7 +417,8 @@ const output = context.toolResponse; // PostToolUse only
     }
   }
 }
-```
+
+```text
 
 ## Advanced Patterns
 
@@ -408,21 +429,22 @@ runClaudeHook(async (context) => {
   // Environment-based logic
   const isProd = process.env.NODE_ENV === 'production';
   const isDev = process.env.NODE_ENV === 'development';
-  
+
   if (isProd && context.toolName === 'Bash') {
     // Strict validation in production
     return await strictBashValidation(context);
   }
-  
+
   if (isDev) {
     // Lenient validation in development
     return await lenientValidation(context);
   }
-  
+
   // Default validation
   return await defaultValidation(context);
 });
-```
+
+```text
 
 ### Multi-Tool Logic
 
@@ -430,22 +452,23 @@ runClaudeHook(async (context) => {
 runClaudeHook(async (context) => {
   // File operations require special handling
   const fileOperations = ['Write', 'Edit', 'MultiEdit'];
-  
+
   if (fileOperations.includes(context.toolName)) {
     return await validateFileOperation(context);
   }
-  
+
   // Network operations
   const networkOperations = ['WebFetch', 'WebSearch'];
-  
+
   if (networkOperations.includes(context.toolName)) {
     return await validateNetworkOperation(context);
   }
-  
+
   // Default handling
   return HookResults.success('No specific validation needed');
 });
-```
+
+```text
 
 ### Async Processing
 
@@ -457,19 +480,20 @@ runClaudeHook(async (context) => {
     validateCompliance(context),
     validatePerformance(context)
   ]);
-  
+
   // Check results
   const failures = validations
     .filter(result => result.status === 'rejected')
     .map(result => result.reason);
-  
+
   if (failures.length > 0) {
     return HookResults.failure(`Validations failed: ${failures.join(', ')}`);
   }
-  
+
   return HookResults.success('All validations passed');
 });
-```
+
+```text
 
 ### Error Handling
 
@@ -479,10 +503,10 @@ runClaudeHook(async (context) => {
     // Your hook logic here
     const result = await performValidation(context);
     return HookResults.success('Validation completed', result);
-    
+
   } catch (error) {
     console.error('Hook error:', error);
-    
+
     // Decide whether to block or allow with warning
     if (error.severity === 'critical') {
       return HookResults.block(`Critical error: ${error.message}`);
@@ -491,7 +515,8 @@ runClaudeHook(async (context) => {
     }
   }
 });
-```
+
+```text
 
 ## Performance Considerations
 
@@ -507,7 +532,7 @@ runClaudeHook(async (context) => {
         "timeout": 5000  // 5 seconds for quick checks
       },
       "Bash": {
-        "command": "bun run thorough-bash-check.ts", 
+        "command": "bun run thorough-bash-check.ts",
         "timeout": 15000  // 15 seconds for complex validation
       }
     },
@@ -519,7 +544,8 @@ runClaudeHook(async (context) => {
     }
   }
 }
-```
+
+```text
 
 ### Efficient Hook Design
 
@@ -530,28 +556,30 @@ runClaudeHook(async (context) => {
   if (!relevantTools.includes(context.toolName)) {
     return HookResults.success('No validation needed');
   }
-  
+
   // Cache expensive computations
   const validationRules = await getCachedValidationRules(context.cwd);
-  
+
   // Parallel processing where possible
   const [securityCheck, complianceCheck] = await Promise.all([
     validateSecurity(context, validationRules),
     validateCompliance(context, validationRules)
   ]);
-  
+
   return HookResults.success('Validation completed');
 });
-```
+
+```text
 
 ## Next Steps
 
 Now that you understand the core concepts:
 
 1. **[Development Guide](./development-guide.md)**: Learn advanced development patterns
-2. **[Configuration Guide](./configuration.md)**: Master configuration management  
+2. **[Configuration Guide](./configuration.md)**: Master configuration management
 3. **[Security Guide](./security.md)**: Implement comprehensive security validation
 4. **[API Examples](../examples/)**: See these concepts in action
 5. **[Testing Guide](./testing.md)**: Learn to test your hooks effectively
 
 The core concepts provide the foundation for building powerful, maintainable hooks that integrate seamlessly with Claude Code's workflow.
+````

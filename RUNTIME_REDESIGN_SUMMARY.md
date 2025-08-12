@@ -7,12 +7,14 @@ Successfully completed a fundamental redesign of the Claude Code hooks runtime s
 ## What Was Wrong
 
 **❌ Previous (Incorrect) Implementation:**
+
 - Assumed environment variables `TOOL_INPUT`, `TOOL_OUTPUT`, `CLAUDE_TOOL_NAME`
-- Context parsing from environment variables  
+- Context parsing from environment variables
 - Simple string-based input/output
 - Wrong field names (`workspacePath` vs `cwd`)
 
 **✅ New (Correct) Implementation:**
+
 - **Input**: JSON via stdin with structured data
 - **Output**: Exit codes + stdout/stderr OR structured JSON responses
 - **Environment**: Only `CLAUDE_PROJECT_DIR` is provided
@@ -57,6 +59,7 @@ Successfully completed a fundamental redesign of the Claude Code hooks runtime s
 ## Key Features Added
 
 ### **Stdin JSON Parsing**
+
 ```typescript
 // Automatically reads and validates JSON from stdin
 const parseResult = await parseStdinInput();
@@ -64,9 +67,11 @@ if (parseResult.success) {
   const context = createHookContext(parseResult.data);
   // Hook context now has correct Claude fields
 }
+
 ```
 
-### **Structured JSON Output** 
+### **Structured JSON Output**
+
 ```typescript
 // New output mode for advanced control
 outputHookResult(result, 'json');
@@ -75,9 +80,11 @@ outputHookResult(result, 'json');
 // Traditional exit code mode still works
 outputHookResult(result, 'exit-code');
 // Exits with: 0=success, 1=error, 2=blocking error
+
 ```
 
 ### **Complete Hook Runtime**
+
 ```typescript
 // One-line hook execution with new runtime
 runClaudeHook(myHookHandler, {
@@ -85,9 +92,11 @@ runClaudeHook(myHookHandler, {
   logLevel: 'info',
   timeout: 30000
 });
+
 ```
 
 ### **Type-Safe Context Access**
+
 ```typescript
 async function myHook(context: HookContext<'PreToolUse'>): Promise<HookResult> {
   // Access all Claude fields with full type safety
@@ -96,30 +105,35 @@ async function myHook(context: HookContext<'PreToolUse'>): Promise<HookResult> {
   console.log(context.transcriptPath); // string (new)
   console.log(context.matcher);       // string | undefined (new)
   console.log(context.rawInput);      // ClaudeHookInputVariant (new)
-  
+
   if (context.event === 'PostToolUse') {
     console.log(context.toolResponse); // Available for PostToolUse
   }
-  
+
   return HookResults.success('Hook completed');
 }
+
 ```
 
 ## Testing Results
 
-✅ **Type Compilation**: All types compile correctly  
-✅ **Stdin Parsing**: Successfully parses Claude JSON input  
-✅ **Context Creation**: Correctly creates typed contexts  
-✅ **Backward Compatibility**: Existing APIs continue to work  
-✅ **Error Handling**: Robust handling of malformed input  
+✅ **Type Compilation**: All types compile correctly
+✅ **Stdin Parsing**: Successfully parses Claude JSON input
+✅ **Context Creation**: Correctly creates typed contexts
+✅ **Backward Compatibility**: Existing APIs continue to work
+✅ **Error Handling**: Robust handling of malformed input
 
 ### Test Examples
+
 ```bash
+
 # Test stdin parsing
+
 echo '{"session_id":"test","transcript_path":"/tmp/test.md","cwd":"/tmp","hook_event_name":"SessionStart"}' | \
   bun -e 'import { parseStdinInput } from "./src/runtime.ts"; console.log(await parseStdinInput());'
 
-# Test context creation  
+# Test context creation
+
 echo '{"session_id":"test","transcript_path":"/tmp/test.md","cwd":"/tmp","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo hello"}}' | \
   bun -e 'import { parseStdinInput, createHookContext } from "./src/runtime.ts"; const result = await parseStdinInput(); console.log(createHookContext(result.data));'
 ```
@@ -129,6 +143,7 @@ echo '{"session_id":"test","transcript_path":"/tmp/test.md","cwd":"/tmp","hook_e
 ### For Existing Hook Scripts
 
 **Before (Old Way):**
+
 ```typescript
 import { createHookContext, exitWithResult } from '@claude-code/hooks-core';
 
@@ -140,9 +155,11 @@ async function myHook(): Promise<HookResult> {
 if (import.meta.main) {
   myHook().then(exitWithResult);
 }
+
 ```
 
 **After (New Way):**
+
 ```typescript
 import { runClaudeHook } from '@claude-code/hooks-core';
 
@@ -154,11 +171,13 @@ async function myHook(context: HookContext<'PreToolUse'>): Promise<HookResult> {
 if (import.meta.main) {
   runClaudeHook(myHook);
 }
+
 ```
 
 ### Context Field Changes
+
 - `context.workspacePath` → `context.cwd`
-- New: `context.transcriptPath` 
+- New: `context.transcriptPath`
 - New: `context.matcher`
 - New: `context.rawInput`
 - New: `context.toolResponse` (PostToolUse only)
@@ -166,7 +185,7 @@ if (import.meta.main) {
 ## Success Criteria Met
 
 - ✅ Runtime correctly parses Claude Code JSON input from stdin
-- ✅ All type definitions match actual Claude Code data structures  
+- ✅ All type definitions match actual Claude Code data structures
 - ✅ Existing hook handler APIs remain usable with minimal changes
 - ✅ Comprehensive error handling for malformed input
 - ✅ Support for both exit code and JSON output modes

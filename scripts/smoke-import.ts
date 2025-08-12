@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
-import * as core from '@claude-code/hooks-core';
-console.log('hooks-core VERSION:', core.VERSION);
+import { VERSION } from '@claude-code/hooks-core';
+
+console.log('hooks-core VERSION:', VERSION);
 console.log('✅ Import test passed');

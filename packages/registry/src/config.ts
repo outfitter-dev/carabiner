@@ -4,32 +4,47 @@
  * Supports JSON/TypeScript configuration files with validation and hot reload.
  */
 
-import { readFile, access } from 'node:fs/promises';
-import { resolve, dirname, extname, join } from 'node:path';
+import { access, readFile, watch } from 'node:fs/promises';
+import { extname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { watch } from 'node:fs/promises';
 import { z } from 'zod';
-import type { PluginConfig, PluginCondition } from './plugin';
+import type { PluginConfig } from './plugin';
 
 /**
  * Plugin condition schema for validation
  */
-const PluginConditionSchema = z.object({
-  type: z.enum(['env', 'context', 'tool', 'custom']),
-  field: z.string().optional(),
-  operator: z.enum(['equals', 'not_equals', 'contains', 'not_contains', 'matches', 'custom']),
-  value: z.unknown().optional(),
-}).refine((condition) => {
-  // Custom conditions don't need field/value
-  if (condition.type === 'custom') return true;
-  
-  // Other conditions need field (except tool conditions)
-  if (condition.type !== 'tool' && !condition.field) return false;
-  
-  return true;
-}, {
-  message: 'Condition must have required fields for its type'
-});
+const PluginConditionSchema = z
+  .object({
+    type: z.enum(['env', 'context', 'tool', 'custom']),
+    field: z.string().optional(),
+    operator: z.enum([
+      'equals',
+      'not_equals',
+      'contains',
+      'not_contains',
+      'matches',
+      'custom',
+    ]),
+    value: z.unknown().optional(),
+  })
+  .refine(
+    (condition) => {
+      // Custom conditions don't need field/value
+      if (condition.type === 'custom') {
+        return true;
+      }
+
+      // Other conditions need field (except tool conditions)
+      if (condition.type !== 'tool' && !condition.field) {
+        return false;
+      }
+
+      return true;
+    },
+    {
+      message: 'Condition must have required fields for its type',
+    }
+  );
 
 /**
  * Plugin configuration schema for validation
@@ -50,44 +65,62 @@ const PluginConfigSchema = z.object({
 const HookConfigSchema = z.object({
   // Plugin configurations
   plugins: z.array(PluginConfigSchema).default([]),
-  
+
   // Plugin-specific rules/settings
   rules: z.record(z.record(z.unknown())).default({}),
-  
+
   // Global settings
-  settings: z.object({
-    defaultTimeout: z.number().min(100).max(60000).default(5000),
-    continueOnFailure: z.boolean().default(false),
-    collectMetrics: z.boolean().default(true),
-    enableHotReload: z.boolean().default(false),
-    logLevel: z.enum(['debug', 'info', 'warn', 'error', 'silent']).default('info'),
-    maxConcurrency: z.number().min(1).max(100).default(10),
-  }).default({}),
-  
+  settings: z
+    .object({
+      defaultTimeout: z.number().min(100).max(60_000).default(5000),
+      continueOnFailure: z.boolean().default(false),
+      collectMetrics: z.boolean().default(true),
+      enableHotReload: z.boolean().default(false),
+      logLevel: z
+        .enum(['debug', 'info', 'warn', 'error', 'silent'])
+        .default('info'),
+      maxConcurrency: z.number().min(1).max(100).default(10),
+    })
+    .default({}),
+
   // Loader configuration
-  loader: z.object({
-    searchPaths: z.array(z.string()).default(['./plugins']),
-    includePatterns: z.array(z.string()).default(['*.plugin.js', '*.plugin.ts', '*.plugin.mjs']),
-    excludePatterns: z.array(z.string()).default(['*.test.*', '*.spec.*', '**/node_modules/**']),
-    recursive: z.boolean().default(true),
-    maxDepth: z.number().min(1).max(10).default(5),
-    enableCache: z.boolean().default(true),
-    validateOnLoad: z.boolean().default(true),
-  }).default({}),
-  
+  loader: z
+    .object({
+      searchPaths: z.array(z.string()).default(['./plugins']),
+      includePatterns: z
+        .array(z.string())
+        .default(['*.plugin.js', '*.plugin.ts', '*.plugin.mjs']),
+      excludePatterns: z
+        .array(z.string())
+        .default(['*.test.*', '*.spec.*', '**/node_modules/**']),
+      recursive: z.boolean().default(true),
+      maxDepth: z.number().min(1).max(10).default(5),
+      enableCache: z.boolean().default(true),
+      validateOnLoad: z.boolean().default(true),
+    })
+    .default({}),
+
   // Environment-specific overrides
-  environments: z.record(z.object({
-    plugins: z.array(PluginConfigSchema).optional(),
-    rules: z.record(z.record(z.unknown())).optional(),
-    settings: z.object({
-      defaultTimeout: z.number().optional(),
-      continueOnFailure: z.boolean().optional(),
-      collectMetrics: z.boolean().optional(),
-      enableHotReload: z.boolean().optional(),
-      logLevel: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
-      maxConcurrency: z.number().optional(),
-    }).optional(),
-  })).optional(),
+  environments: z
+    .record(
+      z.object({
+        plugins: z.array(PluginConfigSchema).optional(),
+        rules: z.record(z.record(z.unknown())).optional(),
+        settings: z
+          .object({
+            defaultTimeout: z.number().optional(),
+            continueOnFailure: z.boolean().optional(),
+            collectMetrics: z.boolean().optional(),
+            enableHotReload: z.boolean().optional(),
+            logLevel: z
+              .enum(['debug', 'info', 'warn', 'error', 'silent'])
+              .optional(),
+            maxConcurrency: z.number().optional(),
+          })
+          .optional(),
+      })
+    )
+    .optional(),
 });
 
 /**
@@ -96,7 +129,9 @@ const HookConfigSchema = z.object({
 export type HookConfig = z.infer<typeof HookConfigSchema>;
 export type HookConfigSettings = z.infer<typeof HookConfigSchema>['settings'];
 export type HookConfigLoader = z.infer<typeof HookConfigSchema>['loader'];
-export type EnvironmentConfig = NonNullable<z.infer<typeof HookConfigSchema>['environments']>[string];
+export type EnvironmentConfig = NonNullable<
+  z.infer<typeof HookConfigSchema>['environments']
+>[string];
 
 /**
  * Configuration load result
@@ -122,7 +157,9 @@ export interface ConfigChangeEvent {
 /**
  * Configuration change listener
  */
-export type ConfigChangeListener = (event: ConfigChangeEvent) => void | Promise<void>;
+export type ConfigChangeListener = (
+  event: ConfigChangeEvent
+) => void | Promise<void>;
 
 /**
  * Configuration loader options
@@ -153,43 +190,43 @@ interface ConfigModule {
 
 /**
  * Configuration loader class
- * 
+ *
  * Loads and manages hook configuration from various sources:
  * - TypeScript configuration files
  * - JSON configuration files
  * - Environment-specific configurations
  * - Hot reload support for development
- * 
+ *
  * @example Basic Usage
  * ```typescript
  * const loader = new ConfigLoader();
  * const { config } = await loader.load('./hooks.config.ts');
- * 
+ *
  * console.log(`Loaded ${config.plugins.length} plugin configurations`);
  * ```
- * 
+ *
  * @example With Environment
  * ```typescript
- * const loader = new ConfigLoader({ 
- *   environment: 'production' 
+ * const loader = new ConfigLoader({
+ *   environment: 'production'
  * });
- * 
+ *
  * const { config } = await loader.load('./hooks.config.js');
  * // Automatically applies production environment overrides
  * ```
- * 
+ *
  * @example With Hot Reload
  * ```typescript
- * const loader = new ConfigLoader({ 
- *   enableHotReload: true 
+ * const loader = new ConfigLoader({
+ *   enableHotReload: true
  * });
- * 
+ *
  * loader.onChange(async (event) => {
  *   if (event.type === 'changed' && event.config) {
  *     await registry.reconfigure(event.config);
  *   }
  * });
- * 
+ *
  * await loader.load('./hooks.config.ts');
  * ```
  */
@@ -208,7 +245,7 @@ export class ConfigLoader {
       hotReloadDebounce: 300,
       validate: true,
       defaults: {},
-      ...options
+      ...options,
     };
   }
 
@@ -220,46 +257,48 @@ export class ConfigLoader {
   async load(configPath?: string): Promise<ConfigLoadResult> {
     const startTime = Date.now();
     const resolvedPath = await this.resolveConfigPath(configPath);
-    
+
     try {
       const rawConfig = await this.loadConfigFile(resolvedPath);
       const config = await this.processConfig(rawConfig);
-      
+
       this.currentConfig = config;
-      
+
       // Start watching if enabled
       if (this.options.enableHotReload && resolvedPath !== this.watchedFile) {
         await this.stopWatching();
         await this.startWatching(resolvedPath);
       }
-      
+
       const result: ConfigLoadResult = {
         config,
         source: resolvedPath,
         duration: Date.now() - startTime,
-        environment: this.options.environment
+        environment: this.options.environment,
       };
-      
+
       await this.emitChange({
         type: 'loaded',
         config,
         source: resolvedPath,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
-      
+
       return result;
-      
     } catch (error) {
-      const configError = error instanceof Error ? error : new Error(String(error));
-      
+      const configError =
+        error instanceof Error ? error : new Error(String(error));
+
       await this.emitChange({
         type: 'error',
         error: configError,
         source: resolvedPath,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
-      
-      throw new Error(`Failed to load configuration from ${resolvedPath}: ${configError.message}`);
+
+      throw new Error(
+        `Failed to load configuration from ${resolvedPath}: ${configError.message}`
+      );
     }
   }
 
@@ -270,7 +309,7 @@ export class ConfigLoader {
     if (!this.watchedFile) {
       throw new Error('No configuration file is currently loaded');
     }
-    
+
     return this.load(this.watchedFile);
   }
 
@@ -292,7 +331,7 @@ export class ConfigLoader {
       await this.checkFileExists(resolved);
       return resolved;
     }
-    
+
     // Try common configuration file names
     const commonNames = [
       'hooks.config.ts',
@@ -303,7 +342,7 @@ export class ConfigLoader {
       '.hooksrc.js',
       '.hooksrc.json',
     ];
-    
+
     for (const name of commonNames) {
       const path = resolve(this.options.baseDir, name);
       try {
@@ -313,8 +352,10 @@ export class ConfigLoader {
         // Continue to next file
       }
     }
-    
-    throw new Error(`Configuration file not found. Tried: ${commonNames.join(', ')}`);
+
+    throw new Error(
+      `Configuration file not found. Tried: ${commonNames.join(', ')}`
+    );
   }
 
   /**
@@ -322,14 +363,14 @@ export class ConfigLoader {
    */
   private async loadConfigFile(filePath: string): Promise<HookConfig> {
     const ext = extname(filePath);
-    
+
     if (ext === '.json') {
       return this.loadJSONConfig(filePath);
-    } else if (ext === '.js' || ext === '.mjs' || ext === '.ts') {
-      return this.loadModuleConfig(filePath);
-    } else {
-      throw new Error(`Unsupported configuration file extension: ${ext}`);
     }
+    if (ext === '.js' || ext === '.mjs' || ext === '.ts') {
+      return this.loadModuleConfig(filePath);
+    }
+    throw new Error(`Unsupported configuration file extension: ${ext}`);
   }
 
   /**
@@ -337,13 +378,15 @@ export class ConfigLoader {
    */
   private async loadJSONConfig(filePath: string): Promise<HookConfig> {
     const content = await readFile(filePath, 'utf-8');
-    
+
     try {
       return JSON.parse(content);
     } catch (error) {
-      throw new Error(`Invalid JSON in configuration file: ${
-        error instanceof Error ? error.message : 'Unknown error'
-      }`);
+      throw new Error(
+        `Invalid JSON in configuration file: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
     }
   }
 
@@ -351,10 +394,11 @@ export class ConfigLoader {
    * Load JavaScript/TypeScript module configuration
    */
   private async loadModuleConfig(filePath: string): Promise<HookConfig> {
-    const isESModule = extname(filePath) === '.mjs' || this.isESModuleEnvironment();
-    
+    const isESModule =
+      extname(filePath) === '.mjs' || this.isESModuleEnvironment();
+
     let module: ConfigModule;
-    
+
     try {
       if (isESModule || extname(filePath) === '.ts') {
         // Use dynamic import
@@ -366,35 +410,43 @@ export class ConfigLoader {
         module = require(filePath);
       }
     } catch (error) {
-      throw new Error(`Failed to load configuration module: ${
-        error instanceof Error ? error.message : 'Unknown error'
-      }`);
+      throw new Error(
+        `Failed to load configuration module: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
     }
-    
+
     return this.extractConfigFromModule(module);
   }
 
   /**
    * Extract configuration from loaded module
    */
-  private async extractConfigFromModule(module: ConfigModule): Promise<HookConfig> {
+  private async extractConfigFromModule(
+    module: ConfigModule
+  ): Promise<HookConfig> {
     // Try default export
     if (module.default !== undefined) {
       const config = await this.resolveConfigValue(module.default);
-      if (config) return config;
+      if (config) {
+        return config;
+      }
     }
-    
+
     // Try named export
     if (module.config !== undefined) {
       const config = await this.resolveConfigValue(module.config);
-      if (config) return config;
+      if (config) {
+        return config;
+      }
     }
-    
+
     // Check if the entire module is the config
     if (this.isConfigLike(module)) {
       return module as HookConfig;
     }
-    
+
     throw new Error('No valid configuration found in module');
   }
 
@@ -406,11 +458,11 @@ export class ConfigLoader {
       const result = (value as () => HookConfig | Promise<HookConfig>)();
       return result instanceof Promise ? await result : result;
     }
-    
+
     if (this.isConfigLike(value)) {
       return value as HookConfig;
     }
-    
+
     return null;
   }
 
@@ -422,19 +474,21 @@ export class ConfigLoader {
   private async processConfig(rawConfig: unknown): Promise<HookConfig> {
     // Merge with defaults
     const mergedConfig = this.mergeConfigs(this.options.defaults, rawConfig);
-    
+
     // Validate configuration
     if (this.options.validate) {
       try {
         const validated = HookConfigSchema.parse(mergedConfig);
         return this.applyEnvironmentOverrides(validated);
       } catch (error) {
-        throw new Error(`Configuration validation failed: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`);
+        throw new Error(
+          `Configuration validation failed: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
+        );
       }
     }
-    
+
     return this.applyEnvironmentOverrides(mergedConfig as HookConfig);
   }
 
@@ -442,15 +496,15 @@ export class ConfigLoader {
    * Apply environment-specific overrides
    */
   private applyEnvironmentOverrides(config: HookConfig): HookConfig {
-    if (!config.environments || !config.environments[this.options.environment]) {
+    if (!config.environments?.[this.options.environment]) {
       return config;
     }
-    
+
     const envOverrides = config.environments[this.options.environment];
     if (!envOverrides) {
       return config;
     }
-    
+
     return this.mergeConfigs(config, {
       plugins: envOverrides.plugins || config.plugins,
       rules: { ...config.rules, ...envOverrides.rules },
@@ -462,20 +516,22 @@ export class ConfigLoader {
    * Deep merge configuration objects
    */
   private mergeConfigs(base: unknown, override: unknown): unknown {
-    if (!this.isPlainObject(base) || !this.isPlainObject(override)) {
+    if (!(this.isPlainObject(base) && this.isPlainObject(override))) {
       return override !== undefined ? override : base;
     }
-    
-    const result = { ...base as Record<string, unknown> };
-    
-    for (const [key, value] of Object.entries(override as Record<string, unknown>)) {
+
+    const result = { ...(base as Record<string, unknown>) };
+
+    for (const [key, value] of Object.entries(
+      override as Record<string, unknown>
+    )) {
       if (this.isPlainObject(value) && this.isPlainObject(result[key])) {
         result[key] = this.mergeConfigs(result[key], value);
       } else {
         result[key] = value;
       }
     }
-    
+
     return result;
   }
 
@@ -488,18 +544,18 @@ export class ConfigLoader {
     if (!this.options.enableHotReload) {
       return;
     }
-    
+
     this.watcher = new AbortController();
     this.watchedFile = filePath;
-    
+
     try {
       const watcher = watch(filePath, { signal: this.watcher.signal });
-      
+
       const debouncedHandler = this.debounce(
         this.handleConfigChange.bind(this),
         this.options.hotReloadDebounce
       );
-      
+
       for await (const event of watcher) {
         if (event.eventType === 'change') {
           debouncedHandler(filePath);
@@ -529,19 +585,19 @@ export class ConfigLoader {
   private async handleConfigChange(filePath: string): Promise<void> {
     try {
       const result = await this.load(filePath);
-      
+
       await this.emitChange({
         type: 'changed',
         config: result.config,
         source: filePath,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     } catch (error) {
       await this.emitChange({
         type: 'error',
         error: error instanceof Error ? error : new Error(String(error)),
         source: filePath,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
   }
@@ -571,14 +627,14 @@ export class ConfigLoader {
    * Emit configuration change event
    */
   private async emitChange(event: ConfigChangeEvent): Promise<void> {
-    const promises = this.changeListeners.map(async listener => {
+    const promises = this.changeListeners.map(async (listener) => {
       try {
         await listener(event);
       } catch (error) {
         console.error('[ConfigLoader] Change listener error:', error);
       }
     });
-    
+
     await Promise.all(promises);
   }
 
@@ -597,10 +653,16 @@ export class ConfigLoader {
   }
 
   private isConfigLike(value: unknown): boolean {
-    return this.isPlainObject(value) && 
-           (value as any).plugins !== undefined ||
-           (value as any).rules !== undefined ||
-           (value as any).settings !== undefined;
+    if (!this.isPlainObject(value)) {
+      return false;
+    }
+
+    const obj = value as Record<string, unknown>;
+    return (
+      obj.plugins !== undefined ||
+      obj.rules !== undefined ||
+      obj.settings !== undefined
+    );
   }
 
   private isESModuleEnvironment(): boolean {
@@ -617,7 +679,7 @@ export class ConfigLoader {
     wait: number
   ): (...args: Parameters<T>) => void {
     let timeout: NodeJS.Timeout;
-    
+
     return (...args: Parameters<T>) => {
       clearTimeout(timeout);
       timeout = setTimeout(() => func(...args), wait);
@@ -659,7 +721,7 @@ export function createDefaultConfig(): HookConfig {
       maxDepth: 5,
       enableCache: true,
       validateOnLoad: true,
-    }
+    },
   };
 }
 

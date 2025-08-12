@@ -2,33 +2,33 @@
  * Tests for tool input types and type guards
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
+  type BashToolInput,
+  type EditToolInput,
+  type GlobToolInput,
+  type GrepToolInput,
   isBashToolInput,
-  isWriteToolInput,
   isEditToolInput,
-  isReadToolInput,
-  isMultiEditToolInput,
   isGlobToolInput,
   isGrepToolInput,
   isLSToolInput,
+  isMultiEditToolInput,
+  isNotebookEditToolInput,
+  isReadToolInput,
   isTodoWriteToolInput,
   isWebFetchToolInput,
   isWebSearchToolInput,
-  isNotebookEditToolInput,
-  type BashToolInput,
-  type WriteToolInput,
-  type EditToolInput,
-  type ReadToolInput,
-  type MultiEditInput,
-  type GlobToolInput,
-  type GrepToolInput,
+  isWriteToolInput,
   type LSToolInput,
+  type MultiEditInput,
+  type NotebookEditToolInput,
+  type ReadToolInput,
   type TodoWriteToolInput,
+  type ToolInputMap,
   type WebFetchToolInput,
   type WebSearchToolInput,
-  type NotebookEditToolInput,
-  type ToolInputMap,
+  type WriteToolInput,
 } from '../tools.js';
 
 describe('BashToolInput', () => {
@@ -36,7 +36,7 @@ describe('BashToolInput', () => {
     const validInputs: BashToolInput[] = [
       { command: 'ls -la' },
       { command: 'echo "hello"', description: 'Print hello' },
-      { command: 'npm test', description: 'Run tests', timeout: 30000 },
+      { command: 'npm test', description: 'Run tests', timeout: 30_000 },
     ];
 
     for (const input of validInputs) {
@@ -57,7 +57,7 @@ describe('BashToolInput', () => {
     for (const input of invalidInputs) {
       expect(isBashToolInput(input)).toBe(false);
     }
-    
+
     // Empty string is technically valid for the type guard (runtime validation happens elsewhere)
     expect(isBashToolInput({ command: '' })).toBe(true);
   });
@@ -68,7 +68,10 @@ describe('WriteToolInput', () => {
     const validInputs: WriteToolInput[] = [
       { file_path: '/tmp/test.txt', content: 'Hello world' },
       { file_path: '/home/user/file.js', content: '' },
-      { file_path: '/project/src/index.ts', content: 'export const hello = "world";' },
+      {
+        file_path: '/project/src/index.ts',
+        content: 'export const hello = "world";',
+      },
     ];
 
     for (const input of validInputs) {
@@ -96,16 +99,16 @@ describe('WriteToolInput', () => {
 describe('EditToolInput', () => {
   test('identifies valid Edit tool input', () => {
     const validInputs: EditToolInput[] = [
-      { 
-        file_path: '/tmp/test.txt', 
-        old_string: 'old text', 
-        new_string: 'new text' 
+      {
+        file_path: '/tmp/test.txt',
+        old_string: 'old text',
+        new_string: 'new text',
       },
-      { 
-        file_path: '/home/user/file.js', 
-        old_string: 'const x = 1', 
+      {
+        file_path: '/home/user/file.js',
+        old_string: 'const x = 1',
         new_string: 'const x = 2',
-        replace_all: true 
+        replace_all: true,
       },
     ];
 
@@ -232,12 +235,12 @@ describe('GrepToolInput', () => {
     const validInputs: GrepToolInput[] = [
       { pattern: 'search term' },
       { pattern: 'function\\s+\\w+', path: '/project/src' },
-      { 
-        pattern: 'TODO', 
-        glob: '*.ts', 
+      {
+        pattern: 'TODO',
+        glob: '*.ts',
         output_mode: 'content',
         head_limit: 10,
-        multiline: true 
+        multiline: true,
       },
     ];
 
@@ -300,9 +303,7 @@ describe('TodoWriteToolInput', () => {
         ],
       },
       {
-        todos: [
-          { content: 'Fix bug', status: 'completed', id: 'bug-123' },
-        ],
+        todos: [{ content: 'Fix bug', status: 'completed', id: 'bug-123' }],
       },
     ];
 
@@ -323,7 +324,7 @@ describe('TodoWriteToolInput', () => {
     for (const input of invalidInputs) {
       expect(isTodoWriteToolInput(input)).toBe(false);
     }
-    
+
     // Empty array is technically valid for the type guard (runtime validation happens elsewhere)
     expect(isTodoWriteToolInput({ todos: [] })).toBe(true);
   });
@@ -362,10 +363,10 @@ describe('WebSearchToolInput', () => {
   test('identifies valid WebSearch tool input', () => {
     const validInputs: WebSearchToolInput[] = [
       { query: 'TypeScript hooks' },
-      { 
-        query: 'Claude Code integration', 
+      {
+        query: 'Claude Code integration',
         allowed_domains: ['docs.anthropic.com'],
-        blocked_domains: ['spam.com'] 
+        blocked_domains: ['spam.com'],
       },
     ];
 
@@ -394,12 +395,12 @@ describe('NotebookEditToolInput', () => {
   test('identifies valid NotebookEdit tool input', () => {
     const validInputs: NotebookEditToolInput[] = [
       { notebook_path: '/tmp/notebook.ipynb', new_source: 'print("hello")' },
-      { 
-        notebook_path: '/project/analysis.ipynb', 
+      {
+        notebook_path: '/project/analysis.ipynb',
         new_source: '# Analysis\n\nThis is markdown',
         cell_id: 'cell-123',
         cell_type: 'markdown',
-        edit_mode: 'replace'
+        edit_mode: 'replace',
       },
     ];
 
@@ -446,7 +447,7 @@ describe('Type system consistency', () => {
     // Check that ToolInputMap has all expected keys
     type ToolInputMapKeys = keyof ToolInputMap;
     const toolMapKeys: ToolInputMapKeys[] = expectedTools;
-    
+
     // This should compile without issues
     expect(toolMapKeys.length).toBe(12);
   });

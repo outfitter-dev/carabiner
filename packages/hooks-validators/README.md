@@ -6,6 +6,7 @@ Security validators and environment-specific validation rules for Claude Code ho
 
 ```bash
 bun add @outfitter/hooks-validators
+
 ```
 
 ## Usage
@@ -13,7 +14,9 @@ bun add @outfitter/hooks-validators
 ### Quick Security Validation
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
 import { SecurityValidators } from '@outfitter/hooks-validators';
 
@@ -36,6 +39,7 @@ runClaudeHook(async (context) => {
     return HookResults.block(error.message);
   }
 });
+
 ```
 
 ### Tool Input Validation
@@ -202,6 +206,7 @@ Pre-built validation schemas for all Claude Code tools:
   timeout: ValidationRules.number(100, 300000),
   description: ValidationRules.maxLength(500)
 }
+
 ```
 
 #### `ToolSchemas.Write`
@@ -217,6 +222,7 @@ Pre-built validation schemas for all Claude Code tools:
     ValidationRules.maxLength(1000000) // 1MB limit
   ]
 }
+
 ```
 
 #### `ToolSchemas.Edit`
@@ -234,6 +240,7 @@ Pre-built validation schemas for all Claude Code tools:
   new_string: ValidationRules.required('new_string'),
   replace_all: ValidationRules.boolean()
 }
+
 ```
 
 ## Security Rules
@@ -428,7 +435,9 @@ if (result.warnings.length > 0) {
 ### Environment-Specific Hook
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
 import { SecurityValidators, validateToolInput } from '@outfitter/hooks-validators';
 
@@ -467,6 +476,7 @@ runClaudeHook(async (context) => {
     return HookResults.block(`Security validation failed: ${error.message}`);
   }
 });
+
 ```
 
 ### Custom Security Rules

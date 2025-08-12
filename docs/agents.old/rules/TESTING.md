@@ -111,11 +111,15 @@ expect(mockedFn).toHaveBeenCalled();
 ### Running Coverage
 
 ```bash
+
 # Bun native coverage
+
 bun test --coverage
 
 # Vitest coverage
+
 vitest run --coverage
+
 ```
 
 ## Performance Testing

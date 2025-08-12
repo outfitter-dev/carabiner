@@ -9,7 +9,7 @@ This guide provides troubleshooting solutions, debugging techniques, and best pr
 1. [Common Issues and Solutions](#common-issues-and-solutions)
 2. [Debugging Techniques](#debugging-techniques)
 3. [Best Practices](#best-practices)
-4. [Performance Optimization](#performance-optimization)
+4. [Performance Optimization](#4-performance-optimization)
 5. [Security Guidelines](#security-guidelines)
 6. [Testing and Validation](#testing-and-validation)
 
@@ -41,17 +41,22 @@ This guide provides troubleshooting solutions, debugging techniques, and best pr
     }
   }
 }
+
 ```
 
 #### Settings File Not Found
 
 ```bash
+
 # Check if settings file exists
+
 ls -la .claude/settings.json
 ls -la ~/.claude/settings.json
 
 # Verify JSON syntax
+
 cat .claude/settings.json | json_pp
+
 ```
 
 #### Wrong Tool Name
@@ -76,6 +81,7 @@ cat .claude/settings.json | json_pp
     }
   }
 }
+
 ```
 
 ### 2. Hook Times Out
@@ -281,7 +287,9 @@ Enable debugging:
 
 ```bash
 export CLAUDE_HOOK_DEBUG=true
+
 # Run Claude Code operations to see debug output
+
 ```
 
 ### 2. Hook Execution Tracing
@@ -289,6 +297,7 @@ export CLAUDE_HOOK_DEBUG=true
 Create a tracing wrapper (`scripts/trace-hook.ts`):
 
 ```typescript
+
 #!/usr/bin/env bun
 
 import { spawn } from 'child_process';
@@ -351,6 +360,7 @@ function traceHookExecution(command: string[], hookType: string, toolName: strin
 // Usage: bun run trace-hook.ts PreToolUse Bash bun run my-hook.ts
 const [, , hookType, toolName, ...command] = process.argv;
 traceHookExecution(command, hookType, toolName);
+
 ```
 
 ### 3. Hook Testing Framework
@@ -358,6 +368,7 @@ traceHookExecution(command, hookType, toolName);
 Create a test harness (`scripts/test-hook.ts`):
 
 ```typescript
+
 #!/usr/bin/env bun
 
 import { spawn } from 'child_process';
@@ -467,6 +478,7 @@ if (!hookScript) {
 }
 
 runAllTests(hookScript);
+
 ```
 
 ## Best Practices
@@ -855,12 +867,15 @@ async function runHookWithInput(scriptPath: string, env: Record<string, string>)
 ### 3. End-to-End Testing
 
 ```bash
+
 #!/bin/bash
+
 # scripts/test-hooks-e2e.sh
 
 echo "Testing Claude Code hooks end-to-end..."
 
 # Test 1: Safe command should succeed
+
 echo "Test 1: Safe bash command"
 export CLAUDE_TOOL_NAME="Bash"
 export TOOL_INPUT='{"command": "echo hello"}'
@@ -873,6 +888,7 @@ else
 fi
 
 # Test 2: Dangerous command should be blocked
+
 echo "Test 2: Dangerous bash command"
 export TOOL_INPUT='{"command": "rm -rf /"}'
 bun run hooks/pre-tool-use.ts
@@ -884,6 +900,7 @@ else
 fi
 
 echo "All end-to-end tests passed!"
+
 ```
 
 This comprehensive troubleshooting and best practices guide should help developers successfully implement, debug, and maintain Claude Code hooks in their projects.

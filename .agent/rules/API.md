@@ -16,6 +16,7 @@ DELETE /api/users/:id      // Delete user
 // Nested resources
 GET    /api/users/:userId/posts
 POST   /api/users/:userId/posts
+
 ```
 
 ### API Versioning
@@ -29,6 +30,7 @@ POST   /api/users/:userId/posts
 headers: {
   'API-Version': '2.0'
 }
+
 ```
 
 ## Request/Response Standards
@@ -214,7 +216,10 @@ export async function requireAuth(req: Request, next: () => Promise<Response>): 
 class RateLimiter {
   private requests = new Map<string, number[]>();
 
-  constructor(private windowMs: number, private maxRequests: number) {}
+  constructor(
+    private windowMs: number,
+    private maxRequests: number,
+  ) {}
 
   async limit(req: Request): Promise<Response | null> {
     const ip = req.headers.get('CF-Connecting-IP') || 'unknown';

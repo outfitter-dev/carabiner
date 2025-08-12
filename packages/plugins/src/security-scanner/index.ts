@@ -1,7 +1,7 @@
 /**
  * @file security-scanner/index.ts
  * @description Security scanner plugin - detects potential security issues in code and operations
- * 
+ *
  * This plugin scans for security vulnerabilities including:
  * - Hardcoded secrets and API keys
  * - Dangerous command patterns
@@ -9,10 +9,10 @@
  * - Common security anti-patterns
  */
 
-import { z } from 'zod';
 import { readFile } from 'node:fs/promises';
-import type { HookPlugin, PluginResult } from '../../../registry/src';
 import type { HookContext } from '@outfitter/types';
+import { z } from 'zod';
+import type { HookPlugin, PluginResult } from '../../../registry/src';
 
 /**
  * Security finding severity levels
@@ -52,60 +52,98 @@ interface SecurityRule {
 /**
  * Security scanner plugin configuration schema
  */
-const SecurityScannerConfigSchema = z.object({
-  /** Whether to scan bash commands */
-  scanCommands: z.boolean().default(true),
-  
-  /** Whether to scan file contents */
-  scanFiles: z.boolean().default(true),
-  
-  /** Maximum file size to scan (bytes) */
-  maxFileSize: z.number().min(0).default(1024 * 1024), // 1MB
-  
-  /** File patterns to include in scanning */
-  includePatterns: z.array(z.string()).default([
-    '*.js', '*.ts', '*.jsx', '*.tsx', '*.py', '*.java', '*.go', '*.php', 
-    '*.rb', '*.rs', '*.c', '*.cpp', '*.h', '*.cs', '*.json', '*.yaml', 
-    '*.yml', '*.xml', '*.env', '*.config', '*.conf'
-  ]),
-  
-  /** File patterns to exclude from scanning */
-  excludePatterns: z.array(z.string()).default([
-    '**/node_modules/**', '**/vendor/**', '**/.git/**', 
-    '**/dist/**', '**/build/**', '*.min.*', '*.bundle.*'
-  ]),
-  
-  /** Minimum severity level to report */
-  minSeverity: z.enum(['critical', 'high', 'medium', 'low', 'info']).default('medium'),
-  
-  /** Whether to block on critical/high severity findings */
-  blockOnCritical: z.boolean().default(true),
-  
-  /** Whether to block on high severity findings */
-  blockOnHigh: z.boolean().default(false),
-  
-  /** Custom security rules */
-  customRules: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    pattern: z.string(),
-    severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
-    category: z.string(),
-    description: z.string(),
-    remediation: z.string().optional(),
-    flags: z.string().optional(),
-    fileTypes: z.array(z.string()).optional(),
-  })).default([]),
-  
-  /** Whether to log all findings */
-  logFindings: z.boolean().default(true),
-  
-  /** Whether to include line context in findings */
-  includeContext: z.boolean().default(true),
-  
-  /** Number of context lines to include around findings */
-  contextLines: z.number().min(0).max(10).default(2),
-}).default({});
+const SecurityScannerConfigSchema = z
+  .object({
+    /** Whether to scan bash commands */
+    scanCommands: z.boolean().default(true),
+
+    /** Whether to scan file contents */
+    scanFiles: z.boolean().default(true),
+
+    /** Maximum file size to scan (bytes) */
+    maxFileSize: z
+      .number()
+      .min(0)
+      .default(1024 * 1024), // 1MB
+
+    /** File patterns to include in scanning */
+    includePatterns: z
+      .array(z.string())
+      .default([
+        '*.js',
+        '*.ts',
+        '*.jsx',
+        '*.tsx',
+        '*.py',
+        '*.java',
+        '*.go',
+        '*.php',
+        '*.rb',
+        '*.rs',
+        '*.c',
+        '*.cpp',
+        '*.h',
+        '*.cs',
+        '*.json',
+        '*.yaml',
+        '*.yml',
+        '*.xml',
+        '*.env',
+        '*.config',
+        '*.conf',
+      ]),
+
+    /** File patterns to exclude from scanning */
+    excludePatterns: z
+      .array(z.string())
+      .default([
+        '**/node_modules/**',
+        '**/vendor/**',
+        '**/.git/**',
+        '**/dist/**',
+        '**/build/**',
+        '*.min.*',
+        '*.bundle.*',
+      ]),
+
+    /** Minimum severity level to report */
+    minSeverity: z
+      .enum(['critical', 'high', 'medium', 'low', 'info'])
+      .default('medium'),
+
+    /** Whether to block on critical/high severity findings */
+    blockOnCritical: z.boolean().default(true),
+
+    /** Whether to block on high severity findings */
+    blockOnHigh: z.boolean().default(false),
+
+    /** Custom security rules */
+    customRules: z
+      .array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          pattern: z.string(),
+          severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+          category: z.string(),
+          description: z.string(),
+          remediation: z.string().optional(),
+          flags: z.string().optional(),
+          fileTypes: z.array(z.string()).optional(),
+        })
+      )
+      .default([]),
+
+    /** Whether to log all findings */
+    logFindings: z.boolean().default(true),
+
+    /** Whether to include line context in findings */
+    includeContext: z.boolean().default(true),
+
+    /** Number of context lines to include around findings */
+    contextLines: z.number().min(0).max(10).default(2),
+  })
+  .default({});
 
 type SecurityScannerConfig = z.infer<typeof SecurityScannerConfigSchema>;
 
@@ -121,7 +159,8 @@ const BUILT_IN_RULES: SecurityRule[] = [
     severity: 'critical',
     category: 'secrets',
     description: 'Hardcoded API key detected',
-    remediation: 'Move API keys to environment variables or secure configuration'
+    remediation:
+      'Move API keys to environment variables or secure configuration',
   },
   {
     id: 'aws-access-key',
@@ -130,7 +169,8 @@ const BUILT_IN_RULES: SecurityRule[] = [
     severity: 'critical',
     category: 'secrets',
     description: 'AWS Access Key ID detected',
-    remediation: 'Remove AWS credentials and use IAM roles or environment variables'
+    remediation:
+      'Remove AWS credentials and use IAM roles or environment variables',
   },
   {
     id: 'private-key',
@@ -139,7 +179,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
     severity: 'critical',
     category: 'secrets',
     description: 'Private key detected',
-    remediation: 'Remove private keys from code and store securely'
+    remediation: 'Remove private keys from code and store securely',
   },
   {
     id: 'password-hardcoded',
@@ -148,7 +188,8 @@ const BUILT_IN_RULES: SecurityRule[] = [
     severity: 'high',
     category: 'secrets',
     description: 'Hardcoded password detected',
-    remediation: 'Use environment variables or secure configuration for passwords'
+    remediation:
+      'Use environment variables or secure configuration for passwords',
   },
   {
     id: 'jwt-token',
@@ -157,9 +198,9 @@ const BUILT_IN_RULES: SecurityRule[] = [
     severity: 'high',
     category: 'secrets',
     description: 'JWT token detected',
-    remediation: 'Avoid hardcoding JWT tokens in source code'
+    remediation: 'Avoid hardcoding JWT tokens in source code',
   },
-  
+
   // Command Injection
   {
     id: 'command-injection-bash',
@@ -168,18 +209,19 @@ const BUILT_IN_RULES: SecurityRule[] = [
     severity: 'high',
     category: 'injection',
     description: 'Potential command injection vulnerability',
-    remediation: 'Sanitize input and use parameterized commands'
+    remediation: 'Sanitize input and use parameterized commands',
   },
   {
     id: 'dangerous-bash-commands',
     name: 'Dangerous Bash Commands',
-    pattern: '\\b(rm\\s+-rf\\s+/|dd\\s+if=/dev/zero|:(\\){\\||shutdown|halt|reboot)\\b',
+    pattern:
+      '\\b(rm\\s+-rf\\s+/|dd\\s+if=/dev/zero|:(\\){\\||shutdown|halt|reboot)\\b',
     severity: 'high',
     category: 'dangerous-commands',
     description: 'Dangerous system command detected',
-    remediation: 'Review and secure dangerous system commands'
+    remediation: 'Review and secure dangerous system commands',
   },
-  
+
   // SQL Injection
   {
     id: 'sql-injection',
@@ -188,9 +230,9 @@ const BUILT_IN_RULES: SecurityRule[] = [
     severity: 'high',
     category: 'injection',
     description: 'Potential SQL injection vulnerability',
-    remediation: 'Use parameterized queries or prepared statements'
+    remediation: 'Use parameterized queries or prepared statements',
   },
-  
+
   // Insecure Configurations
   {
     id: 'debug-mode',
@@ -199,7 +241,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
     severity: 'medium',
     category: 'configuration',
     description: 'Debug mode enabled in configuration',
-    remediation: 'Disable debug mode in production environments'
+    remediation: 'Disable debug mode in production environments',
   },
   {
     id: 'insecure-http',
@@ -209,9 +251,9 @@ const BUILT_IN_RULES: SecurityRule[] = [
     category: 'network',
     description: 'Insecure HTTP URL detected',
     remediation: 'Use HTTPS URLs for secure communication',
-    fileTypes: ['js', 'ts', 'py', 'java', 'go', 'php']
+    fileTypes: ['js', 'ts', 'py', 'java', 'go', 'php'],
   },
-  
+
   // Crypto Issues
   {
     id: 'weak-crypto',
@@ -220,9 +262,9 @@ const BUILT_IN_RULES: SecurityRule[] = [
     severity: 'medium',
     category: 'cryptography',
     description: 'Weak cryptographic algorithm detected',
-    remediation: 'Use stronger cryptographic algorithms like SHA-256 or AES'
+    remediation: 'Use stronger cryptographic algorithms like SHA-256 or AES',
   },
-  
+
   // File System Issues
   {
     id: 'path-traversal',
@@ -231,8 +273,8 @@ const BUILT_IN_RULES: SecurityRule[] = [
     severity: 'high',
     category: 'path-traversal',
     description: 'Potential path traversal vulnerability',
-    remediation: 'Validate and sanitize file paths'
-  }
+    remediation: 'Validate and sanitize file paths',
+  },
 ];
 
 /**
@@ -247,8 +289,11 @@ function getSeverityLevel(severity: Severity): number {
  * Check if file matches patterns
  */
 function matchesPatterns(filePath: string, patterns: string[]): boolean {
-  return patterns.some(pattern => {
-    const regex = new RegExp(pattern.replace(/\*/g, '.*').replace(/\?/g, '.'), 'i');
+  return patterns.some((pattern) => {
+    const regex = new RegExp(
+      pattern.replace(/\*/g, '.*').replace(/\?/g, '.'),
+      'i'
+    );
     return regex.test(filePath);
   });
 }
@@ -271,33 +316,37 @@ function scanContent(
   config: SecurityScannerConfig
 ): SecurityFinding[] {
   const findings: SecurityFinding[] = [];
-  const lines = content.split('\n');
+  const _lines = content.split('\n');
   const fileExt = getFileExtension(filePath);
-  
+
   for (const rule of rules) {
     // Skip rule if it doesn't apply to this file type
-    if (rule.fileTypes && rule.fileTypes.length > 0) {
-      if (!rule.fileTypes.includes(fileExt)) {
-        continue;
-      }
-    }
-    
-    // Skip if severity is below minimum
-    if (getSeverityLevel(rule.severity) < getSeverityLevel(config.minSeverity)) {
+    if (
+      rule.fileTypes &&
+      rule.fileTypes.length > 0 &&
+      !rule.fileTypes.includes(fileExt)
+    ) {
       continue;
     }
-    
+
+    // Skip if severity is below minimum
+    if (
+      getSeverityLevel(rule.severity) < getSeverityLevel(config.minSeverity)
+    ) {
+      continue;
+    }
+
     try {
       const flags = rule.flags || 'gm';
       const regex = new RegExp(rule.pattern, flags);
-      
-      let match;
-      while ((match = regex.exec(content)) !== null) {
+
+      let match: RegExpExecArray | null = regex.exec(content);
+      while (match !== null) {
         // Find line number
         const beforeMatch = content.substring(0, match.index);
         const lineNumber = beforeMatch.split('\n').length;
         const columnNumber = beforeMatch.split('\n').pop()?.length || 0;
-        
+
         findings.push({
           id: rule.id,
           severity: rule.severity,
@@ -307,35 +356,48 @@ function scanContent(
           matched: match[0],
           line: lineNumber,
           column: columnNumber,
-          remediation: rule.remediation
+          remediation: rule.remediation,
         });
-        
+
         // Prevent infinite loops with global regex
-        if (!flags.includes('g')) break;
+        if (!flags.includes('g')) {
+          break;
+        }
+
+        match = regex.exec(content);
       }
     } catch (error) {
-      console.warn(`[SecurityScanner] Invalid regex in rule ${rule.id}:`, error);
+      console.warn(
+        `[SecurityScanner] Invalid regex in rule ${rule.id}:`,
+        error
+      );
     }
   }
-  
+
   return findings;
 }
 
 /**
  * Scan bash command for security issues
  */
-function scanCommand(command: string, rules: SecurityRule[]): SecurityFinding[] {
+function scanCommand(
+  command: string,
+  rules: SecurityRule[]
+): SecurityFinding[] {
   const findings: SecurityFinding[] = [];
-  
+
   for (const rule of rules) {
-    if (rule.category !== 'dangerous-commands' && rule.category !== 'injection') {
+    if (
+      rule.category !== 'dangerous-commands' &&
+      rule.category !== 'injection'
+    ) {
       continue;
     }
-    
+
     try {
       const regex = new RegExp(rule.pattern, rule.flags || 'gi');
       const match = regex.exec(command);
-      
+
       if (match) {
         findings.push({
           id: rule.id,
@@ -344,14 +406,17 @@ function scanCommand(command: string, rules: SecurityRule[]): SecurityFinding[] 
           description: rule.description,
           category: rule.category,
           matched: match[0],
-          remediation: rule.remediation
+          remediation: rule.remediation,
         });
       }
     } catch (error) {
-      console.warn(`[SecurityScanner] Invalid regex in rule ${rule.id}:`, error);
+      console.warn(
+        `[SecurityScanner] Invalid regex in rule ${rule.id}:`,
+        error
+      );
     }
   }
-  
+
   return findings;
 }
 
@@ -362,22 +427,28 @@ function formatFindings(findings: SecurityFinding[]): string {
   if (findings.length === 0) {
     return 'No security issues found';
   }
-  
-  const critical = findings.filter(f => f.severity === 'critical').length;
-  const high = findings.filter(f => f.severity === 'high').length;
-  const medium = findings.filter(f => f.severity === 'medium').length;
-  
+
+  const critical = findings.filter((f) => f.severity === 'critical').length;
+  const high = findings.filter((f) => f.severity === 'high').length;
+  const medium = findings.filter((f) => f.severity === 'medium').length;
+
   let summary = `Found ${findings.length} security issue(s)`;
-  if (critical > 0) summary += `, ${critical} critical`;
-  if (high > 0) summary += `, ${high} high`;
-  if (medium > 0) summary += `, ${medium} medium`;
-  
+  if (critical > 0) {
+    summary += `, ${critical} critical`;
+  }
+  if (high > 0) {
+    summary += `, ${high} high`;
+  }
+  if (medium > 0) {
+    summary += `, ${medium} medium`;
+  }
+
   return summary;
 }
 
 /**
  * Security Scanner Plugin
- * 
+ *
  * Scans code and commands for potential security vulnerabilities including:
  * - Hardcoded secrets and API keys
  * - Command injection vulnerabilities
@@ -385,7 +456,7 @@ function formatFindings(findings: SecurityFinding[]): string {
  * - Weak cryptography usage
  * - Insecure configurations
  * - Path traversal vulnerabilities
- * 
+ *
  * @example Basic Configuration
  * ```typescript
  * {
@@ -397,7 +468,7 @@ function formatFindings(findings: SecurityFinding[]): string {
  *   }
  * }
  * ```
- * 
+ *
  * @example Advanced Configuration
  * ```typescript
  * {
@@ -428,15 +499,18 @@ export const securityScannerPlugin: HookPlugin = {
   version: '1.0.0',
   description: 'Scans for security vulnerabilities in code and operations',
   author: 'Outfitter Team',
-  
+
   events: ['PreToolUse'],
   tools: ['Bash', 'Write', 'Edit', 'MultiEdit'],
   priority: 85, // High priority to catch issues early
-  
+
   configSchema: SecurityScannerConfigSchema,
   defaultConfig: {},
-  
-  async apply(context: HookContext, config: Record<string, unknown> = {}): Promise<PluginResult> {
+
+  async apply(
+    context: HookContext,
+    config: Record<string, unknown> = {}
+  ): Promise<PluginResult> {
     // Only handle specific tools
     if (context.event !== 'PreToolUse' || !('toolName' in context)) {
       return {
@@ -445,7 +519,7 @@ export const securityScannerPlugin: HookPlugin = {
         pluginVersion: this.version,
       };
     }
-    
+
     const toolName = context.toolName;
     if (!['Bash', 'Write', 'Edit', 'MultiEdit'].includes(toolName)) {
       return {
@@ -454,17 +528,19 @@ export const securityScannerPlugin: HookPlugin = {
         pluginVersion: this.version,
       };
     }
-    
+
     // Parse configuration
     const scannerConfig = SecurityScannerConfigSchema.parse(config);
-    
+
     // Combine built-in and custom rules
     const allRules = [...BUILT_IN_RULES, ...scannerConfig.customRules];
     const findings: SecurityFinding[] = [];
-    
-    const toolContext = context as any; // Type assertion for toolInput access
+
+    const toolContext = context as HookContext & {
+      toolInput: Record<string, unknown>;
+    };
     const toolInput = toolContext.toolInput;
-    
+
     try {
       if (toolName === 'Bash' && scannerConfig.scanCommands) {
         // Scan bash command
@@ -473,46 +549,57 @@ export const securityScannerPlugin: HookPlugin = {
           const commandFindings = scanCommand(command, allRules);
           findings.push(...commandFindings);
         }
-      } else if (['Write', 'Edit', 'MultiEdit'].includes(toolName) && scannerConfig.scanFiles) {
+      } else if (
+        ['Write', 'Edit', 'MultiEdit'].includes(toolName) &&
+        scannerConfig.scanFiles
+      ) {
         // Scan file content
         const filePath = toolInput?.file_path as string;
         if (filePath) {
           // Check if file should be scanned
-          if (scannerConfig.includePatterns.length > 0 && 
-              !matchesPatterns(filePath, scannerConfig.includePatterns)) {
+          if (
+            scannerConfig.includePatterns.length > 0 &&
+            !matchesPatterns(filePath, scannerConfig.includePatterns)
+          ) {
             return {
               success: true,
               pluginName: this.name,
               pluginVersion: this.version,
-              metadata: { skipped: true, reason: 'File not in include patterns' }
+              metadata: {
+                skipped: true,
+                reason: 'File not in include patterns',
+              },
             };
           }
-          
+
           if (matchesPatterns(filePath, scannerConfig.excludePatterns)) {
             return {
               success: true,
               pluginName: this.name,
               pluginVersion: this.version,
-              metadata: { skipped: true, reason: 'File matches exclude pattern' }
+              metadata: {
+                skipped: true,
+                reason: 'File matches exclude pattern',
+              },
             };
           }
-          
+
           let content = '';
-          
+
           if (toolName === 'Write') {
             // Scan content being written
-            content = toolInput?.content as string || '';
+            content = (toolInput?.content as string) || '';
           } else if (toolName === 'Edit' || toolName === 'MultiEdit') {
             // For edits, try to read existing file to scan full content
             try {
               const existingContent = await readFile(filePath, 'utf-8');
-              
+
               if (toolName === 'Edit') {
                 // Apply edit to get final content
                 const oldString = toolInput?.old_string as string;
                 const newString = toolInput?.new_string as string;
                 const replaceAll = toolInput?.replace_all as boolean;
-                
+
                 if (oldString && newString !== undefined) {
                   if (replaceAll) {
                     content = existingContent.replaceAll(oldString, newString);
@@ -527,12 +614,12 @@ export const securityScannerPlugin: HookPlugin = {
                 // (would need more complex logic to simulate all edits)
                 content = existingContent;
               }
-            } catch (error) {
+            } catch (_error) {
               // File doesn't exist or can't be read - use new content if available
-              content = toolInput?.content as string || '';
+              content = (toolInput?.content as string) || '';
             }
           }
-          
+
           if (content) {
             // Check file size limit
             if (content.length > scannerConfig.maxFileSize) {
@@ -541,16 +628,21 @@ export const securityScannerPlugin: HookPlugin = {
                 pluginName: this.name,
                 pluginVersion: this.version,
                 message: `File too large to scan (${content.length} > ${scannerConfig.maxFileSize} bytes)`,
-                metadata: { skipped: true, reason: 'File too large' }
+                metadata: { skipped: true, reason: 'File too large' },
               };
             }
-            
-            const fileFindings = scanContent(content, filePath, allRules, scannerConfig);
+
+            const fileFindings = scanContent(
+              content,
+              filePath,
+              allRules,
+              scannerConfig
+            );
             findings.push(...fileFindings);
           }
         }
       }
-      
+
       // Process findings
       if (findings.length === 0) {
         return {
@@ -558,19 +650,21 @@ export const securityScannerPlugin: HookPlugin = {
           pluginName: this.name,
           pluginVersion: this.version,
           message: 'No security issues detected',
-          metadata: { scanned: true, findings: [] }
+          metadata: { scanned: true, findings: [] },
         };
       }
-      
+
       // Log findings
       if (scannerConfig.logFindings) {
         console.warn(`[SecurityScanner] ${formatFindings(findings)}`);
-        
+
         for (const finding of findings) {
           console.warn(`  ${finding.severity.toUpperCase()}: ${finding.title}`);
           console.warn(`    ${finding.description}`);
           if (finding.line) {
-            console.warn(`    Location: line ${finding.line}, column ${finding.column}`);
+            console.warn(
+              `    Location: line ${finding.line}, column ${finding.column}`
+            );
           }
           console.warn(`    Matched: "${finding.matched}"`);
           if (finding.remediation) {
@@ -578,72 +672,77 @@ export const securityScannerPlugin: HookPlugin = {
           }
         }
       }
-      
+
       // Determine if should block
-      const criticalFindings = findings.filter(f => f.severity === 'critical');
-      const highFindings = findings.filter(f => f.severity === 'high');
-      
-      const shouldBlock = 
+      const criticalFindings = findings.filter(
+        (f) => f.severity === 'critical'
+      );
+      const highFindings = findings.filter((f) => f.severity === 'high');
+
+      const shouldBlock =
         (scannerConfig.blockOnCritical && criticalFindings.length > 0) ||
         (scannerConfig.blockOnHigh && highFindings.length > 0);
-      
+
       return {
         success: !shouldBlock,
         block: shouldBlock,
         pluginName: this.name,
         pluginVersion: this.version,
-        message: shouldBlock 
+        message: shouldBlock
           ? `🔒 Security issues found - operation blocked: ${formatFindings(findings)}`
           : `⚠️  Security issues found: ${formatFindings(findings)}`,
         metadata: {
-          findings: findings.map(f => ({
+          findings: findings.map((f) => ({
             id: f.id,
             severity: f.severity,
             title: f.title,
             category: f.category,
             line: f.line,
-            column: f.column
+            column: f.column,
           })),
           totalFindings: findings.length,
           criticalFindings: criticalFindings.length,
           highFindings: highFindings.length,
-          blocked: shouldBlock
-        }
+          blocked: shouldBlock,
+        },
       };
-      
     } catch (error) {
       return {
         success: false,
         pluginName: this.name,
         pluginVersion: this.version,
         message: `Security scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        metadata: { error: error instanceof Error ? error.message : 'Unknown error' }
+        metadata: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
       };
     }
   },
-  
+
   /**
    * Initialize with rule validation
    */
   async init(): Promise<void> {
-    console.log(`[SecurityScanner] Initialized with ${BUILT_IN_RULES.length} built-in security rules`);
+    console.log(
+      `[SecurityScanner] Initialized with ${BUILT_IN_RULES.length} built-in security rules`
+    );
   },
-  
+
   /**
    * Health check
    */
   async healthCheck(): Promise<boolean> {
     return true;
   },
-  
+
   metadata: {
     name: 'security-scanner',
     version: '1.0.0',
     description: 'Scans for security vulnerabilities in code and operations',
     author: 'Outfitter Team',
     keywords: ['security', 'vulnerability', 'scanner', 'secrets', 'injection'],
-    license: 'MIT'
-  }
+    license: 'MIT',
+  },
 };
 
 export default securityScannerPlugin;

@@ -9,14 +9,19 @@ All examples use the **new stdin-based runtime** that reads JSON input from Clau
 ### Running Examples
 
 ```bash
+
 # Function-based pre-tool validation
+
 echo '{"session_id":"test-123","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la"},"cwd":"/tmp","transcript_path":"/tmp/transcript.md"}' | bun packages/examples/src/function-based/pre-tool-use.ts
 
 # Builder pattern security hooks
+
 echo '{"session_id":"test-123","hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"test.txt","content":"Hello World"},"cwd":"/tmp","transcript_path":"/tmp/transcript.md"}' | bun packages/examples/src/builder-pattern/security-hooks.ts
 
 # Declarative configuration
+
 echo '{"session_id":"test-123","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo hello"},"cwd":"/tmp","transcript_path":"/tmp/transcript.md"}' | bun packages/examples/src/declarative/hook-config.ts
+
 ```
 
 ## 📁 Example Categories
@@ -26,6 +31,7 @@ echo '{"session_id":"test-123","hook_event_name":"PreToolUse","tool_name":"Bash"
 Simple, direct approach for straightforward hook logic.
 
 #### [`pre-tool-use.ts`](src/function-based/pre-tool-use.ts)
+
 - ✅ **Correct Runtime**: Uses `runClaudeHook()` with JSON stdin input
 - ✅ **Tool Validation**: Demonstrates bash command, file write, and edit validation
 - ✅ **Security Checks**: Environment-specific security validation
@@ -33,23 +39,27 @@ Simple, direct approach for straightforward hook logic.
 - ✅ **Type Safety**: Full TypeScript type checking for tool inputs
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults } from '@/hooks-core';
 
 runClaudeHook(async (context) => {
   console.log(`🔍 PreToolUse validation for: ${context.toolName}`);
-  
+
   if (context.toolName === 'Bash') {
     const { command } = context.toolInput;
     // Validation logic here
     return HookResults.success('Bash validation passed');
   }
-  
+
   return HookResults.success('Generic validation passed');
 });
+
 ```
 
 #### [`post-tool-use.ts`](src/function-based/post-tool-use.ts)
+
 - ✅ **Post-Processing**: File formatting, type checking, linting
 - ✅ **Tool Response**: Access to tool execution results via `context.toolResponse`
 - ✅ **File Operations**: Automated formatting and validation
@@ -61,6 +71,7 @@ runClaudeHook(async (context) => {
 Fluent interface for complex hooks with middleware and conditions.
 
 #### [`security-hooks.ts`](src/builder-pattern/security-hooks.ts)
+
 - ✅ **Tool Scoping**: Demonstrates hooks that target specific tools vs universal hooks
 - ✅ **Middleware**: Logging, timing, error handling middleware
 - ✅ **Conditions**: Conditional execution based on environment or tool
@@ -69,9 +80,8 @@ Fluent interface for complex hooks with middleware and conditions.
 
 ```typescript
 // Tool-specific hook (only runs for Bash)
-const bashSecurityHook = HookBuilder
-  .forPreToolUse()
-  .forTool('Bash')  // 🎯 Now works correctly!
+const bashSecurityHook = HookBuilder.forPreToolUse()
+  .forTool('Bash') // 🎯 Now works correctly!
   .withPriority(100)
   .withMiddleware(middleware.logging('info'))
   .withHandler(async (context) => {
@@ -81,8 +91,7 @@ const bashSecurityHook = HookBuilder
   .build();
 
 // Universal hook (runs for ALL tools)
-const universalHook = HookBuilder
-  .forPreToolUse()
+const universalHook = HookBuilder.forPreToolUse()
   // No .forTool() call = universal
   .withHandler(async (context) => {
     // Runs for every tool
@@ -96,6 +105,7 @@ const universalHook = HookBuilder
 Configuration-driven approach for managing hooks across environments.
 
 #### [`hook-config.ts`](src/declarative/hook-config.ts)
+
 - ✅ **Environment-Specific**: Different hook sets for development/production/test
 - ✅ **Universal vs Tool-Specific**: Mix of universal and tool-targeted hooks
 - ✅ **Configuration Management**: Centralized hook configuration
@@ -122,6 +132,7 @@ Configuration-driven approach for managing hooks across environments.
     return HookResults.success('Bash monitoring completed');
   }
 }
+
 ```
 
 ## 🔧 Key Architectural Changes
@@ -129,6 +140,7 @@ Configuration-driven approach for managing hooks across environments.
 ### ✅ New Runtime Pattern
 
 **Old (Broken)**:
+
 ```typescript
 // ❌ Used environment variables
 const context = createHookContext('PreToolUse');
@@ -136,14 +148,15 @@ console.log(context.toolInput); // From TOOL_INPUT env var
 ```
 
 **New (Working)**:
+
 ```typescript
 // ✅ Uses JSON stdin input
 runClaudeHook(async (context) => {
-  console.log(context.sessionId);     // From session_id
-  console.log(context.cwd);           // From cwd (not workspacePath)
-  console.log(context.toolInput);     // From tool_input
-  console.log(context.toolResponse);  // From tool_response (PostToolUse)
-  
+  console.log(context.sessionId); // From session_id
+  console.log(context.cwd); // From cwd (not workspacePath)
+  console.log(context.toolInput); // From tool_input
+  console.log(context.toolResponse); // From tool_response (PostToolUse)
+
   return HookResults.success('Hook executed successfully');
 });
 ```
@@ -156,17 +169,15 @@ runClaudeHook(async (context) => {
 
 ```typescript
 // This ONLY runs for Bash commands
-const bashHook = HookBuilder
-  .forPreToolUse()
-  .forTool('Bash')  // Actually works now!
+const bashHook = HookBuilder.forPreToolUse()
+  .forTool('Bash') // Actually works now!
   .withHandler(async (context) => {
     // Only executes when context.toolName === 'Bash'
     return HookResults.success('Bash hook executed');
   });
 
 // This runs for ALL tools
-const universalHook = HookBuilder
-  .forPreToolUse()
+const universalHook = HookBuilder.forPreToolUse()
   // No .forTool() call
   .withHandler(async (context) => {
     // Executes for every tool
@@ -177,6 +188,7 @@ const universalHook = HookBuilder
 ### ✅ Corrected Context Properties
 
 **Changed Properties**:
+
 - `context.workspacePath` → `context.cwd` (matches Claude Code's actual JSON structure)
 - `context.toolOutput` → `context.toolResponse` (consistent with tool_response field)
 - Metadata is on the **result**, not context: `result.metadata.duration`
@@ -184,6 +196,7 @@ const universalHook = HookBuilder
 ### ✅ Import Paths
 
 All examples use the monorepo-friendly import paths:
+
 ```typescript
 import { runClaudeHook, HookResults } from '@/hooks-core';
 import { SecurityValidators } from '@/hooks-validators';
@@ -194,6 +207,7 @@ import { SecurityValidators } from '@/hooks-validators';
 All hooks receive JSON via stdin with this structure:
 
 ### PreToolUse / PostToolUse
+
 ```json
 {
   "session_id": "unique-session-id",
@@ -210,10 +224,11 @@ All hooks receive JSON via stdin with this structure:
 ```
 
 ### Other Events
+
 ```json
 {
   "session_id": "unique-session-id",
-  "transcript_path": "/path/to/transcript.md", 
+  "transcript_path": "/path/to/transcript.md",
   "cwd": "/current/working/directory",
   "hook_event_name": "SessionStart",
   "message": "Session started"
@@ -225,10 +240,12 @@ All hooks receive JSON via stdin with this structure:
 Each example includes test data generation and can be run standalone:
 
 ```bash
+
 # Test with different tool inputs
+
 echo '{
   "session_id": "test-session",
-  "hook_event_name": "PreToolUse", 
+  "hook_event_name": "PreToolUse",
   "tool_name": "Write",
   "tool_input": {
     "file_path": "/tmp/test.txt",
@@ -237,33 +254,39 @@ echo '{
   "cwd": "/tmp",
   "transcript_path": "/tmp/transcript.md"
 }' | bun packages/examples/src/function-based/pre-tool-use.ts
+
 ```
 
 ## 🏆 Best Practices Demonstrated
 
 ### 1. **Type Safety**
+
 - Full TypeScript strict mode compliance
 - Tool input type validation with type guards
 - Proper error handling with typed results
 
 ### 2. **Security**
+
 - Environment-specific validation rules
 - Command pattern monitoring
 - File access controls
 - Audit logging
 
-### 3. **Performance** 
+### 3. **Performance**
+
 - Execution timing middleware
 - Output size monitoring
 - Efficient tool routing
 
 ### 4. **Maintainability**
+
 - Clean separation of concerns
 - Reusable middleware components
 - Configuration-driven behavior
 - Comprehensive logging
 
 ### 5. **Tool Scoping**
+
 - Universal hooks for all tools
 - Tool-specific hooks for targeted behavior
 - Conditional execution based on context

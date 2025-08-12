@@ -38,11 +38,15 @@ if (Bun.env.NODE_ENV === 'production') {
 ### Package Auditing
 
 ```bash
+
 # Check for vulnerabilities
+
 bun audit
 
 # Update dependencies safely
+
 bun update --save
+
 ```
 
 ### Lock File Security
@@ -200,11 +204,15 @@ if (process.env.NODE_ENV === 'production') {
 ### Bundle Analysis
 
 ```bash
+
 # Check bundle for secrets
+
 bun build --analyze
 
 # Scan for exposed keys
+
 grep -r "sk_" dist/
+
 ```
 
 ## Security Headers

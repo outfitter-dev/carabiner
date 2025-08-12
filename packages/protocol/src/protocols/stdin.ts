@@ -1,20 +1,28 @@
 /**
  * @grapple/protocol - Stdin/Stdout Protocol Implementation
- * 
+ *
  * Implements the classic Claude Code hooks protocol that reads JSON input
  * from stdin and writes results to stdout/stderr.
  */
 
-import type { HookContext, HookResult } from '@outfitter/types';
 import {
   parseClaudeHookInput,
   validateAndCreateBrandedInput,
-  type ClaudeHookInput,
 } from '@outfitter/schemas';
+import type {
+  DirectoryPath,
+  HookContext,
+  HookResult,
+  NotificationEvent,
+  SessionId,
+  ToolHookEvent,
+  ToolInput,
+  TranscriptPath,
+} from '@outfitter/types';
 import {
+  createNotificationContext,
   createToolHookContext,
   createUserPromptContext,
-  createNotificationContext,
 } from '@outfitter/types';
 import type { HookProtocol } from '../interface';
 import {
@@ -48,14 +56,14 @@ export interface StdinProtocolOptions {
 
 /**
  * Protocol implementation for Claude Code's stdin/stdout communication
- * 
+ *
  * This protocol maintains backward compatibility with existing Claude Code
  * hook runners while providing the new abstracted interface.
- * 
+ *
  * @example
  * ```typescript
  * const protocol = new StdinProtocol({ inputTimeout: 10000 });
- * 
+ *
  * // Use with hook executor
  * const executor = new HookExecutor(protocol);
  * await executor.execute(myHookHandler);
@@ -68,12 +76,12 @@ export class StdinProtocol implements HookProtocol {
    * Read JSON input from stdin with timeout
    */
   async readInput(): Promise<unknown> {
-    const timeout = this.options.inputTimeout ?? 30000;
-    
+    const timeout = this.options.inputTimeout ?? 30_000;
+
     try {
       const chunks: Buffer[] = [];
       const controller = new AbortController();
-      
+
       // Set up timeout
       const timeoutId = setTimeout(() => {
         controller.abort();
@@ -92,7 +100,7 @@ export class StdinProtocol implements HookProtocol {
       }
 
       const input = Buffer.concat(chunks).toString('utf-8').trim();
-      
+
       if (!input) {
         throw new ProtocolInputError('No input received from stdin');
       }
@@ -109,10 +117,7 @@ export class StdinProtocol implements HookProtocol {
       if (error instanceof ProtocolInputError) {
         throw error;
       }
-      throw new ProtocolInputError(
-        'Failed to read input from stdin',
-        error
-      );
+      throw new ProtocolInputError('Failed to read input from stdin', error);
     }
   }
 
@@ -123,10 +128,10 @@ export class StdinProtocol implements HookProtocol {
     try {
       // First validate with Zod schemas
       const claudeInput = parseClaudeHookInput(input);
-      
+
       // Then create branded types and context
       const validatedInput = await validateAndCreateBrandedInput(claudeInput);
-      
+
       return this.createTypedContext(validatedInput);
     } catch (error) {
       if (error instanceof Error) {
@@ -144,24 +149,24 @@ export class StdinProtocol implements HookProtocol {
    */
   async writeOutput(result: HookResult): Promise<void> {
     try {
-      const output = this.options.prettyOutput 
+      const output = this.options.prettyOutput
         ? JSON.stringify(result, null, 2)
         : JSON.stringify(result);
-      
+
       process.stdout.write(output);
-      
+
       // Ensure output is flushed
       await new Promise<void>((resolve, reject) => {
         process.stdout.write('', (error) => {
-          if (error) reject(error);
-          else resolve();
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
         });
       });
     } catch (error) {
-      throw new ProtocolOutputError(
-        'Failed to write output to stdout',
-        error
-      );
+      throw new ProtocolOutputError('Failed to write output to stdout', error);
     }
   }
 
@@ -175,18 +180,21 @@ export class StdinProtocol implements HookProtocol {
         type: error.name,
         ...(this.options.includeErrorStack !== false && { stack: error.stack }),
       };
-      
+
       const output = this.options.prettyOutput
         ? JSON.stringify(errorOutput, null, 2)
         : JSON.stringify(errorOutput);
-      
+
       process.stderr.write(output);
-      
+
       // Ensure error output is flushed
       await new Promise<void>((resolve, reject) => {
         process.stderr.write('', (writeError) => {
-          if (writeError) reject(writeError);
-          else resolve();
+          if (writeError) {
+            reject(writeError);
+          } else {
+            resolve();
+          }
         });
       });
     } catch (writeError) {
@@ -200,55 +208,52 @@ export class StdinProtocol implements HookProtocol {
   /**
    * Create typed context from validated Claude input
    */
-  private createTypedContext(input: any): HookContext {
+  private createTypedContext(input: Record<string, unknown>): HookContext {
     if ('tool_name' in input) {
       // Tool hook context (PreToolUse/PostToolUse)
       return createToolHookContext(
-        input.hook_event_name,
-        input.tool_name,
-        input.tool_input,
+        input.hook_event_name as ToolHookEvent,
+        input.tool_name as string,
+        input.tool_input as ToolInput,
         {
-          sessionId: input.sessionId,
-          transcriptPath: input.transcriptPath,
-          cwd: input.cwd,
+          sessionId: input.sessionId as SessionId,
+          transcriptPath: input.transcriptPath as TranscriptPath,
+          cwd: input.cwd as DirectoryPath,
           environment: process.env as Record<string, string>,
-          matcher: input.matcher,
+          matcher: input.matcher as string | undefined,
         },
-        input.tool_response
+        input.tool_response as Record<string, unknown> | undefined
       );
     }
-    
+
     if ('prompt' in input) {
       // User prompt context
-      return createUserPromptContext(
-        input.prompt,
-        {
-          sessionId: input.sessionId,
-          transcriptPath: input.transcriptPath,
-          cwd: input.cwd,
-          environment: process.env as Record<string, string>,
-          matcher: input.matcher,
-        }
-      );
+      return createUserPromptContext(input.prompt as string, {
+        sessionId: input.sessionId as SessionId,
+        transcriptPath: input.transcriptPath as TranscriptPath,
+        cwd: input.cwd as DirectoryPath,
+        environment: process.env as Record<string, string>,
+        matcher: input.matcher as string | undefined,
+      });
     }
-    
+
     if ('notification' in input) {
       // Notification context
       return createNotificationContext(
-        input.hook_event_name,
+        input.hook_event_name as NotificationEvent,
         {
-          sessionId: input.sessionId,
-          transcriptPath: input.transcriptPath,
-          cwd: input.cwd,
+          sessionId: input.sessionId as SessionId,
+          transcriptPath: input.transcriptPath as TranscriptPath,
+          cwd: input.cwd as DirectoryPath,
           environment: process.env as Record<string, string>,
-          matcher: input.matcher,
+          matcher: input.matcher as string | undefined,
         },
-        input.notification
+        input.notification as string | undefined
       );
     }
-    
+
     throw new ProtocolParseError(
-      `Unsupported hook event: ${input.hook_event_name}`
+      `Unsupported hook event: ${String(input.hook_event_name)}`
     );
   }
 }

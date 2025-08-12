@@ -337,7 +337,8 @@ export const middleware = {
     logLevel: 'debug' | 'info' | 'warn' | 'error' = 'info'
   ): HookMiddleware<T> {
     return async (context, next) => {
-      const start = Date.now();
+      // Timing captured but not used - reserved for future logging
+      Date.now();
 
       if (logLevel === 'debug' || logLevel === 'info') {
         // Logging handled by pino logger in hook execution
@@ -345,7 +346,7 @@ export const middleware = {
 
       try {
         const result = await next(context);
-        const _duration = Date.now() - start;
+        // Duration tracking reserved for future logging
 
         if (logLevel === 'debug' || logLevel === 'info') {
           // Success logging handled by pino logger
@@ -353,7 +354,7 @@ export const middleware = {
 
         return result;
       } catch (error) {
-        const _duration = Date.now() - start;
+        // Duration tracking reserved for future logging
 
         if (logLevel !== 'error') {
           // Error logging handled by pino logger

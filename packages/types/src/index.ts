@@ -1,140 +1,134 @@
 /**
  * @outfitter/types - Type system foundation for Claude Code hooks
- * 
+ *
  * This package provides:
  * - Branded types for compile-time safety and runtime validation
  * - Simple discriminated unions instead of complex generics
  * - Concrete context types for better discoverability
  * - Type guards and validation functions
- * 
+ *
  * This replaces the complex 477-line types.ts with simple, concrete types
  * that are easy to understand, use, and maintain.
  */
 
 // Branded types and validation
 export type {
-  SessionId,
-  FilePath,
   CommandString,
-  TranscriptPath,
   DirectoryPath,
+  FilePath,
+  SessionId,
+  TranscriptPath,
 } from './brands';
 
 export {
   BrandValidationError,
-  createSessionId,
-  createFilePath,
   createCommandString,
-  createTranscriptPath,
   createDirectoryPath,
-  isSessionId,
-  isFilePath,
+  createFilePath,
+  createSessionId,
+  createTranscriptPath,
   isCommandString,
-  isTranscriptPath,
   isDirectoryPath,
+  isFilePath,
+  isSessionId,
+  isTranscriptPath,
   UnsafeBrands,
 } from './brands';
-
+// Context types
+export type {
+  BaseHookContext,
+  BashHookContext,
+  BashHookHandler,
+  CreateContextOptions,
+  FileHookContext,
+  FileHookHandler,
+  HookContext,
+  HookEnvironment,
+  HookHandler,
+  NotificationHandler,
+  NotificationHookContext,
+  PostToolUseContext,
+  PostToolUseHandler,
+  PreToolUseContext,
+  PreToolUseHandler,
+  SearchHookContext,
+  SessionStartContext,
+  SessionStartHandler,
+  StopContext,
+  StopHandler,
+  SubagentStopContext,
+  SubagentStopHandler,
+  ToolHookContext,
+  ToolHookHandler,
+  UserPromptHandler,
+  UserPromptHookContext,
+} from './context';
+export {
+  createNotificationContext,
+  createToolHookContext,
+  createUserPromptContext,
+  isBashHookContext,
+  isFileHookContext,
+  isNotificationContext,
+  isPostToolUseContext,
+  isPreToolUseContext,
+  isSearchHookContext,
+  isToolHookContext,
+  isUserPromptContext,
+} from './context';
 // Hook events and results
 export type {
-  HookEvent,
-  ToolHookEvent,
-  NotificationEvent,
-  UserEvent,
-  ToolName,
-  HookResult,
-  HookMetadata,
   ClaudeHookOutput,
-  HookOutputMode,
+  HookEvent,
   HookExecutionOptions,
+  HookMetadata,
+  HookOutputMode,
+  HookResult,
+  NotificationEvent,
+  ToolHookEvent,
+  ToolName,
+  UserEvent,
 } from './events';
-
 export {
   HOOK_EVENTS,
-  isHookEvent,
-  isToolHookEvent,
-  isNotificationEvent,
-  isUserEvent,
   HookResults,
+  isHookEvent,
+  isNotificationEvent,
+  isToolHookEvent,
+  isUserEvent,
 } from './events';
-
 // Tool types
 export type {
   BashToolInput,
-  WriteToolInput,
+  BrandedBashToolInput,
+  BrandedFileToolInput,
   EditToolInput,
-  MultiEditInput,
-  ReadToolInput,
+  GetToolInput,
   GlobToolInput,
   GrepToolInput,
   LSToolInput,
+  MultiEditInput,
+  NotebookEditToolInput,
+  ReadToolInput,
   TodoWriteToolInput,
+  ToolInput,
+  ToolInputMap,
+  UnknownToolInput,
   WebFetchToolInput,
   WebSearchToolInput,
-  NotebookEditToolInput,
-  ToolInputMap,
-  ToolInput,
-  UnknownToolInput,
-  GetToolInput,
-  BrandedBashToolInput,
-  BrandedFileToolInput,
+  WriteToolInput,
 } from './tools';
-
 export {
   isBashToolInput,
-  isWriteToolInput,
   isEditToolInput,
-  isReadToolInput,
-  isMultiEditToolInput,
   isGlobToolInput,
   isGrepToolInput,
   isLSToolInput,
+  isMultiEditToolInput,
+  isNotebookEditToolInput,
+  isReadToolInput,
   isTodoWriteToolInput,
   isWebFetchToolInput,
   isWebSearchToolInput,
-  isNotebookEditToolInput,
+  isWriteToolInput,
 } from './tools';
-
-// Context types
-export type {
-  HookEnvironment,
-  BaseHookContext,
-  ToolHookContext,
-  BashHookContext,
-  FileHookContext,
-  SearchHookContext,
-  UserPromptHookContext,
-  NotificationHookContext,
-  HookContext,
-  PreToolUseContext,
-  PostToolUseContext,
-  SessionStartContext,
-  StopContext,
-  SubagentStopContext,
-  HookHandler,
-  ToolHookHandler,
-  BashHookHandler,
-  FileHookHandler,
-  UserPromptHandler,
-  NotificationHandler,
-  PreToolUseHandler,
-  PostToolUseHandler,
-  SessionStartHandler,
-  StopHandler,
-  SubagentStopHandler,
-  CreateContextOptions,
-} from './context';
-
-export {
-  isToolHookContext,
-  isBashHookContext,
-  isFileHookContext,
-  isSearchHookContext,
-  isUserPromptContext,
-  isNotificationContext,
-  isPreToolUseContext,
-  isPostToolUseContext,
-  createToolHookContext,
-  createUserPromptContext,
-  createNotificationContext,
-} from './context';

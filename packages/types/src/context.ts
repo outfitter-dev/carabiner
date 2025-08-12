@@ -3,17 +3,11 @@
  * Replaces complex generics with simple, discoverable types
  */
 
-import type {
-  SessionId,
-  FilePath,
-  TranscriptPath,
-  DirectoryPath,
-} from './brands';
+import type { DirectoryPath, SessionId, TranscriptPath } from './brands';
 import type {
   HookEvent,
-  ToolHookEvent,
   NotificationEvent,
-  UserEvent,
+  ToolHookEvent,
   ToolName,
 } from './events';
 import type { ToolInput, ToolInputMap } from './tools';
@@ -60,7 +54,10 @@ export interface BashHookContext extends BaseHookContext {
 export interface FileHookContext extends BaseHookContext {
   readonly event: ToolHookEvent;
   readonly toolName: 'Write' | 'Edit' | 'Read';
-  readonly toolInput: ToolInputMap['Write'] | ToolInputMap['Edit'] | ToolInputMap['Read'];
+  readonly toolInput:
+    | ToolInputMap['Write']
+    | ToolInputMap['Edit']
+    | ToolInputMap['Read'];
   readonly toolResponse?: Record<string, unknown>;
 }
 
@@ -101,14 +98,20 @@ export type HookContext =
 /**
  * Context discriminated by event type
  */
-export type PreToolUseContext = ToolHookContext & { readonly event: 'PreToolUse' };
-export type PostToolUseContext = ToolHookContext & { 
+export type PreToolUseContext = ToolHookContext & {
+  readonly event: 'PreToolUse';
+};
+export type PostToolUseContext = ToolHookContext & {
   readonly event: 'PostToolUse';
   readonly toolResponse: Record<string, unknown>;
 };
-export type SessionStartContext = NotificationHookContext & { readonly event: 'SessionStart' };
+export type SessionStartContext = NotificationHookContext & {
+  readonly event: 'SessionStart';
+};
 export type StopContext = NotificationHookContext & { readonly event: 'Stop' };
-export type SubagentStopContext = NotificationHookContext & { readonly event: 'SubagentStop' };
+export type SubagentStopContext = NotificationHookContext & {
+  readonly event: 'SubagentStop';
+};
 
 /**
  * Hook handler function types
@@ -135,37 +138,56 @@ export type SubagentStopHandler = HookHandler<SubagentStopContext>;
 /**
  * Type guards for context discrimination
  */
-export function isToolHookContext(context: HookContext): context is ToolHookContext {
+export function isToolHookContext(
+  context: HookContext
+): context is ToolHookContext {
   return context.event === 'PreToolUse' || context.event === 'PostToolUse';
 }
 
-export function isBashHookContext(context: HookContext): context is BashHookContext {
+export function isBashHookContext(
+  context: HookContext
+): context is BashHookContext {
   return isToolHookContext(context) && context.toolName === 'Bash';
 }
 
-export function isFileHookContext(context: HookContext): context is FileHookContext {
-  return isToolHookContext(context) && 
-    ['Write', 'Edit', 'Read'].includes(context.toolName);
+export function isFileHookContext(
+  context: HookContext
+): context is FileHookContext {
+  return (
+    isToolHookContext(context) &&
+    ['Write', 'Edit', 'Read'].includes(context.toolName)
+  );
 }
 
-export function isSearchHookContext(context: HookContext): context is SearchHookContext {
-  return isToolHookContext(context) && 
-    ['Glob', 'Grep'].includes(context.toolName);
+export function isSearchHookContext(
+  context: HookContext
+): context is SearchHookContext {
+  return (
+    isToolHookContext(context) && ['Glob', 'Grep'].includes(context.toolName)
+  );
 }
 
-export function isUserPromptContext(context: HookContext): context is UserPromptHookContext {
+export function isUserPromptContext(
+  context: HookContext
+): context is UserPromptHookContext {
   return context.event === 'UserPromptSubmit';
 }
 
-export function isNotificationContext(context: HookContext): context is NotificationHookContext {
+export function isNotificationContext(
+  context: HookContext
+): context is NotificationHookContext {
   return ['SessionStart', 'Stop', 'SubagentStop'].includes(context.event);
 }
 
-export function isPreToolUseContext(context: HookContext): context is PreToolUseContext {
+export function isPreToolUseContext(
+  context: HookContext
+): context is PreToolUseContext {
   return context.event === 'PreToolUse';
 }
 
-export function isPostToolUseContext(context: HookContext): context is PostToolUseContext {
+export function isPostToolUseContext(
+  context: HookContext
+): context is PostToolUseContext {
   return context.event === 'PostToolUse';
 }
 

@@ -6,6 +6,7 @@ Configuration management and settings generation for Claude Code hooks.
 
 ```bash
 bun add @outfitter/hooks-config
+
 ```
 
 ## Usage
@@ -381,7 +382,7 @@ const config = createConfigFromTemplate(template, {
 
 The configuration manager works with this file structure:
 
-```
+```text
 workspace/
 ├── .claude/
 │   ├── settings.json          # Main settings file
@@ -392,6 +393,7 @@ workspace/
 │   ├── format-after-write.ts
 │   └── universal-validator.ts
 └── package.json
+
 ```
 
 ## Settings Hierarchy

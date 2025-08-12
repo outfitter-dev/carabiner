@@ -21,6 +21,7 @@ Always use the `@/` prefix for internal packages:
 ```typescript
 import { someUtil } from '@/utils';
 import { Component } from '@/ui';
+
 ```
 
 ### Quality Gates

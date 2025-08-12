@@ -1,6 +1,6 @@
 /**
  * @grapple/protocol - Protocol abstraction interface
- * 
+ *
  * Defines the contract for I/O protocols that decouple the hooks system
  * from specific transport mechanisms like stdin/stdout, HTTP, or testing.
  */
@@ -9,7 +9,7 @@ import type { HookContext, HookResult } from '@outfitter/types';
 
 /**
  * Core protocol interface for Claude Code hooks I/O
- * 
+ *
  * This interface abstracts the transport layer, enabling hooks to run
  * over different protocols (stdin/stdout, HTTP, testing, etc.) without
  * changing the core hook logic.
@@ -17,7 +17,7 @@ import type { HookContext, HookResult } from '@outfitter/types';
 export interface HookProtocol {
   /**
    * Read raw input from the protocol source
-   * 
+   *
    * @returns Promise resolving to the raw input data
    * @throws {Error} If reading fails or times out
    */
@@ -25,7 +25,7 @@ export interface HookProtocol {
 
   /**
    * Parse and validate raw input into a typed hook context
-   * 
+   *
    * @param input - Raw input from readInput()
    * @returns Validated and typed hook context
    * @throws {ValidationError} If input is invalid
@@ -35,7 +35,7 @@ export interface HookProtocol {
 
   /**
    * Write successful hook result to the protocol output
-   * 
+   *
    * @param result - Hook execution result to write
    * @throws {Error} If writing fails
    */
@@ -43,7 +43,7 @@ export interface HookProtocol {
 
   /**
    * Write error result to the protocol error channel
-   * 
+   *
    * @param error - Error that occurred during execution
    * @throws {Error} If writing error fails
    */
@@ -52,19 +52,19 @@ export interface HookProtocol {
 
 /**
  * Protocol factory interface for creating protocol instances
- * 
+ *
  * Enables dependency injection and testing by providing a consistent
  * way to create protocol instances with different configurations.
  */
 export interface HookProtocolFactory<T = unknown> {
   /**
    * Create a new protocol instance
-   * 
+   *
    * @param options - Protocol-specific configuration options
    * @returns New protocol instance
    */
   create(options?: T): HookProtocol;
-  
+
   /**
    * Protocol type identifier
    */
@@ -88,7 +88,7 @@ export class ProtocolError extends Error {
 
 export class ProtocolInputError extends ProtocolError {
   override name = 'ProtocolInputError';
-  
+
   constructor(message: string, cause?: unknown) {
     super(message, 'PROTOCOL_INPUT_ERROR', cause);
   }
@@ -96,7 +96,7 @@ export class ProtocolInputError extends ProtocolError {
 
 export class ProtocolOutputError extends ProtocolError {
   override name = 'ProtocolOutputError';
-  
+
   constructor(message: string, cause?: unknown) {
     super(message, 'PROTOCOL_OUTPUT_ERROR', cause);
   }
@@ -104,7 +104,7 @@ export class ProtocolOutputError extends ProtocolError {
 
 export class ProtocolParseError extends ProtocolError {
   override name = 'ProtocolParseError';
-  
+
   constructor(message: string, cause?: unknown) {
     super(message, 'PROTOCOL_PARSE_ERROR', cause);
   }

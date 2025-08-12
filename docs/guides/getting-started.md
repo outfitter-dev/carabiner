@@ -24,11 +24,15 @@ Before starting, ensure you have:
 ### Option 1: Quick Setup with CLI
 
 ```bash
+
 # Install the CLI globally
+
 npm install -g @claude-code/hooks-cli
 
 # Initialize hooks in your project
+
 claude-hooks init --template security
+
 ```
 
 This creates a complete hook setup with security-focused examples.
@@ -36,12 +40,16 @@ This creates a complete hook setup with security-focused examples.
 ### Option 2: Manual Installation
 
 ```bash
+
 # Install core library
+
 bun add @claude-code/hooks-core
 
 # Install optional packages
+
 bun add @claude-code/hooks-validators  # Security validation
 bun add --dev @claude-code/hooks-testing  # Testing utilities
+
 ```
 
 ## Your First Hook
@@ -53,7 +61,9 @@ Let's create a simple security hook that validates Bash commands:
 Create `hooks/security-check.ts`:
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import pino from 'pino';
 import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
 const logger = pino({ level: process.env.LOG_LEVEL ?? 'info' }, pino.destination(2));
@@ -83,12 +93,14 @@ runClaudeHook(async (context) => {
 
   return HookResults.success('Security check passed');
 });
+
 ```
 
 ### 2. Make it Executable
 
 ```bash
 chmod +x hooks/security-check.ts
+
 ```
 
 ### 3. Configure Claude Code
@@ -111,7 +123,9 @@ Create `.claude/settings.json`:
 ### 4. Test Your Hook
 
 ```bash
+
 # Test with safe command
+
 echo '{
   "session_id": "test-session",
   "hook_event_name": "PreToolUse",
@@ -122,6 +136,7 @@ echo '{
 }' | bun hooks/security-check.ts
 
 # Test with dangerous command
+
 echo '{
   "session_id": "test-session",
   "hook_event_name": "PreToolUse",
@@ -130,6 +145,7 @@ echo '{
   "cwd": "/tmp",
   "transcript_path": "/tmp/transcript.md"
 }' | bun hooks/security-check.ts
+
 ```
 
 You should see the hook allow the first command and block the second.
@@ -314,14 +330,19 @@ test('security hook blocks dangerous commands', async () => {
 ### Use the CLI for Development
 
 ```bash
+
 # Generate more hooks
+
 claude-hooks generate --type PostToolUse --tool Write --name format-after-write
 
 # Test all hooks
+
 claude-hooks test
 
 # Development mode with watching
+
 claude-hooks dev --watch
+
 ```
 
 ## Common Patterns
@@ -329,7 +350,9 @@ claude-hooks dev --watch
 ### Universal Security Hook
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
 
 runClaudeHook(async (context) => {
@@ -354,12 +377,15 @@ runClaudeHook(async (context) => {
 
   return HookResults.success('Security check passed');
 });
+
 ```
 
 ### Environment-Specific Hook
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
 
 runClaudeHook(async (context) => {
@@ -389,12 +415,15 @@ runClaudeHook(async (context) => {
 
   return HookResults.success(`${environment} validation passed`);
 });
+
 ```
 
 ### Post-Processing Hook
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
 
 runClaudeHook(async (context) => {
@@ -421,6 +450,7 @@ runClaudeHook(async (context) => {
 
   return HookResults.success('No post-processing needed');
 });
+
 ```
 
 ## Troubleshooting

@@ -3,29 +3,31 @@
  * @description Tests for git safety plugin
  */
 
-import { describe, test, expect, beforeEach } from 'bun:test';
-import { gitSafetyPlugin } from '../git-safety/index';
+import { describe, expect, test } from 'bun:test';
 import type { HookContext } from '@outfitter/types';
+import { gitSafetyPlugin } from '../git-safety/index';
 
-const createBashContext = (command: string): HookContext => ({
-  event: 'PreToolUse',
-  toolName: 'Bash',
-  toolInput: { command },
-  sessionId: 'test-session' as any,
-  transcriptPath: '/tmp/transcript' as any,
-  cwd: '/test/repo' as any,
-  environment: {}
-} as any);
+const createBashContext = (command: string): HookContext =>
+  ({
+    event: 'PreToolUse',
+    toolName: 'Bash',
+    toolInput: { command },
+    sessionId: 'test-session' as any,
+    transcriptPath: '/tmp/transcript' as any,
+    cwd: '/test/repo' as any,
+    environment: {},
+  }) as any;
 
-const createNonBashContext = (): HookContext => ({
-  event: 'PreToolUse',
-  toolName: 'Write',
-  toolInput: { file_path: '/test/file.txt', content: 'test' },
-  sessionId: 'test-session' as any,
-  transcriptPath: '/tmp/transcript' as any,
-  cwd: '/test/repo' as any,
-  environment: {}
-} as any);
+const createNonBashContext = (): HookContext =>
+  ({
+    event: 'PreToolUse',
+    toolName: 'Write',
+    toolInput: { file_path: '/test/file.txt', content: 'test' },
+    sessionId: 'test-session' as any,
+    transcriptPath: '/tmp/transcript' as any,
+    cwd: '/test/repo' as any,
+    environment: {},
+  }) as any;
 
 describe('Git Safety Plugin', () => {
   describe('Basic Functionality', () => {
@@ -48,7 +50,7 @@ describe('Git Safety Plugin', () => {
     test('should ignore non-PreToolUse events', () => {
       const context = createBashContext('git status');
       context.event = 'PostToolUse';
-      
+
       const result = gitSafetyPlugin.apply(context);
 
       expect(result.success).toBe(true);
@@ -71,7 +73,7 @@ describe('Git Safety Plugin', () => {
         'git diff',
         'git branch',
         'git show',
-        'git reflog'
+        'git reflog',
       ];
 
       for (const command of safeCommands) {
@@ -97,7 +99,7 @@ describe('Git Safety Plugin', () => {
         'git push --force',
         'git push -f',
         'git push origin main --force',
-        'git push --force-with-lease'
+        'git push --force-with-lease',
       ];
 
       for (const command of commands) {
@@ -114,7 +116,7 @@ describe('Git Safety Plugin', () => {
       const commands = [
         'git reset --hard',
         'git reset --hard HEAD~5',
-        'git reset --hard origin/main'
+        'git reset --hard origin/main',
       ];
 
       for (const command of commands) {
@@ -131,7 +133,7 @@ describe('Git Safety Plugin', () => {
         'git clean -f -d',
         'git clean -fd',
         'git clean -f -d .',
-        'git clean --force -d'
+        'git clean --force -d',
       ];
 
       for (const command of commands) {
@@ -146,7 +148,7 @@ describe('Git Safety Plugin', () => {
     test('should block force branch deletion', () => {
       const commands = [
         'git branch -D feature-branch',
-        'git branch --delete --force main'
+        'git branch --delete --force main',
       ];
 
       for (const command of commands) {
@@ -163,7 +165,7 @@ describe('Git Safety Plugin', () => {
     test('should respect custom block patterns', () => {
       const config = {
         blockPatterns: ['custom-dangerous-command'],
-        allowList: []
+        allowList: [],
       };
 
       const context = createBashContext('git custom-dangerous-command');
@@ -176,7 +178,7 @@ describe('Git Safety Plugin', () => {
     test('should respect custom allow list', () => {
       const config = {
         blockPatterns: ['push.*--force'],
-        allowList: ['git push --force origin feature']
+        allowList: ['git push --force origin feature'],
       };
 
       const context = createBashContext('git push --force origin feature');
@@ -188,12 +190,14 @@ describe('Git Safety Plugin', () => {
 
     test('should use custom rules', () => {
       const config = {
-        customRules: [{
-          name: 'No main branch force push',
-          pattern: 'push.*origin.*main.*--force',
-          message: 'Force pushing to main branch is not allowed',
-          severity: 'block' as const
-        }]
+        customRules: [
+          {
+            name: 'No main branch force push',
+            pattern: 'push.*origin.*main.*--force',
+            message: 'Force pushing to main branch is not allowed',
+            severity: 'block' as const,
+          },
+        ],
       };
 
       const context = createBashContext('git push origin main --force');
@@ -201,17 +205,21 @@ describe('Git Safety Plugin', () => {
 
       expect(result.success).toBe(false);
       expect(result.block).toBe(true);
-      expect(result.message).toContain('Force pushing to main branch is not allowed');
+      expect(result.message).toContain(
+        'Force pushing to main branch is not allowed'
+      );
     });
 
     test('should handle warning severity in custom rules', () => {
       const config = {
-        customRules: [{
-          name: 'Warning rule',
-          pattern: 'merge.*--no-ff',
-          message: 'Consider using fast-forward merge',
-          severity: 'warn' as const
-        }]
+        customRules: [
+          {
+            name: 'Warning rule',
+            pattern: 'merge.*--no-ff',
+            message: 'Consider using fast-forward merge',
+            severity: 'warn' as const,
+          },
+        ],
       };
 
       const context = createBashContext('git merge --no-ff feature');
@@ -224,12 +232,12 @@ describe('Git Safety Plugin', () => {
 
     test('should exclude repositories based on path patterns', () => {
       const config = {
-        excludeRepos: ['/tmp/.*', '.*test.*']
+        excludeRepos: ['/tmp/.*', '.*test.*'],
       };
 
       const context = createBashContext('git push --force');
       context.cwd = '/tmp/test-repo' as any;
-      
+
       const result = gitSafetyPlugin.apply(context, config);
 
       expect(result.success).toBe(true);
@@ -238,13 +246,13 @@ describe('Git Safety Plugin', () => {
 
     test('should include only specified repositories', () => {
       const config = {
-        includeRepos: ['/important/.*']
+        includeRepos: ['/important/.*'],
       };
 
       // Should skip repo not in include list
       const context1 = createBashContext('git push --force');
       context1.cwd = '/unimportant/repo' as any;
-      
+
       const result1 = gitSafetyPlugin.apply(context1, config);
       expect(result1.success).toBe(true);
       expect(result1.metadata?.skipped).toBe(true);
@@ -252,7 +260,7 @@ describe('Git Safety Plugin', () => {
       // Should process repo in include list
       const context2 = createBashContext('git push --force');
       context2.cwd = '/important/repo' as any;
-      
+
       const result2 = gitSafetyPlugin.apply(context2, config);
       expect(result2.success).toBe(false);
       expect(result2.block).toBe(true);
@@ -286,14 +294,16 @@ describe('Git Safety Plugin', () => {
     test('should handle git aliases and shortcuts', () => {
       const context = createBashContext('git pf'); // Assuming pf is alias for push --force
       const config = {
-        customRules: [{
-          name: 'Block git aliases',
-          pattern: '\\bpf\\b',
-          message: 'Dangerous git alias detected',
-          severity: 'block' as const
-        }]
+        customRules: [
+          {
+            name: 'Block git aliases',
+            pattern: '\\bpf\\b',
+            message: 'Dangerous git alias detected',
+            severity: 'block' as const,
+          },
+        ],
       };
-      
+
       const result = gitSafetyPlugin.apply(context, config);
 
       expect(result.success).toBe(false);

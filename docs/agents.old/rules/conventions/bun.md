@@ -102,6 +102,7 @@ Then, run index.ts
 
 ```sh
 bun --hot ./index.ts
+
 ```
 
 For more information, read the Bun API docs in `node_modules/bun-types/docs/**.md`.

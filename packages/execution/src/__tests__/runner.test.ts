@@ -178,10 +178,7 @@ describe('createRunner', () => {
   });
 
   test('should execute handler when runner function is called', async () => {
-    let _executed = false;
-
     const handler: HookHandler = async () => {
-      _executed = true;
       return { success: true };
     };
 

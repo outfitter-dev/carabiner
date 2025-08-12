@@ -3,27 +3,30 @@
  * Provides runtime validation with excellent error messages
  */
 
-import { z } from 'zod';
 import type {
   BashToolInput,
-  WriteToolInput,
   EditToolInput,
-  MultiEditInput,
-  ReadToolInput,
   GlobToolInput,
   GrepToolInput,
   LSToolInput,
+  MultiEditInput,
+  NotebookEditToolInput,
+  ReadToolInput,
   TodoWriteToolInput,
   WebFetchToolInput,
   WebSearchToolInput,
-  NotebookEditToolInput,
+  WriteToolInput,
 } from '@outfitter/types';
+import { z } from 'zod';
 
 /**
  * Common validation schemas
  */
 const nonEmptyString = z.string().min(1, 'Must not be empty');
-const filePath = z.string().min(1).regex(/^\//, 'Must be absolute path starting with /');
+const filePath = z
+  .string()
+  .min(1)
+  .regex(/^\//, 'Must be absolute path starting with /');
 const positiveInteger = z.number().int().positive();
 const nonNegativeInteger = z.number().int().nonnegative();
 
@@ -59,13 +62,15 @@ export const editToolInputSchema = z.object({
  */
 export const multiEditInputSchema = z.object({
   file_path: filePath,
-  edits: z.array(
-    z.object({
-      old_string: z.string(),
-      new_string: z.string(),
-      replace_all: z.boolean().optional(),
-    })
-  ).min(1, 'Must have at least one edit'),
+  edits: z
+    .array(
+      z.object({
+        old_string: z.string(),
+        new_string: z.string(),
+        replace_all: z.boolean().optional(),
+      })
+    )
+    .min(1, 'Must have at least one edit'),
 }) satisfies z.ZodType<MultiEditInput>;
 
 /**
@@ -109,13 +114,15 @@ export const lsToolInputSchema = z.object({
  * TodoWrite tool input schema
  */
 export const todoWriteToolInputSchema = z.object({
-  todos: z.array(
-    z.object({
-      content: nonEmptyString,
-      status: z.enum(['pending', 'in_progress', 'completed']),
-      id: nonEmptyString,
-    })
-  ).min(1, 'Must have at least one todo'),
+  todos: z
+    .array(
+      z.object({
+        content: nonEmptyString,
+        status: z.enum(['pending', 'in_progress', 'completed']),
+        id: nonEmptyString,
+      })
+    )
+    .min(1, 'Must have at least one todo'),
 }) satisfies z.ZodType<TodoWriteToolInput>;
 
 /**

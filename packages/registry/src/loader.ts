@@ -5,13 +5,13 @@
  */
 
 import { readdir, stat, watch } from 'node:fs/promises';
-import { join, extname, resolve, basename } from 'node:path';
+import { basename, extname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type {
   HookPlugin,
-  PluginModule,
   PluginDiscovery,
-  PluginFactory
+  PluginFactory,
+  PluginModule,
 } from './plugin';
 import { isHookPlugin, PluginValidationError } from './plugin';
 
@@ -77,7 +77,7 @@ export type HotReloadListener = (event: HotReloadEvent) => void | Promise<void>;
 
 /**
  * Plugin loader class for dynamic plugin discovery and loading
- * 
+ *
  * Features:
  * - File system plugin discovery
  * - ES Module and CommonJS support
@@ -85,7 +85,7 @@ export type HotReloadListener = (event: HotReloadEvent) => void | Promise<void>;
  * - Plugin validation and error handling
  * - Caching for performance
  * - Recursive directory scanning
- * 
+ *
  * @example Basic Usage
  * ```typescript
  * const loader = new PluginLoader({
@@ -93,30 +93,33 @@ export type HotReloadListener = (event: HotReloadEvent) => void | Promise<void>;
  *   includePatterns: ['*.plugin.js', '*.plugin.ts'],
  *   recursive: true
  * });
- * 
+ *
  * const result = await loader.loadPlugins();
  * console.log(`Loaded ${result.plugins.length} plugins`);
  * ```
- * 
+ *
  * @example With Hot Reload
  * ```typescript
- * const loader = new PluginLoader({ 
- *   enableHotReload: true 
+ * const loader = new PluginLoader({
+ *   enableHotReload: true
  * });
- * 
+ *
  * loader.onHotReload(async (event) => {
  *   if (event.type === 'changed' && event.plugin) {
  *     registry.unregister(event.plugin.name);
  *     registry.register(event.plugin);
  *   }
  * });
- * 
+ *
  * await loader.startWatching();
  * ```
  */
 export class PluginLoader {
   private readonly options: LoaderOptions;
-  private readonly cache = new Map<string, { plugin: HookPlugin; lastModified: number }>();
+  private readonly cache = new Map<
+    string,
+    { plugin: HookPlugin; lastModified: number }
+  >();
   private readonly watchers = new Map<string, AbortController>();
   private readonly hotReloadListeners: HotReloadListener[] = [];
   private readonly loadedPaths = new Set<string>();
@@ -134,7 +137,7 @@ export class PluginLoader {
       validateOnLoad: true,
       allowESModules: true,
       allowCommonJS: true,
-      ...options
+      ...options,
     };
   }
 
@@ -151,7 +154,10 @@ export class PluginLoader {
         const pathDiscoveries = await this.discoverInPath(resolve(searchPath));
         discoveries.push(...pathDiscoveries);
       } catch (error) {
-        console.warn(`[PluginLoader] Failed to discover plugins in ${searchPath}:`, error);
+        console.warn(
+          `[PluginLoader] Failed to discover plugins in ${searchPath}:`,
+          error
+        );
       }
     }
 
@@ -161,7 +167,10 @@ export class PluginLoader {
   /**
    * Discover plugins in a specific directory
    */
-  private async discoverInPath(path: string, depth = 0): Promise<PluginDiscovery[]> {
+  private async discoverInPath(
+    path: string,
+    depth = 0
+  ): Promise<PluginDiscovery[]> {
     if (depth > this.options.maxDepth) {
       return [];
     }
@@ -182,7 +191,6 @@ export class PluginLoader {
 
           const subDiscoveries = await this.discoverInPath(fullPath, depth + 1);
           discoveries.push(...subDiscoveries);
-          
         } else if (entry.isFile()) {
           // Check if file matches include patterns and not excluded
           if (this.shouldInclude(fullPath) && !this.shouldExclude(fullPath)) {
@@ -190,7 +198,7 @@ export class PluginLoader {
             discoveries.push({
               path: fullPath,
               name: this.extractPluginName(fullPath),
-              lastModified: stats.mtime
+              lastModified: stats.mtime,
             });
           }
         }
@@ -222,7 +230,7 @@ export class PluginLoader {
       } catch (error) {
         errors.push({
           path: discovery.path,
-          error: error instanceof Error ? error : new Error(String(error))
+          error: error instanceof Error ? error : new Error(String(error)),
         });
       }
     }
@@ -231,7 +239,7 @@ export class PluginLoader {
       plugins,
       errors,
       scanned: discoveries.length,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     };
   }
 
@@ -245,7 +253,7 @@ export class PluginLoader {
     if (this.options.enableCache && this.cache.has(absolutePath)) {
       const cached = this.cache.get(absolutePath)!;
       const stats = await stat(absolutePath);
-      
+
       if (stats.mtime.getTime() <= cached.lastModified) {
         return cached.plugin;
       }
@@ -253,7 +261,7 @@ export class PluginLoader {
 
     try {
       const plugin = await this.loadPluginModule(absolutePath);
-      
+
       if (!plugin) {
         return null;
       }
@@ -268,17 +276,18 @@ export class PluginLoader {
         const stats = await stat(absolutePath);
         this.cache.set(absolutePath, {
           plugin,
-          lastModified: stats.mtime.getTime()
+          lastModified: stats.mtime.getTime(),
         });
       }
 
       this.loadedPaths.add(absolutePath);
       return plugin;
-
     } catch (error) {
-      throw new Error(`Failed to load plugin from ${filePath}: ${
-        error instanceof Error ? error.message : String(error)
-      }`);
+      throw new Error(
+        `Failed to load plugin from ${filePath}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 
@@ -287,11 +296,12 @@ export class PluginLoader {
    */
   private async loadPluginModule(filePath: string): Promise<HookPlugin | null> {
     const ext = extname(filePath);
-    const isESModule = ext === '.mjs' || (ext === '.js' && this.isESModuleEnvironment());
+    const isESModule =
+      ext === '.mjs' || (ext === '.js' && this.isESModuleEnvironment());
     const isTypeScript = ext === '.ts';
 
     // Clear module from require cache if CommonJS
-    if (!isESModule && !isTypeScript) {
+    if (!(isESModule || isTypeScript)) {
       delete require.cache[require.resolve(filePath)];
     }
 
@@ -302,7 +312,7 @@ export class PluginLoader {
         if (!this.options.allowESModules) {
           throw new Error('ES modules are not allowed');
         }
-        
+
         // Use dynamic import for ES modules
         const fileUrl = pathToFileURL(filePath).href;
         module = await import(`${fileUrl}?t=${Date.now()}`);
@@ -310,14 +320,16 @@ export class PluginLoader {
         if (!this.options.allowCommonJS) {
           throw new Error('CommonJS modules are not allowed');
         }
-        
+
         // Use require for CommonJS
         module = require(filePath);
       }
     } catch (error) {
-      throw new Error(`Failed to load module: ${
-        error instanceof Error ? error.message : String(error)
-      }`);
+      throw new Error(
+        `Failed to load module: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
 
     return this.extractPluginFromModule(module, filePath);
@@ -326,24 +338,37 @@ export class PluginLoader {
   /**
    * Extract plugin from loaded module
    */
-  private extractPluginFromModule(module: PluginModule, filePath: string): HookPlugin | null {
+  private extractPluginFromModule(
+    module: PluginModule,
+    filePath: string
+  ): HookPlugin | null {
     // Try default export first
     if (module.default) {
       const plugin = this.resolvePlugin(module.default, filePath);
-      if (plugin) return plugin;
+      if (plugin) {
+        return plugin;
+      }
     }
 
     // Try named export 'plugin'
     if (module.plugin) {
       const plugin = this.resolvePlugin(module.plugin, filePath);
-      if (plugin) return plugin;
+      if (plugin) {
+        return plugin;
+      }
     }
 
     // Try other named exports that look like plugins
     for (const [key, value] of Object.entries(module)) {
-      if (key !== 'default' && key !== 'plugin' && key.toLowerCase().includes('plugin')) {
+      if (
+        key !== 'default' &&
+        key !== 'plugin' &&
+        key.toLowerCase().includes('plugin')
+      ) {
         const plugin = this.resolvePlugin(value, filePath);
-        if (plugin) return plugin;
+        if (plugin) {
+          return plugin;
+        }
       }
     }
 
@@ -353,7 +378,10 @@ export class PluginLoader {
   /**
    * Resolve plugin from export (could be plugin object or factory function)
    */
-  private resolvePlugin(exportValue: unknown, filePath: string): HookPlugin | null {
+  private resolvePlugin(
+    exportValue: unknown,
+    filePath: string
+  ): HookPlugin | null {
     if (isHookPlugin(exportValue)) {
       return exportValue;
     }
@@ -363,16 +391,21 @@ export class PluginLoader {
         // Try calling as plugin factory
         const factory = exportValue as PluginFactory;
         const result = factory();
-        
+
         if (result instanceof Promise) {
-          throw new Error('Async plugin factories not supported in synchronous context');
+          throw new Error(
+            'Async plugin factories not supported in synchronous context'
+          );
         }
-        
+
         if (isHookPlugin(result)) {
           return result;
         }
       } catch (error) {
-        console.warn(`[PluginLoader] Failed to resolve plugin factory in ${filePath}:`, error);
+        console.warn(
+          `[PluginLoader] Failed to resolve plugin factory in ${filePath}:`,
+          error
+        );
       }
     }
 
@@ -435,9 +468,9 @@ export class PluginLoader {
     this.watchers.set(path, controller);
 
     try {
-      const watcher = watch(path, { 
+      const watcher = watch(path, {
         recursive: this.options.recursive,
-        signal: controller.signal
+        signal: controller.signal,
       });
 
       const debouncedHandler = this.debounce(
@@ -460,31 +493,34 @@ export class PluginLoader {
   /**
    * Handle file change event
    */
-  private async handleFileChange(eventType: string, filePath: string): Promise<void> {
+  private async handleFileChange(
+    eventType: string,
+    filePath: string
+  ): Promise<void> {
     try {
       if (eventType === 'change' || eventType === 'rename') {
         // Check if file still exists
         try {
           await stat(filePath);
-          
+
           // File exists - load or reload plugin
           const plugin = await this.loadPlugin(filePath);
           if (plugin) {
             await this.emitHotReloadEvent({
               type: this.loadedPaths.has(filePath) ? 'changed' : 'added',
               path: filePath,
-              plugin
+              plugin,
             });
           }
-        } catch (error) {
+        } catch (_error) {
           // File was deleted
           if (this.loadedPaths.has(filePath)) {
             this.loadedPaths.delete(filePath);
             this.cache.delete(filePath);
-            
+
             await this.emitHotReloadEvent({
               type: 'removed',
-              path: filePath
+              path: filePath,
             });
           }
         }
@@ -493,13 +529,13 @@ export class PluginLoader {
       await this.emitHotReloadEvent({
         type: 'changed',
         path: filePath,
-        error: error instanceof Error ? error : new Error(String(error))
+        error: error instanceof Error ? error : new Error(String(error)),
       });
     }
   }
 
   private async emitHotReloadEvent(event: HotReloadEvent): Promise<void> {
-    const promises = this.hotReloadListeners.map(async listener => {
+    const promises = this.hotReloadListeners.map(async (listener) => {
       try {
         await listener(event);
       } catch (error) {
@@ -517,14 +553,14 @@ export class PluginLoader {
       return true;
     }
 
-    return this.options.includePatterns.some(pattern => {
+    return this.options.includePatterns.some((pattern) => {
       const regex = this.globToRegex(pattern);
       return regex.test(basename(filePath));
     });
   }
 
   private shouldExclude(filePath: string): boolean {
-    return this.options.excludePatterns.some(pattern => {
+    return this.options.excludePatterns.some((pattern) => {
       const regex = this.globToRegex(pattern);
       return regex.test(filePath);
     });
@@ -535,7 +571,7 @@ export class PluginLoader {
       .replace(/\./g, '\\.')
       .replace(/\*/g, '.*')
       .replace(/\?/g, '.');
-    
+
     return new RegExp(`^${escaped}$`, 'i');
   }
 
@@ -546,7 +582,11 @@ export class PluginLoader {
 
   private validatePlugin(plugin: HookPlugin, filePath: string): void {
     if (!isHookPlugin(plugin)) {
-      throw new PluginValidationError('unknown', 'structure', `Invalid plugin structure in ${filePath}`);
+      throw new PluginValidationError(
+        'unknown',
+        'structure',
+        `Invalid plugin structure in ${filePath}`
+      );
     }
   }
 
@@ -561,11 +601,11 @@ export class PluginLoader {
   }
 
   private debounce<T extends (...args: any[]) => any>(
-    func: T, 
+    func: T,
     wait: number
   ): (...args: Parameters<T>) => void {
     let timeout: NodeJS.Timeout;
-    
+
     return (...args: Parameters<T>) => {
       clearTimeout(timeout);
       timeout = setTimeout(() => func(...args), wait);
@@ -596,7 +636,7 @@ export class PluginLoader {
     return {
       size: this.cache.size,
       paths,
-      memoryUsage
+      memoryUsage,
     };
   }
 

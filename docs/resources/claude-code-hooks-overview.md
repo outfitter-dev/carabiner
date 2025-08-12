@@ -15,11 +15,13 @@ Claude Code hooks are a powerful configuration mechanism that allows you to exec
 
 1. **Create hook directory**: `mkdir -p hooks`
 2. **Create a simple hook script** (`hooks/my-hook.ts`):
+
    ```typescript
    #!/usr/bin/env bun
    console.log(`Hook triggered for: ${process.env.CLAUDE_TOOL_NAME}`);
    process.exit(0); // Success
    ```
+
 3. **Add to settings** (`.claude/settings.json`):
    ```json
    {
@@ -55,41 +57,34 @@ Claude Code hooks are event-driven commands that execute automatically at specif
 ### Available Hook Events
 
 1. **PreToolUse**: Executes before a tool is used
-
    - **Purpose**: Validate inputs, add context, or prevent execution
    - **Common use**: Input validation, security checks
    - **Exit behavior**: Exit code 2 blocks the tool and shows stderr to Claude
 
 2. **PostToolUse**: Executes after a tool completes successfully
-
    - **Purpose**: Process outputs, trigger follow-up actions
    - **Common use**: Code formatting, file processing
    - **Exit behavior**: Non-zero exits mark hook as failed but don't block
 
 3. **UserPromptSubmit**: Executes when a user submits a prompt
-
    - **Purpose**: Add context or validate user inputs
    - **Common use**: Timestamp injection, prompt preprocessing
    - **Note**: `USER_PROMPT` environment variable is only available in this context
 
 4. **SessionStart**: Executes when starting a new session
-
    - **Purpose**: Initialize session-specific state
    - **Common use**: Environment setup, context loading
    - **Note**: `CLAUDE_TOOL_NAME` is not available in this context
 
 5. **Stop**: Executes when Claude Code finishes responding
-
    - **Purpose**: Clean up or trigger post-response actions
    - **Common use**: Logging, state persistence
 
 6. **SubagentStop**: Executes when a subagent finishes responding
-
    - **Purpose**: Handle subagent completion
    - **Common use**: Subagent result processing
 
 7. **Notification**: Executes on certain system notifications
-
    - **Purpose**: Handle system-level events
    - **Common use**: Status monitoring, alerts
 
@@ -113,7 +108,7 @@ Hooks are configured in JSON settings files with hierarchical precedence (higher
 
 ### Basic Hook Configuration
 
-```json
+````json
 {
   "hooks": {
     "PreToolUse": {
@@ -125,7 +120,8 @@ Hooks are configured in JSON settings files with hierarchical precedence (higher
     "UserPromptSubmit": "echo 'User submitted: $USER_PROMPT'"
   }
 }
-```
+
+```text
 
 ### Advanced Configuration with Matchers
 
@@ -146,7 +142,8 @@ Hooks are configured in JSON settings files with hierarchical precedence (higher
     }
   }
 }
-```
+
+```text
 
 ### Hook Configuration Options
 
@@ -174,7 +171,8 @@ process.env.TOOL_INPUT; // Tool input parameters (JSON)
 process.env.TOOL_OUTPUT; // Tool output (PostToolUse only, not in async hooks)
 process.env.USER_PROMPT; // User's prompt text (UserPromptSubmit only)
 process.env.FILE_PATH; // File path for file operations
-```
+
+```text
 
 > **Variable Availability**: Not all variables are available in all hook contexts. For example, `CLAUDE_TOOL_NAME` is empty during `SessionStart` and `USER_PROMPT` is only available in `UserPromptSubmit` hooks.
 
@@ -183,6 +181,7 @@ process.env.FILE_PATH; // File path for file operations
 Create a TypeScript hook script (`hooks/pre-tool-use.ts`):
 
 ```typescript
+
 #!/usr/bin/env bun
 
 interface ToolInput {
@@ -255,7 +254,8 @@ main().catch((error) => {
   console.error('Hook failed:', error);
   process.exit(1);
 });
-```
+
+```text
 
 ### Configuration for TypeScript Hook
 
@@ -270,11 +270,13 @@ main().catch((error) => {
     }
   }
 }
-```
+
+```text
 
 ### Post-Tool Hook with File Processing
 
 ```typescript
+
 #!/usr/bin/env bun
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
@@ -341,7 +343,8 @@ main().catch((error) => {
   console.error('Post-hook failed:', error);
   process.exit(1);
 });
-```
+
+```text
 
 ## Security Considerations
 
@@ -374,7 +377,8 @@ function sanitizeCommand(command: string): boolean {
 
   return allowedCommands.some((pattern) => pattern.test(command));
 }
-```
+
+```text
 
 ## Common Use Cases
 
@@ -389,7 +393,8 @@ function sanitizeCommand(command: string): boolean {
     }
   }
 }
-```
+
+```text
 
 ### 2. Git Integration
 
@@ -402,7 +407,8 @@ function sanitizeCommand(command: string): boolean {
     "Stop": "git status"
   }
 }
-```
+
+```text
 
 ### 3. Environment Context Injection
 
@@ -413,7 +419,8 @@ function sanitizeCommand(command: string): boolean {
     "UserPromptSubmit": "echo \"$(date): User prompt received\""
   }
 }
-```
+
+```text
 
 ### 4. Permission Control
 
@@ -430,7 +437,8 @@ function sanitizeCommand(command: string): boolean {
     }
   }
 }
-```
+
+```text
 
 ## Advanced Patterns
 
@@ -445,7 +453,8 @@ function sanitizeCommand(command: string): boolean {
     }
   }
 }
-```
+
+```text
 
 > **Important**: When multiple matchers match (e.g., both `*` and a specific tool), **all matching hooks execute in parallel**. This differs from most pattern-matching systems that use "first match" or "most specific" rules.
 
@@ -465,7 +474,8 @@ if (process.env.NODE_ENV === 'production') {
 if (context.toolInput.file_path?.endsWith('.ts')) {
   await runTypeScriptChecks();
 }
-```
+
+```text
 
 ### Multi-Tool Hook
 
@@ -486,7 +496,8 @@ switch (context.toolName) {
   default:
     console.log(`No specific validation for ${context.toolName}`);
 }
-```
+
+```text
 
 ---
 
@@ -494,3 +505,4 @@ switch (context.toolName) {
 >
 > - [Claude Code Hooks Documentation](https://docs.anthropic.com/en/docs/claude-code/hooks)
 > - [Claude Code Settings Documentation](https://docs.anthropic.com/en/docs/claude-code/settings)
+````

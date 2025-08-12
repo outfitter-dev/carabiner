@@ -2,21 +2,25 @@
  * Tests for StdinProtocol
  */
 
-import { describe, expect, test, mock, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import {
+  ProtocolInputError,
+  ProtocolOutputError,
+  ProtocolParseError,
+} from '../interface.js';
 import { StdinProtocol, StdinProtocolFactory } from '../protocols/stdin.js';
-import { ProtocolInputError, ProtocolOutputError, ProtocolParseError } from '../interface.js';
 
 describe('StdinProtocol', () => {
   let originalStdin: typeof process.stdin;
   let originalStdout: typeof process.stdout;
   let originalStderr: typeof process.stderr;
-  
+
   beforeEach(() => {
     originalStdin = process.stdin;
     originalStdout = process.stdout;
     originalStderr = process.stderr;
   });
-  
+
   afterEach(() => {
     process.stdin = originalStdin;
     process.stdout = originalStdout;
@@ -31,7 +35,7 @@ describe('StdinProtocol', () => {
 
       const protocol = new StdinProtocol();
       const result = await protocol.readInput();
-      
+
       expect(result).toEqual(testInput);
     });
 
@@ -40,7 +44,7 @@ describe('StdinProtocol', () => {
       process.stdin = mockStdin as any;
 
       const protocol = new StdinProtocol();
-      
+
       await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
     });
 
@@ -49,7 +53,7 @@ describe('StdinProtocol', () => {
       process.stdin = mockStdin as any;
 
       const protocol = new StdinProtocol();
-      
+
       await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
     });
 
@@ -58,7 +62,7 @@ describe('StdinProtocol', () => {
       process.stdin = mockStdin as any;
 
       const protocol = new StdinProtocol({ inputTimeout: 50 });
-      
+
       await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
     });
   });
@@ -76,7 +80,7 @@ describe('StdinProtocol', () => {
 
       const protocol = new StdinProtocol();
       const context = await protocol.parseContext(input);
-      
+
       expect(context.event).toBe('PreToolUse');
       expect(context.sessionId).toBeDefined();
       expect(context.transcriptPath).toBeDefined();
@@ -94,7 +98,7 @@ describe('StdinProtocol', () => {
 
       const protocol = new StdinProtocol();
       const context = await protocol.parseContext(input);
-      
+
       expect(context.event).toBe('UserPromptSubmit');
     });
 
@@ -102,8 +106,10 @@ describe('StdinProtocol', () => {
       const input = { invalid: 'input' };
 
       const protocol = new StdinProtocol();
-      
-      await expect(protocol.parseContext(input)).rejects.toThrow(ProtocolParseError);
+
+      await expect(protocol.parseContext(input)).rejects.toThrow(
+        ProtocolParseError
+      );
     });
   });
 
@@ -114,9 +120,9 @@ describe('StdinProtocol', () => {
 
       const protocol = new StdinProtocol();
       const result = { success: true, message: 'Test success' };
-      
+
       await protocol.writeOutput(result);
-      
+
       expect(mockStdout.writtenData).toBe(JSON.stringify(result));
     });
 
@@ -126,9 +132,9 @@ describe('StdinProtocol', () => {
 
       const protocol = new StdinProtocol({ prettyOutput: true });
       const result = { success: true, message: 'Test success' };
-      
+
       await protocol.writeOutput(result);
-      
+
       expect(mockStdout.writtenData).toBe(JSON.stringify(result, null, 2));
     });
 
@@ -138,8 +144,10 @@ describe('StdinProtocol', () => {
 
       const protocol = new StdinProtocol();
       const result = { success: true, message: 'Test' };
-      
-      await expect(protocol.writeOutput(result)).rejects.toThrow(ProtocolOutputError);
+
+      await expect(protocol.writeOutput(result)).rejects.toThrow(
+        ProtocolOutputError
+      );
     });
   });
 
@@ -150,9 +158,9 @@ describe('StdinProtocol', () => {
 
       const protocol = new StdinProtocol();
       const error = new Error('Test error');
-      
+
       await protocol.writeError(error);
-      
+
       const written = JSON.parse(mockStderr.writtenData);
       expect(written.error).toBe('Test error');
       expect(written.type).toBe('Error');
@@ -168,9 +176,9 @@ describe('StdinProtocol', () => {
       if (error.stack === undefined) {
         error.stack = 'Error: Test error\n    at test';
       }
-      
+
       await protocol.writeError(error);
-      
+
       const written = JSON.parse(mockStderr.writtenData);
       expect(written.stack).toBeDefined();
     });
@@ -181,9 +189,9 @@ describe('StdinProtocol', () => {
 
       const protocol = new StdinProtocol({ includeErrorStack: false });
       const error = new Error('Test error');
-      
+
       await protocol.writeError(error);
-      
+
       const written = JSON.parse(mockStderr.writtenData);
       expect(written.stack).toBeUndefined();
     });
@@ -194,23 +202,26 @@ describe('StdinProtocolFactory', () => {
   test('should create StdinProtocol instances', () => {
     const factory = new StdinProtocolFactory();
     const protocol = factory.create({ inputTimeout: 5000 });
-    
+
     expect(protocol).toBeInstanceOf(StdinProtocol);
     expect(factory.type).toBe('stdin');
   });
 });
 
 // Mock helper functions
-function createMockReadableStream(data: string, options: { delay?: number } = {}) {
+function createMockReadableStream(
+  data: string,
+  options: { delay?: number } = {}
+) {
   const chunks = [Buffer.from(data)];
   let index = 0;
 
   return {
     async *[Symbol.asyncIterator]() {
       if (options.delay) {
-        await new Promise(resolve => setTimeout(resolve, options.delay));
+        await new Promise((resolve) => setTimeout(resolve, options.delay));
       }
-      
+
       while (index < chunks.length) {
         yield chunks[index++];
       }
@@ -224,12 +235,16 @@ function createMockWritableStream(options: { shouldError?: boolean } = {}) {
     write(data: string, callback?: (error?: Error) => void) {
       if (options.shouldError) {
         const error = new Error('Mock write error');
-        if (callback) callback(error);
+        if (callback) {
+          callback(error);
+        }
         return false;
       }
-      
+
       this.writtenData += data;
-      if (callback) callback();
+      if (callback) {
+        callback();
+      }
       return true;
     },
   };

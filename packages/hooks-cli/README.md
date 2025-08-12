@@ -5,11 +5,15 @@ Command-line tools, scaffolding, and project management for Claude Code hooks.
 ## Installation
 
 ```bash
+
 # Global installation (recommended)
+
 npm install -g @outfitter/hooks-cli
 
 # Or use directly with npx
+
 npx @outfitter/hooks-cli --help
+
 ```
 
 ## Usage
@@ -17,40 +21,52 @@ npx @outfitter/hooks-cli --help
 ### Quick Start
 
 ```bash
+
 # Initialize hooks in your project
+
 claude-hooks init
 
 # Generate a new hook
+
 claude-hooks generate --type PreToolUse --tool Bash --name security-check
 
 # Build and validate configuration
+
 claude-hooks build --output .claude/settings.json
 
 # Test a specific hook
+
 claude-hooks test --hook ./hooks/pre-tool-use.ts
 
 # Development mode with file watching
+
 claude-hooks dev --watch
+
 ```
 
 ### Project Initialization
 
 ```bash
+
 # Basic initialization
+
 claude-hooks init
 
 # TypeScript project with strict configuration
+
 claude-hooks init --typescript --strict
 
 # Initialize with templates
+
 claude-hooks init --template security
 claude-hooks init --template formatting
 claude-hooks init --template audit
+
 ```
 
 This creates:
 
-```
+```text
 .claude/
 ├── settings.json              # Claude Code settings
 └── settings.local.json        # Local settings (gitignored)
@@ -66,6 +82,7 @@ hooks/
 package.json                  # Updated with hook dependencies
 .gitignore                    # Updated to ignore local settings
 README.md                     # Updated with hook documentation
+
 ```
 
 ## Commands
@@ -90,17 +107,23 @@ Options:
 **Examples:**
 
 ```bash
+
 # Basic TypeScript setup with Bun
+
 claude-hooks init
 
 # JavaScript with Node.js
+
 claude-hooks init --javascript --runtime node
 
 # Security-focused setup
+
 claude-hooks init --template security --strict
 
 # See what would be created
+
 claude-hooks init --template audit --dry-run
+
 ```
 
 ### `generate`
@@ -123,20 +146,27 @@ Options:
 **Examples:**
 
 ```bash
+
 # Universal security hook for all tools
+
 claude-hooks generate --type PreToolUse --name universal-security
 
 # Bash-specific security hook
+
 claude-hooks generate --type PreToolUse --tool Bash --name bash-security
 
 # Post-write formatting hook
+
 claude-hooks generate --type PostToolUse --tool Write --name format-after-write
 
 # Session audit hook
+
 claude-hooks generate --type SessionStart --name session-audit
 
 # Use template with custom name
+
 claude-hooks generate --type PreToolUse --template security --name custom-security
+
 ```
 
 Generated files include:
@@ -166,17 +196,23 @@ Options:
 **Examples:**
 
 ```bash
+
 # Build default configuration
+
 claude-hooks build
 
 # Build for production environment
+
 claude-hooks build --environment production --output .claude/settings.prod.json
 
 # Build with validation and minification
+
 claude-hooks build --validate --minify
 
 # Watch mode for development
+
 claude-hooks build --watch
+
 ```
 
 ### `test`
@@ -199,20 +235,27 @@ Options:
 **Examples:**
 
 ```bash
+
 # Test all hooks
+
 claude-hooks test
 
 # Test specific hook file
+
 claude-hooks test --hook ./hooks/bash-security.ts
 
 # Test with specific tool context
+
 claude-hooks test --hook ./hooks/pre-tool-use.ts --tool Bash --input '{"command":"ls -la"}'
 
 # Test PreToolUse event with mock data
+
 claude-hooks test --event PreToolUse --tool Write --input '{"file_path":"test.txt","content":"hello"}'
 
 # Validate without execution
+
 claude-hooks test --dry-run --verbose
+
 ```
 
 ### `dev`
@@ -234,14 +277,19 @@ Options:
 **Examples:**
 
 ```bash
+
 # Basic development mode
+
 claude-hooks dev
 
 # Watch with testing and rebuilding
+
 claude-hooks dev --test-on-change --build-on-change
 
 # Development server with UI
+
 claude-hooks dev --port 3001 --open
+
 ```
 
 ### `config`
@@ -264,26 +312,35 @@ Commands:
 **Examples:**
 
 ```bash
+
 # List all hook configurations
+
 claude-hooks config list
 
 # Get specific hook configuration
+
 claude-hooks config get PreToolUse.Bash
 
 # Set hook configuration
+
 claude-hooks config set PreToolUse.Bash.timeout 10000
 
 # Remove hook
+
 claude-hooks config remove PostToolUse.Write
 
 # Validate configuration
+
 claude-hooks config validate
 
 # Create backup
+
 claude-hooks config backup
 
 # Restore from backup
+
 claude-hooks config restore .claude/backups/settings-2024-01-15.json
+
 ```
 
 ### `validate`
@@ -306,17 +363,23 @@ Options:
 **Examples:**
 
 ```bash
+
 # Validate everything
+
 claude-hooks validate
 
 # Validate only configuration
+
 claude-hooks validate --config
 
 # Syntax and type checking only
+
 claude-hooks validate --syntax --types
 
 # Security-focused validation
+
 claude-hooks validate --security
+
 ```
 
 ## Configuration File
@@ -424,6 +487,7 @@ export default defineConfig({
 
 ```bash
 claude-hooks init --template security
+
 ```
 
 Creates hooks for:
@@ -437,6 +501,7 @@ Creates hooks for:
 
 ```bash
 claude-hooks init --template formatting
+
 ```
 
 Creates hooks for:
@@ -450,6 +515,7 @@ Creates hooks for:
 
 ```bash
 claude-hooks init --template audit
+
 ```
 
 Creates hooks for:
@@ -463,6 +529,7 @@ Creates hooks for:
 
 ```bash
 claude-hooks init --template minimal
+
 ```
 
 Creates basic hook structure with minimal dependencies.
@@ -513,6 +580,7 @@ Use with:
 
 ```bash
 claude-hooks init --template ./templates/my-template.ts
+
 ```
 
 ## Integration
@@ -539,6 +607,7 @@ Add to your `package.json`:
 
 ```yaml
 # .github/workflows/hooks.yml
+
 name: Validate Hooks
 
 on: [push, pull_request]
@@ -599,11 +668,15 @@ export interface ProjectHookResult extends HookResult {
 ### Type Checking
 
 ```bash
+
 # Type check all hooks
+
 claude-hooks validate --types
 
 # Type check specific hook
+
 claude-hooks validate --types --hook ./hooks/bash-security.ts
+
 ```
 
 ## Troubleshooting
@@ -613,42 +686,58 @@ claude-hooks validate --types --hook ./hooks/bash-security.ts
 #### Hooks Not Executing
 
 ```bash
+
 # Check configuration
+
 claude-hooks config validate
 
 # Test hook directly
+
 claude-hooks test --hook ./hooks/problematic-hook.ts --verbose
+
 ```
 
 #### Performance Issues
 
 ```bash
+
 # Analyze hook performance
+
 claude-hooks validate --performance
 
 # Check timeout settings
+
 claude-hooks config get PreToolUse.Bash.timeout
+
 ```
 
 #### Permission Errors
 
 ```bash
+
 # Verify file permissions
+
 ls -la hooks/
 
 # Test with explicit permissions
+
 chmod +x hooks/*.ts
 claude-hooks test
+
 ```
 
 ### Debug Mode
 
 ```bash
+
 # Enable debug output
+
 DEBUG=claude-hooks:* claude-hooks dev
 
 # Verbose logging
+
 claude-hooks test --verbose --hook ./hooks/debug-me.ts
+
 ```
 
 ## Examples
@@ -656,35 +745,46 @@ claude-hooks test --verbose --hook ./hooks/debug-me.ts
 ### Complete Project Setup
 
 ```bash
+
 # 1. Initialize project with security template
+
 claude-hooks init --template security --typescript --strict
 
 # 2. Generate additional hooks
+
 claude-hooks generate --type PostToolUse --tool Write --name format-typescript
 claude-hooks generate --type PreToolUse --tool Bash --name dangerous-command-blocker
 
 # 3. Configure for different environments
+
 claude-hooks config set environments.production.hooks.PreToolUse.*.timeout 15000
 claude-hooks config set environments.development.hooks.PreToolUse.*.timeout 5000
 
 # 4. Build production configuration
+
 claude-hooks build --environment production --output .claude/settings.prod.json
 
 # 5. Test everything
+
 claude-hooks test --all
 
 # 6. Start development mode
+
 claude-hooks dev --watch --test-on-change
+
 ```
 
 ### Custom Hook Generation
 
 ```bash
+
 # Generate tool-specific hooks for different scenarios
+
 claude-hooks generate --type PreToolUse --tool Bash --name production-bash-security --template security
 claude-hooks generate --type PreToolUse --tool Write --name file-validation --template validation
 claude-hooks generate --type PostToolUse --tool Edit --name format-and-lint --template formatting
 claude-hooks generate --type SessionStart --name project-initialization
+
 ```
 
 ## API Reference

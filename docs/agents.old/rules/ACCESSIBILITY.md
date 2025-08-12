@@ -33,6 +33,7 @@
 <div class="navigation">
   <div class="nav-item" onclick="navigate('/home')">Home</div>
 </div>
+
 ```
 
 ### Heading Hierarchy
@@ -46,6 +47,7 @@
 
 // Skip heading levels only with aria-level
 <h2 aria-level="4">Visually smaller heading</h2>
+
 ```
 
 ## Keyboard Navigation
@@ -68,6 +70,7 @@ const Button = ({ onClick, children, ...props }) => {
     </button>
   );
 };
+
 ```
 
 ### Tab Order
@@ -84,6 +87,7 @@ const Button = ({ onClick, children, ...props }) => {
 <button tabIndex={isHidden ? -1 : 0}>
   Hidden when not needed
 </button>
+
 ```
 
 ### Skip Links
@@ -112,6 +116,7 @@ const Button = ({ onClick, children, ...props }) => {
     top: 0;
   }
 }
+
 ```
 
 ## ARIA Attributes
@@ -132,6 +137,7 @@ const Button = ({ onClick, children, ...props }) => {
   aria-valuemax={100}
   aria-label="Volume control"
 />
+
 ```
 
 ### Live Regions
@@ -153,6 +159,7 @@ const Button = ({ onClick, children, ...props }) => {
 >
   {errorMessage}
 </div>
+
 ```
 
 ### Descriptions and Labels
@@ -169,6 +176,7 @@ const Button = ({ onClick, children, ...props }) => {
 <span id="email-error" role="alert">
   {errorMessage}
 </span>
+
 ```
 
 ## Forms
@@ -202,6 +210,7 @@ const FormField = ({ label, error, required, ...props }) => {
     </div>
   );
 };
+
 ```
 
 ### Error Handling
@@ -227,6 +236,7 @@ return (
     {/* Form fields */}
   </form>
 );
+
 ```
 
 ## Color and Contrast
@@ -261,6 +271,7 @@ return (
   {status === 'error' && <IconX aria-hidden="true" />}
   <span>{statusMessage}</span>
 </div>
+
 ```
 
 ## Images and Media
@@ -293,6 +304,7 @@ return (
     business logic, and data storage...
   </figcaption>
 </figure>
+
 ```
 
 ### Video Accessibility
@@ -304,6 +316,7 @@ return (
   <track kind="captions" src="captions.vtt" srclang="en" label="English" default />
   <track kind="descriptions" src="descriptions.vtt" srclang="en" label="English descriptions" />
 </video>
+
 ```
 
 ## Testing
@@ -321,6 +334,7 @@ test('should be accessible', async () => {
   const results = await axe(container);
   expect(results).toHaveNoViolations();
 });
+
 ```
 
 ### Manual Testing
@@ -334,17 +348,21 @@ test('should be accessible', async () => {
 ### Testing Tools
 
 ```bash
+
 # Automated tools
+
 - axe DevTools browser extension
 - Lighthouse (built into Chrome)
 - WAVE (WebAIM)
 - Pa11y CLI tool
 
 # Screen readers
+
 - NVDA (Windows, free)
 - JAWS (Windows)
 - VoiceOver (macOS/iOS)
 - TalkBack (Android)
+
 ```
 
 ## React Patterns
@@ -371,6 +389,7 @@ const Modal = ({ isOpen, onClose, children }) => {
     </div>
   ) : null;
 };
+
 ```
 
 ### Announcements
@@ -387,4 +406,5 @@ const RouteAnnouncer = () => {
 
   return <div role="status" aria-live="polite" aria-atomic="true" className="sr-only" />;
 };
+
 ```

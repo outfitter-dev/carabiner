@@ -3,25 +3,16 @@
  * Combines Zod schemas with branded type validation
  */
 
-import type { z } from 'zod';
 import type { ToolName } from '@outfitter/types';
-import { 
+import {
+  BrandValidationError,
+  createDirectoryPath,
   createSessionId,
   createTranscriptPath,
-  createDirectoryPath,
-  BrandValidationError,
 } from '@outfitter/types';
-import {
-  claudeHookInputSchema,
-  parseClaudeHookInput,
-  safeParseClaudeHookInput,
-  type ClaudeHookInput,
-} from './input.js';
-import {
-  toolInputSchemas,
-  validateToolInput,
-  safeValidateToolInput,
-} from './tools.js';
+import type { z } from 'zod';
+import { type ClaudeHookInput, safeParseClaudeHookInput } from './input.js';
+import { safeValidateToolInput, toolInputSchemas } from './tools.js';
 
 /**
  * Validation error with detailed information
@@ -38,11 +29,11 @@ export class ValidationError extends Error {
   }
 
   static fromZodError(error: z.ZodError, context = 'input'): ValidationError {
-    const issues = error.issues.map(issue => {
+    const issues = error.issues.map((issue) => {
       const path = issue.path.join('.');
       return `${path}: ${issue.message}`;
     });
-    
+
     return new ValidationError(
       context,
       undefined, // ZodError doesn't have input property
@@ -76,14 +67,19 @@ export interface ValidatedClaudeInput {
 /**
  * Main validation function - validates and brands input
  */
-export function validateClaudeInput(input: unknown): ValidationResult<ValidatedClaudeInput> {
+export function validateClaudeInput(
+  input: unknown
+): ValidationResult<ValidatedClaudeInput> {
   try {
     // First validate the schema
     const schemaResult = safeParseClaudeHookInput(input);
     if (!schemaResult.success) {
       return {
         success: false,
-        error: ValidationError.fromZodError(schemaResult.error, 'Claude hook input'),
+        error: ValidationError.fromZodError(
+          schemaResult.error,
+          'Claude hook input'
+        ),
       };
     }
 
@@ -108,9 +104,15 @@ export function validateClaudeInput(input: unknown): ValidationResult<ValidatedC
   } catch (error) {
     return {
       success: false,
-      error: error instanceof BrandValidationError 
-        ? error 
-        : new ValidationError('unknown', input, [String(error)], 'Unknown validation error'),
+      error:
+        error instanceof BrandValidationError
+          ? error
+          : new ValidationError(
+              'unknown',
+              input,
+              [String(error)],
+              'Unknown validation error'
+            ),
     };
   }
 }
@@ -118,7 +120,9 @@ export function validateClaudeInput(input: unknown): ValidationResult<ValidatedC
 /**
  * Validate tool input for specific tool
  */
-export function validateToolInputForTool<T extends keyof typeof toolInputSchemas>(
+export function validateToolInputForTool<
+  T extends keyof typeof toolInputSchemas,
+>(
   toolName: T,
   input: unknown
 ): ValidationResult<(typeof toolInputSchemas)[T]['_output']> {
@@ -127,7 +131,10 @@ export function validateToolInputForTool<T extends keyof typeof toolInputSchemas
     if (!result.success) {
       return {
         success: false,
-        error: ValidationError.fromZodError(result.error, `${toolName} tool input`),
+        error: ValidationError.fromZodError(
+          result.error,
+          `${toolName} tool input`
+        ),
       };
     }
 
@@ -139,9 +146,9 @@ export function validateToolInputForTool<T extends keyof typeof toolInputSchemas
     return {
       success: false,
       error: new ValidationError(
-        'tool_input', 
-        input, 
-        [String(error)], 
+        'tool_input',
+        input,
+        [String(error)],
         `Failed to validate ${toolName} tool input`
       ),
     };
@@ -151,7 +158,9 @@ export function validateToolInputForTool<T extends keyof typeof toolInputSchemas
 /**
  * Generic tool input validation (for unknown tools)
  */
-export function validateGenericToolInput(input: unknown): ValidationResult<Record<string, unknown>> {
+export function validateGenericToolInput(
+  input: unknown
+): ValidationResult<Record<string, unknown>> {
   if (typeof input !== 'object' || input === null) {
     return {
       success: false,
@@ -180,45 +189,47 @@ export interface CompleteValidationResult {
   readonly errors: (ValidationError | BrandValidationError)[];
 }
 
-export function validateCompleteHookInput(input: unknown): CompleteValidationResult {
+export function validateCompleteHookInput(
+  input: unknown
+): CompleteValidationResult {
   const errors: (ValidationError | BrandValidationError)[] = [];
   let claudeInput: ValidatedClaudeInput | undefined;
   let toolInput: unknown;
 
   // Validate main input structure
   const inputResult = validateClaudeInput(input);
-  if (!inputResult.success) {
-    errors.push(inputResult.error!);
-  } else {
+  if (inputResult.success) {
     claudeInput = inputResult.data;
-    
+
     // If it's a tool hook, validate tool input
     if (claudeInput) {
       const original = claudeInput.original;
       if ('tool_name' in original && 'tool_input' in original) {
-      const toolName = original.tool_name as ToolName;
-      
-      if (toolName in toolInputSchemas) {
-        const toolResult = validateToolInputForTool(
-          toolName as keyof typeof toolInputSchemas,
-          original.tool_input
-        );
-        if (!toolResult.success) {
-          errors.push(toolResult.error!);
+        const toolName = original.tool_name as ToolName;
+
+        if (toolName in toolInputSchemas) {
+          const toolResult = validateToolInputForTool(
+            toolName as keyof typeof toolInputSchemas,
+            original.tool_input
+          );
+          if (toolResult.success) {
+            toolInput = toolResult.data;
+          } else {
+            errors.push(toolResult.error!);
+          }
         } else {
-          toolInput = toolResult.data;
-        }
-      } else {
-        // Generic validation for unknown tools
-        const genericResult = validateGenericToolInput(original.tool_input);
-        if (!genericResult.success) {
-          errors.push(genericResult.error!);
-        } else {
-          toolInput = genericResult.data;
+          // Generic validation for unknown tools
+          const genericResult = validateGenericToolInput(original.tool_input);
+          if (genericResult.success) {
+            toolInput = genericResult.data;
+          } else {
+            errors.push(genericResult.error!);
+          }
         }
       }
     }
-    }
+  } else {
+    errors.push(inputResult.error!);
   }
 
   return {
@@ -245,12 +256,17 @@ export const ValidationUtils = {
    */
   getErrors: (input: unknown): string[] => {
     const result = validateClaudeInput(input);
-    if (result.success) return [];
-    if (!result.error) return ['Unknown error'];
-    
+    if (result.success) {
+      return [];
+    }
+    if (!result.error) {
+      return ['Unknown error'];
+    }
+
     if (result.error instanceof ValidationError) {
       return result.error.issues;
-    } else if (result.error instanceof BrandValidationError) {
+    }
+    if (result.error instanceof BrandValidationError) {
       return [result.error.message];
     }
     return ['Unknown error'];
@@ -273,7 +289,9 @@ export const ValidationUtils = {
   /**
    * Batch validate multiple inputs
    */
-  validateBatch: (inputs: unknown[]): ValidationResult<ValidatedClaudeInput>[] => {
+  validateBatch: (
+    inputs: unknown[]
+  ): ValidationResult<ValidatedClaudeInput>[] => {
     return inputs.map(validateClaudeInput);
   },
 } as const;

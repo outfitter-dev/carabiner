@@ -6,6 +6,7 @@ Core types, runtime utilities, and execution engine for Claude Code hooks TypeSc
 
 ```bash
 bun add @outfitter/hooks-core
+
 ```
 
 ## Usage
@@ -15,7 +16,9 @@ bun add @outfitter/hooks-core
 The simplest way to create hooks using the new stdin-based runtime:
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
 
 // Universal hook - runs for all tools
@@ -36,6 +39,7 @@ runClaudeHook(async (context) => {
 
   return HookResults.success('Validation passed');
 });
+
 ```
 
 ### Builder Pattern API
@@ -43,7 +47,9 @@ runClaudeHook(async (context) => {
 Fluent interface for complex hooks with middleware and tool scoping:
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { HookBuilder, middleware, runClaudeHook, HookResults } from '@outfitter/hooks-core';
 
 // Tool-specific hook - ONLY runs for Bash commands
@@ -91,6 +97,7 @@ if (import.meta.main) {
     return HookResults.success('No applicable hooks');
   });
 }
+
 ```
 
 ### Declarative Configuration
@@ -192,6 +199,7 @@ Adds request/response logging:
 
 ```typescript
 .withMiddleware(middleware.logging('info'))
+
 ```
 
 #### `middleware.timing()`
@@ -200,6 +208,7 @@ Adds execution timing:
 
 ```typescript
 .withMiddleware(middleware.timing())
+
 ```
 
 #### `middleware.errorHandling(options?)`
@@ -211,6 +220,7 @@ Adds comprehensive error handling:
   logErrors: true,
   throwOnError: false
 }))
+
 ```
 
 ### Type Guards

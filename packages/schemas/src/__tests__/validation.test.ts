@@ -2,25 +2,29 @@
  * Tests for main validation utilities
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { z } from 'zod';
 import {
-  ValidationError,
-  validateClaudeInput,
-  validateToolInputForTool,
-  validateGenericToolInput,
-  validateCompleteHookInput,
-  ValidationUtils,
-  type ValidationResult,
-  type ValidatedClaudeInput,
   type CompleteValidationResult,
+  type ValidatedClaudeInput,
+  ValidationError,
+  type ValidationResult,
+  ValidationUtils,
+  validateClaudeInput,
+  validateCompleteHookInput,
+  validateGenericToolInput,
+  validateToolInputForTool,
 } from '../validation.js';
-import { BrandValidationError } from '@outfitter/types';
 
 describe('ValidationError', () => {
   test('creates error with correct properties', () => {
     const issues = ['field1: is required', 'field2: must be string'];
-    const error = new ValidationError('test_field', { invalid: 'data' }, issues, 'Test failed');
+    const error = new ValidationError(
+      'test_field',
+      { invalid: 'data' },
+      issues,
+      'Test failed'
+    );
 
     expect(error.name).toBe('ValidationError');
     expect(error.field).toBe('test_field');
@@ -32,16 +36,19 @@ describe('ValidationError', () => {
 
   test('creates error from ZodError', () => {
     const schema = z.object({ name: z.string(), age: z.number() });
-    
+
     try {
       schema.parse({ name: 123, age: 'invalid' });
     } catch (zodError) {
-      const error = ValidationError.fromZodError(zodError as z.ZodError, 'test_context');
-      
+      const error = ValidationError.fromZodError(
+        zodError as z.ZodError,
+        'test_context'
+      );
+
       expect(error.field).toBe('test_context');
       expect(error.issues.length).toBeGreaterThan(0);
-      expect(error.issues.some(issue => issue.includes('name'))).toBe(true);
-      expect(error.issues.some(issue => issue.includes('age'))).toBe(true);
+      expect(error.issues.some((issue) => issue.includes('name'))).toBe(true);
+      expect(error.issues.some((issue) => issue.includes('age'))).toBe(true);
       expect(error.message).toContain('Validation failed for test_context');
     }
   });
@@ -154,10 +161,10 @@ describe('validateToolInputForTool', () => {
 
     expect(writeResult.success).toBe(true);
 
-    const editInput = { 
-      file_path: '/tmp/test.txt', 
-      old_string: 'old', 
-      new_string: 'new' 
+    const editInput = {
+      file_path: '/tmp/test.txt',
+      old_string: 'old',
+      new_string: 'new',
     };
     const editResult = validateToolInputForTool('Edit', editInput);
 
@@ -195,7 +202,7 @@ describe('validateGenericToolInput', () => {
         expect(result.error.message).toContain('must be an object');
       }
     }
-    
+
     // Arrays are objects in JavaScript, so they pass the typeof check
     const result = validateGenericToolInput([]);
     expect(result.success).toBe(true);
@@ -274,7 +281,7 @@ describe('validateCompleteHookInput', () => {
     expect(result.success).toBe(false);
     expect(result.errors.length).toBeGreaterThan(0);
     // Both errors will be ValidationError since schema validation happens first
-    expect(result.errors.some(e => e instanceof ValidationError)).toBe(true);
+    expect(result.errors.some((e) => e instanceof ValidationError)).toBe(true);
   });
 
   test('handles invalid tool input for unknown tool', () => {
@@ -290,7 +297,11 @@ describe('validateCompleteHookInput', () => {
     const result = validateCompleteHookInput(input);
 
     expect(result.success).toBe(false);
-    expect(result.errors.some(e => e instanceof ValidationError && e.field === 'tool_input')).toBe(true);
+    expect(
+      result.errors.some(
+        (e) => e instanceof ValidationError && e.field === 'tool_input'
+      )
+    ).toBe(true);
   });
 });
 
@@ -331,7 +342,7 @@ describe('ValidationUtils', () => {
 
       const errors = ValidationUtils.getErrors(input);
       expect(errors.length).toBeGreaterThan(0);
-      expect(errors.some(error => error.includes('session_id'))).toBe(true); // Schema error mentions field name
+      expect(errors.some((error) => error.includes('session_id'))).toBe(true); // Schema error mentions field name
     });
   });
 
@@ -345,7 +356,7 @@ describe('ValidationUtils', () => {
       };
 
       const result = ValidationUtils.validateWithHandler(input, () => 'error');
-      
+
       expect(typeof result).toBe('object');
       expect(result).not.toBe('error');
     });
@@ -426,7 +437,7 @@ describe('Type system consistency', () => {
 
     if (result.success) {
       const validated: ValidatedClaudeInput = result.data;
-      
+
       // Should have both original and branded versions
       expect(validated.original.session_id).toBe('test-session-123');
       expect(typeof validated.sessionId).toBe('string');

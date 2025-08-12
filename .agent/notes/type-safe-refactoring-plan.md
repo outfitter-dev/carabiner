@@ -190,6 +190,7 @@ const toolSchemas = {
 ```typescript
 tool_input: Record<string, unknown>
 ValidationRule<T = any>
+
 ```
 
 ### After (✅ Type-safe):
@@ -198,6 +199,7 @@ ValidationRule<T = any>
 // No unknown - everything is strongly typed through Zod + branded types
 toolInput: ToolInputs[T['tool']]  // Perfect inference
 ValidationRule<T extends z.ZodType>  // No any, constrained to Zod types
+
 ```
 
 ## Making Illegal States Unrepresentable

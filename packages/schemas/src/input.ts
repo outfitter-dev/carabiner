@@ -3,8 +3,8 @@
  * Validates the JSON input structure from Claude Code
  */
 
-import { z } from 'zod';
 import { HOOK_EVENTS, type ToolName } from '@outfitter/types';
+import { z } from 'zod';
 
 /**
  * Hook event validation
@@ -20,8 +20,15 @@ export const toolNameSchema = z.string().min(1) as z.ZodType<ToolName>;
  * Base Claude hook input schema
  */
 export const baseClaudeHookInputSchema = z.object({
-  session_id: z.string().min(3).max(100).regex(/^[a-zA-Z0-9_-]+$/),
-  transcript_path: z.string().min(1).regex(/^\/.*\.md$/),
+  session_id: z
+    .string()
+    .min(3)
+    .max(100)
+    .regex(/^[a-zA-Z0-9_-]+$/),
+  transcript_path: z
+    .string()
+    .min(1)
+    .regex(/^\/.*\.md$/),
   cwd: z.string().min(1).regex(/^\//),
   hook_event_name: hookEventSchema,
   matcher: z.string().optional(),
@@ -77,11 +84,13 @@ export const hookResultSchema = z.object({
   message: z.string().optional(),
   block: z.boolean().optional(),
   data: z.record(z.string(), z.unknown()).optional(),
-  metadata: z.object({
-    duration: z.number().optional(),
-    timestamp: z.string().optional(),
-    hookVersion: z.string().optional(),
-  }).optional(),
+  metadata: z
+    .object({
+      duration: z.number().optional(),
+      timestamp: z.string().optional(),
+      hookVersion: z.string().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -111,7 +120,9 @@ export const hookExecutionOptionsSchema = z.object({
 export type ClaudeHookInput = z.infer<typeof claudeHookInputSchema>;
 export type ClaudeToolHookInput = z.infer<typeof claudeToolHookInputSchema>;
 export type ClaudeUserPromptInput = z.infer<typeof claudeUserPromptInputSchema>;
-export type ClaudeNotificationInput = z.infer<typeof claudeNotificationInputSchema>;
+export type ClaudeNotificationInput = z.infer<
+  typeof claudeNotificationInputSchema
+>;
 export type HookEnvironment = z.infer<typeof hookEnvironmentSchema>;
 export type HookResult = z.infer<typeof hookResultSchema>;
 export type ClaudeHookOutput = z.infer<typeof claudeHookOutputSchema>;
@@ -136,26 +147,36 @@ export function parseHookResult(result: unknown): HookResult {
   return hookResultSchema.parse(result);
 }
 
-export function parseHookExecutionOptions(options: unknown): HookExecutionOptions {
+export function parseHookExecutionOptions(
+  options: unknown
+): HookExecutionOptions {
   return hookExecutionOptionsSchema.parse(options);
 }
 
 /**
  * Type guards using Zod validation
  */
-export function isValidClaudeHookInput(input: unknown): input is ClaudeHookInput {
+export function isValidClaudeHookInput(
+  input: unknown
+): input is ClaudeHookInput {
   return claudeHookInputSchema.safeParse(input).success;
 }
 
-export function isValidToolHookInput(input: unknown): input is ClaudeToolHookInput {
+export function isValidToolHookInput(
+  input: unknown
+): input is ClaudeToolHookInput {
   return claudeToolHookInputSchema.safeParse(input).success;
 }
 
-export function isValidUserPromptInput(input: unknown): input is ClaudeUserPromptInput {
+export function isValidUserPromptInput(
+  input: unknown
+): input is ClaudeUserPromptInput {
   return claudeUserPromptInputSchema.safeParse(input).success;
 }
 
-export function isValidNotificationInput(input: unknown): input is ClaudeNotificationInput {
+export function isValidNotificationInput(
+  input: unknown
+): input is ClaudeNotificationInput {
   return claudeNotificationInputSchema.safeParse(input).success;
 }
 
@@ -164,14 +185,11 @@ export function isValidNotificationInput(input: unknown): input is ClaudeNotific
  */
 export async function validateAndCreateBrandedInput(input: unknown) {
   const parsed = parseClaudeHookInput(input);
-  
+
   // Import brands dynamically to avoid circular dependency
-  const { 
-    createSessionId, 
-    createTranscriptPath, 
-    createDirectoryPath 
-  } = await import('@outfitter/types');
-  
+  const { createSessionId, createTranscriptPath, createDirectoryPath } =
+    await import('@outfitter/types');
+
   return {
     ...parsed,
     sessionId: createSessionId(parsed.session_id),

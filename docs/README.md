@@ -38,30 +38,41 @@ Welcome to the comprehensive documentation for the Claude Code Hooks TypeScript 
 ### 1. Installation
 
 ```bash
+
 # Install core library
+
 bun add @claude-code/hooks-core
 
 # Install additional packages as needed
+
 bun add @claude-code/hooks-validators
 bun add --dev @claude-code/hooks-testing
 npm install -g @claude-code/hooks-cli
 
 # Alternatively, invoke the CLI without a global install (Bun):
+
 # bunx will fetch and run the package on demand
+
 # bunx @claude-code/hooks-cli --help
+
 ```
 
 ### 2. Initialize Project
 
 ```bash
+
 # Initialize hooks in your project
+
 claude-hooks init --template security
+
 ```
 
 ### 3. Create Your First Hook
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import pino from 'pino';
 import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
 const logger = pino({ level: process.env.LOG_LEVEL ?? 'info' }, pino.destination(2)); // stderr
@@ -79,13 +90,17 @@ runClaudeHook(async (context) => {
 
   return HookResults.success('Validation passed');
 });
+
 ```
 
 ### 4. Test Your Hook
 
 ```bash
+
 # Test the hook
+
 echo '{"session_id":"test","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la"},"cwd":"/tmp","transcript_path":"/tmp/transcript.md"}' | bun path/to/your-hook.ts
+
 ```
 
 ## 🏗️ Library Architecture

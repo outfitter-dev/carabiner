@@ -218,7 +218,10 @@ class MemoryCache<T> {
 
 ```typescript
 class UserRepository {
-  constructor(private db: Database, private cache: MemoryCache<User>) {}
+  constructor(
+    private db: Database,
+    private cache: MemoryCache<User>,
+  ) {}
 
   async findById(id: string): Promise<User | null> {
     // Check cache first

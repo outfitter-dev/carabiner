@@ -286,7 +286,8 @@ export async function runTestHooks(
         options: options.additionalContext,
       });
 
-      const _executor = new HookExecutor(protocol, {
+      // Create executor instance - not used directly but needed for initialization
+      new HookExecutor(protocol, {
         ...options,
         exitProcess: false,
       });

@@ -1,26 +1,36 @@
 /**
  * @grapple/protocol - Test Protocol Implementation
- * 
+ *
  * Implements a testing protocol that allows for easy unit testing of hooks
  * without requiring actual I/O operations. Provides full control over input
  * and captures all output for assertions.
  */
 
-import type { HookContext, HookResult, BashToolInput } from '@outfitter/types';
 import {
   parseClaudeHookInput,
   validateAndCreateBrandedInput,
-  type ClaudeHookInput,
 } from '@outfitter/schemas';
+import type {
+  BashToolInput,
+  DirectoryPath,
+  HookContext,
+  HookResult,
+  NotificationEvent,
+  SessionId,
+  ToolHookEvent,
+  ToolInput,
+  TranscriptPath,
+} from '@outfitter/types';
 import {
-  createToolHookContext,
-  createUserPromptContext,
+  createDirectoryPath,
   createNotificationContext,
+  createSessionId,
+  createToolHookContext,
+  createTranscriptPath,
+  createUserPromptContext,
 } from '@outfitter/types';
 import type { HookProtocol } from '../interface';
-import {
-  ProtocolParseError,
-} from '../interface';
+import { ProtocolParseError } from '../interface';
 
 /**
  * Configuration options for TestProtocol
@@ -47,20 +57,20 @@ export interface TestProtocolOptions {
 
 /**
  * Test protocol for unit testing hooks without I/O
- * 
+ *
  * This protocol enables comprehensive testing of hook logic by providing
  * controlled input and capturing all outputs for verification.
- * 
+ *
  * @example
  * ```typescript
  * const protocol = new TestProtocol(mockInput, {
  *   environment: { TEST_MODE: 'true' },
  *   captureTiming: true
  * });
- * 
+ *
  * const executor = new HookExecutor(protocol);
  * await executor.execute(myHookHandler);
- * 
+ *
  * expect(protocol.output).toEqual({ success: true });
  * expect(protocol.error).toBeUndefined();
  * expect(protocol.timing.executionTime).toBeLessThan(100);
@@ -110,14 +120,14 @@ export class TestProtocol implements HookProtocol {
    */
   async readInput(): Promise<unknown> {
     this.callCounts.readInput++;
-    
+
     if (this.options.captureTiming) {
       this.startTime = performance.now();
       const start = performance.now();
-      
+
       // Simulate async behavior
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
       this.timing.readInputTime = performance.now() - start;
     }
 
@@ -129,22 +139,22 @@ export class TestProtocol implements HookProtocol {
    */
   async parseContext(input: unknown): Promise<HookContext> {
     this.callCounts.parseContext++;
-    
+
     const start = this.options.captureTiming ? performance.now() : 0;
 
     try {
       // First validate with Zod schemas
       const claudeInput = parseClaudeHookInput(input);
-      
+
       // Then create branded types and context
       const validatedInput = await validateAndCreateBrandedInput(claudeInput);
-      
+
       const context = this.createTypedContext(validatedInput);
-      
+
       if (this.options.captureTiming) {
         this.timing.parseContextTime = performance.now() - start;
       }
-      
+
       return context;
     } catch (error) {
       if (this.options.strictValidation !== false) {
@@ -156,7 +166,7 @@ export class TestProtocol implements HookProtocol {
         }
         throw new ProtocolParseError('Failed to parse hook context');
       }
-      
+
       // In non-strict mode, return a minimal context for testing
       return this.createMinimalContext();
     }
@@ -167,15 +177,15 @@ export class TestProtocol implements HookProtocol {
    */
   async writeOutput(result: HookResult): Promise<void> {
     this.callCounts.writeOutput++;
-    
+
     if (this.options.captureTiming) {
       const start = performance.now();
-      
+
       // Simulate async write
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
       this.timing.writeOutputTime = performance.now() - start;
-      
+
       if (this.startTime) {
         this.timing.executionTime = performance.now() - this.startTime;
       }
@@ -189,15 +199,15 @@ export class TestProtocol implements HookProtocol {
    */
   async writeError(error: Error): Promise<void> {
     this.callCounts.writeError++;
-    
+
     if (this.options.captureTiming) {
       const start = performance.now();
-      
+
       // Simulate async write
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
       this.timing.writeErrorTime = performance.now() - start;
-      
+
       if (this.startTime) {
         this.timing.executionTime = performance.now() - this.startTime;
       }
@@ -246,7 +256,7 @@ export class TestProtocol implements HookProtocol {
   /**
    * Create typed context from validated Claude input
    */
-  private createTypedContext(input: any): HookContext {
+  private createTypedContext(input: Record<string, unknown>): HookContext {
     const environment = {
       CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
       ...this.options.environment,
@@ -255,51 +265,48 @@ export class TestProtocol implements HookProtocol {
     if ('tool_name' in input) {
       // Tool hook context (PreToolUse/PostToolUse)
       return createToolHookContext(
-        input.hook_event_name,
-        input.tool_name,
-        input.tool_input,
+        input.hook_event_name as ToolHookEvent,
+        input.tool_name as string,
+        input.tool_input as ToolInput,
         {
-          sessionId: input.sessionId,
-          transcriptPath: input.transcriptPath,
-          cwd: input.cwd,
+          sessionId: input.sessionId as SessionId,
+          transcriptPath: input.transcriptPath as TranscriptPath,
+          cwd: input.cwd as DirectoryPath,
           environment,
-          matcher: input.matcher,
+          matcher: input.matcher as string | undefined,
         },
-        input.tool_response
+        input.tool_response as Record<string, unknown> | undefined
       );
     }
-    
+
     if ('prompt' in input) {
       // User prompt context
-      return createUserPromptContext(
-        input.prompt,
-        {
-          sessionId: input.sessionId,
-          transcriptPath: input.transcriptPath,
-          cwd: input.cwd,
-          environment,
-          matcher: input.matcher,
-        }
-      );
+      return createUserPromptContext(input.prompt as string, {
+        sessionId: input.sessionId as SessionId,
+        transcriptPath: input.transcriptPath as TranscriptPath,
+        cwd: input.cwd as DirectoryPath,
+        environment,
+        matcher: input.matcher as string | undefined,
+      });
     }
-    
+
     if ('notification' in input) {
       // Notification context
       return createNotificationContext(
-        input.hook_event_name,
+        input.hook_event_name as NotificationEvent,
         {
-          sessionId: input.sessionId,
-          transcriptPath: input.transcriptPath,
-          cwd: input.cwd,
+          sessionId: input.sessionId as SessionId,
+          transcriptPath: input.transcriptPath as TranscriptPath,
+          cwd: input.cwd as DirectoryPath,
           environment,
-          matcher: input.matcher,
+          matcher: input.matcher as string | undefined,
         },
-        input.notification
+        input.notification as string | undefined
       );
     }
-    
+
     throw new ProtocolParseError(
-      `Unsupported hook event: ${input.hook_event_name}`
+      `Unsupported hook event: ${String(input.hook_event_name)}`
     );
   }
 
@@ -312,9 +319,9 @@ export class TestProtocol implements HookProtocol {
       'Bash',
       { command: 'echo "test"' } as BashToolInput,
       {
-        sessionId: { __brand: 'SessionId' } as any,
-        transcriptPath: { __brand: 'TranscriptPath' } as any,
-        cwd: { __brand: 'DirectoryPath' } as any,
+        sessionId: createSessionId('test-session'),
+        transcriptPath: createTranscriptPath('/test/transcript.md'),
+        cwd: createDirectoryPath('/test/dir'),
         environment: {
           CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
           ...this.options.environment,
@@ -330,7 +337,13 @@ export class TestProtocol implements HookProtocol {
 export class TestProtocolFactory {
   readonly type = 'test';
 
-  create({ input, options }: { input: unknown; options?: TestProtocolOptions }): HookProtocol {
+  create({
+    input,
+    options,
+  }: {
+    input: unknown;
+    options?: TestProtocolOptions;
+  }): HookProtocol {
     return new TestProtocol(input, options);
   }
 }
@@ -338,47 +351,51 @@ export class TestProtocolFactory {
 /**
  * Utility functions for creating test inputs
  */
-export class TestInputBuilder {
-  /**
-   * Create a mock tool hook input
-   */
-  static createToolHookInput(overrides: Partial<any> = {}) {
-    return {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/test-transcript.md',
-      cwd: '/test/cwd',
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
-      tool_input: { command: 'echo "test"' },
-      ...overrides,
-    };
-  }
+/**
+ * Create a mock tool hook input
+ */
+export function createToolHookInput(
+  overrides: Partial<Record<string, unknown>> = {}
+) {
+  return {
+    session_id: 'test-session-123',
+    transcript_path: '/tmp/test-transcript.md',
+    cwd: '/test/cwd',
+    hook_event_name: 'PreToolUse',
+    tool_name: 'Bash',
+    tool_input: { command: 'echo "test"' },
+    ...overrides,
+  };
+}
 
-  /**
-   * Create a mock user prompt input
-   */
-  static createUserPromptInput(overrides: Partial<any> = {}) {
-    return {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/test-transcript.md',
-      cwd: '/test/cwd',
-      hook_event_name: 'UserPromptSubmit',
-      prompt: 'Test prompt',
-      ...overrides,
-    };
-  }
+/**
+ * Create a mock user prompt input
+ */
+export function createUserPromptInput(
+  overrides: Partial<Record<string, unknown>> = {}
+) {
+  return {
+    session_id: 'test-session-123',
+    transcript_path: '/tmp/test-transcript.md',
+    cwd: '/test/cwd',
+    hook_event_name: 'UserPromptSubmit',
+    prompt: 'Test prompt',
+    ...overrides,
+  };
+}
 
-  /**
-   * Create a mock notification input
-   */
-  static createNotificationInput(overrides: Partial<any> = {}) {
-    return {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/test-transcript.md',
-      cwd: '/test/cwd',
-      hook_event_name: 'SessionStart',
-      notification: 'Session started',
-      ...overrides,
-    };
-  }
+/**
+ * Create a mock notification input
+ */
+export function createNotificationInput(
+  overrides: Partial<Record<string, unknown>> = {}
+) {
+  return {
+    session_id: 'test-session-123',
+    transcript_path: '/tmp/test-transcript.md',
+    cwd: '/test/cwd',
+    hook_event_name: 'SessionStart',
+    notification: 'Session started',
+    ...overrides,
+  };
 }

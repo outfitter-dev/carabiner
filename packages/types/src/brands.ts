@@ -34,22 +34,38 @@ export class BrandValidationError extends Error {
  */
 export function createSessionId(value: string): SessionId {
   if (!value || typeof value !== 'string') {
-    throw new BrandValidationError('SessionId', value, 'must be a non-empty string');
+    throw new BrandValidationError(
+      'SessionId',
+      value,
+      'must be a non-empty string'
+    );
   }
-  
+
   if (value.length < 3) {
-    throw new BrandValidationError('SessionId', value, 'must be at least 3 characters');
+    throw new BrandValidationError(
+      'SessionId',
+      value,
+      'must be at least 3 characters'
+    );
   }
-  
+
   if (value.length > 100) {
-    throw new BrandValidationError('SessionId', value, 'must be at most 100 characters');
+    throw new BrandValidationError(
+      'SessionId',
+      value,
+      'must be at most 100 characters'
+    );
   }
-  
+
   // Basic format validation - alphanumeric, dashes, underscores
   if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
-    throw new BrandValidationError('SessionId', value, 'must contain only alphanumeric characters, dashes, and underscores');
+    throw new BrandValidationError(
+      'SessionId',
+      value,
+      'must contain only alphanumeric characters, dashes, and underscores'
+    );
   }
-  
+
   return value as SessionId;
 }
 
@@ -59,29 +75,45 @@ export function createSessionId(value: string): SessionId {
  */
 export function createFilePath(value: string): FilePath {
   if (!value || typeof value !== 'string') {
-    throw new BrandValidationError('FilePath', value, 'must be a non-empty string');
+    throw new BrandValidationError(
+      'FilePath',
+      value,
+      'must be a non-empty string'
+    );
   }
-  
+
   // Must be absolute path
   if (!value.startsWith('/')) {
-    throw new BrandValidationError('FilePath', value, 'must be an absolute path starting with /');
+    throw new BrandValidationError(
+      'FilePath',
+      value,
+      'must be an absolute path starting with /'
+    );
   }
-  
+
   // Reasonable length limits
   if (value.length > 4096) {
-    throw new BrandValidationError('FilePath', value, 'path too long (max 4096 characters)');
+    throw new BrandValidationError(
+      'FilePath',
+      value,
+      'path too long (max 4096 characters)'
+    );
   }
-  
+
   // Prevent path traversal attempts
   if (value.includes('/../') || value.endsWith('/..')) {
-    throw new BrandValidationError('FilePath', value, 'path traversal not allowed');
+    throw new BrandValidationError(
+      'FilePath',
+      value,
+      'path traversal not allowed'
+    );
   }
-  
+
   // Prevent null bytes
   if (value.includes('\0')) {
     throw new BrandValidationError('FilePath', value, 'null bytes not allowed');
   }
-  
+
   return value as FilePath;
 }
 
@@ -91,18 +123,30 @@ export function createFilePath(value: string): FilePath {
  */
 export function createCommandString(value: string): CommandString {
   if (!value || typeof value !== 'string') {
-    throw new BrandValidationError('CommandString', value, 'must be a non-empty string');
+    throw new BrandValidationError(
+      'CommandString',
+      value,
+      'must be a non-empty string'
+    );
   }
-  
+
   if (value.length > 8192) {
-    throw new BrandValidationError('CommandString', value, 'command too long (max 8192 characters)');
+    throw new BrandValidationError(
+      'CommandString',
+      value,
+      'command too long (max 8192 characters)'
+    );
   }
-  
+
   // Prevent null bytes
   if (value.includes('\0')) {
-    throw new BrandValidationError('CommandString', value, 'null bytes not allowed');
+    throw new BrandValidationError(
+      'CommandString',
+      value,
+      'null bytes not allowed'
+    );
   }
-  
+
   return value as CommandString;
 }
 
@@ -112,34 +156,58 @@ export function createCommandString(value: string): CommandString {
  */
 export function createTranscriptPath(value: string): TranscriptPath {
   if (!value || typeof value !== 'string') {
-    throw new BrandValidationError('TranscriptPath', value, 'must be a non-empty string');
+    throw new BrandValidationError(
+      'TranscriptPath',
+      value,
+      'must be a non-empty string'
+    );
   }
-  
+
   // Must be absolute path
   if (!value.startsWith('/')) {
-    throw new BrandValidationError('TranscriptPath', value, 'must be an absolute path starting with /');
+    throw new BrandValidationError(
+      'TranscriptPath',
+      value,
+      'must be an absolute path starting with /'
+    );
   }
-  
+
   // Should typically end with .md
   if (!value.endsWith('.md')) {
-    throw new BrandValidationError('TranscriptPath', value, 'transcript path should end with .md');
+    throw new BrandValidationError(
+      'TranscriptPath',
+      value,
+      'transcript path should end with .md'
+    );
   }
-  
+
   // Reasonable length limits
   if (value.length > 4096) {
-    throw new BrandValidationError('TranscriptPath', value, 'path too long (max 4096 characters)');
+    throw new BrandValidationError(
+      'TranscriptPath',
+      value,
+      'path too long (max 4096 characters)'
+    );
   }
-  
+
   // Prevent path traversal attempts
   if (value.includes('/../') || value.endsWith('/..')) {
-    throw new BrandValidationError('TranscriptPath', value, 'path traversal not allowed');
+    throw new BrandValidationError(
+      'TranscriptPath',
+      value,
+      'path traversal not allowed'
+    );
   }
-  
+
   // Prevent null bytes
   if (value.includes('\0')) {
-    throw new BrandValidationError('TranscriptPath', value, 'null bytes not allowed');
+    throw new BrandValidationError(
+      'TranscriptPath',
+      value,
+      'null bytes not allowed'
+    );
   }
-  
+
   return value as TranscriptPath;
 }
 
@@ -148,29 +216,49 @@ export function createTranscriptPath(value: string): TranscriptPath {
  */
 export function createDirectoryPath(value: string): DirectoryPath {
   if (!value || typeof value !== 'string') {
-    throw new BrandValidationError('DirectoryPath', value, 'must be a non-empty string');
+    throw new BrandValidationError(
+      'DirectoryPath',
+      value,
+      'must be a non-empty string'
+    );
   }
-  
+
   // Must be absolute path
   if (!value.startsWith('/')) {
-    throw new BrandValidationError('DirectoryPath', value, 'must be an absolute path starting with /');
+    throw new BrandValidationError(
+      'DirectoryPath',
+      value,
+      'must be an absolute path starting with /'
+    );
   }
-  
+
   // Reasonable length limits
   if (value.length > 4096) {
-    throw new BrandValidationError('DirectoryPath', value, 'path too long (max 4096 characters)');
+    throw new BrandValidationError(
+      'DirectoryPath',
+      value,
+      'path too long (max 4096 characters)'
+    );
   }
-  
+
   // Prevent path traversal attempts
   if (value.includes('/../') || value.endsWith('/..')) {
-    throw new BrandValidationError('DirectoryPath', value, 'path traversal not allowed');
+    throw new BrandValidationError(
+      'DirectoryPath',
+      value,
+      'path traversal not allowed'
+    );
   }
-  
+
   // Prevent null bytes
   if (value.includes('\0')) {
-    throw new BrandValidationError('DirectoryPath', value, 'null bytes not allowed');
+    throw new BrandValidationError(
+      'DirectoryPath',
+      value,
+      'null bytes not allowed'
+    );
   }
-  
+
   return value as DirectoryPath;
 }
 
@@ -179,7 +267,9 @@ export function createDirectoryPath(value: string): DirectoryPath {
  */
 export function isSessionId(value: unknown): value is SessionId {
   try {
-    if (typeof value !== 'string') return false;
+    if (typeof value !== 'string') {
+      return false;
+    }
     createSessionId(value);
     return true;
   } catch {
@@ -189,7 +279,9 @@ export function isSessionId(value: unknown): value is SessionId {
 
 export function isFilePath(value: unknown): value is FilePath {
   try {
-    if (typeof value !== 'string') return false;
+    if (typeof value !== 'string') {
+      return false;
+    }
     createFilePath(value);
     return true;
   } catch {
@@ -199,7 +291,9 @@ export function isFilePath(value: unknown): value is FilePath {
 
 export function isCommandString(value: unknown): value is CommandString {
   try {
-    if (typeof value !== 'string') return false;
+    if (typeof value !== 'string') {
+      return false;
+    }
     createCommandString(value);
     return true;
   } catch {
@@ -209,7 +303,9 @@ export function isCommandString(value: unknown): value is CommandString {
 
 export function isTranscriptPath(value: unknown): value is TranscriptPath {
   try {
-    if (typeof value !== 'string') return false;
+    if (typeof value !== 'string') {
+      return false;
+    }
     createTranscriptPath(value);
     return true;
   } catch {
@@ -219,7 +315,9 @@ export function isTranscriptPath(value: unknown): value is TranscriptPath {
 
 export function isDirectoryPath(value: unknown): value is DirectoryPath {
   try {
-    if (typeof value !== 'string') return false;
+    if (typeof value !== 'string') {
+      return false;
+    }
     createDirectoryPath(value);
     return true;
   } catch {

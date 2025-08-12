@@ -49,6 +49,7 @@ import { runClaudeHook, HookResults } from '@/hooks-core';
 **Before (Old - Environment Variables)**:
 
 ```typescript
+
 #!/usr/bin/env bun
 
 import { createHookContext, exitWithResult } from '@claude-code/hooks-core';
@@ -68,11 +69,13 @@ async function main() {
 if (import.meta.main) {
   main();
 }
+
 ```
 
 **After (New - JSON Stdin)**:
 
 ```typescript
+
 #!/usr/bin/env bun
 
 import { runClaudeHook, HookResults } from '@/hooks-core';
@@ -91,6 +94,7 @@ async function myHookHandler(context: HookContext): Promise<HookResult> {
   // Your hook logic here
   return HookResults.success('Hook executed successfully');
 }
+
 ```
 
 ### 3. Context Property Changes
@@ -234,7 +238,9 @@ Your hooks now receive JSON via stdin with this structure:
 **Before**:
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { createHookContext, exitWithResult, HookResults } from '@claude-code/hooks-core';
 
 async function main() {
@@ -252,12 +258,15 @@ async function main() {
 }
 
 if (import.meta.main) main();
+
 ```
 
 **After**:
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults, isBashToolInput } from '@/hooks-core';
 
 runClaudeHook(async (context) => {
@@ -273,6 +282,7 @@ runClaudeHook(async (context) => {
 
   return HookResults.success('Validation passed');
 });
+
 ```
 
 ### Example 2: Builder Pattern Hook
@@ -280,7 +290,9 @@ runClaudeHook(async (context) => {
 **Before**:
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import {
   HookBuilder,
   registerHook,
@@ -305,12 +317,15 @@ async function main() {
 }
 
 if (import.meta.main) main();
+
 ```
 
 **After**:
 
 ```typescript
+
 #!/usr/bin/env bun
+
 import { HookBuilder, runClaudeHook, HookResults } from '@/hooks-core';
 
 const bashSecurityHook = HookBuilder.forPreToolUse()
@@ -330,6 +345,7 @@ runClaudeHook(async (context) => {
 
   return HookResults.success('No applicable security checks');
 });
+
 ```
 
 ## 🧪 Testing Your Migration
@@ -355,12 +371,17 @@ Create a test JSON file:
 Test your migrated hook:
 
 ```bash
+
 # Test the hook with mock input
+
 cat test-input.json | bun your-migrated-hook.ts
 
 # Should output something like:
+
 # 🔍 Validating Bash in session test-session-123
+
 # Hook succeeded: Validation passed
+
 ```
 
 ### Validate All Properties

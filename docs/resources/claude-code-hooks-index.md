@@ -191,17 +191,23 @@ Minimal hook configuration (`.claude/settings.json`):
 ### Debugging Commands
 
 ```bash
+
 # Test hook configuration
+
 bun run hooks/debug-hook.ts
 
 # Validate settings syntax
+
 cat .claude/settings.json | json_pp
 
 # Check hook script permissions
+
 ls -la hooks/
 
 # View hook execution traces
+
 tail -f .claude/hook-trace.log
+
 ```
 
 For detailed troubleshooting, see the [Troubleshooting Guide](./claude-code-hooks-troubleshooting.md).

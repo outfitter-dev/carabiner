@@ -2,34 +2,32 @@
  * Tests for hook context types and utilities
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
-  isToolHookContext,
-  isBashHookContext,
-  isFileHookContext,
-  isSearchHookContext,
-  isUserPromptContext,
-  isNotificationContext,
-  isPreToolUseContext,
-  isPostToolUseContext,
+  createDirectoryPath,
+  createSessionId,
+  createTranscriptPath,
+} from '../brands.js';
+import {
+  type BashHookContext,
+  createNotificationContext,
   createToolHookContext,
   createUserPromptContext,
-  createNotificationContext,
   type HookContext,
-  type ToolHookContext,
-  type BashHookContext,
-  type FileHookContext,
-  type SearchHookContext,
-  type UserPromptHookContext,
+  isBashHookContext,
+  isFileHookContext,
+  isNotificationContext,
+  isPostToolUseContext,
+  isPreToolUseContext,
+  isSearchHookContext,
+  isToolHookContext,
+  isUserPromptContext,
   type NotificationHookContext,
-  type PreToolUseContext,
   type PostToolUseContext,
+  type PreToolUseContext,
+  type ToolHookContext,
+  type UserPromptHookContext,
 } from '../context.js';
-import { 
-  createSessionId, 
-  createTranscriptPath, 
-  createDirectoryPath 
-} from '../brands.js';
 
 // Helper function to create base options
 const createBaseOptions = () => ({
@@ -67,10 +65,8 @@ describe('Context type guards', () => {
         createBaseOptions()
       );
 
-      const notificationContext: NotificationHookContext = createNotificationContext(
-        'SessionStart',
-        createBaseOptions()
-      );
+      const notificationContext: NotificationHookContext =
+        createNotificationContext('SessionStart', createBaseOptions());
 
       expect(isToolHookContext(userContext)).toBe(false);
       expect(isToolHookContext(notificationContext)).toBe(false);
@@ -197,10 +193,8 @@ describe('Context type guards', () => {
 
   describe('isNotificationContext', () => {
     test('identifies notification contexts', () => {
-      const sessionStartContext: NotificationHookContext = createNotificationContext(
-        'SessionStart',
-        createBaseOptions()
-      );
+      const sessionStartContext: NotificationHookContext =
+        createNotificationContext('SessionStart', createBaseOptions());
 
       const stopContext: NotificationHookContext = createNotificationContext(
         'Stop',
@@ -208,10 +202,8 @@ describe('Context type guards', () => {
         'Session ended'
       );
 
-      const subagentStopContext: NotificationHookContext = createNotificationContext(
-        'SubagentStop',
-        createBaseOptions()
-      );
+      const subagentStopContext: NotificationHookContext =
+        createNotificationContext('SubagentStop', createBaseOptions());
 
       expect(isNotificationContext(sessionStartContext)).toBe(true);
       expect(isNotificationContext(stopContext)).toBe(true);
@@ -302,9 +294,9 @@ describe('Context creation functions', () => {
     });
 
     test('creates PostToolUse context with response', () => {
-      const toolResponse = { 
-        success: true, 
-        output: 'file1.txt\nfile2.txt\n' 
+      const toolResponse = {
+        success: true,
+        output: 'file1.txt\nfile2.txt\n',
       };
 
       const context = createToolHookContext(
@@ -321,9 +313,9 @@ describe('Context creation functions', () => {
     });
 
     test('includes matcher when provided', () => {
-      const options = { 
-        ...createBaseOptions(), 
-        matcher: 'security-check' 
+      const options = {
+        ...createBaseOptions(),
+        matcher: 'security-check',
       };
 
       const context = createToolHookContext(
@@ -354,12 +346,9 @@ describe('Context creation functions', () => {
 
     test('uses default environment when not provided', () => {
       const options = createBaseOptions();
-      delete options.environment;
+      options.environment = undefined;
 
-      const context = createUserPromptContext(
-        'Help with React',
-        options
-      );
+      const context = createUserPromptContext('Help with React', options);
 
       expect(context.environment).toEqual({});
     });
@@ -415,10 +404,8 @@ describe('Type system consistency', () => {
       createBaseOptions()
     );
 
-    const notificationContext: NotificationHookContext = createNotificationContext(
-      'SessionStart',
-      createBaseOptions()
-    );
+    const notificationContext: NotificationHookContext =
+      createNotificationContext('SessionStart', createBaseOptions());
 
     // These should all be assignable to HookContext
     const contexts: HookContext[] = [
@@ -459,7 +446,7 @@ describe('Type system consistency', () => {
     // These properties should be readonly
     // @ts-expect-error - event should be readonly
     context.event = 'PostToolUse';
-    
+
     // @ts-expect-error - sessionId should be readonly
     context.sessionId = createSessionId('different');
   });

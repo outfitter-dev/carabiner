@@ -4,7 +4,8 @@
 
 ### Directory Layout
 
-```
+````text
+
 packages/
 ├── package-name/
 │   ├── src/
@@ -14,7 +15,8 @@ packages/
 │   ├── tsconfig.json
 │   ├── README.md
 │   └── CHANGELOG.md
-```
+
+```text
 
 ### Naming Conventions
 
@@ -48,7 +50,8 @@ packages/
     "test": "bun test"
   }
 }
-```
+
+```text
 
 ### Dependencies
 
@@ -73,7 +76,8 @@ packages/
   "include": ["src/**/*"],
   "exclude": ["**/*.test.ts", "**/*.spec.ts"]
 }
-```
+
+```text
 
 ### Type Exports
 
@@ -93,7 +97,8 @@ bun build ./src/index.ts \
   --format esm \
   --minify \
   --sourcemap
-```
+
+```text
 
 ### Build Outputs
 
@@ -114,7 +119,8 @@ export type { TypeA } from './types';
 
 // Avoid barrel exports
 // export * from './module';
-```
+
+```text
 
 ### Package Exports Field
 
@@ -126,7 +132,8 @@ export type { TypeA } from './types';
     "./types": "./dist/types.d.ts"
   }
 }
-```
+
+```text
 
 ## Versioning Strategy
 
@@ -171,13 +178,15 @@ export type { TypeA } from './types';
 
 ### Test Location
 
-```
+```text
+
 packages/package-name/
 ├── src/
 │   ├── index.ts
 │   └── index.test.ts    # Colocated tests
 └── tests/               # Integration tests
-```
+
+```text
 
 ## Publishing
 
@@ -196,4 +205,6 @@ packages/package-name/
   "prepublishOnly": "bun run build && bun run test",
   "postpublish": "git push --follow-tags"
 }
-```
+
+```text
+````

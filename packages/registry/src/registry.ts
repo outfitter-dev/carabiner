@@ -8,18 +8,18 @@ import type { HookContext, HookResult } from '@outfitter/types';
 // import { ExecutionTimer, MemoryTracker } from '@outfitter/execution';
 import type {
   HookPlugin,
-  PluginResult,
+  PluginCondition,
   PluginConfig,
-  PluginExecutionOptions,
   PluginExecutionContext,
-  PluginCondition
+  PluginExecutionOptions,
+  PluginResult,
 } from './plugin';
 import {
-  isHookPlugin,
   createPluginResult,
-  PluginValidationError,
+  isHookPlugin,
+  PluginConfigurationError,
   PluginExecutionError,
-  PluginConfigurationError
+  PluginValidationError,
 } from './plugin';
 
 /**
@@ -70,7 +70,12 @@ export interface RegistryOptions {
  * Plugin registry event
  */
 export interface RegistryEvent {
-  type: 'plugin-registered' | 'plugin-unregistered' | 'plugin-executed' | 'plugin-failed' | 'registry-cleared';
+  type:
+    | 'plugin-registered'
+    | 'plugin-unregistered'
+    | 'plugin-executed'
+    | 'plugin-failed'
+    | 'registry-cleared';
   plugin?: HookPlugin;
   error?: Error;
   result?: PluginResult;
@@ -81,11 +86,13 @@ export interface RegistryEvent {
 /**
  * Registry event listener
  */
-export type RegistryEventListener = (event: RegistryEvent) => void | Promise<void>;
+export type RegistryEventListener = (
+  event: RegistryEvent
+) => void | Promise<void>;
 
 /**
  * Main plugin registry class
- * 
+ *
  * Manages plugin registration, configuration, and execution with support for:
  * - Priority-based ordering
  * - Event filtering
@@ -93,17 +100,17 @@ export type RegistryEventListener = (event: RegistryEvent) => void | Promise<voi
  * - Performance monitoring
  * - Error handling and recovery
  * - Plugin lifecycle management
- * 
+ *
  * @example Basic Usage
  * ```typescript
  * const registry = new PluginRegistry();
- * 
+ *
  * registry.register(gitSafetyPlugin);
  * registry.register(fileBackupPlugin);
- * 
+ *
  * const results = await registry.execute(context);
  * ```
- * 
+ *
  * @example With Configuration
  * ```typescript
  * const registry = new PluginRegistry({
@@ -111,7 +118,7 @@ export type RegistryEventListener = (event: RegistryEvent) => void | Promise<voi
  *   continueOnFailure: true,
  *   collectMetrics: true
  * });
- * 
+ *
  * const results = await registry.executeWithOptions(context, {
  *   timeout: 10000,
  *   continueOnFailure: false
@@ -134,7 +141,7 @@ export class PluginRegistry {
       maxConcurrency: 10,
       enableHotReload: false,
       logLevel: 'info',
-      ...options
+      ...options,
     };
 
     this.stats = {
@@ -146,7 +153,7 @@ export class PluginRegistry {
       averageExecutionTime: 0,
       successRate: 1,
       executionCounts: {},
-      errorCounts: {}
+      errorCounts: {},
     };
   }
 
@@ -159,7 +166,11 @@ export class PluginRegistry {
     this.validatePlugin(plugin);
 
     if (this.plugins.has(plugin.name)) {
-      throw new PluginValidationError(plugin.name, 'name', 'Plugin already registered');
+      throw new PluginValidationError(
+        plugin.name,
+        'name',
+        'Plugin already registered'
+      );
     }
 
     // Create default config
@@ -171,7 +182,7 @@ export class PluginRegistry {
       tools: plugin.tools,
       config: { ...plugin.defaultConfig, ...config?.config },
       conditions: config?.conditions || [],
-      ...config
+      ...config,
     };
 
     // Validate plugin configuration
@@ -190,10 +201,16 @@ export class PluginRegistry {
     this.configs.set(plugin.name, pluginConfig);
 
     this.updateStats();
-    this.emitEvent({ type: 'plugin-registered', plugin, timestamp: new Date() });
+    this.emitEvent({
+      type: 'plugin-registered',
+      plugin,
+      timestamp: new Date(),
+    });
 
     if (this.options.logLevel !== 'silent') {
-      console.log(`[Registry] Registered plugin: ${plugin.name}@${plugin.version}`);
+      console.log(
+        `[Registry] Registered plugin: ${plugin.name}@${plugin.version}`
+      );
     }
   }
 
@@ -210,7 +227,11 @@ export class PluginRegistry {
     this.configs.delete(pluginName);
 
     this.updateStats();
-    this.emitEvent({ type: 'plugin-unregistered', plugin, timestamp: new Date() });
+    this.emitEvent({
+      type: 'plugin-unregistered',
+      plugin,
+      timestamp: new Date(),
+    });
 
     if (this.options.logLevel !== 'silent') {
       console.log(`[Registry] Unregistered plugin: ${pluginName}`);
@@ -248,14 +269,16 @@ export class PluginRegistry {
       timeout: this.options.defaultTimeout,
       collectMetrics: this.options.collectMetrics,
       continueOnFailure: this.options.continueOnFailure,
-      ...options
+      ...options,
     };
 
     const applicablePlugins = this.getApplicablePlugins(context);
     const results: PluginResult[] = [];
 
     if (this.options.logLevel === 'debug') {
-      console.log(`[Registry] Executing ${applicablePlugins.length} plugins for ${context.event}`);
+      console.log(
+        `[Registry] Executing ${applicablePlugins.length} plugins for ${context.event}`
+      );
     }
 
     for (let i = 0; i < applicablePlugins.length; i++) {
@@ -263,7 +286,7 @@ export class PluginRegistry {
       if (!plugin) {
         continue;
       }
-      
+
       const config = this.configs.get(plugin.name);
 
       if (!config?.enabled) {
@@ -271,42 +294,49 @@ export class PluginRegistry {
       }
 
       try {
-        const result = await this.executePlugin(plugin, context, config, execOptions, {
+        const result = await this.executePlugin(
+          plugin,
           context,
-          config: config.config,
-          registry: this,
-          plugins: applicablePlugins,
-          index: i,
-          previousResults: results
-        });
+          config,
+          execOptions,
+          {
+            context,
+            config: config.config,
+            registry: this,
+            plugins: applicablePlugins,
+            index: i,
+            previousResults: results,
+          }
+        );
 
         results.push(result);
-        this.emitEvent({ 
-          type: 'plugin-executed', 
-          plugin, 
-          result, 
-          context, 
-          timestamp: new Date() 
+        this.emitEvent({
+          type: 'plugin-executed',
+          plugin,
+          result,
+          context,
+          timestamp: new Date(),
         });
 
         // Stop on blocking failure
         if (!result.success && result.block && !execOptions.continueOnFailure) {
           if (this.options.logLevel !== 'silent') {
-            console.warn(`[Registry] Plugin ${plugin.name} blocked execution: ${result.message}`);
+            console.warn(
+              `[Registry] Plugin ${plugin.name} blocked execution: ${result.message}`
+            );
           }
           break;
         }
-
       } catch (error) {
         const errorResult = this.createErrorResult(plugin, error as Error);
         results.push(errorResult);
 
-        this.emitEvent({ 
-          type: 'plugin-failed', 
-          plugin, 
-          error: error as Error, 
-          context, 
-          timestamp: new Date() 
+        this.emitEvent({
+          type: 'plugin-failed',
+          plugin,
+          error: error as Error,
+          context,
+          timestamp: new Date(),
         });
 
         if (!execOptions.continueOnFailure) {
@@ -327,7 +357,7 @@ export class PluginRegistry {
     context: HookContext,
     config: PluginConfig,
     options: PluginExecutionOptions,
-    execContext: PluginExecutionContext
+    _execContext: PluginExecutionContext
   ): Promise<PluginResult> {
     const startTime = options.collectMetrics ? performance.now() : 0;
     const startMemory = options.collectMetrics ? process.memoryUsage() : null;
@@ -335,14 +365,20 @@ export class PluginRegistry {
     try {
       // Execute plugin with timeout
       const executePromise = plugin.apply(context, config.config);
-      
+
       let result: PluginResult;
       if (options.timeout && options.timeout > 0) {
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Plugin execution timeout')), options.timeout);
+          setTimeout(
+            () => reject(new Error('Plugin execution timeout')),
+            options.timeout
+          );
         });
-        
-        const pluginResult = await Promise.race([executePromise, timeoutPromise]);
+
+        const pluginResult = await Promise.race([
+          executePromise,
+          timeoutPromise,
+        ]);
         result = this.normalizePluginResult(plugin, pluginResult);
       } else {
         const pluginResult = await executePromise;
@@ -353,16 +389,15 @@ export class PluginRegistry {
       if (options.collectMetrics && startMemory) {
         const endTime = performance.now();
         const endMemory = process.memoryUsage();
-        
+
         result.executionTime = endTime - startTime;
         result.memoryUsage = {
           heapUsed: endMemory.heapUsed,
-          heapTotal: endMemory.heapTotal
+          heapTotal: endMemory.heapTotal,
         };
       }
 
       return result;
-
     } catch (error) {
       throw new PluginExecutionError(
         plugin.name,
@@ -395,13 +430,16 @@ export class PluginRegistry {
       // Check tool filtering
       if (config.tools && config.tools.length > 0) {
         const toolName = 'toolName' in context ? context.toolName : null;
-        if (!toolName || !config.tools.includes(toolName)) {
+        if (!(toolName && config.tools.includes(toolName))) {
           continue;
         }
       }
 
       // Check conditions
-      if (config.conditions && !this.checkConditions(context, config.conditions)) {
+      if (
+        config.conditions &&
+        !this.checkConditions(context, config.conditions)
+      ) {
         continue;
       }
 
@@ -411,14 +449,17 @@ export class PluginRegistry {
     // Sort by priority (higher priority first)
     return applicable
       .sort((a, b) => b.priority - a.priority)
-      .map(item => item.plugin);
+      .map((item) => item.plugin);
   }
 
   /**
    * Check if plugin conditions are satisfied
    */
-  private checkConditions(context: HookContext, conditions: PluginCondition[]): boolean {
-    return conditions.every(condition => {
+  private checkConditions(
+    context: HookContext,
+    conditions: PluginCondition[]
+  ): boolean {
+    return conditions.every((condition) => {
       switch (condition.type) {
         case 'env':
           return this.checkEnvironmentCondition(condition);
@@ -435,36 +476,66 @@ export class PluginRegistry {
   }
 
   private checkEnvironmentCondition(condition: PluginCondition): boolean {
-    if (!condition.field) return true;
-    
+    if (!condition.field) {
+      return true;
+    }
+
     const envValue = process.env[condition.field];
     return this.compareValues(envValue, condition.operator, condition.value);
   }
 
-  private checkContextCondition(context: HookContext, condition: PluginCondition): boolean {
-    if (!condition.field) return true;
-    
+  private checkContextCondition(
+    context: HookContext,
+    condition: PluginCondition
+  ): boolean {
+    if (!condition.field) {
+      return true;
+    }
+
     const contextValue = (context as any)[condition.field];
-    return this.compareValues(contextValue, condition.operator, condition.value);
+    return this.compareValues(
+      contextValue,
+      condition.operator,
+      condition.value
+    );
   }
 
-  private checkToolCondition(context: HookContext, condition: PluginCondition): boolean {
-    if (!('toolName' in context)) return false;
-    
-    const toolValue = condition.field ? (context as any)[condition.field] : context.toolName;
+  private checkToolCondition(
+    context: HookContext,
+    condition: PluginCondition
+  ): boolean {
+    if (!('toolName' in context)) {
+      return false;
+    }
+
+    const toolValue = condition.field
+      ? (context as any)[condition.field]
+      : context.toolName;
     return this.compareValues(toolValue, condition.operator, condition.value);
   }
 
-  private compareValues(actual: unknown, operator: PluginCondition['operator'], expected: unknown): boolean {
+  private compareValues(
+    actual: unknown,
+    operator: PluginCondition['operator'],
+    expected: unknown
+  ): boolean {
     switch (operator) {
       case 'equals':
         return actual === expected;
       case 'not_equals':
         return actual !== expected;
       case 'contains':
-        return typeof actual === 'string' && typeof expected === 'string' && actual.includes(expected);
+        return (
+          typeof actual === 'string' &&
+          typeof expected === 'string' &&
+          actual.includes(expected)
+        );
       case 'not_contains':
-        return typeof actual === 'string' && typeof expected === 'string' && !actual.includes(expected);
+        return (
+          typeof actual === 'string' &&
+          typeof expected === 'string' &&
+          !actual.includes(expected)
+        );
       case 'matches':
         if (typeof actual === 'string' && expected instanceof RegExp) {
           return expected.test(actual);
@@ -485,7 +556,10 @@ export class PluginRegistry {
   /**
    * Update plugin configuration
    */
-  updatePluginConfig(pluginName: string, config: Partial<PluginConfig>): boolean {
+  updatePluginConfig(
+    pluginName: string,
+    config: Partial<PluginConfig>
+  ): boolean {
     const existingConfig = this.configs.get(pluginName);
     if (!existingConfig) {
       return false;
@@ -515,18 +589,23 @@ export class PluginRegistry {
       return;
     }
 
-    const initPromises = Array.from(this.plugins.values()).map(async plugin => {
-      if (plugin.init) {
-        try {
-          await plugin.init();
-          if (this.options.logLevel === 'debug') {
-            console.log(`[Registry] Initialized plugin: ${plugin.name}`);
+    const initPromises = Array.from(this.plugins.values()).map(
+      async (plugin) => {
+        if (plugin.init) {
+          try {
+            await plugin.init();
+            if (this.options.logLevel === 'debug') {
+              console.log(`[Registry] Initialized plugin: ${plugin.name}`);
+            }
+          } catch (error) {
+            console.error(
+              `[Registry] Failed to initialize plugin ${plugin.name}:`,
+              error
+            );
           }
-        } catch (error) {
-          console.error(`[Registry] Failed to initialize plugin ${plugin.name}:`, error);
         }
       }
-    });
+    );
 
     await Promise.all(initPromises);
     this.initialized = true;
@@ -540,18 +619,23 @@ export class PluginRegistry {
       return;
     }
 
-    const shutdownPromises = Array.from(this.plugins.values()).map(async plugin => {
-      if (plugin.shutdown) {
-        try {
-          await plugin.shutdown();
-          if (this.options.logLevel === 'debug') {
-            console.log(`[Registry] Shutdown plugin: ${plugin.name}`);
+    const shutdownPromises = Array.from(this.plugins.values()).map(
+      async (plugin) => {
+        if (plugin.shutdown) {
+          try {
+            await plugin.shutdown();
+            if (this.options.logLevel === 'debug') {
+              console.log(`[Registry] Shutdown plugin: ${plugin.name}`);
+            }
+          } catch (error) {
+            console.error(
+              `[Registry] Failed to shutdown plugin ${plugin.name}:`,
+              error
+            );
           }
-        } catch (error) {
-          console.error(`[Registry] Failed to shutdown plugin ${plugin.name}:`, error);
         }
       }
-    });
+    );
 
     await Promise.all(shutdownPromises);
     this.initialized = false;
@@ -563,17 +647,19 @@ export class PluginRegistry {
   async healthCheck(): Promise<Record<string, boolean>> {
     const results: Record<string, boolean> = {};
 
-    const healthPromises = Array.from(this.plugins.entries()).map(async ([name, plugin]) => {
-      if (plugin.healthCheck) {
-        try {
-          results[name] = await plugin.healthCheck();
-        } catch (error) {
-          results[name] = false;
+    const healthPromises = Array.from(this.plugins.entries()).map(
+      async ([name, plugin]) => {
+        if (plugin.healthCheck) {
+          try {
+            results[name] = await plugin.healthCheck();
+          } catch (_error) {
+            results[name] = false;
+          }
+        } else {
+          results[name] = true; // No health check = healthy
         }
-      } else {
-        results[name] = true; // No health check = healthy
       }
-    });
+    );
 
     await Promise.all(healthPromises);
     return results;
@@ -631,7 +717,7 @@ export class PluginRegistry {
   }
 
   private async emitEvent(event: RegistryEvent): Promise<void> {
-    const promises = this.eventListeners.map(async listener => {
+    const promises = this.eventListeners.map(async (listener) => {
       try {
         await listener(event);
       } catch (error) {
@@ -648,23 +734,42 @@ export class PluginRegistry {
 
   private validatePlugin(plugin: HookPlugin): void {
     if (!isHookPlugin(plugin)) {
-      throw new PluginValidationError('unknown', 'structure', 'Invalid plugin structure');
+      throw new PluginValidationError(
+        'unknown',
+        'structure',
+        'Invalid plugin structure'
+      );
     }
 
     if (!plugin.name.match(/^[a-z0-9-]+$/)) {
-      throw new PluginValidationError(plugin.name, 'name', 'Plugin name must be kebab-case');
+      throw new PluginValidationError(
+        plugin.name,
+        'name',
+        'Plugin name must be kebab-case'
+      );
     }
 
     if (!plugin.version.match(/^\d+\.\d+\.\d+/)) {
-      throw new PluginValidationError(plugin.name, 'version', 'Plugin version must be semver format');
+      throw new PluginValidationError(
+        plugin.name,
+        'version',
+        'Plugin version must be semver format'
+      );
     }
 
     if (plugin.events.length === 0) {
-      throw new PluginValidationError(plugin.name, 'events', 'Plugin must handle at least one event');
+      throw new PluginValidationError(
+        plugin.name,
+        'events',
+        'Plugin must handle at least one event'
+      );
     }
   }
 
-  private normalizePluginResult(plugin: HookPlugin, result: HookResult | PluginResult): PluginResult {
+  private normalizePluginResult(
+    plugin: HookPlugin,
+    result: HookResult | PluginResult
+  ): PluginResult {
     if ('pluginName' in result && 'pluginVersion' in result) {
       return result as PluginResult;
     }
@@ -673,7 +778,8 @@ export class PluginRegistry {
   }
 
   private createErrorResult(plugin: HookPlugin, error: Error): PluginResult {
-    this.stats.errorCounts[plugin.name] = (this.stats.errorCounts[plugin.name] || 0) + 1;
+    this.stats.errorCounts[plugin.name] =
+      (this.stats.errorCounts[plugin.name] || 0) + 1;
 
     return {
       success: false,
@@ -681,15 +787,17 @@ export class PluginRegistry {
       message: `Plugin execution failed: ${error.message}`,
       pluginName: plugin.name,
       pluginVersion: plugin.version,
-      metadata: { error: error.name, stack: error.stack }
+      metadata: { error: error.name, stack: error.stack },
     };
   }
 
   private updateStats(): void {
     this.stats.totalPlugins = this.plugins.size;
-    this.stats.enabledPlugins = Array.from(this.configs.values())
-      .filter(config => config.enabled).length;
-    this.stats.disabledPlugins = this.stats.totalPlugins - this.stats.enabledPlugins;
+    this.stats.enabledPlugins = Array.from(this.configs.values()).filter(
+      (config) => config.enabled
+    ).length;
+    this.stats.disabledPlugins =
+      this.stats.totalPlugins - this.stats.enabledPlugins;
   }
 
   private updateExecutionStats(results: PluginResult[]): void {
@@ -701,7 +809,7 @@ export class PluginRegistry {
 
     for (const result of results) {
       // Update execution counts
-      this.stats.executionCounts[result.pluginName] = 
+      this.stats.executionCounts[result.pluginName] =
         (this.stats.executionCounts[result.pluginName] || 0) + 1;
 
       // Update timing
@@ -716,7 +824,8 @@ export class PluginRegistry {
     }
 
     this.stats.totalExecutionTime += totalTime;
-    this.stats.averageExecutionTime = this.stats.totalExecutionTime / this.stats.totalExecutions;
+    this.stats.averageExecutionTime =
+      this.stats.totalExecutionTime / this.stats.totalExecutions;
     this.stats.successRate = successCount / results.length;
   }
 }

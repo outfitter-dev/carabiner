@@ -4,8 +4,8 @@
  * Enables composition of small, focused hooks through a plugin architecture.
  */
 
+import type { HookContext, HookEvent, HookResult } from '@outfitter/types';
 import type { z } from 'zod';
-import type { HookContext, HookResult, HookEvent } from '@outfitter/types';
 
 /**
  * Plugin execution result with enhanced metadata
@@ -55,7 +55,13 @@ export interface PluginCondition {
   /** Field to check (for env/context/tool conditions) */
   field?: string;
   /** Operator for comparison */
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'matches' | 'custom';
+  operator:
+    | 'equals'
+    | 'not_equals'
+    | 'contains'
+    | 'not_contains'
+    | 'matches'
+    | 'custom';
   /** Value to compare against */
   value?: unknown;
   /** Custom condition function (for custom type/operator) */
@@ -94,10 +100,10 @@ export interface PluginMetadata {
 
 /**
  * Core hook plugin interface
- * 
+ *
  * Plugins are the fundamental unit of composition in the Claude Code hook system.
  * They encapsulate specific behaviors and can be combined to create complex workflows.
- * 
+ *
  * @example Basic Plugin
  * ```typescript
  * export const gitSafetyPlugin: HookPlugin = {
@@ -105,10 +111,10 @@ export interface PluginMetadata {
  *   version: '1.0.0',
  *   description: 'Prevents dangerous git operations',
  *   events: ['PreToolUse'],
- *   
+ *
  *   async apply(context) {
  *     if (context.toolName !== 'Bash') return { success: true };
- *     
+ *
  *     const command = context.toolInput.command;
  *     if (command.includes('--force')) {
  *       return {
@@ -117,7 +123,7 @@ export interface PluginMetadata {
  *         message: 'Force operations require confirmation'
  *       };
  *     }
- *     
+ *
  *     return { success: true };
  *   }
  * };
@@ -125,86 +131,86 @@ export interface PluginMetadata {
  */
 export interface HookPlugin {
   // === Plugin Identity ===
-  
+
   /** Unique plugin name (kebab-case recommended) */
   name: string;
-  
+
   /** Plugin version (semver format) */
   version: string;
-  
+
   /** Human-readable description */
   description?: string;
-  
+
   /** Plugin author */
   author?: string;
-  
+
   // === Event Filtering ===
-  
+
   /** Events this plugin handles (empty = all events) */
   events: HookEvent[];
-  
+
   /** Tools this plugin targets (empty = all tools) */
   tools?: string[];
-  
+
   // === Execution Control ===
-  
+
   /** Execution priority (higher = runs first, default: 0) */
   priority?: number;
-  
+
   /** Whether plugin is enabled by default */
   enabled?: boolean;
-  
+
   // === Configuration ===
-  
+
   /** Zod schema for plugin configuration validation */
   configSchema?: z.ZodSchema<Record<string, unknown>>;
-  
+
   /** Default configuration values */
   defaultConfig?: Record<string, unknown>;
-  
+
   // === Plugin Implementation ===
-  
+
   /**
    * Apply the plugin to a hook context
-   * 
+   *
    * @param context - The hook context to process
    * @param config - Plugin-specific configuration (validated against configSchema)
    * @returns Plugin execution result
    */
   apply(
-    context: HookContext, 
+    context: HookContext,
     config?: Record<string, unknown>
   ): Promise<PluginResult> | PluginResult;
-  
+
   // === Lifecycle Hooks ===
-  
+
   /**
    * Initialize the plugin (called once during registry startup)
    */
   init?(): Promise<void> | void;
-  
+
   /**
    * Shutdown the plugin (called during registry shutdown)
    */
   shutdown?(): Promise<void> | void;
-  
+
   /**
    * Health check for the plugin
-   * 
+   *
    * @returns true if plugin is healthy, false otherwise
    */
   healthCheck?(): Promise<boolean> | boolean;
-  
+
   /**
    * Validate plugin configuration
-   * 
+   *
    * @param config - Configuration to validate
    * @returns true if valid, error message if invalid
    */
   validateConfig?(config: Record<string, unknown>): boolean | string;
-  
+
   // === Plugin Metadata ===
-  
+
   /** Additional metadata for discovery and management */
   metadata?: PluginMetadata;
 }
@@ -212,7 +218,9 @@ export interface HookPlugin {
 /**
  * Plugin factory function for dynamic plugin creation
  */
-export type PluginFactory = (options?: Record<string, unknown>) => HookPlugin | Promise<HookPlugin>;
+export type PluginFactory = (
+  options?: Record<string, unknown>
+) => HookPlugin | Promise<HookPlugin>;
 
 /**
  * Plugin module interface for ES6 module loading
@@ -281,9 +289,9 @@ export function isHookPlugin(obj: unknown): obj is HookPlugin {
   if (typeof obj !== 'object' || obj === null) {
     return false;
   }
-  
+
   const plugin = obj as Partial<HookPlugin>;
-  
+
   return (
     typeof plugin.name === 'string' &&
     typeof plugin.version === 'string' &&
@@ -299,9 +307,9 @@ export function isPluginResult(obj: unknown): obj is PluginResult {
   if (typeof obj !== 'object' || obj === null) {
     return false;
   }
-  
+
   const result = obj as Partial<PluginResult>;
-  
+
   return (
     typeof result.success === 'boolean' &&
     typeof result.pluginName === 'string' &&
@@ -353,7 +361,7 @@ export class PluginExecutionError extends Error {
   ) {
     super(`Plugin ${pluginName}: ${message}`);
     this.name = 'PluginExecutionError';
-    
+
     if (originalError) {
       this.stack = originalError.stack;
     }

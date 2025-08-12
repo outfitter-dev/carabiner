@@ -2,29 +2,24 @@
  * Tests for Claude Code hook input validation schemas
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { z } from 'zod';
 import {
-  hookEventSchema,
-  toolNameSchema,
   baseClaudeHookInputSchema,
+  claudeHookInputSchema,
+  claudeHookOutputSchema,
+  claudeNotificationInputSchema,
   claudeToolHookInputSchema,
   claudeUserPromptInputSchema,
-  claudeNotificationInputSchema,
-  claudeHookInputSchema,
   hookEnvironmentSchema,
-  hookResultSchema,
-  claudeHookOutputSchema,
+  hookEventSchema,
   hookExecutionOptionsSchema,
-  parseClaudeHookInput,
-  safeParseClaudeHookInput,
-  parseHookEnvironment,
-  parseHookResult,
-  parseHookExecutionOptions,
+  hookResultSchema,
   isValidClaudeHookInput,
   isValidToolHookInput,
-  isValidUserPromptInput,
-  isValidNotificationInput,
+  parseClaudeHookInput,
+  safeParseClaudeHookInput,
+  toolNameSchema,
   validateAndCreateBrandedInput,
 } from '../input.js';
 
@@ -139,11 +134,36 @@ describe('baseClaudeHookInputSchema', () => {
     const invalidInputs = [
       {}, // missing all required fields
       { session_id: 'test' }, // missing other required fields
-      { session_id: 'ab', transcript_path: '/tmp/transcript.md', cwd: '/project', hook_event_name: 'PreToolUse' }, // session_id too short
-      { session_id: 'test-session', transcript_path: 'relative.md', cwd: '/project', hook_event_name: 'PreToolUse' }, // non-absolute transcript_path
-      { session_id: 'test-session', transcript_path: '/tmp/file.txt', cwd: '/project', hook_event_name: 'PreToolUse' }, // transcript_path not .md
-      { session_id: 'test-session', transcript_path: '/tmp/transcript.md', cwd: 'relative', hook_event_name: 'PreToolUse' }, // non-absolute cwd
-      { session_id: 'test session', transcript_path: '/tmp/transcript.md', cwd: '/project', hook_event_name: 'PreToolUse' }, // invalid session_id format
+      {
+        session_id: 'ab',
+        transcript_path: '/tmp/transcript.md',
+        cwd: '/project',
+        hook_event_name: 'PreToolUse',
+      }, // session_id too short
+      {
+        session_id: 'test-session',
+        transcript_path: 'relative.md',
+        cwd: '/project',
+        hook_event_name: 'PreToolUse',
+      }, // non-absolute transcript_path
+      {
+        session_id: 'test-session',
+        transcript_path: '/tmp/file.txt',
+        cwd: '/project',
+        hook_event_name: 'PreToolUse',
+      }, // transcript_path not .md
+      {
+        session_id: 'test-session',
+        transcript_path: '/tmp/transcript.md',
+        cwd: 'relative',
+        hook_event_name: 'PreToolUse',
+      }, // non-absolute cwd
+      {
+        session_id: 'test session',
+        transcript_path: '/tmp/transcript.md',
+        cwd: '/project',
+        hook_event_name: 'PreToolUse',
+      }, // invalid session_id format
     ];
 
     for (const input of invalidInputs) {
@@ -238,7 +258,9 @@ describe('claudeUserPromptInputSchema', () => {
     ];
 
     for (const input of invalidInputs) {
-      expect(() => claudeUserPromptInputSchema.parse(input)).toThrow(z.ZodError);
+      expect(() => claudeUserPromptInputSchema.parse(input)).toThrow(
+        z.ZodError
+      );
     }
   });
 });
@@ -284,7 +306,9 @@ describe('claudeNotificationInputSchema', () => {
     ];
 
     for (const input of invalidInputs) {
-      expect(() => claudeNotificationInputSchema.parse(input)).toThrow(z.ZodError);
+      expect(() => claudeNotificationInputSchema.parse(input)).toThrow(
+        z.ZodError
+      );
     }
   });
 });
@@ -355,11 +379,11 @@ describe('hookResultSchema', () => {
     const validResults = [
       { success: true },
       { success: false, message: 'Error occurred' },
-      { 
-        success: true, 
-        message: 'Completed', 
+      {
+        success: true,
+        message: 'Completed',
         data: { count: 5 },
-        metadata: { duration: 150, timestamp: '2024-01-01T00:00:00Z' }
+        metadata: { duration: 150, timestamp: '2024-01-01T00:00:00Z' },
       },
     ];
 
@@ -385,11 +409,11 @@ describe('claudeHookOutputSchema', () => {
     const validOutputs = [
       { action: 'continue' },
       { action: 'block', message: 'Security violation' },
-      { 
-        action: 'modify', 
+      {
+        action: 'modify',
         message: 'Input modified',
         modified_input: { command: 'safe-command' },
-        data: { original: 'dangerous-command' }
+        data: { original: 'dangerous-command' },
       },
     ];
 
@@ -414,13 +438,13 @@ describe('hookExecutionOptionsSchema', () => {
   test('validates execution options', () => {
     const validOptions = [
       {},
-      { timeout: 30000 },
-      { 
-        timeout: 60000,
+      { timeout: 30_000 },
+      {
+        timeout: 60_000,
         throwOnError: true,
         captureOutput: false,
         logLevel: 'debug',
-        outputMode: 'json'
+        outputMode: 'json',
       },
     ];
 
@@ -437,7 +461,9 @@ describe('hookExecutionOptionsSchema', () => {
     ];
 
     for (const options of invalidOptions) {
-      expect(() => hookExecutionOptionsSchema.parse(options)).toThrow(z.ZodError);
+      expect(() => hookExecutionOptionsSchema.parse(options)).toThrow(
+        z.ZodError
+      );
     }
   });
 });
@@ -535,11 +561,11 @@ describe('validateAndCreateBrandedInput', () => {
     };
 
     const result = await validateAndCreateBrandedInput(input);
-    
+
     expect(result.session_id).toBe('test-session-123');
     expect(result.transcript_path).toBe('/tmp/transcript.md');
     expect(result.cwd).toBe('/project');
-    
+
     // Branded types should be present
     expect(typeof result.sessionId).toBe('string');
     expect(typeof result.transcriptPath).toBe('string');

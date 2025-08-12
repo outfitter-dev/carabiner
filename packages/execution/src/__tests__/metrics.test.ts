@@ -71,7 +71,7 @@ describe('Memory tracking functions', () => {
     const before = snapshotMemoryUsage();
 
     // Allocate some memory that will definitely be tracked
-    const largeBuffer = Buffer.alloc(1_024 * 1_024); // 1MB buffer
+    const largeBuffer = Buffer.alloc(1024 * 1024); // 1MB buffer
     largeBuffer.fill(42); // Fill to ensure allocation is real
 
     const after = snapshotMemoryUsage();
@@ -81,7 +81,7 @@ describe('Memory tracking functions', () => {
     expect(delta.heapUsed).toBeGreaterThanOrEqual(0);
 
     // Keep reference to prevent optimization
-    expect(largeBuffer.length).toBe(1_024 * 1_024);
+    expect(largeBuffer.length).toBe(1024 * 1024);
   });
 
   test('should format memory usage for display', () => {

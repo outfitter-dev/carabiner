@@ -6,6 +6,7 @@ Testing framework, mocks, and utilities for Claude Code hooks.
 
 ```bash
 bun add --dev @outfitter/hooks-testing
+
 ```
 
 ## Usage

@@ -16,6 +16,7 @@ Simplified execution engine for Claude Code hooks with predictable error handlin
 
 ```bash
 bun add @outfitter/execution
+
 ```
 
 ## Quick Start

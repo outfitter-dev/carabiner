@@ -104,15 +104,22 @@ export interface HookExecutionOptions {
  * Type guards for hook events
  */
 export function isHookEvent(value: unknown): value is HookEvent {
-  return typeof value === 'string' && (HOOK_EVENTS as readonly string[]).includes(value);
+  return (
+    typeof value === 'string' &&
+    (HOOK_EVENTS as readonly string[]).includes(value)
+  );
 }
 
 export function isToolHookEvent(event: HookEvent): event is ToolHookEvent {
   return event === 'PreToolUse' || event === 'PostToolUse';
 }
 
-export function isNotificationEvent(event: HookEvent): event is NotificationEvent {
-  return event === 'SessionStart' || event === 'Stop' || event === 'SubagentStop';
+export function isNotificationEvent(
+  event: HookEvent
+): event is NotificationEvent {
+  return (
+    event === 'SessionStart' || event === 'Stop' || event === 'SubagentStop'
+  );
 }
 
 export function isUserEvent(event: HookEvent): event is UserEvent {

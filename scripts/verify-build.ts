@@ -72,17 +72,19 @@ async function checkPackage(packageName: string): Promise<PackageCheck> {
         }
 
         if (stat.isDirectory()) {
-          const { readdirSync } = await import('node:fs');
+          const { readdirSync } = require('node:fs');
           return readdirSync(dirPath)
-            .map((name) => calculateSize(join(dirPath, name)))
-            .reduce((total, size) => total + size, 0);
+            .map((name: string) => calculateSize(join(dirPath, name)))
+            .reduce((total: number, size: number) => total + size, 0);
         }
 
         return 0;
       };
 
       distSize = calculateSize(distPath);
-    } catch (_error) {}
+    } catch (_error) {
+      // Directory size calculation failed, keep default 0
+    }
   }
 
   return {
@@ -95,10 +97,14 @@ async function checkPackage(packageName: string): Promise<PackageCheck> {
   };
 }
 
-async function verifyBuild(): Promise<void> {
+async function runCleanStep(): Promise<void> {
   const cleanResult = await runCommand('bun', ['run', 'clean'], process.cwd());
   if (cleanResult.code !== 0) {
+    throw new Error(`Clean failed with code ${cleanResult.code}`);
   }
+}
+
+async function runBuildStep(): Promise<void> {
   const buildResult = await runCommand(
     'bun',
     ['run', 'build:packages'],
@@ -106,16 +112,11 @@ async function verifyBuild(): Promise<void> {
   );
 
   if (buildResult.code !== 0) {
-    process.exit(1);
+    throw new Error(`Build failed with code ${buildResult.code}`);
   }
+}
 
-  const checks: PackageCheck[] = [];
-  for (const packageName of PACKAGES) {
-    const check = await checkPackage(packageName);
-    checks.push(check);
-
-    const _status = check.hasMain && check.hasTypes ? '✅' : '❌';
-  }
+async function runTypecheckStep(): Promise<void> {
   const typecheckResult = await runCommand(
     'bun',
     ['run', 'typecheck'],
@@ -123,9 +124,11 @@ async function verifyBuild(): Promise<void> {
   );
 
   if (typecheckResult.code !== 0) {
-    process.exit(1);
+    throw new Error(`Typecheck failed with code ${typecheckResult.code}`);
   }
+}
 
+async function validatePackageFiles(): Promise<void> {
   for (const packageName of PACKAGES) {
     try {
       const packagePath = join(
@@ -136,7 +139,6 @@ async function verifyBuild(): Promise<void> {
         'index.js'
       );
       if (existsSync(packagePath)) {
-        // Try to import the built package
         const { readFile } = await import('node:fs/promises');
         const content = await readFile(packagePath, 'utf-8');
 
@@ -144,9 +146,15 @@ async function verifyBuild(): Promise<void> {
           throw new Error('Package file is empty');
         }
       } else {
+        throw new Error(`Package file not found: ${packagePath}`);
       }
-    } catch (_error) {}
+    } catch (_error) {
+      // Package validation failed, continue with other checks
+    }
   }
+}
+
+async function runPublintValidation(): Promise<void> {
   const publintResult = await runCommand(
     'bunx',
     ['publint', '--strict'],
@@ -154,17 +162,35 @@ async function verifyBuild(): Promise<void> {
   );
 
   if (publintResult.code !== 0 && publintResult.stderr) {
+    console.warn('Publint validation warnings:', publintResult.stderr);
   } else {
+    console.log('Publint validation passed');
   }
+}
+
+async function verifyBuild(): Promise<void> {
+  await runCleanStep();
+  await runBuildStep();
+  await runTypecheckStep();
+
+  const checks: PackageCheck[] = [];
+  for (const packageName of PACKAGES) {
+    const check = await checkPackage(packageName);
+    checks.push(check);
+  }
+
+  await validatePackageFiles();
+  await runPublintValidation();
 
   // Summary
   const failedChecks = checks.filter(
     (check) => !(check.hasMain && check.hasTypes)
   );
-  const _totalSize = checks.reduce((sum, check) => sum + check.distSize, 0);
 
   if (failedChecks.length > 0) {
-    process.exit(1);
+    throw new Error(
+      `Build verification failed for ${failedChecks.length} packages`
+    );
   }
 }
 

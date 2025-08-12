@@ -299,7 +299,6 @@ export class ValidateCommand extends BaseCommand {
 
     // Validate each hook file
     for (const filePath of hookFiles) {
-      // biome-ignore lint/nursery/noAwaitInLoop: sequential validation is required for proper error handling
       errors += await this.validateHookFile(
         filePath,
         workspacePath,

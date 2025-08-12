@@ -200,7 +200,6 @@ export class TestCommand extends BaseCommand {
           files.push(relativePath);
         } else if (entry.isDirectory()) {
           // Recursively search subdirectories
-          // biome-ignore lint/nursery/noAwaitInLoop: recursive directory traversal requires sequential processing
           const subFiles = await this.findTestFilesRecursive(fullPath, baseDir);
           files.push(...subFiles);
         }

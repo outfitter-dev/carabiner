@@ -5,7 +5,9 @@
 ### Bun Bundler
 
 ```bash
+
 # Production build with optimizations
+
 bun build ./src/index.ts \
   --outdir ./dist \
   --minify \
@@ -131,6 +133,7 @@ const users = await db.prepare(
 
 // Connection pooling
 const pool = new DatabasePool({ max: 10 });
+
 ```
 
 ### N+1 Query Prevention
@@ -215,8 +218,11 @@ group('string operations', () => {
 ### Load Testing
 
 ```bash
+
 # Use autocannon for HTTP load testing
+
 bunx autocannon -c 100 -d 30 http://localhost:3000
+
 ```
 
 ## Best Practices

@@ -59,7 +59,7 @@ export {
 
 Option B — implement missing APIs in `runtime.ts` (prefer later if truly needed). For now, A avoids broken imports.
 
-2. CLI templates use legacy APIs (doesn’t match stdin runtime)
+1. CLI templates use legacy APIs (doesn't match stdin runtime)
 
 - File: `packages/hooks-cli/src/commands/generate.ts`
 - Generated hooks call `createHookContext('PreToolUse')` + `exitWithResult`. Prefer `runClaudeHook(handler)`.
@@ -67,7 +67,9 @@ Option B — implement missing APIs in `runtime.ts` (prefer later if truly neede
 Recommended template body:
 
 ```ts
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults, type HookContext } from '@claude-code/hooks-core';
 
 async function handler(ctx: HookContext) {
@@ -84,11 +86,12 @@ async function handler(ctx: HookContext) {
 if (import.meta.main) {
   await runClaudeHook(handler, { timeout: 10_000 });
 }
+
 ```
 
 Also switch JSON vs exit-code via `outputMode` if needed.
 
-3. Timeout naming mismatch (docs vs generator)
+1. Timeout naming mismatch (docs vs generator)
 
 - Docs and `docs/resources/*` use `timeoutMs` (Claude Code).
 - `hooks-config` `DEFAULT_CONFIG` and `generateClaudeSettings` emit `timeout`.
@@ -103,11 +106,12 @@ private processHookConfig(config: ToolHookConfig) {
   if (config.detached !== undefined) processed.detached = config.detached;
   return processed;
 }
+
 ```
 
 Optionally update `README` examples for consistency.
 
-4. Tests vs runtime input model
+1. Tests vs runtime input model
 
 - Mocks rely on env vars, while runtime uses stdin. Keep mocks (fast), but document the distinction and add a `TestProtocol`-based example to future-proof.
 
@@ -149,7 +153,9 @@ console.log('hooks-core VERSION', core.VERSION);
 ## Example: Minimal PreToolUse Hook (ready-to-copy)
 
 ```ts
+
 #!/usr/bin/env bun
+
 import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
 
 await runClaudeHook(
@@ -163,6 +169,7 @@ await runClaudeHook(
   },
   { timeout: 10_000 },
 );
+
 ```
 
 ## Example: Config Manager → Claude settings

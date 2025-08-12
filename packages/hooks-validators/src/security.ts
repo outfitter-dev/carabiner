@@ -411,6 +411,76 @@ export function validateFileContent(
 }
 
 /**
+ * Validate Bash tool security
+ */
+function validateBashToolSecurity(
+  context: HookContext,
+  options: SecurityOptions
+): void {
+  if (isBashToolInput(context.toolInput)) {
+    validateBashCommand(context.toolInput.command, options);
+  }
+}
+
+/**
+ * Validate Write tool security
+ */
+function validateWriteToolSecurity(
+  context: HookContext,
+  options: SecurityOptions
+): void {
+  if (isWriteToolInput(context.toolInput)) {
+    validateFilePath(context.toolInput.file_path, context.cwd, options);
+    validateFileContent(
+      context.toolInput.content,
+      context.toolInput.file_path,
+      options
+    );
+  }
+}
+
+/**
+ * Validate Edit tool security
+ */
+function validateEditToolSecurity(
+  context: HookContext,
+  options: SecurityOptions
+): void {
+  if (isEditToolInput(context.toolInput)) {
+    validateFilePath(context.toolInput.file_path, context.cwd, options);
+    validateFileContent(
+      context.toolInput.new_string,
+      context.toolInput.file_path,
+      options
+    );
+  }
+}
+
+/**
+ * Validate unknown tool security with generic checks
+ */
+function validateUnknownToolSecurity(
+  context: HookContext,
+  options: SecurityOptions
+): void {
+  if (typeof context.toolInput === 'object' && context.toolInput !== null) {
+    const input = context.toolInput as Record<string, unknown>;
+
+    if (input.file_path && typeof input.file_path === 'string') {
+      validateFilePath(input.file_path, context.cwd, options);
+    }
+
+    if (input.content && typeof input.content === 'string') {
+      validateFileContent(
+        input.content,
+        typeof input.file_path === 'string' ? input.file_path : 'unknown',
+        options
+      );
+    }
+  }
+}
+
+/**
  * Comprehensive security validation for hook context
  */
 export function validateHookSecurity(
@@ -420,53 +490,16 @@ export function validateHookSecurity(
   try {
     switch (context.toolName) {
       case 'Bash':
-        if (isBashToolInput(context.toolInput)) {
-          validateBashCommand(context.toolInput.command, options);
-        }
+        validateBashToolSecurity(context, options);
         break;
-
       case 'Write':
-        if (isWriteToolInput(context.toolInput)) {
-          validateFilePath(context.toolInput.file_path, context.cwd, options);
-          validateFileContent(
-            context.toolInput.content,
-            context.toolInput.file_path,
-            options
-          );
-        }
+        validateWriteToolSecurity(context, options);
         break;
-
       case 'Edit':
-        if (isEditToolInput(context.toolInput)) {
-          validateFilePath(context.toolInput.file_path, context.cwd, options);
-          validateFileContent(
-            context.toolInput.new_string,
-            context.toolInput.file_path,
-            options
-          );
-        }
+        validateEditToolSecurity(context, options);
         break;
-
       default:
-        // For unknown tools, perform basic validation if possible
-        if (
-          typeof context.toolInput === 'object' &&
-          context.toolInput !== null
-        ) {
-          const input = context.toolInput as Record<string, unknown>;
-
-          if (input.file_path && typeof input.file_path === 'string') {
-            validateFilePath(input.file_path, context.cwd, options);
-          }
-
-          if (input.content && typeof input.content === 'string') {
-            validateFileContent(
-              input.content,
-              typeof input.file_path === 'string' ? input.file_path : 'unknown',
-              options
-            );
-          }
-        }
+        validateUnknownToolSecurity(context, options);
     }
   } catch (error) {
     if (error instanceof SecurityValidationError) {

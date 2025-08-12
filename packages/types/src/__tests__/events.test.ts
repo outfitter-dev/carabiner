@@ -2,17 +2,17 @@
  * Tests for hook event types and utilities
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
   HOOK_EVENTS,
-  isHookEvent,
-  isToolHookEvent,
-  isNotificationEvent,
-  isUserEvent,
-  HookResults,
   type HookEvent,
-  type ToolHookEvent,
+  HookResults,
+  isHookEvent,
+  isNotificationEvent,
+  isToolHookEvent,
+  isUserEvent,
   type NotificationEvent,
+  type ToolHookEvent,
   type UserEvent,
 } from '../events.js';
 
@@ -33,7 +33,7 @@ describe('HOOK_EVENTS constant', () => {
     // We don't actually execute the push to avoid mutating the array during tests
     // @ts-expect-error - HOOK_EVENTS should be readonly
     // HOOK_EVENTS.push('InvalidEvent');
-    
+
     // Instead, just verify the array is properly typed
     expect(HOOK_EVENTS.length).toBe(6);
   });
@@ -52,7 +52,7 @@ describe('isHookEvent', () => {
     expect(isHookEvent('preToolUse')).toBe(false); // wrong case
     expect(isHookEvent('POST_TOOL_USE')).toBe(false); // wrong case
     expect(isHookEvent('')).toBe(false); // empty string
-    
+
     // Test non-string values
     expect(isHookEvent(123)).toBe(false);
     expect(isHookEvent(null)).toBe(false);
@@ -65,15 +65,20 @@ describe('isHookEvent', () => {
 describe('isToolHookEvent', () => {
   test('identifies tool hook events', () => {
     const toolEvents: HookEvent[] = ['PreToolUse', 'PostToolUse'];
-    
+
     for (const event of toolEvents) {
       expect(isToolHookEvent(event)).toBe(true);
     }
   });
 
   test('rejects non-tool hook events', () => {
-    const nonToolEvents: HookEvent[] = ['UserPromptSubmit', 'SessionStart', 'Stop', 'SubagentStop'];
-    
+    const nonToolEvents: HookEvent[] = [
+      'UserPromptSubmit',
+      'SessionStart',
+      'Stop',
+      'SubagentStop',
+    ];
+
     for (const event of nonToolEvents) {
       expect(isToolHookEvent(event)).toBe(false);
     }
@@ -82,16 +87,24 @@ describe('isToolHookEvent', () => {
 
 describe('isNotificationEvent', () => {
   test('identifies notification events', () => {
-    const notificationEvents: HookEvent[] = ['SessionStart', 'Stop', 'SubagentStop'];
-    
+    const notificationEvents: HookEvent[] = [
+      'SessionStart',
+      'Stop',
+      'SubagentStop',
+    ];
+
     for (const event of notificationEvents) {
       expect(isNotificationEvent(event)).toBe(true);
     }
   });
 
   test('rejects non-notification events', () => {
-    const nonNotificationEvents: HookEvent[] = ['PreToolUse', 'PostToolUse', 'UserPromptSubmit'];
-    
+    const nonNotificationEvents: HookEvent[] = [
+      'PreToolUse',
+      'PostToolUse',
+      'UserPromptSubmit',
+    ];
+
     for (const event of nonNotificationEvents) {
       expect(isNotificationEvent(event)).toBe(false);
     }
@@ -104,8 +117,14 @@ describe('isUserEvent', () => {
   });
 
   test('rejects non-user events', () => {
-    const nonUserEvents: HookEvent[] = ['PreToolUse', 'PostToolUse', 'SessionStart', 'Stop', 'SubagentStop'];
-    
+    const nonUserEvents: HookEvent[] = [
+      'PreToolUse',
+      'PostToolUse',
+      'SessionStart',
+      'Stop',
+      'SubagentStop',
+    ];
+
     for (const event of nonUserEvents) {
       expect(isUserEvent(event)).toBe(false);
     }
@@ -116,7 +135,7 @@ describe('HookResults builders', () => {
   describe('success', () => {
     test('creates success result without message or data', () => {
       const result = HookResults.success();
-      
+
       expect(result).toEqual({
         success: true,
         message: undefined,
@@ -126,7 +145,7 @@ describe('HookResults builders', () => {
 
     test('creates success result with message', () => {
       const result = HookResults.success('Operation completed');
-      
+
       expect(result).toEqual({
         success: true,
         message: 'Operation completed',
@@ -137,7 +156,7 @@ describe('HookResults builders', () => {
     test('creates success result with message and data', () => {
       const data = { count: 5, files: ['a.txt', 'b.txt'] };
       const result = HookResults.success('Files processed', data);
-      
+
       expect(result).toEqual({
         success: true,
         message: 'Files processed',
@@ -149,7 +168,7 @@ describe('HookResults builders', () => {
   describe('failure', () => {
     test('creates failure result with message', () => {
       const result = HookResults.failure('Something went wrong');
-      
+
       expect(result).toEqual({
         success: false,
         message: 'Something went wrong',
@@ -160,7 +179,7 @@ describe('HookResults builders', () => {
 
     test('creates blocking failure result', () => {
       const result = HookResults.failure('Critical error', true);
-      
+
       expect(result).toEqual({
         success: false,
         message: 'Critical error',
@@ -172,7 +191,7 @@ describe('HookResults builders', () => {
     test('creates failure result with data', () => {
       const data = { errorCode: 'E001', details: 'File not found' };
       const result = HookResults.failure('File error', false, data);
-      
+
       expect(result).toEqual({
         success: false,
         message: 'File error',
@@ -185,7 +204,7 @@ describe('HookResults builders', () => {
   describe('block', () => {
     test('creates blocking failure result', () => {
       const result = HookResults.block('Security violation detected');
-      
+
       expect(result).toEqual({
         success: false,
         message: 'Security violation detected',
@@ -197,7 +216,7 @@ describe('HookResults builders', () => {
   describe('skip', () => {
     test('creates skip result with default message', () => {
       const result = HookResults.skip();
-      
+
       expect(result).toEqual({
         success: true,
         message: 'Hook skipped',
@@ -206,7 +225,7 @@ describe('HookResults builders', () => {
 
     test('creates skip result with custom message', () => {
       const result = HookResults.skip('Not applicable for this tool');
-      
+
       expect(result).toEqual({
         success: true,
         message: 'Not applicable for this tool',
@@ -217,7 +236,7 @@ describe('HookResults builders', () => {
   describe('warn', () => {
     test('creates warning result with message', () => {
       const result = HookResults.warn('Deprecated feature used');
-      
+
       expect(result).toEqual({
         success: true,
         message: 'Deprecated feature used',
@@ -228,7 +247,7 @@ describe('HookResults builders', () => {
     test('creates warning result with data', () => {
       const data = { deprecatedFeature: 'oldApi', replacement: 'newApi' };
       const result = HookResults.warn('Deprecated API call', data);
-      
+
       expect(result).toEqual({
         success: true,
         message: 'Deprecated API call',
@@ -242,7 +261,7 @@ describe('Type relationships', () => {
   test('ToolHookEvent is subset of HookEvent', () => {
     const toolEvent: ToolHookEvent = 'PreToolUse';
     const hookEvent: HookEvent = toolEvent; // Should compile
-    
+
     expect(isHookEvent(hookEvent)).toBe(true);
     expect(isToolHookEvent(toolEvent)).toBe(true);
   });
@@ -250,7 +269,7 @@ describe('Type relationships', () => {
   test('NotificationEvent is subset of HookEvent', () => {
     const notificationEvent: NotificationEvent = 'SessionStart';
     const hookEvent: HookEvent = notificationEvent; // Should compile
-    
+
     expect(isHookEvent(hookEvent)).toBe(true);
     expect(isNotificationEvent(notificationEvent)).toBe(true);
   });
@@ -258,7 +277,7 @@ describe('Type relationships', () => {
   test('UserEvent is subset of HookEvent', () => {
     const userEvent: UserEvent = 'UserPromptSubmit';
     const hookEvent: HookEvent = userEvent; // Should compile
-    
+
     expect(isHookEvent(hookEvent)).toBe(true);
     expect(isUserEvent(userEvent)).toBe(true);
   });
@@ -267,7 +286,7 @@ describe('Type relationships', () => {
 describe('HookResult interface', () => {
   test('accepts minimal result', () => {
     const result = { success: true };
-    
+
     // Should satisfy HookResult interface
     expect(result.success).toBe(true);
   });
@@ -284,7 +303,7 @@ describe('HookResult interface', () => {
         hookVersion: '1.0.0',
       },
     };
-    
+
     expect(result.success).toBe(false);
     expect(result.message).toBe('Error occurred');
     expect(result.block).toBe(true);

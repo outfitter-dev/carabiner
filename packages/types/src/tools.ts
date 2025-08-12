@@ -3,7 +3,7 @@
  * Concrete types instead of complex generic mappings
  */
 
-import type { FilePath, CommandString } from './brands.js';
+import type { CommandString, FilePath } from './brands.js';
 
 /**
  * Tool input types with strict definitions
@@ -221,7 +221,9 @@ export function isLSToolInput(input: unknown): input is LSToolInput {
   );
 }
 
-export function isTodoWriteToolInput(input: unknown): input is TodoWriteToolInput {
+export function isTodoWriteToolInput(
+  input: unknown
+): input is TodoWriteToolInput {
   return (
     typeof input === 'object' &&
     input !== null &&
@@ -230,7 +232,9 @@ export function isTodoWriteToolInput(input: unknown): input is TodoWriteToolInpu
   );
 }
 
-export function isWebFetchToolInput(input: unknown): input is WebFetchToolInput {
+export function isWebFetchToolInput(
+  input: unknown
+): input is WebFetchToolInput {
   return (
     typeof input === 'object' &&
     input !== null &&
@@ -241,7 +245,9 @@ export function isWebFetchToolInput(input: unknown): input is WebFetchToolInput 
   );
 }
 
-export function isWebSearchToolInput(input: unknown): input is WebSearchToolInput {
+export function isWebSearchToolInput(
+  input: unknown
+): input is WebSearchToolInput {
   return (
     typeof input === 'object' &&
     input !== null &&
@@ -250,7 +256,9 @@ export function isWebSearchToolInput(input: unknown): input is WebSearchToolInpu
   );
 }
 
-export function isNotebookEditToolInput(input: unknown): input is NotebookEditToolInput {
+export function isNotebookEditToolInput(
+  input: unknown
+): input is NotebookEditToolInput {
   return (
     typeof input === 'object' &&
     input !== null &&

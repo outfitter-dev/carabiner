@@ -2,25 +2,25 @@
  * Tests for tool input validation schemas
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { z } from 'zod';
 import {
   bashToolInputSchema,
-  writeToolInputSchema,
   editToolInputSchema,
-  multiEditInputSchema,
-  readToolInputSchema,
+  getToolInputSchema,
   globToolInputSchema,
   grepToolInputSchema,
   lsToolInputSchema,
+  multiEditInputSchema,
+  notebookEditToolInputSchema,
+  readToolInputSchema,
+  safeValidateToolInput,
   todoWriteToolInputSchema,
+  toolInputSchemas,
+  validateToolInput,
   webFetchToolInputSchema,
   webSearchToolInputSchema,
-  notebookEditToolInputSchema,
-  toolInputSchemas,
-  getToolInputSchema,
-  validateToolInput,
-  safeValidateToolInput,
+  writeToolInputSchema,
 } from '../tools.js';
 
 describe('bashToolInputSchema', () => {
@@ -28,7 +28,7 @@ describe('bashToolInputSchema', () => {
     const validInputs = [
       { command: 'ls -la' },
       { command: 'echo "hello"', description: 'Print hello' },
-      { command: 'npm test', description: 'Run tests', timeout: 30000 },
+      { command: 'npm test', description: 'Run tests', timeout: 30_000 },
     ];
 
     for (const input of validInputs) {
@@ -83,21 +83,21 @@ describe('writeToolInputSchema', () => {
 describe('editToolInputSchema', () => {
   test('validates valid Edit inputs', () => {
     const validInputs = [
-      { 
-        file_path: '/tmp/test.txt', 
-        old_string: 'old text', 
-        new_string: 'new text' 
+      {
+        file_path: '/tmp/test.txt',
+        old_string: 'old text',
+        new_string: 'new text',
       },
-      { 
-        file_path: '/home/user/file.js', 
-        old_string: 'const x = 1', 
+      {
+        file_path: '/home/user/file.js',
+        old_string: 'const x = 1',
         new_string: 'const x = 2',
-        replace_all: true 
+        replace_all: true,
       },
-      { 
-        file_path: '/project/file.ts', 
-        old_string: '', 
-        new_string: 'added text' 
+      {
+        file_path: '/project/file.ts',
+        old_string: '',
+        new_string: 'added text',
       },
     ];
 
@@ -149,7 +149,10 @@ describe('multiEditInputSchema', () => {
       { file_path: '/tmp/test.txt' }, // missing edits
       { edits: [] }, // missing file_path
       { file_path: '/tmp/test.txt', edits: [] }, // empty edits array
-      { file_path: 'relative.txt', edits: [{ old_string: 'old', new_string: 'new' }] }, // non-absolute path
+      {
+        file_path: 'relative.txt',
+        edits: [{ old_string: 'old', new_string: 'new' }],
+      }, // non-absolute path
       { file_path: '/tmp/test.txt', edits: 'not array' }, // wrong edits type
     ];
 
@@ -220,12 +223,12 @@ describe('grepToolInputSchema', () => {
     const validInputs = [
       { pattern: 'search term' },
       { pattern: 'function\\s+\\w+', path: '/project/src' },
-      { 
-        pattern: 'TODO', 
-        glob: '*.ts', 
+      {
+        pattern: 'TODO',
+        glob: '*.ts',
         output_mode: 'content',
         head_limit: 10,
-        multiline: true 
+        multiline: true,
       },
       { pattern: 'test', output_mode: 'files_with_matches' },
       { pattern: 'error', output_mode: 'count' },
@@ -288,9 +291,7 @@ describe('todoWriteToolInputSchema', () => {
         ],
       },
       {
-        todos: [
-          { content: 'Fix bug', status: 'completed', id: 'bug-123' },
-        ],
+        todos: [{ content: 'Fix bug', status: 'completed', id: 'bug-123' }],
       },
     ];
 
@@ -348,10 +349,10 @@ describe('webSearchToolInputSchema', () => {
   test('validates valid WebSearch inputs', () => {
     const validInputs = [
       { query: 'TypeScript hooks' },
-      { 
-        query: 'Claude Code integration', 
+      {
+        query: 'Claude Code integration',
         allowed_domains: ['docs.anthropic.com'],
-        blocked_domains: ['spam.com'] 
+        blocked_domains: ['spam.com'],
       },
       { query: 'search term', allowed_domains: [] }, // empty arrays allowed
     ];
@@ -379,14 +380,18 @@ describe('notebookEditToolInputSchema', () => {
   test('validates valid NotebookEdit inputs', () => {
     const validInputs = [
       { notebook_path: '/tmp/notebook.ipynb', new_source: 'print("hello")' },
-      { 
-        notebook_path: '/project/analysis.ipynb', 
+      {
+        notebook_path: '/project/analysis.ipynb',
         new_source: '# Analysis\n\nThis is markdown',
         cell_id: 'cell-123',
         cell_type: 'markdown',
-        edit_mode: 'replace'
+        edit_mode: 'replace',
       },
-      { notebook_path: '/notebooks/test.ipynb', new_source: '', cell_type: 'code' },
+      {
+        notebook_path: '/notebooks/test.ipynb',
+        new_source: '',
+        cell_type: 'code',
+      },
     ];
 
     for (const input of validInputs) {
@@ -401,12 +406,22 @@ describe('notebookEditToolInputSchema', () => {
       { new_source: 'code' }, // missing notebook_path
       { notebook_path: '/tmp/notebook.txt', new_source: 'code' }, // not .ipynb
       { notebook_path: 'relative.ipynb', new_source: 'code' }, // non-absolute path
-      { notebook_path: '/tmp/notebook.ipynb', new_source: 'code', cell_type: 'invalid' }, // invalid cell_type
-      { notebook_path: '/tmp/notebook.ipynb', new_source: 'code', edit_mode: 'invalid' }, // invalid edit_mode
+      {
+        notebook_path: '/tmp/notebook.ipynb',
+        new_source: 'code',
+        cell_type: 'invalid',
+      }, // invalid cell_type
+      {
+        notebook_path: '/tmp/notebook.ipynb',
+        new_source: 'code',
+        edit_mode: 'invalid',
+      }, // invalid edit_mode
     ];
 
     for (const input of invalidInputs) {
-      expect(() => notebookEditToolInputSchema.parse(input)).toThrow(z.ZodError);
+      expect(() => notebookEditToolInputSchema.parse(input)).toThrow(
+        z.ZodError
+      );
     }
   });
 });
@@ -430,7 +445,9 @@ describe('toolInputSchemas map', () => {
 
     for (const key of expectedKeys) {
       expect(toolInputSchemas).toHaveProperty(key);
-      expect(toolInputSchemas[key as keyof typeof toolInputSchemas]).toBeInstanceOf(z.ZodObject);
+      expect(
+        toolInputSchemas[key as keyof typeof toolInputSchemas]
+      ).toBeInstanceOf(z.ZodObject);
     }
   });
 });

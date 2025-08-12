@@ -2,19 +2,19 @@
  * Tests for branded types and validation
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
-  createSessionId,
-  createFilePath,
-  createCommandString,
-  createTranscriptPath,
-  createDirectoryPath,
-  isSessionId,
-  isFilePath,
-  isCommandString,
-  isTranscriptPath,
-  isDirectoryPath,
   BrandValidationError,
+  createCommandString,
+  createDirectoryPath,
+  createFilePath,
+  createSessionId,
+  createTranscriptPath,
+  isCommandString,
+  isDirectoryPath,
+  isFilePath,
+  isSessionId,
+  isTranscriptPath,
   UnsafeBrands,
 } from '../brands.js';
 
@@ -55,11 +55,19 @@ describe('SessionId', () => {
     );
 
     expect(() => createSessionId('ab')).toThrow(
-      new BrandValidationError('SessionId', 'ab', 'must be at least 3 characters')
+      new BrandValidationError(
+        'SessionId',
+        'ab',
+        'must be at least 3 characters'
+      )
     );
 
     expect(() => createSessionId('invalid spaces')).toThrow(
-      new BrandValidationError('SessionId', 'invalid spaces', 'must contain only alphanumeric characters, dashes, and underscores')
+      new BrandValidationError(
+        'SessionId',
+        'invalid spaces',
+        'must contain only alphanumeric characters, dashes, and underscores'
+      )
     );
   });
 
@@ -67,7 +75,9 @@ describe('SessionId', () => {
     const nonStringValues = [null, undefined, 123, {}, [], true];
 
     for (const value of nonStringValues) {
-      expect(() => createSessionId(value as string)).toThrow(BrandValidationError);
+      expect(() => createSessionId(value as string)).toThrow(
+        BrandValidationError
+      );
       expect(isSessionId(value)).toBe(false);
     }
   });
@@ -99,7 +109,7 @@ describe('FilePath', () => {
       '/path/to/../file', // path traversal
       '/path/ending/..', // path traversal
       '/path/with\0null', // null byte
-      '/' + 'a'.repeat(4097), // too long
+      `/${'a'.repeat(4097)}`, // too long
     ];
 
     for (const path of invalidPaths) {
@@ -217,7 +227,7 @@ describe('DirectoryPath', () => {
       'relative/dir', // not absolute
       '/path/../traversal', // path traversal
       '/path/with\0null', // null byte
-      '/' + 'a'.repeat(4097), // too long
+      `/${'a'.repeat(4097)}`, // too long
     ];
 
     for (const path of invalidPaths) {
@@ -246,7 +256,7 @@ describe('UnsafeBrands', () => {
 
   test('unsafe brands bypass type guards', () => {
     const invalidSession = UnsafeBrands.sessionId('');
-    
+
     // Type guard should still fail since it validates
     expect(isSessionId(invalidSession)).toBe(false);
   });
@@ -254,7 +264,11 @@ describe('UnsafeBrands', () => {
 
 describe('BrandValidationError', () => {
   test('has correct properties', () => {
-    const error = new BrandValidationError('TestBrand', 'invalid-value', 'test message');
+    const error = new BrandValidationError(
+      'TestBrand',
+      'invalid-value',
+      'test message'
+    );
 
     expect(error.name).toBe('BrandValidationError');
     expect(error.brandType).toBe('TestBrand');
@@ -286,7 +300,7 @@ describe('Type guards edge cases', () => {
 
   test('handle objects and arrays', () => {
     const nonStringValues = [{}, [], 123, true, Symbol('test')];
-    
+
     for (const value of nonStringValues) {
       expect(isSessionId(value)).toBe(false);
       expect(isFilePath(value)).toBe(false);

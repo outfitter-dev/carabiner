@@ -3,29 +3,31 @@
  * @description Tests for security scanner plugin
  */
 
-import { describe, test, expect } from 'bun:test';
-import { securityScannerPlugin } from '../security-scanner/index';
+import { describe, expect, test } from 'bun:test';
 import type { HookContext } from '@outfitter/types';
+import { securityScannerPlugin } from '../security-scanner/index';
 
-const createBashContext = (command: string): HookContext => ({
-  event: 'PreToolUse',
-  toolName: 'Bash',
-  toolInput: { command },
-  sessionId: 'test-session' as any,
-  transcriptPath: '/tmp/transcript' as any,
-  cwd: '/test/repo' as any,
-  environment: {}
-} as any);
+const createBashContext = (command: string): HookContext =>
+  ({
+    event: 'PreToolUse',
+    toolName: 'Bash',
+    toolInput: { command },
+    sessionId: 'test-session' as any,
+    transcriptPath: '/tmp/transcript' as any,
+    cwd: '/test/repo' as any,
+    environment: {},
+  }) as any;
 
-const createWriteContext = (filePath: string, content: string): HookContext => ({
-  event: 'PreToolUse',
-  toolName: 'Write',
-  toolInput: { file_path: filePath, content },
-  sessionId: 'test-session' as any,
-  transcriptPath: '/tmp/transcript' as any,
-  cwd: '/test/repo' as any,
-  environment: {}
-} as any);
+const createWriteContext = (filePath: string, content: string): HookContext =>
+  ({
+    event: 'PreToolUse',
+    toolName: 'Write',
+    toolInput: { file_path: filePath, content },
+    sessionId: 'test-session' as any,
+    transcriptPath: '/tmp/transcript' as any,
+    cwd: '/test/repo' as any,
+    environment: {},
+  }) as any;
 
 describe('Security Scanner Plugin', () => {
   describe('Basic Functionality', () => {
@@ -45,7 +47,7 @@ describe('Security Scanner Plugin', () => {
         sessionId: 'test' as any,
         transcriptPath: '/tmp/test' as any,
         cwd: '/test' as any,
-        environment: {}
+        environment: {},
       } as any;
 
       const result = securityScannerPlugin.apply(context);
@@ -67,7 +69,7 @@ describe('Security Scanner Plugin', () => {
         'dd if=/dev/zero of=/dev/sda',
         'sudo rm -rf /',
         'chmod 777 /',
-        'shutdown now'
+        'shutdown now',
       ];
 
       for (const command of dangerousCommands) {
@@ -85,7 +87,7 @@ describe('Security Scanner Plugin', () => {
         'ls -la',
         'cat file.txt',
         'grep pattern file.txt',
-        'find . -name "*.js"'
+        'find . -name "*.js"',
       ];
 
       for (const command of safeCommands) {
@@ -102,7 +104,7 @@ describe('Security Scanner Plugin', () => {
         'system("rm -rf /")',
         'exec($userInput)',
         'shell_exec($dangerous)',
-        'passthru($command)'
+        'passthru($command)',
       ];
 
       for (const command of injectionCommands) {
@@ -130,9 +132,11 @@ describe('Security Scanner Plugin', () => {
       expect(result.success).toBe(false);
       expect(result.block).toBe(true);
       expect(result.metadata?.findings).toBeInstanceOf(Array);
-      expect((result.metadata?.findings as any[]).some(
-        f => f.category === 'secrets' && f.id === 'hardcoded-api-key'
-      )).toBe(true);
+      expect(
+        (result.metadata?.findings as any[]).some(
+          (f) => f.category === 'secrets' && f.id === 'hardcoded-api-key'
+        )
+      ).toBe(true);
     });
 
     test('should detect AWS access keys', async () => {
@@ -266,7 +270,7 @@ describe('Security Scanner Plugin', () => {
   describe('Configuration', () => {
     test('should respect minimum severity level', async () => {
       const config = {
-        minSeverity: 'high' as const
+        minSeverity: 'high' as const,
       };
 
       const content = `
@@ -283,7 +287,7 @@ describe('Security Scanner Plugin', () => {
     test('should respect blocking configuration', async () => {
       const config = {
         blockOnCritical: false,
-        blockOnHigh: false
+        blockOnHigh: false,
       };
 
       const content = `
@@ -299,14 +303,16 @@ describe('Security Scanner Plugin', () => {
 
     test('should use custom security rules', async () => {
       const config = {
-        customRules: [{
-          id: 'custom-secret',
-          name: 'Company API Key',
-          pattern: 'COMPANY_[A-Z0-9]{32}',
-          severity: 'critical' as const,
-          category: 'secrets',
-          description: 'Company API key detected'
-        }]
+        customRules: [
+          {
+            id: 'custom-secret',
+            name: 'Company API Key',
+            pattern: 'COMPANY_[A-Z0-9]{32}',
+            severity: 'critical' as const,
+            category: 'secrets',
+            description: 'Company API key detected',
+          },
+        ],
       };
 
       const content = `
@@ -324,7 +330,7 @@ describe('Security Scanner Plugin', () => {
     test('should respect file pattern filters', async () => {
       const config = {
         includePatterns: ['*.js', '*.ts'],
-        excludePatterns: ['*.test.*']
+        excludePatterns: ['*.test.*'],
       };
 
       const content = `const apiKey = "sk-1234567890abcdef";`;
@@ -343,7 +349,7 @@ describe('Security Scanner Plugin', () => {
 
     test('should respect file size limits', async () => {
       const config = {
-        maxFileSize: 100 // 100 bytes
+        maxFileSize: 100, // 100 bytes
       };
 
       const largeContent = 'x'.repeat(200); // 200 bytes
@@ -357,7 +363,7 @@ describe('Security Scanner Plugin', () => {
     test('should disable scanning when configured', async () => {
       const config = {
         scanFiles: false,
-        scanCommands: false
+        scanCommands: false,
       };
 
       const content = `const apiKey = "sk-1234567890abcdef";`;
@@ -381,7 +387,7 @@ describe('Security Scanner Plugin', () => {
 
       expect(result.metadata?.findings).toBeInstanceOf(Array);
       const findings = result.metadata?.findings as any[];
-      
+
       expect(findings.length).toBeGreaterThan(0);
       expect(findings[0]).toHaveProperty('id');
       expect(findings[0]).toHaveProperty('severity');
@@ -409,14 +415,16 @@ describe('Security Scanner Plugin', () => {
   describe('Error Handling', () => {
     test('should handle invalid regex patterns gracefully', async () => {
       const config = {
-        customRules: [{
-          id: 'invalid-regex',
-          name: 'Invalid Pattern',
-          pattern: '[invalid regex(',
-          severity: 'high' as const,
-          category: 'test',
-          description: 'Invalid regex test'
-        }]
+        customRules: [
+          {
+            id: 'invalid-regex',
+            name: 'Invalid Pattern',
+            pattern: '[invalid regex(',
+            severity: 'high' as const,
+            category: 'test',
+            description: 'Invalid regex test',
+          },
+        ],
       };
 
       const context = createWriteContext('/test/test.js', 'test content');
@@ -431,15 +439,15 @@ describe('Security Scanner Plugin', () => {
       const context = {
         event: 'PreToolUse',
         toolName: 'Edit',
-        toolInput: { 
-          file_path: '/non/existent/file.js', 
-          old_string: 'old', 
-          new_string: 'new' 
+        toolInput: {
+          file_path: '/non/existent/file.js',
+          old_string: 'old',
+          new_string: 'new',
         },
         sessionId: 'test' as any,
         transcriptPath: '/tmp/test' as any,
         cwd: '/test' as any,
-        environment: {}
+        environment: {},
       } as any;
 
       const result = await securityScannerPlugin.apply(context);

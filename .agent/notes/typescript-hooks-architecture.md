@@ -6,36 +6,44 @@ A developer-friendly system for writing Claude Code hooks in TypeScript with a c
 
 ## Core Concept
 
-```mermaid
+````mermaid
 graph LR
     A[Developer writes/imports TypeScript hooks] --> B[Hooks stored in ~/.claude-hooks/]
     B --> C[Claude settings.json references hooks]
     C --> D[Claude executes via 'bun hook.ts']
-```
+
+```text
 
 ## Architecture Components
 
 ### 1. Developer Experience
 
 ```bash
+
 # Install from registry (like shadcn)
+
 claude-hooks add security/bash-validator
 claude-hooks add github/pr-checks
 claude-hooks add performance/monitor
 
 # Create custom hook
+
 claude-hooks create my-custom-hook
 
 # Test hooks
+
 claude-hooks test my-custom-hook
 
 # List installed hooks
+
 claude-hooks list
-```
+
+```text
 
 ### 2. File Structure
 
-```
+```text
+
 ~/.claude-hooks/
 ├── installed/          # Hooks from registry
 │   ├── bash-validator.ts
@@ -46,7 +54,8 @@ claude-hooks list
 ├── node_modules/      # Shared dependencies
 ├── package.json       # Dependency management
 └── hooks.json         # Hook metadata/config
-```
+
+```text
 
 ### 3. Claude Settings Integration
 
@@ -71,13 +80,15 @@ What gets written to `~/.claude/settings.json`:
     ]
   }
 }
-```
+
+```text
 
 ### 4. Hook Runtime Structure
 
 Each hook is a standalone TypeScript file that can be executed by Bun:
 
 ```typescript
+
 #!/usr/bin/env bun
 
 import { parseContext, respond } from '@claude-code/hooks-runtime';
@@ -108,7 +119,8 @@ if (validated.tool === 'Bash') {
 }
 
 respond({ action: 'allow' });
-```
+
+```text
 
 ## Registry Architecture
 
@@ -154,7 +166,8 @@ Similar to how shadcn/ui works, the registry would be a GitHub repository with a
     }
   ]
 }
-```
+
+```text
 
 ### Registry CLI Implementation
 
@@ -198,7 +211,8 @@ export class AddCommand {
     }
   }
 }
-```
+
+```text
 
 ### Registry Hosting Options
 
@@ -209,13 +223,13 @@ export class AddCommand {
    - Version control built-in
    - PRs for community contributions
 
-2. **NPM Packages**
+1. **NPM Packages**
 
    - Each hook as a package
    - Versioning via NPM
    - `@claude-hooks/bash-validator`
 
-3. **Custom Registry**
+1. **Custom Registry**
    - API-based
    - Search functionality
    - Ratings/reviews
@@ -315,19 +329,20 @@ export class AddCommand {
    - Test with Claude Code settings
    - Measure performance impact
 
-2. **Registry Design**
+1. **Registry Design**
 
    - Define registry schema
    - Create initial hook collection
    - Build submission process
 
-3. **CLI Enhancement**
+1. **CLI Enhancement**
 
    - Add `add` command
    - Add `remove` command
    - Add `update` command
 
-4. **Documentation**
+1. **Documentation**
    - Hook authoring guide
    - Registry contribution guide
    - Migration guide from bash hooks
+````

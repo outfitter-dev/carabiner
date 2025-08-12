@@ -1,9 +1,6 @@
 # Greenfield Refactoring Plan: @outfitter/grapple
 
-**Date:** 2025-01-11  
-**Author:** Claude Code  
-**Status:** In Progress  
-**Timeline:** 8-11 weeks total
+**Date:** 2025-01-11 **Author:** Claude Code **Status:** In Progress **Timeline:** 8-11 weeks total
 
 ## Executive Summary
 
@@ -14,19 +11,16 @@ This document outlines a comprehensive refactoring of the @outfitter/grapple Cla
 ### Problems with Current Architecture
 
 1. **Over-engineered Type System**
-
    - 477 lines of complex generic types in `types.ts`
    - Excessive conditional types causing inference issues
    - Runtime type guards instead of compile-time validation
 
 2. **Monolithic Package Structure**
-
    - `hooks-core` handles too many responsibilities
    - Tight coupling to stdin/stdout protocol
    - Difficult to test in isolation
 
 3. **Complex Builder Pattern**
-
    - Unnecessary ceremony for simple hook creation
    - Complex middleware chains that obscure intent
    - Poor developer experience with generic inference
@@ -47,7 +41,8 @@ This document outlines a comprehensive refactoring of the @outfitter/grapple Cla
 
 ### Package Structure
 
-```
+````text
+
 packages/
 ├── @grapple/types          # Core type definitions (branded types, domains)
 ├── @grapple/schemas         # Zod validation schemas
@@ -58,7 +53,8 @@ packages/
 ├── @grapple/testing         # Testing utilities
 ├── @grapple/cli            # CLI tools
 └── @grapple/examples       # Example implementations
-```
+
+```text
 
 ## Implementation Phases
 
@@ -105,7 +101,8 @@ export function createCommandString(value: string): CommandString {
   }
   return value as CommandString;
 }
-```
+
+```text
 
 **1.2 Create @grapple/schemas Package**
 
@@ -143,7 +140,8 @@ export const EditInputSchema = z
 export type BashInput = z.infer<typeof BashInputSchema>;
 export type WriteInput = z.infer<typeof WriteInputSchema>;
 export type EditInput = z.infer<typeof EditInputSchema>;
-```
+
+```text
 
 **1.3 Concrete Context Types**
 
@@ -196,7 +194,8 @@ export type HookContext =
   | WritePostToolUseContext
   | UserPromptContext
   | SessionStartContext;
-```
+
+```text
 
 #### Testing Plan
 
@@ -226,7 +225,8 @@ describe('Brand Types', () => {
     });
   });
 });
-```
+
+```text
 
 ### Phase 2: Protocol Abstraction (Weeks 4-5)
 
@@ -340,7 +340,8 @@ export class TestProtocol implements HookProtocol {
     this.error = error;
   }
 }
-```
+
+```text
 
 ### Phase 3: Simplified Execution Engine (Weeks 6-7)
 
@@ -404,7 +405,8 @@ export function createRunner(handler: HookHandler) {
     await executor.execute(handler);
   };
 }
-```
+
+```text
 
 ### Phase 4: Plugin Architecture (Weeks 8-9)
 
@@ -461,7 +463,8 @@ export class PluginRegistry {
     return Array.from(this.plugins.values());
   }
 }
-```
+
+```text
 
 **4.2 Example Plugins**
 
@@ -525,7 +528,8 @@ export const fileBackupPlugin: HookPlugin = {
     }
   },
 };
-```
+
+```text
 
 ## Testing Strategy
 
@@ -553,7 +557,8 @@ describe('Context Types', () => {
     expect(context.toolName).toBe('Bash');
   });
 });
-```
+
+```text
 
 ### Integration Tests
 
@@ -584,7 +589,8 @@ describe('Hook Execution', () => {
     });
   });
 });
-```
+
+```text
 
 ### End-to-End Tests
 
@@ -614,7 +620,8 @@ describe('Full Hook Flow', () => {
     expect(results[0].message).toContain('Dangerous git operation blocked');
   });
 });
-```
+
+```text
 
 ## Code Review Process
 
@@ -626,19 +633,19 @@ describe('Full Hook Flow', () => {
    - Zod schema coverage
    - Brand type safety
 
-2. **Phase 2 Review** (End of Week 5)
+1. **Phase 2 Review** (End of Week 5)
 
    - Protocol abstraction completeness
    - Test protocol functionality
    - Error handling
 
-3. **Phase 3 Review** (End of Week 7)
+1. **Phase 3 Review** (End of Week 7)
 
    - Execution engine simplicity
    - Error handling patterns
    - Performance characteristics
 
-4. **Phase 4 Review** (End of Week 9)
+1. **Phase 4 Review** (End of Week 9)
    - Plugin architecture flexibility
    - Configuration system usability
    - Example coverage
@@ -671,7 +678,8 @@ const hook = createHook('PreToolUse', {
   handler,
   condition, // optional
 });
-```
+
+```text
 
 ### For Hook Authors
 
@@ -701,7 +709,8 @@ export const myPlugin: HookPlugin = {
     return { success: true };
   },
 };
-```
+
+```text
 
 ## Success Metrics
 
@@ -711,13 +720,13 @@ export const myPlugin: HookPlugin = {
    - Type inference errors: 0 (from dozens)
    - API surface area: 50% reduction
 
-2. **Code Quality**
+1. **Code Quality**
 
    - Test coverage: >90%
    - TypeScript strict mode: 100% compliance
    - Bundle size: 30% reduction
 
-3. **Performance**
+1. **Performance**
    - Hook execution: <10ms
    - TypeScript compilation: 50% faster
    - Test suite runtime: <5 seconds
@@ -747,7 +756,8 @@ gantt
     Plugin Architecture :p4, after p3, 14d
     section Review
     Final Review :milestone, after p4, 0d
-```
+
+```text
 
 ## Next Steps
 
@@ -757,13 +767,13 @@ gantt
    - Create `@grapple/schemas` package with Zod schemas
    - Write initial unit tests
 
-2. **Week 1**
+1. **Week 1**
 
    - Complete type system overhaul
    - Migrate one existing hook as proof of concept
    - Update documentation
 
-3. **Week 2-3**
+1. **Week 2-3**
    - Complete Phase 1 deliverables
    - Conduct Phase 1 review
    - Begin Phase 2 implementation
@@ -803,7 +813,8 @@ export default {
     return { success: true };
   },
 } satisfies HookPlugin;
-```
+
+```text
 
 ### Test Example
 
@@ -825,8 +836,10 @@ describe('Git Safety Plugin', () => {
     expect(result.message).toContain('Force operations');
   });
 });
-```
+
+```text
 
 ---
 
 This plan provides a clear path forward for transforming the @outfitter/grapple hooks system into a simpler, more maintainable, and more developer-friendly architecture.
+````

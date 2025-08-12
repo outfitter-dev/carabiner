@@ -13,6 +13,7 @@ Brief description of what this package does.
 
 ```bash
 bun add @org/package-name
+
 ```
 
 ## Usage
@@ -129,11 +130,15 @@ export interface ApiConfig {
 ### Documentation Generation
 
 ```bash
+
 # Generate HTML docs
+
 bunx typedoc
 
 # Generate Markdown docs
+
 bunx typedoc --plugin typedoc-plugin-markdown
+
 ```
 
 ## Changelog Management
@@ -141,14 +146,19 @@ bunx typedoc --plugin typedoc-plugin-markdown
 ### Changeset Usage
 
 ```bash
+
 # Add a changeset
+
 bunx changeset add
 
 # Version packages
+
 bunx changeset version
 
 # Publish packages
+
 bunx changeset publish
+
 ```
 
 ### Changelog Format

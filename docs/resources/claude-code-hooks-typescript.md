@@ -17,7 +17,8 @@ This guide provides detailed instructions and examples for implementing Claude C
 
 Create a dedicated hooks directory in your project:
 
-```
+```text
+
 project-root/
 ├── hooks/
 │   ├── lib/
@@ -31,6 +32,7 @@ project-root/
 ├── .claude/
 │   └── settings.json
 └── package.json
+
 ```
 
 ### TypeScript Configuration
@@ -329,6 +331,7 @@ export function validateFileContent(content: string, filePath: string): void {
 Create `hooks/pre-tool-use.ts`:
 
 ```typescript
+
 #!/usr/bin/env bun
 
 import { createHookContext, isBashToolInput, isWriteToolInput } from './lib/context.ts';
@@ -418,6 +421,7 @@ if (import.meta.main) {
 }
 
 export { handlePreToolUse };
+
 ```
 
 ### PostToolUse Hook Template
@@ -425,6 +429,7 @@ export { handlePreToolUse };
 Create `hooks/post-tool-use.ts`:
 
 ```typescript
+
 #!/usr/bin/env bun
 
 import { createHookContext, isWriteToolInput, isEditToolInput } from './lib/context.ts';
@@ -589,6 +594,7 @@ if (import.meta.main) {
 }
 
 export { handlePostToolUse };
+
 ```
 
 ### Session Start Hook
@@ -596,6 +602,7 @@ export { handlePostToolUse };
 Create `hooks/session-start.ts`:
 
 ```typescript
+
 #!/usr/bin/env bun
 
 import { createHookContext } from './lib/context.ts';
@@ -709,6 +716,7 @@ if (import.meta.main) {
 }
 
 export { handleSessionStart };
+
 ```
 
 ## Advanced Implementation Patterns
@@ -853,6 +861,7 @@ describe('PreToolUse Hook', () => {
 Create `hooks/debug-hook.ts`:
 
 ```typescript
+
 #!/usr/bin/env bun
 
 import { createHookContext } from './lib/context.ts';
@@ -880,6 +889,7 @@ function debugHook(): void {
 if (import.meta.main) {
   debugHook();
 }
+
 ```
 
 ## Project Integration
