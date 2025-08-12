@@ -49,14 +49,16 @@ export {
 // Metrics and performance monitoring
 export {
   type AggregateMetrics,
+  deltaMemoryUsage,
   type ExecutionMetrics,
   ExecutionTimer,
   type ExecutionTiming,
+  formatMemoryUsage,
   globalMetrics,
-  MemoryTracker,
   type MemoryUsage,
   MetricsCollector,
   setMetricsEnabled,
+  snapshotMemoryUsage,
 } from './metrics';
 
 // Result pattern for error handling

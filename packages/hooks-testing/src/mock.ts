@@ -4,6 +4,8 @@
  */
 
 import type {
+  ClaudeHookInputVariant,
+  ClaudeToolHookInput,
   GetToolInput,
   HookContext,
   HookEnvironment,
@@ -175,6 +177,16 @@ export function createMockContext<
     ...environment,
   };
 
+  const rawInput: ClaudeHookInputVariant = {
+    hook_event_name: event === 'PreToolUse' ? 'PreToolUse' : 'PostToolUse',
+    tool_name: toolName,
+    tool_input: toolInput as Record<string, unknown>,
+    session_id: sessionId,
+    transcript_path: '/tmp/test-transcript.txt',
+    cwd: workspacePath,
+    user_prompt: userPrompt,
+  } as ClaudeToolHookInput;
+
   return {
     event,
     sessionId,
@@ -184,7 +196,7 @@ export function createMockContext<
     toolInput,
     userPrompt,
     environment: mockEnvironment,
-    rawInput: {} as Record<string, unknown>, // Mock raw input
+    rawInput,
   };
 }
 
