@@ -104,13 +104,12 @@ export class ValidateCommand extends BaseCommand {
       ];
 
       let configExists = false;
-      let _configPath = '';
 
       for (const path of configPaths) {
         const fullPath = join(workspacePath, path);
         if (existsSync(fullPath)) {
           configExists = true;
-          _configPath = path;
+          // Config path found: path
           break;
         }
       }
@@ -234,7 +233,7 @@ export class ValidateCommand extends BaseCommand {
     verbose: boolean,
     autoFix: boolean
   ): number {
-    const _hookName = tool ? `${event}:${tool}` : event;
+    // Hook name for context: tool ? `${event}:${tool}` : event
 
     if (hookConfig.enabled === false) {
       if (verbose) {
@@ -351,7 +350,7 @@ export class ValidateCommand extends BaseCommand {
     verbose: boolean,
     autoFix: boolean
   ): Promise<number> {
-    const _relativePath = relative(workspacePath, filePath);
+    // File path relative to workspace: relative(workspacePath, filePath)
     let errors = 0;
 
     try {
