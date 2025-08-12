@@ -4,7 +4,7 @@
 
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 import { loadConfig } from '@outfitter/hooks-config';
 import { BaseCommand, type CliConfig } from '../cli';
 
@@ -171,7 +171,7 @@ export class ValidateCommand extends BaseCommand {
     config: any,
     workspacePath: string,
     verbose: boolean,
-    autoFix: boolean
+    _autoFix: boolean
   ): number {
     let errors = 0;
 
@@ -194,7 +194,7 @@ export class ValidateCommand extends BaseCommand {
             '',
             workspacePath,
             verbose,
-            autoFix
+            _autoFix
           );
         } else {
           // Tool-specific configs
@@ -211,7 +211,7 @@ export class ValidateCommand extends BaseCommand {
                 tool,
                 workspacePath,
                 verbose,
-                autoFix
+                _autoFix
               );
             }
           }
@@ -227,8 +227,8 @@ export class ValidateCommand extends BaseCommand {
    */
   private validateCommand(
     hookConfig: { command: string; enabled?: boolean },
-    event: string,
-    tool: string,
+    _event: string,
+    _tool: string,
     workspacePath: string,
     verbose: boolean,
     autoFix: boolean
@@ -346,11 +346,11 @@ export class ValidateCommand extends BaseCommand {
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: file validation requires extensive checks
   private async validateHookFile(
     filePath: string,
-    workspacePath: string,
+    _workspacePath: string,
     verbose: boolean,
     autoFix: boolean
   ): Promise<number> {
-    // File path relative to workspace: relative(workspacePath, filePath)
+    // File path relative to workspace: relative(_workspacePath, filePath)
     let errors = 0;
 
     try {

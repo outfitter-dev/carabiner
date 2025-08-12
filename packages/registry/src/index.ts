@@ -262,7 +262,7 @@ export async function createPluginSystem(
     configLoaderInstance.onChange(async (event: ConfigChangeEvent) => {
       if (event.type === 'changed' && event.config) {
         // Reconfigure registry (simplified - could be more sophisticated)
-        const _newConfig = event.config;
+        // const newConfig = event.config; // TODO: Implement config hot reload
 
         // Update registry options would require extending PluginRegistry
         console.log(

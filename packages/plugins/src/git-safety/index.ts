@@ -48,153 +48,115 @@ const GitSafetyConfigSchema = z
         'git log',
         'git diff',
         'git branch',
-        'git show',
-        'git reflog',
-        'git stash list',
+        'git checkout',
+        'git add',
+        'git commit',
+        'git pull',
+        'git fetch',
+        'git merge',
+        'git rebase',
+        'git stash',
+        'git clone',
+        'git init',
         'git config',
         'git remote',
         'git tag',
+        'git show',
+        'git rev-parse',
       ]),
 
-    /** Custom validation rules */
-    customRules: z
-      .array(
-        z.object({
-          name: z.string(),
-          pattern: z.string(),
-          message: z.string(),
-          severity: z.enum(['block', 'warn']).default('block'),
-        })
-      )
+    /** Whether to block force operations */
+    blockForce: z.boolean().default(true),
+
+    /** Whether to allow operations in specific directories */
+    trustedDirectories: z
+      .array(z.string())
       .default([]),
 
-    /** Whether to allow force operations with confirmation */
-    allowWithConfirmation: z.boolean().default(true),
-
-    /** Confirmation prompt message */
-    confirmationMessage: z
-      .string()
-      .default('This is a potentially dangerous git operation. Are you sure?'),
-
-    /** Whether to log blocked operations */
+    /** Whether to log blocked commands */
     logBlocked: z.boolean().default(true),
 
-    /** Exclude certain repositories by path pattern */
-    excludeRepos: z.array(z.string()).default([]),
-
-    /** Include only certain repositories by path pattern */
-    includeRepos: z.array(z.string()).default([]),
+    /** Whether to warn about potentially dangerous commands */
+    warnOnly: z.boolean().default(false),
   })
   .default({});
 
 type GitSafetyConfig = z.infer<typeof GitSafetyConfigSchema>;
 
 /**
- * Extract git command from bash command string
+ * Check if command matches any pattern
  */
-function extractGitCommand(command: string): string | null {
-  // Remove leading/trailing whitespace and extract git command
-  const trimmed = command.trim();
+function matchesPattern(command: string, patterns: string[]): string | null {
+  const gitCommand = command.trim();
 
-  // Check if it's a git command
-  if (!trimmed.startsWith('git ')) {
+  // Only check git commands
+  if (!gitCommand.startsWith('git ')) {
     return null;
   }
 
-  return trimmed;
-}
-
-/**
- * Check if command matches any pattern in the list
- */
-function matchesPatterns(
-  command: string,
-  patterns: string[]
-): { matched: boolean; pattern?: string } {
   for (const pattern of patterns) {
     try {
       const regex = new RegExp(pattern, 'i');
-      if (regex.test(command)) {
-        return { matched: true, pattern };
+      if (regex.test(gitCommand)) {
+        return pattern;
       }
-    } catch (_error) {
-      // Invalid regex - treat as literal string match
-      if (command.toLowerCase().includes(pattern.toLowerCase())) {
-        return { matched: true, pattern };
-      }
+    } catch (error) {
+      console.warn(`[GitSafety] Invalid regex pattern: ${pattern}`, error);
     }
   }
 
-  return { matched: false };
+  return null;
 }
 
 /**
- * Check if repository path should be excluded/included
+ * Check if command is in allow list
  */
-function isRepositoryInScope(cwd: string, config: GitSafetyConfig): boolean {
-  // If include patterns are specified, path must match one
-  if (config.includeRepos.length > 0) {
-    const includeMatch = matchesPatterns(cwd, config.includeRepos);
-    if (!includeMatch.matched) {
+function isAllowed(command: string, allowList: string[]): boolean {
+  const gitCommand = command.trim().toLowerCase();
+
+  return allowList.some((allowed) => {
+    try {
+      const regex = new RegExp(`^${allowed.toLowerCase()}`, 'i');
+      return regex.test(gitCommand);
+    } catch (error) {
+      console.warn(`[GitSafety] Invalid allow pattern: ${allowed}`, error);
       return false;
     }
-  }
-
-  // If exclude patterns are specified, path must not match any
-  if (config.excludeRepos.length > 0) {
-    const excludeMatch = matchesPatterns(cwd, config.excludeRepos);
-    if (excludeMatch.matched) {
-      return false;
-    }
-  }
-
-  return true;
+  });
 }
 
 /**
- * Create a warning result for dangerous operations
+ * Check if directory is trusted
  */
-function createWarningResult(
-  plugin: HookPlugin,
-  command: string,
-  reason: string,
-  config: GitSafetyConfig
-): PluginResult {
-  const message = `⚠️  Dangerous git operation detected: ${reason}`;
+function isTrustedDirectory(cwd: string, trustedDirectories: string[]): boolean {
+  return trustedDirectories.some((trusted) => {
+    try {
+      // Normalize paths for comparison
+      const normalizedCwd = cwd.toLowerCase();
+      const normalizedTrusted = trusted.toLowerCase();
 
-  if (config.logBlocked) {
-    console.warn(`[GitSafety] Blocked: ${command} - ${reason}`);
-  }
-
-  return {
-    success: false,
-    block: true,
-    message,
-    pluginName: plugin.name,
-    pluginVersion: plugin.version,
-    metadata: {
-      blockedCommand: command,
-      reason,
-      severity: 'high',
-      category: 'git-safety',
-      timestamp: new Date().toISOString(),
-    },
-  };
+      return normalizedCwd.includes(normalizedTrusted) ||
+        normalizedCwd.startsWith(normalizedTrusted);
+    } catch (error) {
+      console.warn(`[GitSafety] Error checking trusted directory: ${trusted}`, error);
+      return false;
+    }
+  });
 }
 
 /**
  * Git Safety Plugin
  *
- * Prevents dangerous git operations by analyzing bash commands for risky patterns.
- * Provides configurable blocking rules with allow lists and custom validation.
+ * Prevents execution of dangerous git commands that could cause data loss
+ * or unwanted changes. Configurable patterns and allow lists provide
+ * fine-grained control over what operations are permitted.
  *
  * @example Basic Configuration
  * ```typescript
  * {
  *   "git-safety": {
- *     "blockPatterns": ["push.*--force", "reset.*--hard"],
- *     "allowList": ["git status", "git diff"],
- *     "logBlocked": true
+ *     "blockForce": true,
+ *     "warnOnly": false
  *   }
  * }
  * ```
@@ -203,17 +165,18 @@ function createWarningResult(
  * ```typescript
  * {
  *   "git-safety": {
- *     "blockPatterns": ["push.*--force"],
- *     "customRules": [
- *       {
- *         "name": "No main branch force push",
- *         "pattern": "push.*origin.*main.*--force",
- *         "message": "Force pushing to main branch is not allowed",
- *         "severity": "block"
- *       }
+ *     "blockPatterns": [
+ *       "push.*--force",
+ *       "reset.*--hard",
+ *       "clean.*-f.*-d"
  *     ],
- *     "excludeRepos": ["/tmp/.*", ".*test.*"],
- *     "allowWithConfirmation": true
+ *     "allowList": [
+ *       "git status",
+ *       "git log",
+ *       "git diff"
+ *     ],
+ *     "trustedDirectories": ["/safe/project/path"],
+ *     "warnOnly": false
  *   }
  * }
  * ```
@@ -221,124 +184,123 @@ function createWarningResult(
 export const gitSafetyPlugin: HookPlugin = {
   name: 'git-safety',
   version: '1.0.0',
-  description:
-    'Prevents dangerous git operations like force pushes and hard resets',
+  description: 'Prevents dangerous git operations',
   author: 'Outfitter Team',
 
   events: ['PreToolUse'],
   tools: ['Bash'],
-  priority: 90, // High priority to block before other plugins
+  priority: 90, // High priority to intercept dangerous commands
 
   configSchema: GitSafetyConfigSchema,
   defaultConfig: {},
 
-  apply(
+  async apply(
     context: HookContext,
     config: Record<string, unknown> = {}
-  ): PluginResult {
-    // Only handle Bash tool usage
+  ): Promise<PluginResult> {
+    // Only handle PreToolUse for Bash commands
+    if (context.event !== 'PreToolUse' || !('toolName' in context)) {
+      return {
+        success: true,
+        pluginName: this.name,
+        pluginVersion: this.version,
+      };
+    }
+
+    const bashContext = context as BashHookContext;
+    if (bashContext.toolName !== 'Bash') {
+      return {
+        success: true,
+        pluginName: this.name,
+        pluginVersion: this.version,
+      };
+    }
+
+    // Parse configuration
+    const safetyConfig = GitSafetyConfigSchema.parse(config);
+    const command = bashContext.toolInput.command;
+
+    // Skip non-git commands
+    if (!command.trim().startsWith('git ')) {
+      return {
+        success: true,
+        pluginName: this.name,
+        pluginVersion: this.version,
+        metadata: {
+          safe: true,
+          reason: 'Non-git command',
+        },
+      };
+    }
+
+    // Check allow list first
+    if (isAllowed(command, safetyConfig.allowList)) {
+      return {
+        success: true,
+        pluginName: this.name,
+        pluginVersion: this.version,
+        metadata: {
+          safe: true,
+          reason: 'Command in allow list',
+        },
+      };
+    }
+
+    // Check trusted directories
     if (
-      context.event !== 'PreToolUse' ||
-      !('toolName' in context) ||
-      context.toolName !== 'Bash'
+      safetyConfig.trustedDirectories.length > 0 &&
+      isTrustedDirectory(bashContext.cwd, safetyConfig.trustedDirectories)
     ) {
       return {
         success: true,
         pluginName: this.name,
         pluginVersion: this.version,
-      };
-    }
-
-    // Parse and validate configuration
-    const safetyConfig = GitSafetyConfigSchema.parse(config);
-
-    // Type guard and get command and current working directory
-    if (context.toolName !== 'Bash' || !('toolInput' in context)) {
-      return { success: true, message: 'Not applicable to this tool' };
-    }
-
-    const bashContext = context as BashHookContext;
-    const command = bashContext.toolInput.command;
-    const cwd = bashContext.cwd || process.cwd();
-
-    if (!command) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-      };
-    }
-
-    // Check if repository is in scope
-    if (!isRepositoryInScope(cwd, safetyConfig)) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
         metadata: {
-          skipped: true,
-          reason: 'Repository not in scope',
+          safe: true,
+          reason: 'Trusted directory',
         },
       };
     }
 
-    // Extract git command
-    const gitCommand = extractGitCommand(command);
-    if (!gitCommand) {
-      // Not a git command
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-      };
-    }
+    // Check for dangerous patterns
+    const matchedPattern = matchesPattern(command, safetyConfig.blockPatterns);
+    if (matchedPattern) {
+      const message = `🚫 Git command blocked: ${command}`;
+      const reason = `Command matches dangerous pattern: ${matchedPattern}`;
 
-    // Check allow list first (takes precedence)
-    const allowMatch = matchesPatterns(gitCommand, safetyConfig.allowList);
-    if (allowMatch.matched) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-        metadata: {
-          allowed: true,
-          allowPattern: allowMatch.pattern,
-        },
-      };
-    }
-
-    // Check custom rules
-    for (const rule of safetyConfig.customRules) {
-      const ruleMatch = matchesPatterns(gitCommand, [rule.pattern]);
-      if (ruleMatch.matched) {
-        if (rule.severity === 'warn') {
-          console.warn(`[GitSafety] Warning: ${rule.message}`);
-          return {
-            success: true,
-            pluginName: this.name,
-            pluginVersion: this.version,
-            message: `⚠️  ${rule.message}`,
-            metadata: {
-              warning: true,
-              ruleName: rule.name,
-              severity: 'warn',
-            },
-          };
-        }
-        return createWarningResult(
-          this,
-          gitCommand,
-          rule.message,
-          safetyConfig
-        );
+      if (safetyConfig.logBlocked) {
+        console.warn(`[GitSafety] Blocked: ${command} - ${reason}`);
       }
-    }
 
-    // Check block patterns
-    const blockMatch = matchesPatterns(gitCommand, safetyConfig.blockPatterns);
-    if (blockMatch.matched) {
-      const reason = `Command matches dangerous pattern: ${blockMatch.pattern}`;
-      return createWarningResult(this, gitCommand, reason, safetyConfig);
+      if (safetyConfig.warnOnly) {
+        return {
+          success: true,
+          pluginName: this.name,
+          pluginVersion: this.version,
+          message: `⚠️ Warning: ${message}`,
+          metadata: {
+            safe: false,
+            blocked: false,
+            warned: true,
+            reason,
+            matchedPattern,
+          },
+        };
+      }
+
+      return {
+        success: false,
+        block: true,
+        pluginName: this.name,
+        pluginVersion: this.version,
+        message,
+        metadata: {
+          safe: false,
+          blocked: true,
+          reason,
+          matchedPattern,
+        },
+      };
     }
 
     // Command is safe
@@ -347,64 +309,30 @@ export const gitSafetyPlugin: HookPlugin = {
       pluginName: this.name,
       pluginVersion: this.version,
       metadata: {
-        scanned: true,
-        command: gitCommand,
         safe: true,
+        reason: 'No dangerous patterns matched',
       },
     };
   },
 
   /**
-   * Initialize plugin - validate git is available
+   * Initialize plugin
    */
   async init(): Promise<void> {
-    try {
-      // Check if git is available
-      const { spawn } = await import('node:child_process');
-      const child = spawn('git', ['--version'], { stdio: 'ignore' });
-
-      await new Promise<void>((resolve, reject) => {
-        child.on('exit', (code) => {
-          if (code === 0) {
-            resolve();
-          } else {
-            reject(new Error(`Git not available (exit code: ${code})`));
-          }
-        });
-        child.on('error', reject);
-      });
-
-      console.log('[GitSafety] Plugin initialized successfully');
-    } catch (error) {
-      console.warn(
-        '[GitSafety] Git not available - plugin may not work correctly:',
-        error
-      );
-    }
+    console.log('[GitSafety] Git safety plugin initialized');
   },
 
   /**
-   * Health check - ensure git is still available
+   * Health check
    */
   async healthCheck(): Promise<boolean> {
-    try {
-      const { spawn } = await import('node:child_process');
-      const child = spawn('git', ['--version'], { stdio: 'ignore' });
-
-      return new Promise<boolean>((resolve) => {
-        child.on('exit', (code) => resolve(code === 0));
-        child.on('error', () => resolve(false));
-      });
-    } catch {
-      return false;
-    }
+    return true;
   },
 
   metadata: {
     name: 'git-safety',
     version: '1.0.0',
-    description:
-      'Prevents dangerous git operations like force pushes and hard resets',
+    description: 'Prevents dangerous git operations',
     author: 'Outfitter Team',
     keywords: ['git', 'safety', 'security', 'version-control'],
     license: 'MIT',
