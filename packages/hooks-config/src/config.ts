@@ -10,7 +10,7 @@ import type {
   HookEvent,
   ToolHookConfig,
   ToolName,
-} from '@claude-code/hooks-core';
+} from '@outfitter/hooks-core';
 
 /**
  * Hook configuration error
@@ -662,7 +662,7 @@ export class ConfigManager {
   private generateJSConfig(config: ExtendedHookConfiguration): string {
     return `/**
  * Claude Code hooks configuration
- * @type {import('@claude-code/hooks-config').ExtendedHookConfiguration}
+ * @type {import('@outfitter/hooks-config').ExtendedHookConfiguration}
  */
 module.exports = ${JSON.stringify(config, null, 2)};
 `;
@@ -672,7 +672,7 @@ module.exports = ${JSON.stringify(config, null, 2)};
    * Generate TypeScript config content
    */
   private generateTSConfig(config: ExtendedHookConfiguration): string {
-    return `import type { ExtendedHookConfiguration } from '@claude-code/hooks-config';
+    return `import type { ExtendedHookConfiguration } from '@outfitter/hooks-config';
 
 /**
  * Claude Code hooks configuration

@@ -5,8 +5,8 @@
 import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
-import { ConfigManager } from '@claude-code/hooks-config';
-import type { HookEvent, ToolName } from '@claude-code/hooks-core';
+import { ConfigManager } from '@outfitter/hooks-config';
+import type { HookEvent, ToolName } from '@outfitter/hooks-core';
 import { BaseCommand, type CliConfig } from '../cli';
 
 // Regex constants for better performance

@@ -218,7 +218,7 @@ export class GenerateCommand extends BaseCommand {
     if (useTypeScript) {
       return `#!/usr/bin/env bun
 
-import { runClaudeHook, HookResults, type HookContext } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults, type HookContext } from '@outfitter/hooks-core';
 
 async function handler(ctx: HookContext) {
   console.log(\`${name} hook triggered for: \${ctx.toolName}\`);
@@ -243,7 +243,7 @@ export { handler };
     }
     return `#!/usr/bin/env bun
 
-const { runClaudeHook, HookResults } = require('@claude-code/hooks-core');
+const { runClaudeHook, HookResults } = require('@outfitter/hooks-core');
 
 async function handler(ctx) {
   console.log(\`${name} hook triggered for: \${ctx.toolName}\`);
@@ -277,8 +277,8 @@ module.exports = { handler };
     if (useTypeScript) {
       return `#!/usr/bin/env bun
 
-import { runClaudeHook, HookResults, type HookContext } from '@claude-code/hooks-core';
-import { validateHookContext } from '@claude-code/hooks-validators';
+import { runClaudeHook, HookResults, type HookContext } from '@outfitter/hooks-core';
+import { validateHookContext } from '@outfitter/hooks-validators';
 
 async function handler(ctx: HookContext) {
   console.log(\`${name} hook triggered for: \${ctx.toolName}\`);
@@ -334,8 +334,8 @@ export { handler };
     }
     return `#!/usr/bin/env bun
 
-const { runClaudeHook, HookResults } = require('@claude-code/hooks-core');
-const { validateHookContext } = require('@claude-code/hooks-validators');
+const { runClaudeHook, HookResults } = require('@outfitter/hooks-core');
+const { validateHookContext } = require('@outfitter/hooks-validators');
 
 async function handler(ctx) {
   console.log(\`${name} hook triggered for: \${ctx.toolName}\`);
@@ -400,8 +400,8 @@ module.exports = { handler };
     if (useTypeScript) {
       return `#!/usr/bin/env bun
 
-import { runClaudeHook, HookResults, type HookContext } from '@claude-code/hooks-core';
-import { SecurityValidators } from '@claude-code/hooks-validators';
+import { runClaudeHook, HookResults, type HookContext } from '@outfitter/hooks-core';
+import { SecurityValidators } from '@outfitter/hooks-validators';
 
 async function handler(ctx: HookContext) {
   console.log(\`🔒 ${name} security hook triggered for: \${ctx.toolName}\`);
@@ -468,8 +468,8 @@ export { handler };
     }
     return `#!/usr/bin/env bun
 
-const { runClaudeHook, HookResults } = require('@claude-code/hooks-core');
-const { SecurityValidators } = require('@claude-code/hooks-validators');
+const { runClaudeHook, HookResults } = require('@outfitter/hooks-core');
+const { SecurityValidators } = require('@outfitter/hooks-validators');
 
 async function handler(ctx) {
   console.log(\`🔒 ${name} security hook triggered for: \${ctx.toolName}\`);
@@ -543,8 +543,8 @@ module.exports = { handler };
  * Custom validator: ${name}
  */
 
-import type { HookContext, ValidationResult } from '@claude-code/hooks-core';
-import { ValidationError } from '@claude-code/hooks-validators';
+import type { HookContext, ValidationResult } from '@outfitter/hooks-core';
+import { ValidationError } from '@outfitter/hooks-validators';
 
 /**
  * ${this.pascalCase(name)} validator
@@ -629,7 +629,7 @@ export default ${this.pascalCase(name)}Validator;
  * Custom validator: ${name}
  */
 
-const { ValidationError } = require('@claude-code/hooks-validators');
+const { ValidationError } = require('@outfitter/hooks-validators');
 
 /**
  * ${this.pascalCase(name)} validator
@@ -716,7 +716,7 @@ module.exports = { ${this.pascalCase(name)}Validator };
  * Custom middleware: ${name}
  */
 
-import type { HookMiddleware, HookContext, HookResult } from '@claude-code/hooks-core';
+import type { HookMiddleware, HookContext, HookResult } from '@outfitter/hooks-core';
 
 /**
  * ${this.pascalCase(name)} middleware
@@ -870,7 +870,7 @@ import {
   createMockContextFor,
   TestUtils,
   mockEnv
-} from '@claude-code/hooks-testing';
+} from '@outfitter/hooks-testing';
 import { handle${this.pascalCase(name)} } from '../${name}.ts';
 
 describe('${name} hook tests', () => {
@@ -958,7 +958,7 @@ const {
   createMockContextFor,
   TestUtils,
   mockEnv
-} = require('@claude-code/hooks-testing');
+} = require('@outfitter/hooks-testing');
 const { handle${this.pascalCase(name)} } = require('../${name}.js');
 
 describe('${name} hook tests', () => {

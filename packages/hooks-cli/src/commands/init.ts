@@ -5,7 +5,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { DEFAULT_CONFIG } from '@claude-code/hooks-config';
+import { DEFAULT_CONFIG } from '@outfitter/hooks-config';
 import { BaseCommand, type CliConfig } from '../cli';
 
 export class InitCommand extends BaseCommand {
@@ -177,9 +177,9 @@ export class InitCommand extends BaseCommand {
     const typesContent = (useTypeScript: boolean) =>
       useTypeScript
         ? `
-export * from '@claude-code/hooks-core';
-export * from '@claude-code/hooks-validators';
-export * from '@claude-code/hooks-config';
+export * from '@outfitter/hooks-core';
+export * from '@outfitter/hooks-validators';
+export * from '@outfitter/hooks-config';
 
 // Custom types for your hooks
 export interface CustomHookData {
@@ -333,8 +333,8 @@ module.exports = { HookUtils };
     const advancedContent =
       extension === 'ts'
         ? `
-import { HookBuilder, middleware } from '@claude-code/hooks-core';
-import { SecurityValidators } from '@claude-code/hooks-validators';
+import { HookBuilder, middleware } from '@outfitter/hooks-core';
+import { SecurityValidators } from '@outfitter/hooks-validators';
 
 // Example of advanced hook composition
 export const advancedPreToolUse = HookBuilder
@@ -351,7 +351,7 @@ export const advancedPreToolUse = HookBuilder
 `
         : `
 // Advanced hook composition example
-// Requires @claude-code/hooks-core and @claude-code/hooks-validators
+// Requires @outfitter/hooks-core and @outfitter/hooks-validators
 `;
 
     const advancedPath = join(hooksDir, `advanced.${extension}`);
@@ -373,8 +373,8 @@ export const advancedPreToolUse = HookBuilder
     const securityContent =
       extension === 'ts'
         ? `
-import { SecurityValidators, validateHookSecurity } from '@claude-code/hooks-validators';
-import type { HookContext, HookResult } from '@claude-code/hooks-core';
+import { SecurityValidators, validateHookSecurity } from '@outfitter/hooks-validators';
+import type { HookContext, HookResult } from '@outfitter/hooks-core';
 
 /**
  * Security-focused hook handler
@@ -406,7 +406,7 @@ export async function securityHookHandler(context: HookContext): Promise<HookRes
 `
         : `
 // Security-focused hook handlers
-// Requires @claude-code/hooks-validators
+// Requires @outfitter/hooks-validators
 `;
 
     const securityPath = join(hooksDir, `security.${extension}`);
@@ -429,7 +429,7 @@ export async function securityHookHandler(context: HookContext): Promise<HookRes
       extension === 'ts'
         ? `
 import { test, expect } from 'bun:test';
-import { createMockContextFor, TestUtils } from '@claude-code/hooks-testing';
+import { createMockContextFor, TestUtils } from '@outfitter/hooks-testing';
 import { handlePreToolUse } from '../pre-tool-use.ts';
 
 test('PreToolUse hook should validate safe commands', async () => {
@@ -450,7 +450,7 @@ test('PreToolUse hook should block dangerous commands', async () => {
 `
         : `
 // Test file for hooks
-// Requires @claude-code/hooks-testing and bun:test
+// Requires @outfitter/hooks-testing and bun:test
 const { test, expect } = require('bun:test');
 // Add your tests here
 `;
@@ -530,9 +530,9 @@ const { test, expect } = require('bun:test');
     if (isTypeScript) {
       return `#!/usr/bin/env bun
 
-import { createHookContext, exitWithResult, HookResults } from '@claude-code/hooks-core';
-import { validateHookSecurity } from '@claude-code/hooks-validators';
-import type { HookResult } from '@claude-code/hooks-core';
+import { createHookContext, exitWithResult, HookResults } from '@outfitter/hooks-core';
+import { validateHookSecurity } from '@outfitter/hooks-validators';
+import type { HookResult } from '@outfitter/hooks-core';
 
 /**
  * PreToolUse hook - validates tool usage before execution
@@ -571,8 +571,8 @@ export { handlePreToolUse };
     }
     return `#!/usr/bin/env bun
 
-const { createHookContext, exitWithResult, HookResults } = require('@claude-code/hooks-core');
-const { validateHookSecurity } = require('@claude-code/hooks-validators');
+const { createHookContext, exitWithResult, HookResults } = require('@outfitter/hooks-core');
+const { validateHookSecurity } = require('@outfitter/hooks-validators');
 
 /**
  * PreToolUse hook - validates tool usage before execution
@@ -617,8 +617,8 @@ module.exports = { handlePreToolUse };
     if (isTypeScript) {
       return `#!/usr/bin/env bun
 
-import { createHookContext, exitWithResult, HookResults } from '@claude-code/hooks-core';
-import type { HookResult } from '@claude-code/hooks-core';
+import { createHookContext, exitWithResult, HookResults } from '@outfitter/hooks-core';
+import type { HookResult } from '@outfitter/hooks-core';
 
 /**
  * PostToolUse hook - performs actions after tool execution
@@ -650,7 +650,7 @@ export { handlePostToolUse };
     }
     return `#!/usr/bin/env bun
 
-const { createHookContext, exitWithResult, HookResults } = require('@claude-code/hooks-core');
+const { createHookContext, exitWithResult, HookResults } = require('@outfitter/hooks-core');
 
 /**
  * PostToolUse hook - performs actions after tool execution
@@ -688,8 +688,8 @@ module.exports = { handlePostToolUse };
     if (isTypeScript) {
       return `#!/usr/bin/env bun
 
-import { createHookContext, exitWithResult, HookResults } from '@claude-code/hooks-core';
-import type { HookResult } from '@claude-code/hooks-core';
+import { createHookContext, exitWithResult, HookResults } from '@outfitter/hooks-core';
+import type { HookResult } from '@outfitter/hooks-core';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -743,7 +743,7 @@ export { handleSessionStart };
     }
     return `#!/usr/bin/env bun
 
-const { createHookContext, exitWithResult, HookResults } = require('@claude-code/hooks-core');
+const { createHookContext, exitWithResult, HookResults } = require('@outfitter/hooks-core');
 const { existsSync, readFileSync } = require('node:fs');
 const { join } = require('node:path');
 

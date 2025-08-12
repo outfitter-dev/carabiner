@@ -1,5 +1,5 @@
 /**
- * @claude-code/hooks-core
+ * @outfitter/hooks-core
  * Core TypeScript types and runtime utilities for Claude Code hooks
  */
 

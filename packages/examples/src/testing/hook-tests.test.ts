@@ -273,7 +273,7 @@ describe('Custom Hook Scenarios', () => {
   });
 
   test('should test hook with middleware', async () => {
-    const { middleware } = await import('@claude-code/hooks-core');
+    const { middleware } = await import('@outfitter/hooks-core');
 
     // Create hook with timing middleware
     const timedHook = HookBuilder.forPostToolUse()

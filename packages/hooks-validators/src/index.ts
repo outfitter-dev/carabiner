@@ -1,5 +1,5 @@
 /**
- * @claude-code/hooks-validators
+ * @outfitter/hooks-validators
  * Security and validation utilities for Claude Code hooks
  */
 

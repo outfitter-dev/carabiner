@@ -1,5 +1,5 @@
 {
-  "name": "@claude-code/hooks-config",
+  "name": "@outfitter/hooks-config",
   "version": "0.1.0",
   "description": "Configuration management for Claude Code hooks",
   "type": "module",
@@ -35,7 +35,7 @@
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@claude-code/hooks-core": "workspace:*"
+    "@outfitter/hooks-core": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "^1.2.19",

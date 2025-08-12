@@ -7,8 +7,8 @@ import type {
   HookContext,
   HookHandler,
   HookResult,
-} from '@claude-code/hooks-core';
-import { executeHook } from '@claude-code/hooks-core';
+} from '@outfitter/hooks-core';
+import { executeHook } from '@outfitter/hooks-core';
 import type { MockEnvironmentConfig } from './mock';
 import { mockEnv } from './mock';
 

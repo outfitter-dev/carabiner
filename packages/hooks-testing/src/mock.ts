@@ -10,7 +10,7 @@ import type {
   HookEvent,
   ToolInput,
   ToolName,
-} from '@claude-code/hooks-core';
+} from '@outfitter/hooks-core';
 
 /**
  * Mock environment configuration

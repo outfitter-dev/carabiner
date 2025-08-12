@@ -5,13 +5,13 @@
 
 import { existsSync, statSync } from 'node:fs';
 import { dirname, extname, resolve } from 'node:path';
-import type { HookContext, ToolInput, ToolName } from '@claude-code/hooks-core';
+import type { HookContext, ToolInput, ToolName } from '@outfitter/hooks-core';
 import {
   isBashToolInput,
   isEditToolInput,
   isMultiEditToolInput,
   isWriteToolInput,
-} from '@claude-code/hooks-core';
+} from '@outfitter/hooks-core';
 
 /**
  * Validation error class

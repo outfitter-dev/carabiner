@@ -5,7 +5,7 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
-import { loadConfig } from '@claude-code/hooks-config';
+import { loadConfig } from '@outfitter/hooks-config';
 import { BaseCommand, type CliConfig } from '../cli';
 
 // Regex patterns at top level
@@ -396,7 +396,7 @@ export class ValidateCommand extends BaseCommand {
 
       // Check for basic imports (TypeScript/JavaScript)
       const hasImports =
-        content.includes('@claude-code/hooks-core') ||
+        content.includes('@outfitter/hooks-core') ||
         content.includes('require(') ||
         content.includes('import');
 

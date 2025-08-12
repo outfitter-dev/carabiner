@@ -1,5 +1,5 @@
 /**
- * @claude-code/hooks-cli
+ * @outfitter/hooks-cli
  * CLI tools for Claude Code hooks development
  */
 

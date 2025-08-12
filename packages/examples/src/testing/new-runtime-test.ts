@@ -9,12 +9,12 @@ import type {
   ClaudeToolHookInput,
   HookContext,
   HookResult,
-} from '@claude-code/hooks-core';
+} from '@outfitter/hooks-core';
 import {
   createHookContext,
   HookResults,
   runClaudeHook,
-} from '@claude-code/hooks-core';
+} from '@outfitter/hooks-core';
 
 function hasCommand(input: unknown): input is { command: string } {
   return (

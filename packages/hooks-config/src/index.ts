@@ -1,5 +1,5 @@
 /**
- * @claude-code/hooks-config
+ * @outfitter/hooks-config
  * Configuration management for Claude Code hooks
  */
 

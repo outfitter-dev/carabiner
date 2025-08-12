@@ -1,5 +1,5 @@
 {
-  "name": "@claude-code/hooks-testing",
+  "name": "@outfitter/hooks-testing",
   "version": "0.1.0",
   "description": "Testing utilities for Claude Code hooks",
   "type": "module",
@@ -36,8 +36,8 @@
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@claude-code/hooks-core": "workspace:*",
-    "@claude-code/hooks-validators": "workspace:*"
+    "@outfitter/hooks-core": "workspace:*",
+    "@outfitter/hooks-validators": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "^1.2.19",

@@ -4,12 +4,12 @@
  */
 
 import { extname, resolve } from 'node:path';
-import type { HookContext } from '@claude-code/hooks-core';
+import type { HookContext } from '@outfitter/hooks-core';
 import {
   isBashToolInput,
   isEditToolInput,
   isWriteToolInput,
-} from '@claude-code/hooks-core';
+} from '@outfitter/hooks-core';
 
 // Regex patterns defined at module level for performance
 const DYNAMIC_REQUIRE_PATTERN = /require\s*\(\s*[^"'][^)]*[^"']\s*\)/;

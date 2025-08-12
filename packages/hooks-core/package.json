@@ -1,5 +1,5 @@
 {
-  "name": "@claude-code/hooks-core",
+  "name": "@outfitter/hooks-core",
   "version": "0.2.0",
   "description": "Core TypeScript types and runtime utilities for Claude Code hooks",
   "type": "module",
