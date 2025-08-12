@@ -31,7 +31,7 @@ const createWriteContext = (filePath: string, content: string): HookContext =>
 
 describe('Security Scanner Plugin', () => {
   describe('Basic Functionality', () => {
-    test('should have correct plugin metadata', () => {
+    test('should have correct plugin metadata', async () => {
       expect(securityScannerPlugin.name).toBe('security-scanner');
       expect(securityScannerPlugin.version).toBe('1.0.0');
       expect(securityScannerPlugin.events).toContain('PreToolUse');
@@ -40,7 +40,7 @@ describe('Security Scanner Plugin', () => {
       expect(securityScannerPlugin.priority).toBe(85);
     });
 
-    test('should ignore unsupported tools', () => {
+    test('should ignore unsupported tools', async () => {
       const context = {
         event: 'PreToolUse',
         toolName: 'Read',
@@ -50,13 +50,13 @@ describe('Security Scanner Plugin', () => {
         environment: {},
       } as any;
 
-      const result = securityScannerPlugin.apply(context);
+      const result = await securityScannerPlugin.apply(context);
       expect(result.success).toBe(true);
     });
 
-    test('should handle empty commands', () => {
+    test('should handle empty commands', async () => {
       const context = createBashContext('');
-      const result = securityScannerPlugin.apply(context);
+      const result = await securityScannerPlugin.apply(context);
 
       expect(result.success).toBe(true);
     });

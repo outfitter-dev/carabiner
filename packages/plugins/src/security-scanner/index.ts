@@ -145,7 +145,7 @@ const SecurityScannerConfigSchema = z
   })
   .default({});
 
-type SecurityScannerConfig = z.infer<typeof SecurityScannerConfigSchema>;
+type _SecurityScannerConfig = z.infer<typeof SecurityScannerConfigSchema>;
 
 /**
  * Built-in security rules
@@ -155,7 +155,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
   {
     id: 'hardcoded-api-key',
     name: 'Hardcoded API Key',
-    pattern: '(?i)(api[_-]?key|apikey)\\s*[:=]\\s*["\'][a-zA-Z0-9]{10,}["\']',
+    pattern: '(api[_-]?key|apikey)\\s*[:=]\\s*["\'][a-zA-Z0-9]{10,}["\']',
     severity: 'critical',
     category: 'secrets',
     description: 'Hardcoded API key detected',
@@ -184,7 +184,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
   {
     id: 'password-hardcoded',
     name: 'Hardcoded Password',
-    pattern: '(?i)(password|passwd|pwd)\\s*[:=]\\s*["\'][^"\'\\s]{4,}["\']',
+    pattern: '(password|passwd|pwd)\\s*[:=]\\s*["\'][^"\'\\s]{4,}["\']',
     severity: 'high',
     category: 'secrets',
     description: 'Hardcoded password detected',
@@ -205,7 +205,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
   {
     id: 'command-injection-bash',
     name: 'Potential Command Injection',
-    pattern: '(?i)(system|exec|shell_exec|passthru|popen)\\s*\\([^)]*\\$',
+    pattern: '(system|exec|shell_exec|passthru|popen)\\s*\\([^)]*\\$',
     severity: 'high',
     category: 'injection',
     description: 'Potential command injection vulnerability',
@@ -215,7 +215,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
     id: 'dangerous-bash-commands',
     name: 'Dangerous Bash Commands',
     pattern:
-      '\\b(rm\\s+-rf\\s+/|dd\\s+if=/dev/zero|:(\\){\\||shutdown|halt|reboot)\\b',
+      '\\b(rm\\s+-rf\\s+/|dd\\s+if=/dev/zero|:\\(\\)\\{\\||shutdown|halt|reboot)\\b',
     severity: 'high',
     category: 'dangerous-commands',
     description: 'Dangerous system command detected',
@@ -226,7 +226,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
   {
     id: 'sql-injection',
     name: 'Potential SQL Injection',
-    pattern: '(?i)(select|insert|update|delete|drop|create).*\\+.*["\']',
+    pattern: '(select|insert|update|delete|drop|create).*\\+.*["\']',
     severity: 'high',
     category: 'injection',
     description: 'Potential SQL injection vulnerability',
@@ -237,7 +237,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
   {
     id: 'debug-mode',
     name: 'Debug Mode Enabled',
-    pattern: '(?i)(debug|DEBUG)\\s*[:=]\\s*(true|True|TRUE|1)',
+    pattern: '(debug|DEBUG)\\s*[:=]\\s*(true|True|TRUE|1)',
     severity: 'medium',
     category: 'configuration',
     description: 'Debug mode enabled in configuration',
@@ -258,7 +258,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
   {
     id: 'weak-crypto',
     name: 'Weak Cryptographic Algorithm',
-    pattern: '(?i)\\b(md5|sha1|des|rc4)\\b',
+    pattern: '\\b(md5|sha1|des|rc4)\\b',
     severity: 'medium',
     category: 'cryptography',
     description: 'Weak cryptographic algorithm detected',
@@ -507,6 +507,7 @@ export const securityScannerPlugin: HookPlugin = {
   configSchema: SecurityScannerConfigSchema,
   defaultConfig: {},
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complex security scanning logic will be refactored in future
   async apply(
     context: HookContext,
     config: Record<string, unknown> = {}

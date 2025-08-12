@@ -31,7 +31,7 @@ const createNonBashContext = (): HookContext =>
 
 describe('Git Safety Plugin', () => {
   describe('Basic Functionality', () => {
-    test('should have correct plugin metadata', () => {
+    test('should have correct plugin metadata', async () => {
       expect(gitSafetyPlugin.name).toBe('git-safety');
       expect(gitSafetyPlugin.version).toBe('1.0.0');
       expect(gitSafetyPlugin.events).toContain('PreToolUse');
@@ -39,26 +39,26 @@ describe('Git Safety Plugin', () => {
       expect(gitSafetyPlugin.priority).toBe(90);
     });
 
-    test('should ignore non-Bash tools', () => {
+    test('should ignore non-Bash tools', async () => {
       const context = createNonBashContext();
-      const result = gitSafetyPlugin.apply(context);
+      const result = await gitSafetyPlugin.apply(context);
 
       expect(result.success).toBe(true);
       expect(result.pluginName).toBe('git-safety');
     });
 
-    test('should ignore non-PreToolUse events', () => {
+    test('should ignore non-PreToolUse events', async () => {
       const context = createBashContext('git status');
       context.event = 'PostToolUse';
 
-      const result = gitSafetyPlugin.apply(context);
+      const result = await gitSafetyPlugin.apply(context);
 
       expect(result.success).toBe(true);
     });
 
-    test('should ignore non-git commands', () => {
+    test('should ignore non-git commands', async () => {
       const context = createBashContext('ls -la');
-      const result = gitSafetyPlugin.apply(context);
+      const result = await gitSafetyPlugin.apply(context);
 
       expect(result.success).toBe(true);
       expect(result.metadata?.safe).toBe(true);
@@ -66,7 +66,7 @@ describe('Git Safety Plugin', () => {
   });
 
   describe('Safe Git Commands', () => {
-    test('should allow safe git commands', () => {
+    test('should allow safe git commands', async () => {
       const safeCommands = [
         'git status',
         'git log',
@@ -78,23 +78,23 @@ describe('Git Safety Plugin', () => {
 
       for (const command of safeCommands) {
         const context = createBashContext(command);
-        const result = gitSafetyPlugin.apply(context);
+        const result = await gitSafetyPlugin.apply(context);
 
         expect(result.success).toBe(true);
         expect(result.metadata?.allowed).toBe(true);
       }
     });
 
-    test('should allow git commands with arguments', () => {
+    test('should allow git commands with arguments', async () => {
       const context = createBashContext('git log --oneline --graph');
-      const result = gitSafetyPlugin.apply(context);
+      const result = await gitSafetyPlugin.apply(context);
 
       expect(result.success).toBe(true);
     });
   });
 
   describe('Dangerous Git Commands', () => {
-    test('should block force push', () => {
+    test('should block force push', async () => {
       const commands = [
         'git push --force',
         'git push -f',
@@ -104,7 +104,7 @@ describe('Git Safety Plugin', () => {
 
       for (const command of commands) {
         const context = createBashContext(command);
-        const result = gitSafetyPlugin.apply(context);
+        const result = await gitSafetyPlugin.apply(context);
 
         expect(result.success).toBe(false);
         expect(result.block).toBe(true);
@@ -112,7 +112,7 @@ describe('Git Safety Plugin', () => {
       }
     });
 
-    test('should block hard reset', () => {
+    test('should block hard reset', async () => {
       const commands = [
         'git reset --hard',
         'git reset --hard HEAD~5',
@@ -121,14 +121,14 @@ describe('Git Safety Plugin', () => {
 
       for (const command of commands) {
         const context = createBashContext(command);
-        const result = gitSafetyPlugin.apply(context);
+        const result = await gitSafetyPlugin.apply(context);
 
         expect(result.success).toBe(false);
         expect(result.block).toBe(true);
       }
     });
 
-    test('should block dangerous clean commands', () => {
+    test('should block dangerous clean commands', async () => {
       const commands = [
         'git clean -f -d',
         'git clean -fd',
@@ -138,14 +138,14 @@ describe('Git Safety Plugin', () => {
 
       for (const command of commands) {
         const context = createBashContext(command);
-        const result = gitSafetyPlugin.apply(context);
+        const result = await gitSafetyPlugin.apply(context);
 
         expect(result.success).toBe(false);
         expect(result.block).toBe(true);
       }
     });
 
-    test('should block force branch deletion', () => {
+    test('should block force branch deletion', async () => {
       const commands = [
         'git branch -D feature-branch',
         'git branch --delete --force main',
@@ -153,7 +153,7 @@ describe('Git Safety Plugin', () => {
 
       for (const command of commands) {
         const context = createBashContext(command);
-        const result = gitSafetyPlugin.apply(context);
+        const result = await gitSafetyPlugin.apply(context);
 
         expect(result.success).toBe(false);
         expect(result.block).toBe(true);
@@ -162,33 +162,33 @@ describe('Git Safety Plugin', () => {
   });
 
   describe('Configuration', () => {
-    test('should respect custom block patterns', () => {
+    test('should respect custom block patterns', async () => {
       const config = {
         blockPatterns: ['custom-dangerous-command'],
         allowList: [],
       };
 
       const context = createBashContext('git custom-dangerous-command');
-      const result = gitSafetyPlugin.apply(context, config);
+      const result = await gitSafetyPlugin.apply(context, config);
 
       expect(result.success).toBe(false);
       expect(result.block).toBe(true);
     });
 
-    test('should respect custom allow list', () => {
+    test('should respect custom allow list', async () => {
       const config = {
         blockPatterns: ['push.*--force'],
         allowList: ['git push --force origin feature'],
       };
 
       const context = createBashContext('git push --force origin feature');
-      const result = gitSafetyPlugin.apply(context, config);
+      const result = await gitSafetyPlugin.apply(context, config);
 
       expect(result.success).toBe(true);
       expect(result.metadata?.allowed).toBe(true);
     });
 
-    test('should use custom rules', () => {
+    test('should use custom rules', async () => {
       const config = {
         customRules: [
           {
@@ -201,7 +201,7 @@ describe('Git Safety Plugin', () => {
       };
 
       const context = createBashContext('git push origin main --force');
-      const result = gitSafetyPlugin.apply(context, config);
+      const result = await gitSafetyPlugin.apply(context, config);
 
       expect(result.success).toBe(false);
       expect(result.block).toBe(true);
@@ -210,7 +210,7 @@ describe('Git Safety Plugin', () => {
       );
     });
 
-    test('should handle warning severity in custom rules', () => {
+    test('should handle warning severity in custom rules', async () => {
       const config = {
         customRules: [
           {
@@ -223,14 +223,14 @@ describe('Git Safety Plugin', () => {
       };
 
       const context = createBashContext('git merge --no-ff feature');
-      const result = gitSafetyPlugin.apply(context, config);
+      const result = await gitSafetyPlugin.apply(context, config);
 
       expect(result.success).toBe(true);
       expect(result.message).toContain('Consider using fast-forward merge');
       expect(result.metadata?.warning).toBe(true);
     });
 
-    test('should exclude repositories based on path patterns', () => {
+    test('should exclude repositories based on path patterns', async () => {
       const config = {
         excludeRepos: ['/tmp/.*', '.*test.*'],
       };
@@ -238,13 +238,13 @@ describe('Git Safety Plugin', () => {
       const context = createBashContext('git push --force');
       context.cwd = '/tmp/test-repo' as any;
 
-      const result = gitSafetyPlugin.apply(context, config);
+      const result = await gitSafetyPlugin.apply(context, config);
 
       expect(result.success).toBe(true);
       expect(result.metadata?.skipped).toBe(true);
     });
 
-    test('should include only specified repositories', () => {
+    test('should include only specified repositories', async () => {
       const config = {
         includeRepos: ['/important/.*'],
       };
@@ -253,7 +253,7 @@ describe('Git Safety Plugin', () => {
       const context1 = createBashContext('git push --force');
       context1.cwd = '/unimportant/repo' as any;
 
-      const result1 = gitSafetyPlugin.apply(context1, config);
+      const result1 = await gitSafetyPlugin.apply(context1, config);
       expect(result1.success).toBe(true);
       expect(result1.metadata?.skipped).toBe(true);
 
@@ -261,37 +261,37 @@ describe('Git Safety Plugin', () => {
       const context2 = createBashContext('git push --force');
       context2.cwd = '/important/repo' as any;
 
-      const result2 = gitSafetyPlugin.apply(context2, config);
+      const result2 = await gitSafetyPlugin.apply(context2, config);
       expect(result2.success).toBe(false);
       expect(result2.block).toBe(true);
     });
   });
 
   describe('Edge Cases', () => {
-    test('should handle empty command', () => {
+    test('should handle empty command', async () => {
       const context = createBashContext('');
-      const result = gitSafetyPlugin.apply(context);
+      const result = await gitSafetyPlugin.apply(context);
 
       expect(result.success).toBe(true);
     });
 
-    test('should handle commands with multiple spaces', () => {
+    test('should handle commands with multiple spaces', async () => {
       const context = createBashContext('git    push    --force');
-      const result = gitSafetyPlugin.apply(context);
+      const result = await gitSafetyPlugin.apply(context);
 
       expect(result.success).toBe(false);
       expect(result.block).toBe(true);
     });
 
-    test('should handle case insensitive patterns', () => {
+    test('should handle case insensitive patterns', async () => {
       const context = createBashContext('GIT PUSH --FORCE');
-      const result = gitSafetyPlugin.apply(context);
+      const result = await gitSafetyPlugin.apply(context);
 
       expect(result.success).toBe(false);
       expect(result.block).toBe(true);
     });
 
-    test('should handle git aliases and shortcuts', () => {
+    test('should handle git aliases and shortcuts', async () => {
       const context = createBashContext('git pf'); // Assuming pf is alias for push --force
       const config = {
         customRules: [
@@ -304,15 +304,15 @@ describe('Git Safety Plugin', () => {
         ],
       };
 
-      const result = gitSafetyPlugin.apply(context, config);
+      const result = await gitSafetyPlugin.apply(context, config);
 
       expect(result.success).toBe(false);
       expect(result.block).toBe(true);
     });
 
-    test('should provide detailed metadata', () => {
+    test('should provide detailed metadata', async () => {
       const context = createBashContext('git status');
-      const result = gitSafetyPlugin.apply(context);
+      const result = await gitSafetyPlugin.apply(context);
 
       expect(result.metadata?.scanned).toBe(true);
       expect(result.metadata?.command).toBe('git status');
@@ -321,15 +321,15 @@ describe('Git Safety Plugin', () => {
   });
 
   describe('Plugin Lifecycle', () => {
-    test('should have init method', () => {
+    test('should have init method', async () => {
       expect(typeof gitSafetyPlugin.init).toBe('function');
     });
 
-    test('should have healthCheck method', () => {
+    test('should have healthCheck method', async () => {
       expect(typeof gitSafetyPlugin.healthCheck).toBe('function');
     });
 
-    test('should have proper metadata', () => {
+    test('should have proper metadata', async () => {
       expect(gitSafetyPlugin.metadata).toBeDefined();
       expect(gitSafetyPlugin.metadata?.name).toBe('git-safety');
       expect(gitSafetyPlugin.metadata?.keywords).toContain('git');

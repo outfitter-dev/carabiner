@@ -33,7 +33,7 @@ const GitSafetyConfigSchema = z
         'push.*--force',
         'push.*-f(?:\\s|$)',
         'reset.*--hard',
-        'clean.*-f.*-d',
+        'clean.*(-f.*-d|-fd)',
         'branch.*-D',
         'tag.*-d',
         'reflog.*--delete',
@@ -47,20 +47,26 @@ const GitSafetyConfigSchema = z
         'git status',
         'git log',
         'git diff',
-        'git branch',
+        'git branch$',
+        'git branch -[alv]',
+        'git branch --list',
         'git checkout',
         'git add',
         'git commit',
         'git pull',
         'git fetch',
-        'git merge',
+        'git merge$',
+        'git merge --abort',
+        'git merge --continue',
         'git rebase',
         'git stash',
         'git clone',
         'git init',
         'git config',
         'git remote',
-        'git tag',
+        'git tag$',
+        'git tag -l',
+        'git tag --list',
         'git show',
         'git rev-parse',
       ]),
@@ -69,19 +75,35 @@ const GitSafetyConfigSchema = z
     blockForce: z.boolean().default(true),
 
     /** Whether to allow operations in specific directories */
-    trustedDirectories: z
-      .array(z.string())
-      .default([]),
+    trustedDirectories: z.array(z.string()).default([]),
 
     /** Whether to log blocked commands */
     logBlocked: z.boolean().default(true),
 
     /** Whether to warn about potentially dangerous commands */
     warnOnly: z.boolean().default(false),
+
+    /** Custom rules to add */
+    customRules: z
+      .array(
+        z.object({
+          name: z.string(),
+          pattern: z.string(),
+          message: z.string(),
+          severity: z.enum(['block', 'warn']),
+        })
+      )
+      .default([]),
+
+    /** Repository path patterns to exclude from checking */
+    excludeRepos: z.array(z.string()).default([]),
+
+    /** Repository path patterns to include (if set, only these repos are checked) */
+    includeRepos: z.array(z.string()).default([]),
   })
   .default({});
 
-type GitSafetyConfig = z.infer<typeof GitSafetyConfigSchema>;
+type _GitSafetyConfig = z.infer<typeof GitSafetyConfigSchema>;
 
 /**
  * Check if command matches any pattern
@@ -89,8 +111,8 @@ type GitSafetyConfig = z.infer<typeof GitSafetyConfigSchema>;
 function matchesPattern(command: string, patterns: string[]): string | null {
   const gitCommand = command.trim();
 
-  // Only check git commands
-  if (!gitCommand.startsWith('git ')) {
+  // Only check git commands (case insensitive)
+  if (!gitCommand.toLowerCase().startsWith('git ')) {
     return null;
   }
 
@@ -116,6 +138,7 @@ function isAllowed(command: string, allowList: string[]): boolean {
 
   return allowList.some((allowed) => {
     try {
+      // Match allowed patterns exactly - the allowlist should contain full patterns
       const regex = new RegExp(`^${allowed.toLowerCase()}`, 'i');
       return regex.test(gitCommand);
     } catch (error) {
@@ -128,20 +151,163 @@ function isAllowed(command: string, allowList: string[]): boolean {
 /**
  * Check if directory is trusted
  */
-function isTrustedDirectory(cwd: string, trustedDirectories: string[]): boolean {
+function isTrustedDirectory(
+  cwd: string,
+  trustedDirectories: string[]
+): boolean {
   return trustedDirectories.some((trusted) => {
     try {
       // Normalize paths for comparison
       const normalizedCwd = cwd.toLowerCase();
       const normalizedTrusted = trusted.toLowerCase();
 
-      return normalizedCwd.includes(normalizedTrusted) ||
-        normalizedCwd.startsWith(normalizedTrusted);
+      return (
+        normalizedCwd.includes(normalizedTrusted) ||
+        normalizedCwd.startsWith(normalizedTrusted)
+      );
     } catch (error) {
-      console.warn(`[GitSafety] Error checking trusted directory: ${trusted}`, error);
+      console.warn(
+        `[GitSafety] Error checking trusted directory: ${trusted}`,
+        error
+      );
       return false;
     }
   });
+}
+
+/**
+ * Check repository exclusions
+ */
+function checkRepoExclusions(
+  cwd: string,
+  excludeRepos: string[],
+  pluginName: string,
+  pluginVersion: string
+): PluginResult | null {
+  if (excludeRepos.length === 0) {
+    return null;
+  }
+
+  for (const excludePattern of excludeRepos) {
+    try {
+      const regex = new RegExp(excludePattern);
+      if (regex.test(cwd)) {
+        return {
+          success: true,
+          pluginName,
+          pluginVersion,
+          metadata: {
+            skipped: true,
+            reason: 'Repository excluded',
+          },
+        };
+      }
+    } catch (error) {
+      console.warn(
+        `[GitSafety] Invalid exclude pattern: ${excludePattern}`,
+        error
+      );
+    }
+  }
+  return null;
+}
+
+/**
+ * Check repository inclusions
+ */
+function checkRepoInclusions(
+  cwd: string,
+  includeRepos: string[],
+  pluginName: string,
+  pluginVersion: string
+): PluginResult | null {
+  if (includeRepos.length === 0) {
+    return null;
+  }
+
+  let shouldInclude = false;
+  for (const includePattern of includeRepos) {
+    try {
+      const regex = new RegExp(includePattern);
+      if (regex.test(cwd)) {
+        shouldInclude = true;
+        break;
+      }
+    } catch (error) {
+      console.warn(
+        `[GitSafety] Invalid include pattern: ${includePattern}`,
+        error
+      );
+    }
+  }
+
+  if (!shouldInclude) {
+    return {
+      success: true,
+      pluginName,
+      pluginVersion,
+      metadata: {
+        skipped: true,
+        reason: 'Repository not in include list',
+      },
+    };
+  }
+  return null;
+}
+
+/**
+ * Check custom rules
+ */
+function checkCustomRules(
+  command: string,
+  customRules: Array<{
+    name: string;
+    pattern: string;
+    message: string;
+    severity: 'block' | 'warn';
+  }>,
+  pluginName: string,
+  pluginVersion: string
+): PluginResult | null {
+  for (const rule of customRules) {
+    try {
+      const regex = new RegExp(rule.pattern, 'i');
+      if (regex.test(command)) {
+        if (rule.severity === 'warn') {
+          return {
+            success: true,
+            pluginName,
+            pluginVersion,
+            message: rule.message,
+            metadata: {
+              safe: false,
+              blocked: false,
+              warning: true,
+              matchedRule: rule.name,
+            },
+          };
+        }
+        return {
+          success: false,
+          block: true,
+          pluginName,
+          pluginVersion,
+          message: rule.message,
+          metadata: {
+            safe: false,
+            blocked: true,
+            matchedRule: rule.name,
+          },
+        };
+      }
+    } catch (error) {
+      console.warn(
+        `[GitSafety] Invalid custom rule pattern: ${rule.pattern}`,
+        error
+      );
+    }
+  }
+  return null;
 }
 
 /**
@@ -220,8 +386,29 @@ export const gitSafetyPlugin: HookPlugin = {
     const safetyConfig = GitSafetyConfigSchema.parse(config);
     const command = bashContext.toolInput.command;
 
+    // Check repository exclusions/inclusions
+    const excludeResult = checkRepoExclusions(
+      bashContext.cwd,
+      safetyConfig.excludeRepos,
+      this.name,
+      this.version
+    );
+    if (excludeResult) {
+      return excludeResult;
+    }
+
+    const includeResult = checkRepoInclusions(
+      bashContext.cwd,
+      safetyConfig.includeRepos,
+      this.name,
+      this.version
+    );
+    if (includeResult) {
+      return includeResult;
+    }
+
     // Skip non-git commands
-    if (!command.trim().startsWith('git ')) {
+    if (!command.trim().toLowerCase().startsWith('git ')) {
       return {
         success: true,
         pluginName: this.name,
@@ -241,6 +428,9 @@ export const gitSafetyPlugin: HookPlugin = {
         pluginVersion: this.version,
         metadata: {
           safe: true,
+          allowed: true,
+          scanned: true,
+          command,
           reason: 'Command in allow list',
         },
       };
@@ -262,10 +452,21 @@ export const gitSafetyPlugin: HookPlugin = {
       };
     }
 
+    // Check custom rules first (they take priority over built-in patterns)
+    const customRuleResult = checkCustomRules(
+      command,
+      safetyConfig.customRules,
+      this.name,
+      this.version
+    );
+    if (customRuleResult) {
+      return customRuleResult;
+    }
+
     // Check for dangerous patterns
     const matchedPattern = matchesPattern(command, safetyConfig.blockPatterns);
     if (matchedPattern) {
-      const message = `🚫 Git command blocked: ${command}`;
+      const message = `🚫 Git command blocked: ${command} - dangerous pattern detected`;
       const reason = `Command matches dangerous pattern: ${matchedPattern}`;
 
       if (safetyConfig.logBlocked) {
@@ -310,6 +511,9 @@ export const gitSafetyPlugin: HookPlugin = {
       pluginVersion: this.version,
       metadata: {
         safe: true,
+        allowed: true,
+        scanned: true,
+        command,
         reason: 'No dangerous patterns matched',
       },
     };
