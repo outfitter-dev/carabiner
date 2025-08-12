@@ -5,7 +5,13 @@
     "declarationMap": true,
     "composite": true,
     "incremental": true,
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
     "tsBuildInfoFile": "./tsconfig.build.tsbuildinfo"
   },
-  "references": [{ "path": "../execution/tsconfig.build.json" }, { "path": "../types/tsconfig.build.json" }, { "path": "../schemas/tsconfig.build.json" }]
+  "references": [
+    { "path": "../execution/tsconfig.build.json" },
+    { "path": "../types/tsconfig.build.json" },
+    { "path": "../schemas/tsconfig.build.json" }
+  ]
 }
