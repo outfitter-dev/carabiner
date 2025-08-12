@@ -7,5 +7,5 @@
     "incremental": true,
     "tsBuildInfoFile": "./tsconfig.build.tsbuildinfo"
   },
-  "references": [{ "path": "../execution" }, { "path": "../types" }, { "path": "../schemas" }]
+  "references": [{ "path": "../execution/tsconfig.build.json" }, { "path": "../types/tsconfig.build.json" }, { "path": "../schemas/tsconfig.build.json" }]
 }

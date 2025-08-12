@@ -3,7 +3,8 @@
   "compilerOptions": {
     "noEmit": false,
     "allowImportingTsExtensions": false,
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "composite": true
   },
   "exclude": ["**/*.test.ts", "**/*.spec.ts", "src/__tests__"]
 }
