@@ -1,10 +1,10 @@
 /**
  * @outfitter/execution - Simplified execution engine for Claude Code hooks
- * 
+ *
  * This package provides a clean, predictable execution model that removes
  * complex middleware chains and focuses on reliability, observability,
  * and developer experience.
- * 
+ *
  * Key Features:
  * - Simple execution model with clear error boundaries
  * - Result pattern for predictable error handling
@@ -12,11 +12,11 @@
  * - Timeout support and graceful shutdown
  * - Memory usage tracking
  * - Protocol abstraction support
- * 
+ *
  * @example Basic Usage
  * ```typescript
  * import { runHook } from '@outfitter/execution';
- * 
+ *
  * await runHook(async (context) => {
  *   if (context.event === 'PreToolUse') {
  *     // Validate tool usage
@@ -25,11 +25,11 @@
  *   return { success: true };
  * });
  * ```
- * 
+ *
  * @example Testing
  * ```typescript
  * import { runTestHook } from '@outfitter/execution';
- * 
+ *
  * await runTestHook(
  *   myHandler,
  *   mockInputData,
@@ -40,66 +40,64 @@
 
 // Core execution engine
 export {
-  HookExecutor,
-  executeHook,
   createDevelopmentExecutor,
   createProductionExecutor,
   type ExecutionOptions,
+  executeHook,
+  HookExecutor,
 } from './executor';
+// Metrics and performance monitoring
+export {
+  type AggregateMetrics,
+  type ExecutionMetrics,
+  ExecutionTimer,
+  type ExecutionTiming,
+  globalMetrics,
+  MemoryTracker,
+  type MemoryUsage,
+  MetricsCollector,
+  setMetricsEnabled,
+} from './metrics';
 
+// Result pattern for error handling
+export {
+  chainResult,
+  ExecutionError,
+  type FailureResult,
+  failure,
+  fromHookResult,
+  isExecutionError,
+  isFailure,
+  isSuccess,
+  isTimeoutError,
+  isValidationError,
+  mapResult,
+  type Result,
+  type SuccessResult,
+  success,
+  TimeoutError,
+  toHookResult,
+  tryAsyncResult,
+  tryResult,
+  unwrapOr,
+  unwrapResult,
+  ValidationError,
+} from './result';
 // Simple runner utilities
 export {
-  HookRunner,
-  runHook,
-  runTestHook,
-  runTestHooks,
+  clearExecutionMetrics,
   createRunner,
   createTestRunner,
   getExecutionMetrics,
   getExecutionStats,
-  clearExecutionMetrics,
-  hasRecentFailures,
   getLastExecution,
+  HookRunner,
+  hasRecentFailures,
   type RunnerOptions,
+  runHook,
+  runTestHook,
+  runTestHooks,
 } from './runner';
-
-// Result pattern for error handling
-export {
-  success,
-  failure,
-  isSuccess,
-  isFailure,
-  mapResult,
-  chainResult,
-  tryResult,
-  tryAsyncResult,
-  unwrapResult,
-  unwrapOr,
-  fromHookResult,
-  toHookResult,
-  ExecutionError,
-  TimeoutError,
-  ValidationError,
-  isExecutionError,
-  isTimeoutError,
-  isValidationError,
-  type Result,
-  type SuccessResult,
-  type FailureResult,
-} from './result';
-
-// Metrics and performance monitoring
-export {
-  ExecutionTimer,
-  MemoryTracker,
-  MetricsCollector,
-  globalMetrics,
-  setMetricsEnabled,
-  type ExecutionTiming,
-  type MemoryUsage,
-  type ExecutionMetrics,
-  type AggregateMetrics,
-} from './metrics';
 
 /**
  * Version information

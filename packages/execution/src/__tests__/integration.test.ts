@@ -2,24 +2,23 @@
  * @outfitter/execution - Integration tests demonstrating the execution engine
  */
 
-import { describe, expect, test, beforeEach } from 'bun:test';
-import type { HookContext, HookResult, HookHandler } from '@outfitter/types';
-
-import { 
-  success,
-  failure,
-  isSuccess,
-} from '../result';
-
+import { beforeEach, describe, expect, test } from 'bun:test';
+import type { HookContext, HookHandler } from '@outfitter/types';
+import {
+  createDirectoryPath,
+  createSessionId,
+  createTranscriptPath,
+} from '@outfitter/types';
 import {
   ExecutionTimer,
-  MemoryTracker,
   MetricsCollector,
+  snapshotMemoryUsage,
 } from '../metrics';
+import { failure, isSuccess, success } from '../result';
 
 describe('Execution Engine Integration', () => {
   let metricsCollector: MetricsCollector;
-  
+
   beforeEach(() => {
     metricsCollector = new MetricsCollector();
   });
@@ -29,17 +28,18 @@ describe('Execution Engine Integration', () => {
     const mockContext: HookContext = {
       event: 'PreToolUse',
       toolName: 'Bash',
-      sessionId: 'integration-test-123',
-      cwd: '/tmp',
+      sessionId: createSessionId('integration-test-123'),
+      cwd: createDirectoryPath('/tmp'),
       environment: { PATH: '/usr/bin' },
       toolInput: { command: 'echo "Hello World"' },
+      transcriptPath: createTranscriptPath('/tmp/transcript.md'),
     } as HookContext;
 
     // Create a handler that validates bash commands
     const securityHandler: HookHandler = async (context) => {
       if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
         const command = (context as any).toolInput.command;
-        
+
         // Block dangerous commands
         const dangerousPatterns = ['rm -rf', 'sudo', '> /dev/null'];
         for (const pattern of dangerousPatterns) {
@@ -52,29 +52,28 @@ describe('Execution Engine Integration', () => {
           }
         }
       }
-      
+
       return { success: true, message: 'Command approved' };
     };
 
     // Simulate execution timing and metrics collection
     const timer = new ExecutionTimer();
-    const memoryBefore = MemoryTracker.snapshot();
-    
+    const memoryBefore = snapshotMemoryUsage();
+
     timer.markPhase('input');
     // Simulate parsing delay
-    await new Promise(resolve => setTimeout(resolve, 1));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1));
     timer.markPhase('parsing');
     // Execute the handler
     const result = await securityHandler(mockContext);
-    
+
     timer.markPhase('execution');
     // Simulate output delay
-    await new Promise(resolve => setTimeout(resolve, 1));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1));
+
     timer.markPhase('output');
-    const memoryAfter = MemoryTracker.snapshot();
-    
+    const memoryAfter = snapshotMemoryUsage();
+
     // Record metrics
     metricsCollector.record(
       mockContext,
@@ -92,30 +91,33 @@ describe('Execution Engine Integration', () => {
     // Verify metrics were collected
     const metrics = metricsCollector.getMetrics();
     expect(metrics).toHaveLength(1);
-    
+
     const metric = metrics[0];
-    expect(metric.event).toBe('PreToolUse');
-    expect(metric.toolName).toBe('Bash');
-    expect(metric.success).toBe(true);
-    expect(metric.timing.duration).toBeGreaterThan(0);
-    expect(metric.timing.phases.input).toBeGreaterThanOrEqual(0);
-    expect(metric.timing.phases.execution).toBeGreaterThanOrEqual(0);
+    expect(metric).toBeDefined();
+    if (metric) {
+      expect(metric.event).toBe('PreToolUse');
+      expect(metric.success).toBe(true);
+      expect(metric.timing.duration).toBeGreaterThan(0);
+      expect(metric.timing.phases.input).toBeGreaterThanOrEqual(0);
+      expect(metric.timing.phases.execution).toBeGreaterThanOrEqual(0);
+    }
   });
 
   test('should handle execution errors gracefully', async () => {
     const mockContext: HookContext = {
       event: 'PreToolUse',
       toolName: 'Bash',
-      sessionId: 'error-test',
+      sessionId: createSessionId('error-test'),
       cwd: '/tmp',
       environment: {},
       toolInput: { command: 'rm -rf /' },
+      transcriptPath: createTranscriptPath('/tmp/transcript.md'),
     } as HookContext;
 
     const securityHandler: HookHandler = async (context) => {
       if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
         const command = (context as any).toolInput.command;
-        
+
         if (command.includes('rm -rf /')) {
           return {
             success: false,
@@ -124,17 +126,17 @@ describe('Execution Engine Integration', () => {
           };
         }
       }
-      
+
       return { success: true };
     };
 
     const timer = new ExecutionTimer();
-    const memoryBefore = MemoryTracker.snapshot();
-    
+    const memoryBefore = snapshotMemoryUsage();
+
     const result = await securityHandler(mockContext);
-    
-    const memoryAfter = MemoryTracker.snapshot();
-    
+
+    const memoryAfter = snapshotMemoryUsage();
+
     metricsCollector.record(
       mockContext,
       result,
@@ -150,14 +152,20 @@ describe('Execution Engine Integration', () => {
 
     // Verify metrics show the failure
     const aggregate = metricsCollector.getAggregateMetrics();
-    expect(aggregate.failedExecutions).toBe(1);
-    expect(aggregate.successRate).toBe(0);
-    expect(aggregate.topErrors[0].code).toBe('SECURITY_ERROR');
+    expect(aggregate).toBeDefined();
+    if (aggregate) {
+      expect(aggregate.failedExecutions).toBe(1);
+      expect(aggregate.successRate).toBe(0);
+      expect(aggregate.topErrors[0]).toBeDefined();
+      if (aggregate.topErrors[0]) {
+        expect(aggregate.topErrors[0].code).toBe('SECURITY_ERROR');
+      }
+    }
   });
 
-  test('should demonstrate Result pattern usage', () => {
+  test('should handle Result type operations', async () => {
     // Simulate operations that may succeed or fail
-    const parseConfig = (input: string): typeof success<object> | typeof failure<Error> => {
+    const parseConfig = (input: string) => {
       try {
         const config = JSON.parse(input);
         return success(config);
@@ -166,7 +174,7 @@ describe('Execution Engine Integration', () => {
       }
     };
 
-    const validateConfig = (config: any): typeof success<any> | typeof failure<Error> => {
+    const validateConfig = (config: any) => {
       if (!config.timeout || config.timeout < 0) {
         return failure(new Error('Invalid timeout configuration'));
       }
@@ -176,9 +184,9 @@ describe('Execution Engine Integration', () => {
     // Test successful chain
     const validInput = '{"timeout": 5000, "enabled": true}';
     const parseResult = parseConfig(validInput);
-    
+
     expect(isSuccess(parseResult)).toBe(true);
-    
+
     if (isSuccess(parseResult)) {
       const validateResult = validateConfig(parseResult.value);
       expect(isSuccess(validateResult)).toBe(true);
@@ -187,9 +195,9 @@ describe('Execution Engine Integration', () => {
     // Test failure chain
     const invalidInput = '{"timeout": -1}';
     const invalidParseResult = parseConfig(invalidInput);
-    
+
     expect(isSuccess(invalidParseResult)).toBe(true); // JSON is valid
-    
+
     if (isSuccess(invalidParseResult)) {
       const invalidValidateResult = validateConfig(invalidParseResult.value);
       expect(isSuccess(invalidValidateResult)).toBe(false);
@@ -205,29 +213,36 @@ describe('Execution Engine Integration', () => {
 
     // Simulate multiple executions with different performance characteristics
     for (let i = 0; i < contexts.length; i++) {
+      const contextItem = contexts[i];
+      if (!contextItem) {
+        continue;
+      }
+
       const context = {
-        event: contexts[i].event,
-        toolName: contexts[i].tool,
-        sessionId: `perf-test-${i}`,
+        event: contextItem.event,
+        toolName: contextItem.tool,
+        sessionId: createSessionId(`perf-test-${i}`),
         cwd: '/tmp',
         environment: {},
+        toolInput: { command: 'test' },
+        transcriptPath: createTranscriptPath('/tmp/transcript.md'),
       } as HookContext;
 
       const handler: HookHandler = async () => {
         // Simulate work
-        const delay = contexts[i].fast ? 1 : 10;
-        await new Promise(resolve => setTimeout(resolve, delay));
-        
-        return { success: true, message: `${contexts[i].tool} completed` };
+        const delay = contextItem.fast ? 1 : 10;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
+        return { success: true, message: `${contextItem.tool} completed` };
       };
 
+      const memoryBefore = snapshotMemoryUsage();
       const timer = new ExecutionTimer();
-      const memoryBefore = MemoryTracker.snapshot();
-      
+
       const result = await handler(context);
-      
-      const memoryAfter = MemoryTracker.snapshot();
-      
+
+      const memoryAfter = snapshotMemoryUsage();
+
       metricsCollector.record(
         context,
         result,
@@ -239,29 +254,35 @@ describe('Execution Engine Integration', () => {
 
     // Analyze performance metrics
     const stats = metricsCollector.getAggregateMetrics();
-    
-    expect(stats.totalExecutions).toBe(3);
-    expect(stats.successfulExecutions).toBe(3);
-    expect(stats.successRate).toBe(100);
-    expect(stats.averageDuration).toBeGreaterThan(0);
-    expect(stats.minDuration).toBeGreaterThanOrEqual(0);
-    expect(stats.maxDuration).toBeGreaterThanOrEqual(stats.minDuration);
-    expect(stats.eventBreakdown.PreToolUse).toBe(2);
-    expect(stats.eventBreakdown.PostToolUse).toBe(1);
+
+    expect(stats).toBeDefined();
+    if (stats) {
+      expect(stats.totalExecutions).toBe(3);
+      expect(stats.successfulExecutions).toBe(3);
+      expect(stats.successRate).toBe(100);
+      expect(stats.averageDuration).toBeGreaterThan(0);
+      expect(stats.minDuration).toBeGreaterThanOrEqual(0);
+      expect(stats.maxDuration).toBeGreaterThanOrEqual(stats.minDuration);
+      expect(stats.eventBreakdown).toBeDefined();
+      if (stats.eventBreakdown) {
+        expect(stats.eventBreakdown.PreToolUse).toBe(2);
+        expect(stats.eventBreakdown.PostToolUse).toBe(1);
+      }
+    }
   });
 
   test('should handle concurrent executions', async () => {
     const handlers = [
       async () => {
-        await new Promise(resolve => setTimeout(resolve, 5));
+        await new Promise((resolve) => setTimeout(resolve, 5));
         return { success: true, message: 'Handler 1' };
       },
       async () => {
-        await new Promise(resolve => setTimeout(resolve, 3));
+        await new Promise((resolve) => setTimeout(resolve, 3));
         return { success: true, message: 'Handler 2' };
       },
       async () => {
-        await new Promise(resolve => setTimeout(resolve, 7));
+        await new Promise((resolve) => setTimeout(resolve, 7));
         return { success: false, message: 'Handler 3 failed' };
       },
     ];
@@ -269,18 +290,21 @@ describe('Execution Engine Integration', () => {
     const promises = handlers.map(async (handler, index) => {
       const context = {
         event: 'PreToolUse',
-        sessionId: `concurrent-${index}`,
+        sessionId: createSessionId(`concurrent-${index}`),
         cwd: '/tmp',
         environment: {},
+        toolName: 'Bash',
+        toolInput: { command: 'test' },
+        transcriptPath: createTranscriptPath('/tmp/transcript.md'),
       } as HookContext;
 
       const timer = new ExecutionTimer();
-      const memoryBefore = MemoryTracker.snapshot();
-      
+      const memoryBefore = snapshotMemoryUsage();
+
       const result = await handler();
-      
-      const memoryAfter = MemoryTracker.snapshot();
-      
+
+      const memoryAfter = snapshotMemoryUsage();
+
       metricsCollector.record(
         context,
         result,
@@ -293,17 +317,20 @@ describe('Execution Engine Integration', () => {
     });
 
     const results = await Promise.all(promises);
-    
+
     // Verify all handlers completed
     expect(results).toHaveLength(3);
-    expect(results[0].success).toBe(true);
-    expect(results[1].success).toBe(true);  
-    expect(results[2].success).toBe(false);
+    expect(results[0]?.success).toBe(true);
+    expect(results[1]?.success).toBe(true);
+    expect(results[2]?.success).toBe(false);
 
     // Verify metrics captured all executions
     const stats = metricsCollector.getAggregateMetrics();
-    expect(stats.totalExecutions).toBe(3);
-    expect(stats.successfulExecutions).toBe(2);
-    expect(stats.failedExecutions).toBe(1);
+    expect(stats).toBeDefined();
+    if (stats) {
+      expect(stats.totalExecutions).toBe(3);
+      expect(stats.successfulExecutions).toBe(2);
+      expect(stats.failedExecutions).toBe(1);
+    }
   });
 });

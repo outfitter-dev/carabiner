@@ -24,13 +24,13 @@ runClaudeHook(async (context) => {
       case 'production':
         await SecurityValidators.production(context); // Strict rules
         break;
-      case 'development':  
+      case 'development':
         await SecurityValidators.development(context); // Lenient rules
         break;
       default:
         await SecurityValidators.strict(context); // Maximum security
     }
-    
+
     return HookResults.success('Security validation passed');
   } catch (error) {
     return HookResults.block(error.message);
@@ -45,21 +45,20 @@ import { validateToolInput, ToolSchemas } from '@outfitter/hooks-validators';
 
 runClaudeHook(async (context) => {
   // Validate tool input structure
-  const result = await validateToolInput(
-    context.toolName, 
-    context.toolInput, 
-    context
-  );
-  
+  const result = await validateToolInput(context.toolName, context.toolInput, context);
+
   if (!result.valid) {
-    const errors = result.errors.map(e => e.message).join(', ');
+    const errors = result.errors.map((e) => e.message).join(', ');
     return HookResults.block(`Validation failed: ${errors}`);
   }
-  
+
   if (result.warnings.length > 0) {
-    console.warn('Warnings:', result.warnings.map(w => w.message));
+    console.warn(
+      'Warnings:',
+      result.warnings.map((w) => w.message),
+    );
   }
-  
+
   return HookResults.success('Input validation passed');
 });
 ```
@@ -73,25 +72,25 @@ const customSchema = {
   file_path: [
     ValidationRules.required('file_path'),
     ValidationRules.validFilePath(true),
-    ValidationRules.fileExtension(['.ts', '.js', '.json'])
+    ValidationRules.fileExtension(['.ts', '.js', '.json']),
   ],
   content: [
     ValidationRules.required('content'),
     ValidationRules.maxLength(100000),
     ValidationRules.custom(
       (content) => !content.includes('console.log'),
-      'Code should not contain console.log statements'
-    )
-  ]
+      'Code should not contain console.log statements',
+    ),
+  ],
 };
 
 runClaudeHook(async (context) => {
   const result = await validateSchema(context.toolInput, customSchema, context);
-  
+
   if (!result.valid) {
     return HookResults.block('Custom validation failed');
   }
-  
+
   return HookResults.success('Custom validation passed');
 });
 ```
@@ -119,6 +118,7 @@ Apply lenient security rules suitable for development environments.
 Apply custom security rule set.
 
 **Parameters:**
+
 - `rules` - Custom security rule configuration
 - `context` - Hook context to validate
 
@@ -129,6 +129,7 @@ Apply custom security rule set.
 Validate tool input against tool-specific schema.
 
 **Parameters:**
+
 - `toolName` - Name of the Claude Code tool
 - `input` - Tool input parameters
 - `context` - Optional hook context for path resolution
@@ -247,27 +248,27 @@ const strictRules = {
     enabled: true,
     severity: 'critical',
     patterns: [
-      /rm\s+-rf\s+\//, 
-      /sudo.*rm/, 
+      /rm\s+-rf\s+\//,
+      /sudo.*rm/,
       /curl.*\|\s*sh/,
       /wget.*\|\s*sh/,
       />\s*\/dev\/sda/,
-      /dd\s+if=.*of=\/dev/
-    ]
+      /dd\s+if=.*of=\/dev/,
+    ],
   },
   fileAccess: {
     enabled: true,
     severity: 'high',
     allowedPaths: ['./'],
     deniedPaths: ['/etc', '/usr', '/bin', '/sbin'],
-    allowSymlinks: false
+    allowSymlinks: false,
   },
   networkAccess: {
     enabled: true,
     severity: 'medium',
     allowedDomains: [],
-    deniedPorts: [22, 23, 135, 445]
-  }
+    deniedPorts: [22, 23, 135, 445],
+  },
 };
 ```
 
@@ -278,18 +279,18 @@ const productionRules = {
   dangerousCommands: {
     enabled: true,
     severity: 'high',
-    patterns: [/rm\s+-rf/, /sudo\s+rm/, /curl.*\|\s*sh/]
+    patterns: [/rm\s+-rf/, /sudo\s+rm/, /curl.*\|\s*sh/],
   },
   fileAccess: {
     enabled: true,
     severity: 'medium',
     allowedPaths: ['./', '/tmp'],
     deniedPaths: ['/etc'],
-    allowSymlinks: true
+    allowSymlinks: true,
   },
   networkAccess: {
-    enabled: false
-  }
+    enabled: false,
+  },
 };
 ```
 
@@ -300,14 +301,14 @@ const developmentRules = {
   dangerousCommands: {
     enabled: true,
     severity: 'warning',
-    patterns: [/rm\s+-rf\s+\/(?!tmp|var\/tmp)/]
+    patterns: [/rm\s+-rf\s+\/(?!tmp|var\/tmp)/],
   },
   fileAccess: {
-    enabled: false
+    enabled: false,
   },
   networkAccess: {
-    enabled: false
-  }
+    enabled: false,
+  },
 };
 ```
 
@@ -321,7 +322,7 @@ interface SecurityRuleSet {
     patterns: RegExp[];
     exceptions?: string[];
   };
-  
+
   fileAccess?: {
     enabled: boolean;
     severity: 'critical' | 'high' | 'medium' | 'low' | 'warning';
@@ -330,7 +331,7 @@ interface SecurityRuleSet {
     allowSymlinks: boolean;
     maxFileSize?: number;
   };
-  
+
   networkAccess?: {
     enabled: boolean;
     severity: 'critical' | 'high' | 'medium' | 'low' | 'warning';
@@ -338,7 +339,7 @@ interface SecurityRuleSet {
     deniedPorts: number[];
     allowLocalhost?: boolean;
   };
-  
+
   contentFiltering?: {
     enabled: boolean;
     severity: 'critical' | 'high' | 'medium' | 'low' | 'warning';
@@ -359,13 +360,13 @@ import type {
   ValidationSchema,
   SecurityRuleSet,
   SecurityError,
-  ToolSchemaType
+  ToolSchemaType,
 } from '@outfitter/hooks-validators';
 
 // Type-safe validation
 const schema: ValidationSchema = {
   file_path: ValidationRules.validFilePath(),
-  content: ValidationRules.maxLength(1000)
+  content: ValidationRules.maxLength(1000),
 };
 
 // Custom rule with proper typing
@@ -374,7 +375,7 @@ const customRule: ValidationRule<string> = {
   description: 'Custom validation rule',
   validate: (value: string) => value.includes('required-text'),
   message: 'Value must contain required text',
-  severity: 'error'
+  severity: 'error',
 };
 ```
 
@@ -404,19 +405,19 @@ interface ValidationResult {
 ```typescript
 const result = await validateToolInput('Write', {
   file_path: '/etc/passwd',
-  content: 'malicious content'
+  content: 'malicious content',
 });
 
 if (!result.valid) {
   console.error('Validation errors:');
-  result.errors.forEach(error => {
+  result.errors.forEach((error) => {
     console.error(`${error.field}: ${error.message}`);
   });
 }
 
 if (result.warnings.length > 0) {
   console.warn('Validation warnings:');
-  result.warnings.forEach(warning => {
+  result.warnings.forEach((warning) => {
     console.warn(`${warning.field}: ${warning.message}`);
   });
 }
@@ -433,21 +434,17 @@ import { SecurityValidators, validateToolInput } from '@outfitter/hooks-validato
 
 runClaudeHook(async (context) => {
   // Always validate input structure
-  const inputValidation = await validateToolInput(
-    context.toolName,
-    context.toolInput,
-    context
-  );
-  
+  const inputValidation = await validateToolInput(context.toolName, context.toolInput, context);
+
   if (!inputValidation.valid) {
-    const errors = inputValidation.errors.map(e => e.message).join(', ');
+    const errors = inputValidation.errors.map((e) => e.message).join(', ');
     return HookResults.block(`Input validation failed: ${errors}`);
   }
-  
+
   // Apply environment-specific security
   try {
     const environment = Bun.env.NODE_ENV || 'development';
-    
+
     switch (environment) {
       case 'production':
         await SecurityValidators.production(context);
@@ -464,7 +461,7 @@ runClaudeHook(async (context) => {
       default:
         await SecurityValidators.strict(context); // Default to strict
     }
-    
+
     return HookResults.success(`Validation passed for ${environment} environment`);
   } catch (error) {
     return HookResults.block(`Security validation failed: ${error.message}`);
@@ -486,8 +483,8 @@ const customSecurityRules = {
       /curl.*githubusercontent.*\|.*sh/,
       /wget.*raw\.github.*\|.*sh/,
       /docker\s+run.*--privileged/,
-      /systemctl\s+stop/
-    ]
+      /systemctl\s+stop/,
+    ],
   },
   fileAccess: {
     enabled: true,
@@ -495,7 +492,7 @@ const customSecurityRules = {
     allowedPaths: ['./src', './docs', './tests'],
     deniedPaths: ['/etc', '/var', '/usr/bin'],
     allowSymlinks: false,
-    maxFileSize: 10 * 1024 * 1024 // 10MB
+    maxFileSize: 10 * 1024 * 1024, // 10MB
   },
   contentFiltering: {
     enabled: true,
@@ -503,10 +500,10 @@ const customSecurityRules = {
     patterns: [
       /password\s*=\s*["'].*["']/i,
       /api_?key\s*=\s*["'].*["']/i,
-      /secret\s*=\s*["'].*["']/i
+      /secret\s*=\s*["'].*["']/i,
     ],
-    maxContentSize: 1024 * 1024 // 1MB
-  }
+    maxContentSize: 1024 * 1024, // 1MB
+  },
 };
 
 runClaudeHook(async (context) => {
@@ -533,21 +530,21 @@ runClaudeHook(async (context) => {
         ValidationRules.required('command'),
         ValidationRules.custom(
           (cmd: string) => !cmd.includes('sudo'),
-          'sudo commands are not allowed'
+          'sudo commands are not allowed',
         ),
         ValidationRules.custom(
           (cmd: string) => cmd.length <= 1000,
-          'Commands must be under 1000 characters'
-        )
-      ]
+          'Commands must be under 1000 characters',
+        ),
+      ],
     };
-    
+
     const result = await validateSchema(context.toolInput, bashSchema);
     if (!result.valid) {
       return HookResults.block('Bash validation failed');
     }
   }
-  
+
   if (isWriteToolInput(context.toolInput)) {
     // Custom Write validation
     const writeSchema = {
@@ -555,24 +552,24 @@ runClaudeHook(async (context) => {
         ValidationRules.validFilePath(true),
         ValidationRules.custom(
           (path: string) => !path.startsWith('/etc/'),
-          'Cannot write to system directories'
-        )
+          'Cannot write to system directories',
+        ),
       ],
       content: [
         ValidationRules.maxLength(100000),
         ValidationRules.custom(
           (content: string) => !content.includes('#!/bin/sh'),
-          'Shell scripts are not allowed'
-        )
-      ]
+          'Shell scripts are not allowed',
+        ),
+      ],
     };
-    
+
     const result = await validateSchema(context.toolInput, writeSchema);
     if (!result.valid) {
       return HookResults.block('Write validation failed');
     }
   }
-  
+
   return HookResults.success('Tool-specific validation passed');
 });
 ```

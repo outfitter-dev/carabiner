@@ -37,6 +37,7 @@
       "packages/hooks-validators/src/**",
       "packages/hooks-cli/src/**",
       "packages/hooks-testing/src/**",
+      "packages/execution/src/**",
       "packages/examples/**/*.{ts,tsx,js,jsx}",
       "apps/**/*.{ts,tsx,js,jsx}",
       "packages/**/package.json",

@@ -49,6 +49,7 @@ claude-hooks init --template audit
 ```
 
 This creates:
+
 ```
 .claude/
 ├── settings.json              # Claude Code settings
@@ -87,6 +88,7 @@ Options:
 ```
 
 **Examples:**
+
 ```bash
 # Basic TypeScript setup with Bun
 claude-hooks init
@@ -119,6 +121,7 @@ Options:
 ```
 
 **Examples:**
+
 ```bash
 # Universal security hook for all tools
 claude-hooks generate --type PreToolUse --name universal-security
@@ -137,6 +140,7 @@ claude-hooks generate --type PreToolUse --template security --name custom-securi
 ```
 
 Generated files include:
+
 - Hook script with proper imports and structure
 - Type-safe tool input handling
 - Error handling patterns
@@ -160,6 +164,7 @@ Options:
 ```
 
 **Examples:**
+
 ```bash
 # Build default configuration
 claude-hooks build
@@ -192,6 +197,7 @@ Options:
 ```
 
 **Examples:**
+
 ```bash
 # Test all hooks
 claude-hooks test
@@ -226,6 +232,7 @@ Options:
 ```
 
 **Examples:**
+
 ```bash
 # Basic development mode
 claude-hooks dev
@@ -255,6 +262,7 @@ Commands:
 ```
 
 **Examples:**
+
 ```bash
 # List all hook configurations
 claude-hooks config list
@@ -296,6 +304,7 @@ Options:
 ```
 
 **Examples:**
+
 ```bash
 # Validate everything
 claude-hooks validate
@@ -323,7 +332,7 @@ export default defineConfig({
   runtime: 'bun',
   typescript: true,
   strict: true,
-  
+
   // Hook configuration
   hooks: {
     PreToolUse: {
@@ -331,82 +340,79 @@ export default defineConfig({
       '*': {
         command: 'bun run hooks/universal-security.ts',
         timeout: 5000,
-        enabled: true
+        enabled: true,
       },
       // Bash-specific hook
-      'Bash': {
+      Bash: {
         command: 'bun run hooks/bash-security.ts',
         timeout: 10000,
-        enabled: process.env.NODE_ENV === 'production'
-      }
+        enabled: process.env.NODE_ENV === 'production',
+      },
     },
-    
+
     PostToolUse: {
       // Format after writing
-      'Write': {
+      Write: {
         command: 'bun run hooks/format-after-write.ts',
         timeout: 30000,
-        enabled: true
+        enabled: true,
       },
       // Format after editing
-      'Edit': {
+      Edit: {
         command: 'bun run hooks/format-after-edit.ts',
         timeout: 30000,
-        enabled: true
-      }
+        enabled: true,
+      },
     },
-    
+
     SessionStart: {
       command: 'bun run hooks/session-init.ts',
-      timeout: 10000
-    }
+      timeout: 10000,
+    },
   },
-  
+
   // Environment-specific overrides
   environments: {
     development: {
       hooks: {
         PreToolUse: {
           '*': {
-            timeout: 2000 // Faster timeouts in dev
-          }
-        }
-      }
+            timeout: 2000, // Faster timeouts in dev
+          },
+        },
+      },
     },
-    
+
     production: {
       hooks: {
         PreToolUse: {
-          'Bash': {
-            timeout: 15000 // Longer timeouts in prod
-          }
-        }
-      }
-    }
+          Bash: {
+            timeout: 15000, // Longer timeouts in prod
+          },
+        },
+      },
+    },
   },
-  
+
   // Template usage
-  templates: [
-    templates.security,
-    templates.formatting
-  ],
-  
+  templates: [templates.security, templates.formatting],
+
   // Generation settings
   generation: {
     outputDir: './hooks',
     typescript: true,
     includeTypes: true,
     includeTests: true,
-    includeDocumentation: true
+    includeDocumentation: true,
   },
-  
+
   // Development settings
   development: {
     watch: true,
     testOnChange: true,
     buildOnChange: true,
-    hotReload: true
-  }
+    hotReload: true,
+  },
 });
 ```
 
@@ -415,39 +421,46 @@ export default defineConfig({
 ### Built-in Templates
 
 #### Security Template
+
 ```bash
 claude-hooks init --template security
 ```
 
 Creates hooks for:
+
 - Dangerous command detection
-- File access validation  
+- File access validation
 - Network request monitoring
 - Content filtering
 
 #### Formatting Template
+
 ```bash
 claude-hooks init --template formatting
 ```
 
 Creates hooks for:
+
 - Auto-formatting after writes
 - Code style validation
 - Import organization
 - Linting integration
 
-#### Audit Template  
+#### Audit Template
+
 ```bash
 claude-hooks init --template audit
 ```
 
 Creates hooks for:
+
 - Comprehensive logging
 - Performance monitoring
 - Security auditing
 - Usage tracking
 
 #### Minimal Template
+
 ```bash
 claude-hooks init --template minimal
 ```
@@ -465,16 +478,16 @@ import { defineTemplate } from '@outfitter/hooks-cli';
 export default defineTemplate({
   name: 'my-template',
   description: 'Custom hook template',
-  
+
   hooks: {
     PreToolUse: {
       '*': {
         command: 'bun run hooks/custom-validator.ts',
-        timeout: 5000
-      }
-    }
+        timeout: 5000,
+      },
+    },
   },
-  
+
   files: [
     {
       path: 'hooks/custom-validator.ts',
@@ -484,21 +497,20 @@ import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
 runClaudeHook(async (context) => {
   console.log(\`Custom validation for \${context.toolName}\`);
   return HookResults.success('Custom validation passed');
-});`
-    }
+});`,
+    },
   ],
-  
-  dependencies: [
-    '@outfitter/hooks-core'
-  ],
-  
+
+  dependencies: ['@outfitter/hooks-core'],
+
   postInstall: async (context) => {
     console.log('Custom template installed successfully!');
-  }
+  },
 });
 ```
 
 Use with:
+
 ```bash
 claude-hooks init --template ./templates/my-template.ts
 ```
@@ -536,13 +548,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
-          
+
       - run: bun install
-      
+
       - name: Validate hooks
         run: |
           bunx @outfitter/hooks-cli validate --all
@@ -599,6 +611,7 @@ claude-hooks validate --types --hook ./hooks/bash-security.ts
 ### Common Issues
 
 #### Hooks Not Executing
+
 ```bash
 # Check configuration
 claude-hooks config validate
@@ -608,6 +621,7 @@ claude-hooks test --hook ./hooks/problematic-hook.ts --verbose
 ```
 
 #### Performance Issues
+
 ```bash
 # Analyze hook performance
 claude-hooks validate --performance
@@ -617,6 +631,7 @@ claude-hooks config get PreToolUse.Bash.timeout
 ```
 
 #### Permission Errors
+
 ```bash
 # Verify file permissions
 ls -la hooks/
@@ -667,7 +682,7 @@ claude-hooks dev --watch --test-on-change
 ```bash
 # Generate tool-specific hooks for different scenarios
 claude-hooks generate --type PreToolUse --tool Bash --name production-bash-security --template security
-claude-hooks generate --type PreToolUse --tool Write --name file-validation --template validation  
+claude-hooks generate --type PreToolUse --tool Write --name file-validation --template validation
 claude-hooks generate --type PostToolUse --tool Edit --name format-and-lint --template formatting
 claude-hooks generate --type SessionStart --name project-initialization
 ```

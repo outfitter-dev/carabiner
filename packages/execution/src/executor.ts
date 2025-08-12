@@ -1,6 +1,6 @@
 /**
  * @outfitter/execution - Simple, predictable hook execution engine
- * 
+ *
  * Provides a clean execution model that removes complex middleware chains
  * and focuses on reliability, observability, and developer experience.
  * The executor manages the complete hook lifecycle with proper error
@@ -8,27 +8,24 @@
  */
 
 import type { HookProtocol } from '@outfitter/protocol';
-import type { HookContext, HookResult, HookHandler } from '@outfitter/types';
-import { isProtocolError } from '@outfitter/protocol';
-
-import {
-  type Result,
-  success,
-  failure,
-  isSuccess,
-  tryAsyncResult,
-  toHookResult,
-  TimeoutError,
-  ValidationError,
-  ExecutionError,
-} from './result';
-
+import type { HookContext, HookHandler, HookResult } from '@outfitter/types';
 import {
   ExecutionTimer,
-  MemoryTracker,
-  MetricsCollector,
   globalMetrics,
+  type MetricsCollector,
+  snapshotMemoryUsage,
 } from './metrics';
+import {
+  ExecutionError,
+  failure,
+  isSuccess,
+  type Result,
+  success,
+  TimeoutError,
+  toHookResult,
+  tryAsyncResult,
+  ValidationError,
+} from './result';
 
 /**
  * Configuration options for hook execution
@@ -36,25 +33,25 @@ import {
 export interface ExecutionOptions {
   /** Maximum execution time in milliseconds (default: 30000) */
   readonly timeout?: number;
-  
+
   /** Whether to collect detailed metrics (default: true) */
   readonly collectMetrics?: boolean;
-  
+
   /** Whether to validate hook results (default: true) */
   readonly validateResults?: boolean;
-  
+
   /** Custom metrics collector (uses global if not provided) */
   readonly metricsCollector?: MetricsCollector;
-  
+
   /** Additional context to include in metrics */
   readonly additionalContext?: Record<string, unknown>;
-  
+
   /** Exit process on completion (default: true for CLI usage) */
   readonly exitProcess?: boolean;
-  
+
   /** Success exit code (default: 0) */
   readonly successExitCode?: number;
-  
+
   /** Failure exit code (default: 1) */
   readonly failureExitCode?: number;
 }
@@ -63,7 +60,7 @@ export interface ExecutionOptions {
  * Default execution options optimized for typical hook usage
  */
 const DEFAULT_OPTIONS: Required<ExecutionOptions> = {
-  timeout: 30000, // 30 seconds
+  timeout: 30_000, // 30 seconds
   collectMetrics: true,
   validateResults: true,
   metricsCollector: globalMetrics,
@@ -75,7 +72,7 @@ const DEFAULT_OPTIONS: Required<ExecutionOptions> = {
 
 /**
  * Simple, predictable hook execution engine
- * 
+ *
  * The HookExecutor manages the complete hook lifecycle:
  * 1. Input reading and parsing
  * 2. Context validation
@@ -83,7 +80,7 @@ const DEFAULT_OPTIONS: Required<ExecutionOptions> = {
  * 4. Result validation and output
  * 5. Metrics collection
  * 6. Process lifecycle management
- * 
+ *
  * Error handling is explicit and predictable using the Result pattern,
  * with proper error boundaries to prevent failures from crashing the process.
  */
@@ -98,16 +95,16 @@ export class HookExecutor {
 
   /**
    * Execute a hook handler with full lifecycle management
-   * 
+   *
    * This is the main entry point for hook execution. It handles the complete
    * execution lifecycle with proper error boundaries, timeouts, and metrics.
-   * 
+   *
    * @param handler - Hook handler function to execute
    * @returns Promise that resolves when execution completes (never returns if exitProcess=true)
    */
-  async execute(handler: HookHandler): Promise<never | void> {
+  async execute(handler: HookHandler): Promise<never | undefined> {
     const timer = new ExecutionTimer();
-    const memoryBefore = MemoryTracker.snapshot();
+    const memoryBefore = snapshotMemoryUsage();
     let context: HookContext | null = null;
     let result: HookResult;
 
@@ -115,7 +112,7 @@ export class HookExecutor {
       // Phase 1: Input reading
       const inputResult = await this.readInput();
       timer.markPhase('input');
-      
+
       if (!isSuccess(inputResult)) {
         result = toHookResult(inputResult);
         await this.handleFailure(result, timer, memoryBefore, null);
@@ -125,7 +122,7 @@ export class HookExecutor {
       // Phase 2: Context parsing and validation
       const contextResult = await this.parseContext(inputResult.value);
       timer.markPhase('parsing');
-      
+
       if (!isSuccess(contextResult)) {
         result = toHookResult(contextResult);
         await this.handleFailure(result, timer, memoryBefore, null);
@@ -137,7 +134,7 @@ export class HookExecutor {
       // Phase 3: Handler execution with timeout
       const executionResult = await this.executeHandler(handler, context);
       timer.markPhase('execution');
-      
+
       if (!isSuccess(executionResult)) {
         result = toHookResult(executionResult);
         await this.handleFailure(result, timer, memoryBefore, context);
@@ -146,7 +143,7 @@ export class HookExecutor {
 
       // Phase 4: Result validation and output
       result = executionResult.value;
-      
+
       if (this.options.validateResults) {
         const validationResult = this.validateResult(result);
         if (!isSuccess(validationResult)) {
@@ -158,7 +155,7 @@ export class HookExecutor {
 
       const outputResult = await this.writeOutput(result);
       timer.markPhase('output');
-      
+
       if (!isSuccess(outputResult)) {
         const errorResult = toHookResult(outputResult);
         await this.handleFailure(errorResult, timer, memoryBefore, context);
@@ -168,7 +165,6 @@ export class HookExecutor {
       // Success: collect metrics and exit
       await this.handleSuccess(result, timer, memoryBefore, context);
       return this.exit(this.options.successExitCode);
-
     } catch (error) {
       // Catch-all for any unhandled errors
       const errorResult: HookResult = {
@@ -176,7 +172,7 @@ export class HookExecutor {
         message: `Unhandled execution error: ${error instanceof Error ? error.message : String(error)}`,
         block: true,
       };
-      
+
       await this.handleFailure(errorResult, timer, memoryBefore, context);
       return this.exit(this.options.failureExitCode);
     }
@@ -184,7 +180,7 @@ export class HookExecutor {
 
   /**
    * Execute handler with timeout support
-   * 
+   *
    * @param handler - Handler function to execute
    * @param context - Validated hook context
    * @returns Promise resolving to execution result
@@ -196,10 +192,12 @@ export class HookExecutor {
     // Create timeout promise
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        reject(new TimeoutError(this.options.timeout, { 
-          event: context.event,
-          toolName: 'toolName' in context ? context.toolName : undefined,
-        }));
+        reject(
+          new TimeoutError(this.options.timeout, {
+            event: context.event,
+            toolName: 'toolName' in context ? context.toolName : undefined,
+          })
+        );
       }, this.options.timeout);
     });
 
@@ -209,7 +207,7 @@ export class HookExecutor {
         this.runHandler(handler, context),
         timeoutPromise,
       ]);
-      
+
       return success(result);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error(String(error)));
@@ -218,19 +216,23 @@ export class HookExecutor {
 
   /**
    * Run the actual handler function with error boundary
-   * 
+   *
    * @param handler - Handler function
    * @param context - Hook context
    * @returns Promise resolving to hook result
    */
-  private async runHandler(handler: HookHandler, context: HookContext): Promise<HookResult> {
+  private async runHandler(
+    handler: HookHandler,
+    context: HookContext
+  ): Promise<HookResult> {
     try {
       const result = await handler(context);
       return this.normalizeResult(result, context);
     } catch (error) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Handler execution failed',
+        message:
+          error instanceof Error ? error.message : 'Handler execution failed',
         block: context.event === 'PreToolUse', // Block pre-tool-use by default on errors
       };
     }
@@ -238,7 +240,7 @@ export class HookExecutor {
 
   /**
    * Normalize handler result to ensure it conforms to HookResult interface
-   * 
+   *
    * @param result - Raw result from handler
    * @param context - Hook context for additional validation
    * @returns Normalized hook result
@@ -256,7 +258,9 @@ export class HookExecutor {
     if (typeof result === 'boolean') {
       return {
         success: result,
-        message: result ? 'Handler completed successfully' : 'Handler returned false',
+        message: result
+          ? 'Handler completed successfully'
+          : 'Handler returned false',
         block: !result && context.event === 'PreToolUse',
       };
     }
@@ -272,11 +276,13 @@ export class HookExecutor {
     // Handle object results
     if (typeof result === 'object' && result !== null) {
       const obj = result as Partial<HookResult>;
-      
+
       return {
         success: obj.success ?? true,
         message: obj.message || 'Handler completed successfully',
-        block: obj.block ?? (obj.success === false && context.event === 'PreToolUse'),
+        block:
+          obj.block ??
+          (obj.success === false && context.event === 'PreToolUse'),
         data: obj.data,
       };
     }
@@ -300,7 +306,9 @@ export class HookExecutor {
   /**
    * Parse context from raw input with error handling
    */
-  private async parseContext(input: unknown): Promise<Result<HookContext, Error>> {
+  private async parseContext(
+    input: unknown
+  ): Promise<Result<HookContext, Error>> {
     return tryAsyncResult(async () => {
       return await this.protocol.parseContext(input);
     });
@@ -326,7 +334,7 @@ export class HookExecutor {
 
   /**
    * Validate hook result format and content
-   * 
+   *
    * @param result - Hook result to validate
    * @returns Validation result
    */
@@ -334,27 +342,37 @@ export class HookExecutor {
     try {
       // Check required fields
       if (typeof result.success !== 'boolean') {
-        return failure(new ValidationError('Result must have boolean success field'));
+        return failure(
+          new ValidationError('Result must have boolean success field')
+        );
       }
 
       // Validate message field
       if (result.message !== undefined && typeof result.message !== 'string') {
-        return failure(new ValidationError('Result message must be string if present'));
+        return failure(
+          new ValidationError('Result message must be string if present')
+        );
       }
 
       // Validate block field
       if (result.block !== undefined && typeof result.block !== 'boolean') {
-        return failure(new ValidationError('Result block must be boolean if present'));
+        return failure(
+          new ValidationError('Result block must be boolean if present')
+        );
       }
 
       // Additional semantic validation
-      if (!result.success && !result.message) {
-        return failure(new ValidationError('Failed results should include an error message'));
+      if (!(result.success || result.message)) {
+        return failure(
+          new ValidationError('Failed results should include an error message')
+        );
       }
 
       return success(result);
     } catch (error) {
-      return failure(error instanceof Error ? error : new Error('Validation failed'));
+      return failure(
+        error instanceof Error ? error : new Error('Validation failed')
+      );
     }
   }
 
@@ -369,8 +387,8 @@ export class HookExecutor {
   ): Promise<void> {
     if (this.options.collectMetrics) {
       const timing = timer.getTiming();
-      const memoryAfter = MemoryTracker.snapshot();
-      
+      const memoryAfter = snapshotMemoryUsage();
+
       this.options.metricsCollector.record(
         context,
         result,
@@ -400,8 +418,8 @@ export class HookExecutor {
     // Collect metrics if context is available
     if (this.options.collectMetrics && context) {
       const timing = timer.getTiming();
-      const memoryAfter = MemoryTracker.snapshot();
-      
+      const memoryAfter = snapshotMemoryUsage();
+
       this.options.metricsCollector.record(
         context,
         result,
@@ -416,17 +434,17 @@ export class HookExecutor {
   /**
    * Exit the process or return void based on configuration
    */
-  private exit(code: number): never | void {
+  private exit(code: number): never | undefined {
     if (this.options.exitProcess) {
       process.exit(code);
     }
-    return undefined;
+    return;
   }
 }
 
 /**
  * Convenience function to create and execute a hook with minimal setup
- * 
+ *
  * @param protocol - Protocol instance for I/O
  * @param handler - Hook handler function
  * @param options - Execution options
@@ -436,7 +454,7 @@ export async function executeHook(
   protocol: HookProtocol,
   handler: HookHandler,
   options?: ExecutionOptions
-): Promise<never | void> {
+): Promise<never | undefined> {
   const executor = new HookExecutor(protocol, options);
   return await executor.execute(handler);
 }
@@ -446,7 +464,7 @@ export async function executeHook(
  * - Shorter timeout (10 seconds)
  * - Don't exit process
  * - Enable detailed metrics
- * 
+ *
  * @param protocol - Protocol instance
  * @param options - Additional options to override defaults
  * @returns Configured executor for development use
@@ -456,13 +474,13 @@ export function createDevelopmentExecutor(
   options: ExecutionOptions = {}
 ): HookExecutor {
   const developmentOptions: ExecutionOptions = {
-    timeout: 10000,
+    timeout: 10_000,
     exitProcess: false,
     collectMetrics: true,
     validateResults: true,
     ...options,
   };
-  
+
   return new HookExecutor(protocol, developmentOptions);
 }
 
@@ -471,7 +489,7 @@ export function createDevelopmentExecutor(
  * - Standard timeout (30 seconds)
  * - Exit process on completion
  * - Minimal metrics (for performance)
- * 
+ *
  * @param protocol - Protocol instance
  * @param options - Additional options to override defaults
  * @returns Configured executor for production use
@@ -481,12 +499,12 @@ export function createProductionExecutor(
   options: ExecutionOptions = {}
 ): HookExecutor {
   const productionOptions: ExecutionOptions = {
-    timeout: 30000,
+    timeout: 30_000,
     exitProcess: true,
     collectMetrics: false, // Disable for performance in production
     validateResults: false, // Trust the handler in production
     ...options,
   };
-  
+
   return new HookExecutor(protocol, productionOptions);
 }

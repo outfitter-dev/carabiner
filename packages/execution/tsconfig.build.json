@@ -6,6 +6,7 @@
     "sourceMap": true,
     "composite": true,
     "incremental": true,
+    "noEmit": false,
     "tsBuildInfoFile": "./tsconfig.build.tsbuildinfo"
   },
   "exclude": ["src/**/__tests__", "src/**/*.test.ts"]

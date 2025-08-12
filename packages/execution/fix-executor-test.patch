@@ -1,0 +1,38 @@
+--- a/src/__tests__/executor.test.ts
++++ b/src/__tests__/executor.test.ts
+@@ -138,7 +138,7 @@
+       ];
+       
+       for (const testCase of testCases) {
+-        const handler: HookHandler = async () => testCase.input;
++        const handler: HookHandler = async () => testCase.input as HookResult;
+         
+         const executor = new HookExecutor(mockProtocol, {
+           exitProcess: false,
+@@ -151,7 +151,7 @@
+         if (testCase.expected.message) {
+           expect(mockProtocol.output?.message).toBe(testCase.expected.message);
+         }
+-        if ('block' in testCase.expected) {
++        if ('block' in testCase.expected && testCase.expected.block \!== undefined) {
+           expect(mockProtocol.output?.block).toBe(testCase.expected.block);
+         }
+       }
+@@ -173,10 +173,13 @@
+       const metrics = metricsCollector.getMetrics();
+       expect(metrics).toHaveLength(1);
+       
+-      const metric = metrics[0];
+-      expect(metric.event).toBe('PreToolUse');
+-      expect(metric.toolName).toBe('Bash');
+-      expect(metric.success).toBe(true);
++      const metric = metrics[0];
++      expect(metric).toBeDefined();
++      if (metric) {
++        expect(metric.event).toBe('PreToolUse');
++        expect(metric.toolName).toBe('Bash');
++        expect(metric.success).toBe(true);
++      }
+       expect(metric.timing.duration).toBeGreaterThan(0);
+     });
+ 

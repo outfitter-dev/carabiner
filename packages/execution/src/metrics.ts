@@ -1,12 +1,12 @@
 /**
  * @outfitter/execution - Execution metrics collection and analysis
- * 
+ *
  * Provides performance monitoring, execution tracking, and operational insights
  * for the hook execution engine. Metrics are lightweight and designed to have
  * minimal impact on execution performance.
  */
 
-import type { HookContext, HookResult, HookEvent } from '@outfitter/types';
+import type { HookContext, HookEvent, HookResult } from '@outfitter/types';
 
 /**
  * Execution timing information
@@ -121,7 +121,7 @@ export class ExecutionTimer {
 
   /**
    * Mark the end of a phase and start of the next
-   * 
+   *
    * @param phase - Name of the phase that just completed
    * @returns Duration of the completed phase
    */
@@ -135,7 +135,7 @@ export class ExecutionTimer {
 
   /**
    * Get the total elapsed time since timer creation
-   * 
+   *
    * @returns Total duration in milliseconds
    */
   getElapsed(): number {
@@ -144,7 +144,7 @@ export class ExecutionTimer {
 
   /**
    * Get timing information for all recorded phases
-   * 
+   *
    * @returns Complete timing breakdown
    */
   getTiming(): ExecutionTiming {
@@ -166,59 +166,57 @@ export class ExecutionTimer {
 }
 
 /**
- * Memory usage tracker
+ * Take a snapshot of current memory usage
+ *
+ * @returns Current memory usage information
  */
-export class MemoryTracker {
-  /**
-   * Take a snapshot of current memory usage
-   * 
-   * @returns Current memory usage information
-   */
-  static snapshot(): MemoryUsage {
-    const memUsage = process.memoryUsage();
-    return {
-      heapUsed: memUsage.heapUsed,
-      heapTotal: memUsage.heapTotal,
-      external: memUsage.external,
-      rss: memUsage.rss,
-    };
-  }
+export function snapshotMemoryUsage(): MemoryUsage {
+  const memUsage = process.memoryUsage();
+  return {
+    heapUsed: memUsage.heapUsed,
+    heapTotal: memUsage.heapTotal,
+    external: memUsage.external,
+    rss: memUsage.rss,
+  };
+}
 
-  /**
-   * Calculate memory delta between two snapshots
-   * 
-   * @param before - Memory usage before operation
-   * @param after - Memory usage after operation
-   * @returns Memory usage difference
-   */
-  static delta(before: MemoryUsage, after: MemoryUsage): MemoryUsage {
-    return {
-      heapUsed: after.heapUsed - before.heapUsed,
-      heapTotal: after.heapTotal - before.heapTotal,
-      external: after.external - before.external,
-      rss: after.rss - before.rss,
-    };
-  }
+/**
+ * Calculate memory delta between two snapshots
+ *
+ * @param before - Memory usage before operation
+ * @param after - Memory usage after operation
+ * @returns Memory usage difference
+ */
+export function deltaMemoryUsage(
+  before: MemoryUsage,
+  after: MemoryUsage
+): MemoryUsage {
+  return {
+    heapUsed: after.heapUsed - before.heapUsed,
+    heapTotal: after.heapTotal - before.heapTotal,
+    external: after.external - before.external,
+    rss: after.rss - before.rss,
+  };
+}
 
-  /**
-   * Format memory usage for human-readable display
-   * 
-   * @param memory - Memory usage to format
-   * @returns Formatted memory information
-   */
-  static format(memory: MemoryUsage): Record<string, string> {
-    const formatBytes = (bytes: number): string => {
-      const mb = bytes / (1024 * 1024);
-      return `${mb.toFixed(2)} MB`;
-    };
+/**
+ * Format memory usage for human-readable display
+ *
+ * @param memory - Memory usage to format
+ * @returns Formatted memory information
+ */
+export function formatMemoryUsage(memory: MemoryUsage): Record<string, string> {
+  const formatBytes = (bytes: number): string => {
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(2)} MB`;
+  };
 
-    return {
-      heapUsed: formatBytes(memory.heapUsed),
-      heapTotal: formatBytes(memory.heapTotal),
-      external: formatBytes(memory.external),
-      rss: formatBytes(memory.rss),
-    };
-  }
+  return {
+    heapUsed: formatBytes(memory.heapUsed),
+    heapTotal: formatBytes(memory.heapTotal),
+    external: formatBytes(memory.external),
+    rss: formatBytes(memory.rss),
+  };
 }
 
 /**
@@ -234,7 +232,7 @@ export class MetricsCollector {
 
   /**
    * Record execution metrics
-   * 
+   *
    * @param context - Hook execution context
    * @param result - Hook execution result
    * @param timing - Execution timing information
@@ -255,11 +253,13 @@ export class MetricsCollector {
       event: context.event,
       toolName: 'toolName' in context ? context.toolName : undefined,
       success: result.success,
-      errorCode: result.success ? undefined : this.extractErrorCode(result.message),
+      errorCode: result.success
+        ? undefined
+        : this.extractErrorCode(result.message),
       timing,
       memoryBefore,
       memoryAfter,
-      memoryDelta: MemoryTracker.delta(memoryBefore, memoryAfter),
+      memoryDelta: deltaMemoryUsage(memoryBefore, memoryAfter),
       timestamp: Date.now(),
       context: additionalContext,
     };
@@ -274,7 +274,7 @@ export class MetricsCollector {
 
   /**
    * Get all collected metrics
-   * 
+   *
    * @returns Array of execution metrics
    */
   getMetrics(): readonly ExecutionMetrics[] {
@@ -283,25 +283,28 @@ export class MetricsCollector {
 
   /**
    * Get metrics for a specific time range
-   * 
+   *
    * @param startTime - Start of time range (timestamp)
    * @param endTime - End of time range (timestamp)
    * @returns Filtered metrics within time range
    */
   getMetricsInRange(startTime: number, endTime: number): ExecutionMetrics[] {
     return this.metrics.filter(
-      metric => metric.timestamp >= startTime && metric.timestamp <= endTime
+      (metric) => metric.timestamp >= startTime && metric.timestamp <= endTime
     );
   }
 
   /**
    * Calculate aggregate metrics
-   * 
+   *
    * @param timeRange - Optional time range to calculate over
    * @returns Aggregate metrics
    */
-  getAggregateMetrics(timeRange?: { start: number; end: number }): AggregateMetrics {
-    const metricsToAnalyze = timeRange 
+  getAggregateMetrics(timeRange?: {
+    start: number;
+    end: number;
+  }): AggregateMetrics {
+    const metricsToAnalyze = timeRange
       ? this.getMetricsInRange(timeRange.start, timeRange.end)
       : this.metrics;
 
@@ -309,9 +312,11 @@ export class MetricsCollector {
       return this.createEmptyAggregateMetrics(timeRange);
     }
 
-    const durations = metricsToAnalyze.map(m => m.timing.duration).sort((a, b) => a - b);
-    const successful = metricsToAnalyze.filter(m => m.success);
-    const failed = metricsToAnalyze.filter(m => !m.success);
+    const durations = metricsToAnalyze
+      .map((m) => m.timing.duration)
+      .sort((a, b) => a - b);
+    const successful = metricsToAnalyze.filter((m) => m.success);
+    const failed = metricsToAnalyze.filter((m) => !m.success);
 
     // Calculate percentiles
     const p95Index = Math.ceil(durations.length * 0.95) - 1;
@@ -339,12 +344,13 @@ export class MetricsCollector {
       successfulExecutions: successful.length,
       failedExecutions: failed.length,
       successRate: (successful.length / metricsToAnalyze.length) * 100,
-      averageDuration: durations.reduce((sum, d) => sum + d, 0) / durations.length,
+      averageDuration:
+        durations.reduce((sum, d) => sum + d, 0) / durations.length,
       medianDuration: durations[medianIndex] || 0,
       p95Duration: durations[p95Index] || 0,
       p99Duration: durations[p99Index] || 0,
       minDuration: durations[0] || 0,
-      maxDuration: durations[durations.length - 1] || 0,
+      maxDuration: durations.at(-1) || 0,
       topErrors: Array.from(errorCounts.entries())
         .map(([code, count]) => ({ code, count }))
         .sort((a, b) => b.count - a.count)
@@ -352,8 +358,8 @@ export class MetricsCollector {
       eventBreakdown: eventCounts as Record<HookEvent, number>,
       averageMemoryUsage: this.calculateAverageMemoryUsage(metricsToAnalyze),
       timeRange: timeRange || {
-        start: Math.min(...metricsToAnalyze.map(m => m.timestamp)),
-        end: Math.max(...metricsToAnalyze.map(m => m.timestamp)),
+        start: Math.min(...metricsToAnalyze.map((m) => m.timestamp)),
+        end: Math.max(...metricsToAnalyze.map((m) => m.timestamp)),
       },
     };
   }
@@ -367,7 +373,7 @@ export class MetricsCollector {
 
   /**
    * Get the number of collected metrics
-   * 
+   *
    * @returns Number of metrics in collection
    */
   size(): number {
@@ -379,8 +385,10 @@ export class MetricsCollector {
   }
 
   private extractErrorCode(message?: string): string | undefined {
-    if (!message) return undefined;
-    
+    if (!message) {
+      return;
+    }
+
     // Extract common error patterns
     const patterns = [
       /\b([A-Z_]+_ERROR)\b/,
@@ -390,7 +398,7 @@ export class MetricsCollector {
 
     for (const pattern of patterns) {
       const match = message.match(pattern);
-      if (match && match[1]) {
+      if (match?.[1]) {
         return match[1].toUpperCase();
       }
     }
@@ -398,7 +406,9 @@ export class MetricsCollector {
     return 'UNKNOWN_ERROR';
   }
 
-  private calculateAverageMemoryUsage(metrics: ExecutionMetrics[]): MemoryUsage {
+  private calculateAverageMemoryUsage(
+    metrics: ExecutionMetrics[]
+  ): MemoryUsage {
     const totals = metrics.reduce(
       (acc, metric) => ({
         heapUsed: acc.heapUsed + metric.memoryAfter.heapUsed,
@@ -418,7 +428,10 @@ export class MetricsCollector {
     };
   }
 
-  private createEmptyAggregateMetrics(timeRange?: { start: number; end: number }): AggregateMetrics {
+  private createEmptyAggregateMetrics(timeRange?: {
+    start: number;
+    end: number;
+  }): AggregateMetrics {
     return {
       totalExecutions: 0,
       successfulExecutions: 0,
@@ -446,7 +459,7 @@ export const globalMetrics = new MetricsCollector();
 
 /**
  * Enable or disable global metrics collection
- * 
+ *
  * @param enabled - Whether to enable metrics collection
  */
 export function setMetricsEnabled(enabled: boolean): void {

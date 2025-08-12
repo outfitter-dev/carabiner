@@ -24,16 +24,16 @@ runClaudeHook(async (context) => {
   console.log(`Session: ${context.sessionId}`);
   console.log(`Working Directory: ${context.cwd}`);
   console.log(`Tool Input:`, context.toolInput);
-  
+
   // Tool-specific validation
   if (context.toolName === 'Bash') {
     const { command } = context.toolInput as { command: string };
-    
+
     if (command.includes('rm -rf /')) {
       return HookResults.block('Dangerous command blocked!');
     }
   }
-  
+
   return HookResults.success('Validation passed');
 });
 ```
@@ -47,36 +47,30 @@ Fluent interface for complex hooks with middleware and tool scoping:
 import { HookBuilder, middleware, runClaudeHook, HookResults } from '@outfitter/hooks-core';
 
 // Tool-specific hook - ONLY runs for Bash commands
-const bashSecurityHook = HookBuilder
-  .forPreToolUse()
-  .forTool('Bash')  // 🎯 Tool scoping works!
+const bashSecurityHook = HookBuilder.forPreToolUse()
+  .forTool('Bash') // 🎯 Tool scoping works!
   .withPriority(100)
   .withTimeout(10000)
   .withMiddleware(middleware.logging('info'))
   .withMiddleware(middleware.timing())
   .withHandler(async (context) => {
     const { command } = context.toolInput as { command: string };
-    
+
     // Bash-specific security checks
-    const dangerousPatterns = [
-      /rm\s+-rf\s+\//,
-      /sudo.*rm/,
-      /curl.*\|\s*sh/
-    ];
-    
+    const dangerousPatterns = [/rm\s+-rf\s+\//, /sudo.*rm/, /curl.*\|\s*sh/];
+
     for (const pattern of dangerousPatterns) {
       if (pattern.test(command)) {
         return HookResults.block(`Blocked dangerous command: ${pattern.source}`);
       }
     }
-    
+
     return HookResults.success('Bash security check passed');
   })
   .build();
 
 // Universal hook - runs for ALL tools
-const universalAuditHook = HookBuilder
-  .forPostToolUse()
+const universalAuditHook = HookBuilder.forPostToolUse()
   // No .forTool() call = universal
   .withHandler(async (context) => {
     console.log(`📝 Audit: ${context.toolName} executed successfully`);
@@ -93,7 +87,7 @@ if (import.meta.main) {
     } else if (context.event === 'PostToolUse') {
       return await universalAuditHook.handler(context);
     }
-    
+
     return HookResults.success('No applicable hooks');
   });
 }
@@ -116,20 +110,20 @@ export const projectHooks = [
       return HookResults.success('Universal check passed');
     },
     priority: 100,
-    middleware: [middleware.logging('info')]
+    middleware: [middleware.logging('info')],
   }),
-  
+
   // Bash-specific monitoring
   defineHook({
-    event: 'PreToolUse', 
+    event: 'PreToolUse',
     tool: 'Bash', // Only for Bash
     handler: async (context) => {
       console.log(`🐚 Bash command monitoring`);
       return HookResults.success('Bash monitoring completed');
     },
-    condition: (ctx) => Bun.env.NODE_ENV === 'production'
+    condition: (ctx) => Bun.env.NODE_ENV === 'production',
   }),
-  
+
   // File formatting after writes
   defineHook({
     event: 'PostToolUse',
@@ -137,11 +131,11 @@ export const projectHooks = [
     handler: async (context) => {
       const { file_path } = context.toolInput as { file_path: string };
       console.log(`🎨 Auto-formatting: ${file_path}`);
-      
+
       return HookResults.success(`Formatted ${file_path}`);
     },
-    timeout: 30000
-  })
+    timeout: 30000,
+  }),
 ];
 ```
 
@@ -154,9 +148,11 @@ export const projectHooks = [
 Main runtime function that reads JSON from stdin and executes your hook handler.
 
 **Parameters:**
+
 - `handler` - Async function that processes the hook context and returns a result
 
 **Example:**
+
 ```typescript
 runClaudeHook(async (context) => {
   // Your hook logic here
@@ -211,9 +207,9 @@ Adds execution timing:
 Adds comprehensive error handling:
 
 ```typescript
-.withMiddleware(middleware.errorHandling({ 
-  logErrors: true, 
-  throwOnError: false 
+.withMiddleware(middleware.errorHandling({
+  logErrors: true,
+  throwOnError: false
 }))
 ```
 
@@ -230,6 +226,7 @@ Tool input type guards for safe type narrowing:
 - `isGrepToolInput(input)` - Check if input is for Grep tool
 
 **Example:**
+
 ```typescript
 if (isBashToolInput(context.toolInput)) {
   // context.toolInput is now typed as BashToolInput
@@ -250,7 +247,7 @@ import type {
   ToolInput,
   GetToolInput,
   HookHandler,
-  HookConfig
+  HookConfig,
 } from '@outfitter/hooks-core';
 
 // Type-safe hook handler
@@ -269,6 +266,7 @@ type WriteContext = HookContext<'PostToolUse', 'Write'>;
 Your hooks receive JSON via stdin with this structure:
 
 ### PreToolUse / PostToolUse
+
 ```json
 {
   "session_id": "unique-session-id",
@@ -285,10 +283,11 @@ Your hooks receive JSON via stdin with this structure:
 ```
 
 ### Other Events
+
 ```json
 {
   "session_id": "unique-session-id",
-  "transcript_path": "/path/to/transcript.md", 
+  "transcript_path": "/path/to/transcript.md",
   "cwd": "/current/working/directory",
   "hook_event_name": "SessionStart",
   "message": "Session started"
@@ -307,11 +306,11 @@ Your hooks receive JSON via stdin with this structure:
 ## Tool Scoping
 
 ### Universal Hooks
+
 Run for all tools when no tool is specified:
 
 ```typescript
-const universalHook = HookBuilder
-  .forPreToolUse()
+const universalHook = HookBuilder.forPreToolUse()
   // No .forTool() call = universal
   .withHandler(async (context) => {
     // Runs for Bash, Write, Edit, Read, etc.
@@ -320,12 +319,12 @@ const universalHook = HookBuilder
 ```
 
 ### Tool-Specific Hooks
+
 Target specific tools only:
 
 ```typescript
-const bashHook = HookBuilder
-  .forPreToolUse() 
-  .forTool('Bash')  // Scoped to Bash only
+const bashHook = HookBuilder.forPreToolUse()
+  .forTool('Bash') // Scoped to Bash only
   .withHandler(async (context) => {
     // Only runs when context.toolName === 'Bash'
     return HookResults.success('Bash-specific validation');
@@ -352,22 +351,24 @@ const bashHook = HookBuilder
 ### ✅ New Stdin-Based Runtime
 
 **Before (Broken)**:
+
 ```typescript
 // ❌ Used environment variables
 const context = createHookContext('PreToolUse');
 const toolInput = JSON.parse(process.env.TOOL_INPUT || '{}');
 ```
 
-**After (Working)**:  
+**After (Working)**:
+
 ```typescript
 // ✅ Reads JSON from stdin automatically
 runClaudeHook(async (context) => {
   // All data comes from Claude Code's JSON input
-  console.log(context.sessionId);    // From session_id
-  console.log(context.cwd);          // From cwd  
-  console.log(context.toolInput);    // From tool_input
+  console.log(context.sessionId); // From session_id
+  console.log(context.cwd); // From cwd
+  console.log(context.toolInput); // From tool_input
   console.log(context.toolResponse); // From tool_response
-  
+
   return HookResults.success('Processed stdin input');
 });
 ```
@@ -377,17 +378,19 @@ runClaudeHook(async (context) => {
 **Previously**: All hooks ran for all tools regardless of configuration.
 
 **Now**: Proper tool targeting:
+
 ```typescript
 // Only runs for Bash commands
 HookBuilder.forPreToolUse().forTool('Bash').withHandler(handler);
 
 // Runs for all tools
-HookBuilder.forPreToolUse().withHandler(handler); 
+HookBuilder.forPreToolUse().withHandler(handler);
 ```
 
 ### ✅ Corrected Context Properties
 
 **Changed Properties**:
+
 - `context.workspacePath` → `context.cwd` (matches Claude Code's JSON structure)
 - `context.toolOutput` → `context.toolResponse` (consistent with tool_response field)
 - Metadata is on the **result**, not context: `result.metadata.duration`
