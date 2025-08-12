@@ -20,7 +20,8 @@ function hasCommand(input: unknown): input is { command: string } {
   return (
     typeof input === 'object' &&
     input !== null &&
-    typeof (input as Record<string, unknown>).command === 'string'
+    'command' in (input as Record<string, unknown>) &&
+    typeof (input as { command?: unknown }).command === 'string'
   );
 }
 
@@ -33,12 +34,11 @@ function exampleHook(context: HookContext): HookResult {
 
   // Access tool input with full type safety
   if (context.event === 'PostToolUse' && context.toolResponse) {
-    // Example: inspect toolResponse here
-    void 0; // No-op: intentionally empty for demonstration
+    // Example: inspect toolResponse here (no-op for demonstration)
   }
 
   if (context.event === 'UserPromptSubmit' && context.userPrompt) {
-    void 0; // No-op: intentionally empty for demonstration
+    // No-op for demonstration
   }
 
   const timestamp = new Date().toISOString();
@@ -107,7 +107,7 @@ if (import.meta.main) {
     });
   } else {
     // For actual hook execution, use the new runtime
-    runClaudeHook(exampleHookScript, {
+    void runClaudeHook(exampleHookScript, {
       outputMode: 'exit-code',
       logLevel: 'info',
       timeout: 30_000,

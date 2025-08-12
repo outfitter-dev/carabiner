@@ -70,8 +70,9 @@ describe('Memory tracking functions', () => {
   test('should calculate memory deltas', () => {
     const before = snapshotMemoryUsage();
 
-    // Allocate some memory
-    const largeArray = new Array(100_000).fill('test data'.repeat(10));
+    // Allocate some memory that will definitely be tracked
+    const largeBuffer = Buffer.alloc(1_024 * 1_024); // 1MB buffer
+    largeBuffer.fill(42); // Fill to ensure allocation is real
 
     const after = snapshotMemoryUsage();
     const delta = deltaMemoryUsage(before, after);
@@ -80,7 +81,7 @@ describe('Memory tracking functions', () => {
     expect(delta.heapUsed).toBeGreaterThanOrEqual(0);
 
     // Keep reference to prevent optimization
-    expect(largeArray.length).toBe(100_000);
+    expect(largeBuffer.length).toBe(1_024 * 1_024);
   });
 
   test('should format memory usage for display', () => {

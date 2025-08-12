@@ -12,6 +12,7 @@ import type { HookContext, HookHandler, HookResult } from '@outfitter/types';
 import {
   ExecutionTimer,
   globalMetrics,
+  type MemoryUsage,
   type MetricsCollector,
   snapshotMemoryUsage,
 } from './metrics';
@@ -163,7 +164,7 @@ export class HookExecutor {
       }
 
       // Success: collect metrics and exit
-      await this.handleSuccess(result, timer, memoryBefore, context);
+      this.handleSuccess(result, timer, memoryBefore, context);
       return this.exit(this.options.successExitCode);
     } catch (error) {
       // Catch-all for any unhandled errors
@@ -379,12 +380,12 @@ export class HookExecutor {
   /**
    * Handle successful execution
    */
-  private async handleSuccess(
+  private handleSuccess(
     result: HookResult,
     timer: ExecutionTimer,
-    memoryBefore: import('./metrics').MemoryUsage,
+    memoryBefore: MemoryUsage,
     context: HookContext
-  ): Promise<void> {
+  ): void {
     if (this.options.collectMetrics) {
       const timing = timer.getTiming();
       const memoryAfter = snapshotMemoryUsage();
@@ -406,7 +407,7 @@ export class HookExecutor {
   private async handleFailure(
     result: HookResult,
     timer: ExecutionTimer,
-    memoryBefore: import('./metrics').MemoryUsage,
+    memoryBefore: MemoryUsage,
     context: HookContext | null
   ): Promise<void> {
     // Try to write error to protocol
@@ -436,7 +437,7 @@ export class HookExecutor {
    */
   private exit(code: number): never | undefined {
     if (this.options.exitProcess) {
-      process.exit(code);
+      process.exit(code) as never;
     }
     return;
   }

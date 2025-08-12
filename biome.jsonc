@@ -7,14 +7,14 @@
       "style": {
         "noParameterProperties": "off",
         "useConsistentMemberAccessibility": "off",
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "error"
       },
       "performance": {
         "useTopLevelRegex": "off"
       },
       "suspicious": {
-        "useAwait": "off",
-        "noConsole": "off"
+        "useAwait": "error",
+        "noConsole": "error"
       },
       "nursery": {
         "noAwaitInLoop": "off"
