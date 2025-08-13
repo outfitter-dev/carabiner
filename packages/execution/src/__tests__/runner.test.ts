@@ -70,7 +70,7 @@ describe('HookRunner', () => {
       await runner.run(handler);
     });
 
-    test('should throw when test protocol missing testInput', () => {
+    test('should throw when test protocol missing testInput', async () => {
       const runner = new HookRunner({
         protocol: 'test',
         // Missing testInput
@@ -78,7 +78,9 @@ describe('HookRunner', () => {
 
       const handler: HookHandler = async () => ({ success: true });
 
-      expect(() => runner.run(handler)).toThrow('testInput is required');
+      await expect(runner.run(handler)).rejects.toThrow(
+        'testInput is required when using test protocol'
+      );
     });
   });
 });
@@ -176,19 +178,23 @@ describe('createRunner', () => {
     expect(typeof runner).toBe('function');
   });
 
-  test('should execute handler when runner function is called', async () => {
+  test('should execute handler via createTestRunner when invoked', async () => {
+    let executed = false;
     const handler: HookHandler = async () => {
+      executed = true;
       return { success: true };
     };
-
-    // Note: createRunner uses different options than the test shows
-    const runner = createRunner(handler, {
-      exitProcess: false,
+    const testRunner = createTestRunner(handler, { collectMetrics: false });
+    await testRunner({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'echo "test"' },
+      session_id: 'exec-test',
+      cwd: '/tmp',
+      transcript_path: '/tmp/transcript.md',
+      environment: {},
     });
-
-    // This would normally read from stdin, so we can't easily test without mocking
-    // But we can verify the function was created
-    expect(typeof runner).toBe('function');
+    expect(executed).toBe(true);
   });
 });
 
@@ -213,7 +219,7 @@ describe('createTestRunner', () => {
     });
 
     const testInput = {
-      hook_event_name: 'UserPrompt',
+      hook_event_name: 'UserPromptSubmit',
       user_prompt: 'What is the meaning of life?',
       session_id: 'test-789',
       cwd: '/home/user',
@@ -224,7 +230,7 @@ describe('createTestRunner', () => {
 
     expect(receivedContext).toBeDefined();
     if (receivedContext) {
-      expect((receivedContext as any).event).toBe('UserPrompt');
+      expect(receivedContext.event).toBe('UserPromptSubmit');
     }
   });
 });
@@ -363,7 +369,7 @@ describe('Metrics utilities', () => {
     expect(getExecutionMetrics().length).toBe(0);
   });
 
-  test('hasRecentFailures should detect failed executions', async () => {
+  test('should detect recent failures via metrics filter', async () => {
     // Clear any previous metrics
     clearExecutionMetrics();
 
@@ -480,21 +486,18 @@ describe('Edge cases and error handling', () => {
       environment: {},
     };
 
-    for (let i = 0; i < testCases.length; i++) {
-      const testCase = testCases[i];
-      if (testCase) {
-        await runTestHook(
-          testCase.handler as HookHandler,
-          {
-            ...mockInput,
-            session_id: `type-test-${i}`,
-          },
-          { collectMetrics: false }
-        );
-
-        // Since we're testing internal behavior and can't easily access the result,
-        // we'll just verify no exceptions were thrown
-      }
+    let idx = 0;
+    for (const testCase of testCases) {
+      await runTestHook(
+        testCase.handler as HookHandler,
+        {
+          ...mockInput,
+          session_id: `type-test-${idx++}`,
+        },
+        { collectMetrics: false }
+      );
+      // Since we're testing internal behaviour and can't easily access the result,
+      // we'll just verify no exceptions were thrown
     }
   });
 
@@ -513,29 +516,25 @@ describe('Edge cases and error handling', () => {
     };
 
     // Should not throw even with timeout
-    await runTestHook(slowHandler, mockInput, { timeout: 50 });
+    await expect(runTestHook(slowHandler, mockInput, { timeout: 50 })).resolves.toBeUndefined();
   });
 
-  test('should handle malformed input gracefully', async () => {
-    const malformedInputs = [
+  test('should handle malformed input deterministically', async () => {
+    const handler: HookHandler = async () => ({ success: true });
+
+    // Only undefined causes immediate rejection due to testInput validation
+    await expect(runTestHook(handler, undefined as any)).rejects.toBeDefined();
+
+    // All other inputs are handled gracefully by the executor's error handling
+    const toleratedInputs = [
       null,
-      undefined,
       'not an object',
       {},
       { hook_event_name: 'InvalidEvent' },
-      { hook_event_name: 'PreToolUse', tool_name: 123 }, // Wrong type
+      { hook_event_name: 'PreToolUse', tool_name: 123 as any }, // Wrong type, but runner should not throw
     ];
-
-    const handler: HookHandler = async () => ({ success: true });
-
-    for (const input of malformedInputs) {
-      try {
-        await runTestHook(handler, input);
-        // Should handle gracefully without throwing
-      } catch (error) {
-        // Some parsing errors are expected for truly malformed input
-        expect(error).toBeDefined();
-      }
+    for (const input of toleratedInputs) {
+      await expect(runTestHook(handler, input as any)).resolves.toBeUndefined();
     }
   });
 });
