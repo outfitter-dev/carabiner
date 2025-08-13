@@ -10,5 +10,13 @@
     "allowImportingTsExtensions": false,
     "tsBuildInfoFile": "./tsconfig.build.tsbuildinfo"
   },
-  "exclude": ["src/**/__tests__", "src/**/*.test.ts"]
+  "exclude": ["src/**/__tests__", "src/**/*.test.ts"],
+  "references": [
+    {
+      "path": "../protocol/tsconfig.build.json"
+    },
+    {
+      "path": "../types/tsconfig.build.json"
+    }
+  ]
 }
