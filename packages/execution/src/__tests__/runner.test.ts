@@ -237,6 +237,8 @@ describe('Metrics utilities', () => {
   test('getExecutionMetrics should return collected metrics', async () => {
     const mockInput = {
       hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'echo "test"' },
       session_id: 'metrics-test-1',
       cwd: '/tmp',
       transcript_path: '/tmp/transcript.md',
@@ -259,6 +261,8 @@ describe('Metrics utilities', () => {
   test('getExecutionMetrics should filter by time range', async () => {
     const mockInput = {
       hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'echo "test"' },
       session_id: 'metrics-test-2',
       cwd: '/tmp',
       transcript_path: '/tmp/transcript.md',
@@ -295,6 +299,8 @@ describe('Metrics utilities', () => {
   test('getExecutionStats should return aggregate metrics', async () => {
     const mockInput = {
       hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'echo "test"' },
       session_id: 'stats-test',
       cwd: '/tmp',
       transcript_path: '/tmp/transcript.md',
@@ -333,6 +339,8 @@ describe('Metrics utilities', () => {
   test('clearExecutionMetrics should remove all metrics', async () => {
     const mockInput = {
       hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'echo "test"' },
       session_id: 'clear-test',
       cwd: '/tmp',
       transcript_path: '/tmp/transcript.md',
@@ -367,6 +375,8 @@ describe('Metrics utilities', () => {
 
     const mockInput = {
       hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'echo "test"' },
       session_id: 'failure-test',
       cwd: '/tmp',
       transcript_path: '/tmp/transcript.md',
@@ -398,6 +408,8 @@ describe('Metrics utilities', () => {
 
     const mockInput1 = {
       hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'echo "test"' },
       session_id: 'last-test-1',
       cwd: '/tmp',
       transcript_path: '/tmp/transcript.md',
@@ -406,6 +418,9 @@ describe('Metrics utilities', () => {
 
     const mockInput2 = {
       hook_event_name: 'PostToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'echo "test"' },
+      tool_output: 'test',
       session_id: 'last-test-2',
       cwd: '/tmp',
       transcript_path: '/tmp/transcript.md',
