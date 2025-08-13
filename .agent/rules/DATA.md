@@ -90,9 +90,13 @@ const emailSchema = z.string().email().brand('Email');
 type Email = z.infer<typeof emailSchema>;
 
 // Validate and transform
-const dateSchema = z.string().datetime().transform((str) => new Date(str));
+const dateSchema = z
+  .string()
+  .datetime()
+  .transform((str) => new Date(str));
 // or
-const dateSchema = z.string()
+const dateSchema = z
+  .string()
   .refine((s) => !Number.isNaN(Date.parse(s)), { message: 'Invalid date' })
   .transform((s) => new Date(s));
 ```

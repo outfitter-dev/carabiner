@@ -160,7 +160,7 @@ jobs:
         continue-on-error: true
 
       - name: Check for secrets
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v3.81.10
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}

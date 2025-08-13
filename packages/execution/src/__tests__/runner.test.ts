@@ -230,7 +230,7 @@ describe('createTestRunner', () => {
 
     expect(receivedContext).toBeDefined();
     if (receivedContext) {
-      expect(receivedContext.event).toBe('UserPromptSubmit');
+      expect((receivedContext as HookContext).event).toBe('UserPromptSubmit');
     }
   });
 });
@@ -516,7 +516,9 @@ describe('Edge cases and error handling', () => {
     };
 
     // Should not throw even with timeout
-    await expect(runTestHook(slowHandler, mockInput, { timeout: 50 })).resolves.toBeUndefined();
+    await expect(
+      runTestHook(slowHandler, mockInput, { timeout: 50 })
+    ).resolves.toBeUndefined();
   });
 
   test('should handle malformed input deterministically', async () => {
