@@ -3,7 +3,11 @@
  * @description Content-specific matching logic
  */
 
-import type { SecurityRule, SecurityFinding, SecurityScannerConfig } from '../types/index.js';
+import type {
+  SecurityFinding,
+  SecurityRule,
+  SecurityScannerConfig,
+} from '../types/index.js';
 import { getSeverityLevel } from '../types/index.js';
 import { isFileTypeSupported } from './pattern-matcher.js';
 import { executeRegex, matchesToFindings } from './regex-matcher.js';
@@ -15,7 +19,9 @@ export function shouldApplyRule(
   rule: SecurityRule,
   config: SecurityScannerConfig
 ): boolean {
-  return getSeverityLevel(rule.severity) >= getSeverityLevel(config.minSeverity);
+  return (
+    getSeverityLevel(rule.severity) >= getSeverityLevel(config.minSeverity)
+  );
 }
 
 /**

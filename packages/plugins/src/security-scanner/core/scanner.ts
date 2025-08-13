@@ -3,19 +3,22 @@
  * @description Main security scanning orchestration
  */
 
-import type { SecurityFinding, SecurityRule, ScanResult } from '../types/index.js';
-import type { ToolInput } from '../analyzers/tool-analyzer.js';
-import { SecurityScannerConfigManager } from './config.js';
-import { SecurityReporter } from './reporter.js';
-import { ruleRegistry } from '../rules/index.js';
 import { analyzeCommand } from '../analyzers/command-analyzer.js';
-import { analyzeFileContent, exceedsSizeLimit } from '../analyzers/file-analyzer.js';
 import {
-  extractWriteContent,
+  analyzeFileContent,
+  exceedsSizeLimit,
+} from '../analyzers/file-analyzer.js';
+import type { ToolInput } from '../analyzers/tool-analyzer.js';
+import {
+  extractBashCommand,
   extractEditContent,
   extractMultiEditContent,
-  extractBashCommand,
+  extractWriteContent,
 } from '../analyzers/tool-analyzer.js';
+import { ruleRegistry } from '../rules/index.js';
+import type { ScanResult, SecurityRule } from '../types/index.js';
+import { SecurityScannerConfigManager } from './config.js';
+import { SecurityReporter } from './reporter.js';
 
 /**
  * Main security scanner orchestrator
@@ -88,42 +91,72 @@ export class SecurityScanner {
   /**
    * Scan tool usage for security issues
    */
-  async scanTool(
+  async scanTool(toolName: string, toolInput: ToolInput): Promise<ScanResult> {
+    if (toolName === 'Bash') {
+      return await this.scanBashTool(toolInput);
+    }
+
+    if (['Write', 'Edit', 'MultiEdit'].includes(toolName)) {
+      return await this.scanFileTool(toolName, toolInput);
+    }
+
+    return { findings: [], scanned: true };
+  }
+
+  /**
+   * Scan Bash tool for security issues
+   */
+  private async scanBashTool(toolInput: ToolInput): Promise<ScanResult> {
+    const command = extractBashCommand(toolInput);
+    if (!command) {
+      return { findings: [], scanned: true };
+    }
+
+    return await this.scanCommand(command);
+  }
+
+  /**
+   * Scan file-related tools for security issues
+   */
+  private async scanFileTool(
     toolName: string,
     toolInput: ToolInput
   ): Promise<ScanResult> {
-    let findings: SecurityFinding[] = [];
-
-    if (toolName === 'Bash') {
-      const command = extractBashCommand(toolInput);
-      if (command) {
-        const result = await this.scanCommand(command);
-        findings = result.findings;
-      }
-    } else if (['Write', 'Edit', 'MultiEdit'].includes(toolName)) {
-      const filePath = toolInput.file_path;
-      if (filePath) {
-        let content = '';
-
-        if (toolName === 'Write') {
-          content = extractWriteContent(toolInput);
-        } else if (toolName === 'Edit') {
-          content = await extractEditContent(toolInput, filePath);
-        } else if (toolName === 'MultiEdit') {
-          content = await extractMultiEditContent(toolInput, filePath);
-        }
-
-        if (content) {
-          const result = await this.scanFileContent(content, filePath);
-          if (result.skipped) {
-            return result;
-          }
-          findings = result.findings;
-        }
-      }
+    const filePath = toolInput.file_path;
+    if (!filePath) {
+      return { findings: [], scanned: true };
     }
 
-    return { findings, scanned: true };
+    const content = await this.extractToolContent(
+      toolName,
+      toolInput,
+      filePath
+    );
+    if (!content) {
+      return { findings: [], scanned: true };
+    }
+
+    return await this.scanFileContent(content, filePath);
+  }
+
+  /**
+   * Extract content from different file tools
+   */
+  private async extractToolContent(
+    toolName: string,
+    toolInput: ToolInput,
+    filePath: string
+  ): Promise<string> {
+    switch (toolName) {
+      case 'Write':
+        return extractWriteContent(toolInput);
+      case 'Edit':
+        return await extractEditContent(toolInput, filePath);
+      case 'MultiEdit':
+        return await extractMultiEditContent(toolInput, filePath);
+      default:
+        return '';
+    }
   }
 
   /**
@@ -131,7 +164,7 @@ export class SecurityScanner {
    */
   generateReport(scanResult: ScanResult) {
     const { findings } = scanResult;
-    const config = this.configManager.getConfig();
+    const _config = this.configManager.getConfig();
     const blockingConfig = this.configManager.getBlockingConfig();
 
     if (findings.length === 0) {

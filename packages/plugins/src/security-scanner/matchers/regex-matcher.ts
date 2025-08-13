@@ -3,7 +3,7 @@
  * @description Regex pattern matching for security rules
  */
 
-import type { SecurityRule, SecurityFinding } from '../types/index.js';
+import type { SecurityFinding, SecurityRule } from '../types/index.js';
 
 /**
  * Result of regex matching operation
@@ -23,7 +23,7 @@ export function executeRegex(
   rule: SecurityRule
 ): RegexMatch[] {
   const matches: RegexMatch[] = [];
-  
+
   try {
     const flags = rule.flags || 'gm';
     const regex = new RegExp(rule.pattern, flags);
@@ -50,10 +50,7 @@ export function executeRegex(
       match = regex.exec(content);
     }
   } catch (error) {
-    console.warn(
-      `[SecurityScanner] Invalid regex in rule ${rule.id}:`,
-      error
-    );
+    console.warn(`[SecurityScanner] Invalid regex in rule ${rule.id}:`, error);
   }
 
   return matches;

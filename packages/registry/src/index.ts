@@ -215,21 +215,21 @@ export async function createPluginSystem(
     }
 
     // Register discovered plugins
-    plugins.forEach((plugin: HookPlugin) => {
+    for (const plugin of plugins) {
       const pluginConfig = config.plugins.find(
         (p: PluginConfig) => p.name === plugin.name
       );
       registryInstance.register(plugin, pluginConfig);
-    });
+    }
 
     // Register plugins from configuration that weren't discovered
-    config.plugins.forEach((pluginConfig: PluginConfig) => {
+    for (const pluginConfig of config.plugins) {
       if (!plugins.find((p: HookPlugin) => p.name === pluginConfig.name)) {
         console.warn(
           `[PluginSystem] Plugin ${pluginConfig.name} configured but not found`
         );
       }
-    });
+    }
 
     // Set up hot reload
     if (enableHotReload) {

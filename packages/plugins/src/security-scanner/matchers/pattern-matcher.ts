@@ -28,13 +28,13 @@ export function getFileExtension(filePath: string): string {
  * Check if file type is supported by rule
  */
 export function isFileTypeSupported(
-  filePath: string, 
+  filePath: string,
   supportedTypes?: string[]
 ): boolean {
   if (!supportedTypes || supportedTypes.length === 0) {
     return true;
   }
-  
+
   const fileExt = getFileExtension(filePath);
   return supportedTypes.includes(fileExt);
 }

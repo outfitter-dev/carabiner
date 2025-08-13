@@ -2,7 +2,9 @@
  * Security hook template
  */
 
-export const securityHookTypeScript = (name: string): string => `#!/usr/bin/env bun
+export const securityHookTypeScript = (
+  name: string
+): string => `#!/usr/bin/env bun
 
 import { runClaudeHook, HookResults, type HookContext } from '@outfitter/hooks-core';
 import { SecurityValidators } from '@outfitter/hooks-validators';
@@ -70,7 +72,9 @@ if (import.meta.main) {
 export { handler };
 `;
 
-export const securityHookJavaScript = (name: string): string => `#!/usr/bin/env bun
+export const securityHookJavaScript = (
+  name: string
+): string => `#!/usr/bin/env bun
 
 const { runClaudeHook, HookResults } = require('@outfitter/hooks-core');
 const { SecurityValidators } = require('@outfitter/hooks-validators');

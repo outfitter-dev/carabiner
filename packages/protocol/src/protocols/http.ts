@@ -177,71 +177,114 @@ export class HttpProtocol implements HookProtocol {
    * Generate HTTP response from stored result or error
    */
   getResponse(): Response {
+    const headers = this.buildResponseHeaders();
+
+    if (this.error) {
+      return this.buildErrorResponse(headers);
+    }
+
+    if (this.result) {
+      return this.buildSuccessResponse(headers);
+    }
+
+    return this.buildNoResultResponse(headers);
+  }
+
+  /**
+   * Build response headers with CORS support
+   */
+  private buildResponseHeaders(): Headers {
     const headers = new Headers({
       'Content-Type': 'application/json',
       ...this.options.responseHeaders,
     });
 
-    // Add CORS headers if configured
     if (this.options.cors) {
-      const {
-        origin,
-        methods,
-        headers: corsHeaders,
-        credentials,
-      } = this.options.cors;
+      this.addCorsHeaders(headers);
+    }
 
-      if (origin !== undefined) {
-        if (origin === true) {
-          headers.set('Access-Control-Allow-Origin', '*');
-        } else if (typeof origin === 'string') {
-          headers.set('Access-Control-Allow-Origin', origin);
-        } else if (Array.isArray(origin)) {
-          // For arrays, we'd need the original request origin to match
-          // This is a simplified implementation
-          headers.set('Access-Control-Allow-Origin', origin[0] || '*');
+    return headers;
+  }
+
+  /**
+   * Add CORS headers to response
+   */
+  private addCorsHeaders(headers: Headers): void {
+    const {
+      origin,
+      methods,
+      headers: corsHeaders,
+      credentials,
+    } = this.options.cors!;
+
+    if (origin !== undefined) {
+      this.setCorsOriginHeader(headers, origin);
+    }
+
+    if (methods) {
+      headers.set('Access-Control-Allow-Methods', methods.join(', '));
+    }
+
+    if (corsHeaders) {
+      headers.set('Access-Control-Allow-Headers', corsHeaders.join(', '));
+    }
+
+    if (credentials) {
+      headers.set('Access-Control-Allow-Credentials', 'true');
+    }
+  }
+
+  /**
+   * Set CORS origin header based on configuration
+   */
+  private setCorsOriginHeader(
+    headers: Headers,
+    origin: string | string[] | boolean
+  ): void {
+    if (origin === true) {
+      headers.set('Access-Control-Allow-Origin', '*');
+    } else if (typeof origin === 'string') {
+      headers.set('Access-Control-Allow-Origin', origin);
+    } else if (Array.isArray(origin)) {
+      // For arrays, we'd need the original request origin to match
+      // This is a simplified implementation
+      headers.set('Access-Control-Allow-Origin', origin[0] || '*');
+    }
+  }
+
+  /**
+   * Build error response
+   */
+  private buildErrorResponse(headers: Headers): Response {
+    const errorBody = this.options.includeErrorDetails
+      ? {
+          error: this.error!.message,
+          type: this.error!.name,
+          ...(this.error!.stack && { stack: this.error!.stack }),
         }
-      }
+      : { error: 'Hook execution failed' };
 
-      if (methods) {
-        headers.set('Access-Control-Allow-Methods', methods.join(', '));
-      }
+    return new Response(JSON.stringify(errorBody), {
+      status: 500,
+      headers,
+    });
+  }
 
-      if (corsHeaders) {
-        headers.set('Access-Control-Allow-Headers', corsHeaders.join(', '));
-      }
+  /**
+   * Build success response
+   */
+  private buildSuccessResponse(headers: Headers): Response {
+    const status = this.result!.success ? 200 : 400;
+    return new Response(JSON.stringify(this.result), {
+      status,
+      headers,
+    });
+  }
 
-      if (credentials) {
-        headers.set('Access-Control-Allow-Credentials', 'true');
-      }
-    }
-
-    // Handle errors
-    if (this.error) {
-      const errorBody = this.options.includeErrorDetails
-        ? {
-            error: this.error.message,
-            type: this.error.name,
-            ...(this.error.stack && { stack: this.error.stack }),
-          }
-        : { error: 'Hook execution failed' };
-
-      return new Response(JSON.stringify(errorBody), {
-        status: 500,
-        headers,
-      });
-    }
-
-    // Handle successful results
-    if (this.result) {
-      const status = this.result.success ? 200 : 400;
-      return new Response(JSON.stringify(this.result), {
-        status,
-        headers,
-      });
-    }
-
-    // No result available yet
+  /**
+   * Build no result response
+   */
+  private buildNoResultResponse(headers: Headers): Response {
     return new Response(JSON.stringify({ error: 'No result available' }), {
       status: 500,
       headers,
@@ -255,40 +298,7 @@ export class HttpProtocol implements HookProtocol {
     const headers = new Headers();
 
     if (options.cors) {
-      const {
-        origin,
-        methods,
-        headers: corsHeaders,
-        credentials,
-      } = options.cors;
-
-      if (origin !== undefined) {
-        if (origin === true) {
-          headers.set('Access-Control-Allow-Origin', '*');
-        } else if (typeof origin === 'string') {
-          headers.set('Access-Control-Allow-Origin', origin);
-        } else if (Array.isArray(origin)) {
-          headers.set('Access-Control-Allow-Origin', origin.join(', '));
-        }
-      }
-
-      if (methods) {
-        headers.set('Access-Control-Allow-Methods', methods.join(', '));
-      } else {
-        headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      }
-
-      if (corsHeaders) {
-        headers.set('Access-Control-Allow-Headers', corsHeaders.join(', '));
-      } else {
-        headers.set('Access-Control-Allow-Headers', 'Content-Type');
-      }
-
-      if (credentials) {
-        headers.set('Access-Control-Allow-Credentials', 'true');
-      }
-
-      headers.set('Access-Control-Max-Age', '86400'); // 24 hours
+      HttpProtocol.addOptionsResponseCorsHeaders(headers, options.cors);
     }
 
     return new Response(null, {
@@ -298,57 +308,168 @@ export class HttpProtocol implements HookProtocol {
   }
 
   /**
+   * Add CORS headers for OPTIONS response
+   */
+  private static addOptionsResponseCorsHeaders(
+    headers: Headers,
+    corsConfig: NonNullable<HttpProtocolOptions['cors']>
+  ): void {
+    const { origin, methods, headers: corsHeaders, credentials } = corsConfig;
+
+    HttpProtocol.setOptionsOriginHeader(headers, origin);
+    HttpProtocol.setOptionsMethodsHeader(headers, methods);
+    HttpProtocol.setOptionsHeadersHeader(headers, corsHeaders);
+
+    if (credentials) {
+      headers.set('Access-Control-Allow-Credentials', 'true');
+    }
+
+    headers.set('Access-Control-Max-Age', '86400'); // 24 hours
+  }
+
+  /**
+   * Set origin header for OPTIONS response
+   */
+  private static setOptionsOriginHeader(
+    headers: Headers,
+    origin: string | string[] | boolean | undefined
+  ): void {
+    if (origin === undefined) {
+      return;
+    }
+
+    if (origin === true) {
+      headers.set('Access-Control-Allow-Origin', '*');
+    } else if (typeof origin === 'string') {
+      headers.set('Access-Control-Allow-Origin', origin);
+    } else if (Array.isArray(origin)) {
+      headers.set('Access-Control-Allow-Origin', origin.join(', '));
+    }
+  }
+
+  /**
+   * Set methods header for OPTIONS response
+   */
+  private static setOptionsMethodsHeader(
+    headers: Headers,
+    methods: string[] | undefined
+  ): void {
+    if (methods) {
+      headers.set('Access-Control-Allow-Methods', methods.join(', '));
+    } else {
+      headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    }
+  }
+
+  /**
+   * Set headers header for OPTIONS response
+   */
+  private static setOptionsHeadersHeader(
+    headers: Headers,
+    corsHeaders: string[] | undefined
+  ): void {
+    if (corsHeaders) {
+      headers.set('Access-Control-Allow-Headers', corsHeaders.join(', '));
+    } else {
+      headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    }
+  }
+
+  /**
    * Create typed context from validated Claude input
    */
   private createTypedContext(input: Record<string, unknown>): HookContext {
-    // Extract environment from request headers or provide defaults
     const environment = this.extractEnvironment();
+    const commonProps = this.extractCommonContextProps(input, environment);
 
     if ('tool_name' in input) {
-      // Tool hook context (PreToolUse/PostToolUse)
-      return createToolHookContext(
-        input.hook_event_name as ToolHookEvent,
-        input.tool_name as string,
-        input.tool_input as ToolInput,
-        {
-          sessionId: input.sessionId as SessionId,
-          transcriptPath: input.transcriptPath as TranscriptPath,
-          cwd: input.cwd as DirectoryPath,
-          environment,
-          matcher: input.matcher as string | undefined,
-        },
-        input.tool_response as Record<string, unknown> | undefined
-      );
+      return this.createToolContext(input, commonProps);
     }
 
     if ('prompt' in input) {
-      // User prompt context
-      return createUserPromptContext(input.prompt as string, {
-        sessionId: input.sessionId as SessionId,
-        transcriptPath: input.transcriptPath as TranscriptPath,
-        cwd: input.cwd as DirectoryPath,
-        environment,
-        matcher: input.matcher as string | undefined,
-      });
+      return this.createPromptContext(input, commonProps);
     }
 
     if ('notification' in input) {
-      // Notification context
-      return createNotificationContext(
-        input.hook_event_name as NotificationEvent,
-        {
-          sessionId: input.sessionId as SessionId,
-          transcriptPath: input.transcriptPath as TranscriptPath,
-          cwd: input.cwd as DirectoryPath,
-          environment,
-          matcher: input.matcher as string | undefined,
-        },
-        input.notification as string | undefined
-      );
+      return this.createNotificationContext(input, commonProps);
     }
 
     throw new ProtocolParseError(
       `Unsupported hook event: ${String(input.hook_event_name)}`
+    );
+  }
+
+  /**
+   * Extract common context properties
+   */
+  private extractCommonContextProps(
+    input: Record<string, unknown>,
+    environment: Record<string, string>
+  ) {
+    return {
+      sessionId: input.sessionId as SessionId,
+      transcriptPath: input.transcriptPath as TranscriptPath,
+      cwd: input.cwd as DirectoryPath,
+      environment,
+      matcher: input.matcher as string | undefined,
+    };
+  }
+
+  /**
+   * Create tool hook context
+   */
+  private createToolContext(
+    input: Record<string, unknown>,
+    commonProps: {
+      sessionId: SessionId;
+      transcriptPath: TranscriptPath;
+      cwd: DirectoryPath;
+      environment: Record<string, string>;
+      matcher?: string;
+    }
+  ): HookContext {
+    return createToolHookContext(
+      input.hook_event_name as ToolHookEvent,
+      input.tool_name as string,
+      input.tool_input as ToolInput,
+      commonProps,
+      input.tool_response as Record<string, unknown> | undefined
+    );
+  }
+
+  /**
+   * Create user prompt context
+   */
+  private createPromptContext(
+    input: Record<string, unknown>,
+    commonProps: {
+      sessionId: SessionId;
+      transcriptPath: TranscriptPath;
+      cwd: DirectoryPath;
+      environment: Record<string, string>;
+      matcher?: string;
+    }
+  ): HookContext {
+    return createUserPromptContext(input.prompt as string, commonProps);
+  }
+
+  /**
+   * Create notification context
+   */
+  private createNotificationContext(
+    input: Record<string, unknown>,
+    commonProps: {
+      sessionId: SessionId;
+      transcriptPath: TranscriptPath;
+      cwd: DirectoryPath;
+      environment: Record<string, string>;
+      matcher?: string;
+    }
+  ): HookContext {
+    return createNotificationContext(
+      input.hook_event_name as NotificationEvent,
+      commonProps,
+      input.notification as string | undefined
     );
   }
 

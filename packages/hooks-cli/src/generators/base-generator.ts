@@ -2,7 +2,10 @@
  * Base generator class
  */
 
-import { writeFileWithChecks, type FileWriteOptions } from '../utils/file-operations.js';
+import {
+  type FileWriteOptions,
+  writeFileWithChecks,
+} from '../utils/file-operations.js';
 
 export interface GeneratorOptions {
   workspacePath: string;

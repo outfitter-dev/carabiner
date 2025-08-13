@@ -2,7 +2,9 @@
  * Validation hook template
  */
 
-export const validationHookTypeScript = (name: string): string => `#!/usr/bin/env bun
+export const validationHookTypeScript = (
+  name: string
+): string => `#!/usr/bin/env bun
 
 import { runClaudeHook, HookResults, type HookContext } from '@outfitter/hooks-core';
 import { validateHookContext } from '@outfitter/hooks-validators';
@@ -59,7 +61,9 @@ if (import.meta.main) {
 export { handler };
 `;
 
-export const validationHookJavaScript = (name: string): string => `#!/usr/bin/env bun
+export const validationHookJavaScript = (
+  name: string
+): string => `#!/usr/bin/env bun
 
 const { runClaudeHook, HookResults } = require('@outfitter/hooks-core');
 const { validateHookContext } = require('@outfitter/hooks-validators');

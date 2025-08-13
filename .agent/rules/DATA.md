@@ -90,7 +90,11 @@ const emailSchema = z.string().email().brand('Email');
 type Email = z.infer<typeof emailSchema>;
 
 // Validate and transform
-const dateSchema = z.string().transform((str) => new Date(str));
+const dateSchema = z.string().datetime().transform((str) => new Date(str));
+// or
+const dateSchema = z.string()
+  .refine((s) => !Number.isNaN(Date.parse(s)), { message: 'Invalid date' })
+  .transform((s) => new Date(s));
 ```
 
 ### Runtime Validation
@@ -202,7 +206,7 @@ class MemoryCache<T> {
 
   // Auto-cleanup expired entries
   startCleanup(intervalMs = 60000) {
-    setInterval(() => {
+    const handle = setInterval(() => {
       const now = Date.now();
       for (const [key, item] of this.cache.entries()) {
         if (now > item.expires) {
@@ -210,6 +214,7 @@ class MemoryCache<T> {
         }
       }
     }, intervalMs);
+    return () => clearInterval(handle);
   }
 }
 ```

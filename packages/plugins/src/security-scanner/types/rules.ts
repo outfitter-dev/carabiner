@@ -23,7 +23,7 @@ export interface SecurityRule {
 /**
  * Rule category for grouping rules
  */
-export type RuleCategory = 
+export type RuleCategory =
   | 'secrets'
   | 'injection'
   | 'dangerous-commands'

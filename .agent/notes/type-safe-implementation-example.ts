@@ -3,6 +3,7 @@
  * Demonstrates strict TypeScript patterns for the refactored architecture
  */
 
+import type { LiteralUnion } from 'type-fest';
 import { z } from 'zod';
 
 // ============================================================================
@@ -56,7 +57,7 @@ export const TOOL_NAMES = [
   'NotebookEdit',
 ] as const;
 
-export type ToolName = (typeof TOOL_NAMES)[number];
+export type ToolName = LiteralUnion<(typeof TOOL_NAMES)[number], string>;
 
 // Event types with discriminated unions
 export type HookEvent =

@@ -4,7 +4,9 @@
 
 import { pascalCase } from '../../utils/case-conversion.js';
 
-export const testTypeScript = (name: string): string => `import { test, expect, describe, beforeEach } from 'bun:test';
+export const testTypeScript = (
+  name: string
+): string => `import { test, expect, describe, beforeEach } from 'bun:test';
 import { 
   createMockContext,
   createMockContextFor,
@@ -92,7 +94,9 @@ describe('${name} hook tests', () => {
 });
 `;
 
-export const testJavaScript = (name: string): string => `const { test, expect, describe, beforeEach } = require('bun:test');
+export const testJavaScript = (
+  name: string
+): string => `const { test, expect, describe, beforeEach } = require('bun:test');
 const { 
   createMockContext,
   createMockContextFor,

@@ -3,8 +3,8 @@
  * @description Command security analysis
  */
 
-import type { SecurityRule, SecurityFinding } from '../types/index.js';
 import { executeRegex, matchesToFindings } from '../matchers/regex-matcher.js';
+import type { SecurityFinding, SecurityRule } from '../types/index.js';
 
 /**
  * Analyze bash command for security issues
@@ -14,9 +14,9 @@ export function analyzeCommand(
   rules: SecurityRule[]
 ): SecurityFinding[] {
   const findings: SecurityFinding[] = [];
-  const commandRules = rules.filter(rule => 
-    rule.category === 'dangerous-commands' || 
-    rule.category === 'injection'
+  const commandRules = rules.filter(
+    (rule) =>
+      rule.category === 'dangerous-commands' || rule.category === 'injection'
   );
 
   for (const rule of commandRules) {
@@ -36,8 +36,8 @@ export function isDangerousCommand(command: string): boolean {
     /rm\s+-rf\s+\//,
     /dd\s+if=\/dev\/zero/,
     /:\(\)\{\|/,
-    /shutdown|halt|reboot/
+    /shutdown|halt|reboot/,
   ];
 
-  return dangerousPatterns.some(pattern => pattern.test(command));
+  return dangerousPatterns.some((pattern) => pattern.test(command));
 }

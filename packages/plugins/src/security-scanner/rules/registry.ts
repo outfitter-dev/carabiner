@@ -4,9 +4,9 @@
  */
 
 import type { SecurityRule } from '../types/index.js';
-import { secretRules } from './secrets.js';
-import { injectionRules } from './injection.js';
 import { commandRules } from './commands.js';
+import { injectionRules } from './injection.js';
+import { secretRules } from './secrets.js';
 
 /**
  * Additional built-in security rules
@@ -77,16 +77,16 @@ export class SecurityRuleRegistry {
    * Get rules by category
    */
   getRulesByCategory(category: string): SecurityRule[] {
-    return this.rules.filter(rule => rule.category === category);
+    return this.rules.filter((rule) => rule.category === category);
   }
 
   /**
    * Get command-specific rules
    */
   getCommandRules(): SecurityRule[] {
-    return this.rules.filter(rule => 
-      rule.category === 'dangerous-commands' || 
-      rule.category === 'injection'
+    return this.rules.filter(
+      (rule) =>
+        rule.category === 'dangerous-commands' || rule.category === 'injection'
     );
   }
 

@@ -3,7 +3,7 @@
  * @description Security rules exports
  */
 
-export { secretRules } from './secrets.js';
-export { injectionRules } from './injection.js';
 export { commandRules } from './commands.js';
-export { SecurityRuleRegistry, ruleRegistry } from './registry.js';
+export { injectionRules } from './injection.js';
+export { ruleRegistry, SecurityRuleRegistry } from './registry.js';
+export { secretRules } from './secrets.js';

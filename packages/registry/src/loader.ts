@@ -191,16 +191,18 @@ export class PluginLoader {
 
           const subDiscoveries = await this.discoverInPath(fullPath, depth + 1);
           discoveries.push(...subDiscoveries);
-        } else if (entry.isFile()) {
-          // Check if file matches include patterns and not excluded
-          if (this.shouldInclude(fullPath) && !this.shouldExclude(fullPath)) {
-            const stats = await stat(fullPath);
-            discoveries.push({
-              path: fullPath,
-              name: this.extractPluginName(fullPath),
-              lastModified: stats.mtime,
-            });
-          }
+        } else if (
+          entry.isFile() &&
+          this.shouldInclude(fullPath) &&
+          !this.shouldExclude(fullPath)
+        ) {
+          // File matches include patterns and not excluded
+          const stats = await stat(fullPath);
+          discoveries.push({
+            path: fullPath,
+            name: this.extractPluginName(fullPath),
+            lastModified: stats.mtime,
+          });
         }
       }
     } catch (error) {
@@ -474,7 +476,11 @@ export class PluginLoader {
       });
 
       const debouncedHandler = this.debounce(
-        this.handleFileChange.bind(this),
+        (eventType: string, filePath: string) => {
+          this.handleFileChange(eventType, filePath).catch((error) => {
+            console.error('[PluginLoader] Error handling file change:', error);
+          });
+        },
         this.options.hotReloadDebounce
       );
 
@@ -600,13 +606,13 @@ export class PluginLoader {
     }
   }
 
-  private debounce<T extends (...args: any[]) => any>(
-    func: T,
+  private debounce<Args extends unknown[]>(
+    func: (...args: Args) => void,
     wait: number
-  ): (...args: Parameters<T>) => void {
+  ): (...args: Args) => void {
     let timeout: NodeJS.Timeout;
 
-    return (...args: Parameters<T>) => {
+    return (...args: Args) => {
       clearTimeout(timeout);
       timeout = setTimeout(() => func(...args), wait);
     };

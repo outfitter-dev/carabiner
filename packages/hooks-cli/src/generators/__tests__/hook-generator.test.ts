@@ -1,9 +1,9 @@
-import { test, expect, describe, beforeEach, afterEach } from 'bun:test';
-import { unlink, rmdir } from 'node:fs/promises';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { existsSync } from 'node:fs';
+import { rmdir, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { HookGenerator } from '../hook-generator.js';
 import type { HookGeneratorOptions } from '../hook-generator.js';
+import { HookGenerator } from '../hook-generator.js';
 
 describe('HookGenerator', () => {
   const testWorkspace = '/tmp/hooks-cli-test';
@@ -61,7 +61,10 @@ describe('HookGenerator', () => {
   });
 
   test('generates validation hook template', async () => {
-    const validationOptions = { ...testOptions, template: 'validation' as const };
+    const validationOptions = {
+      ...testOptions,
+      template: 'validation' as const,
+    };
     const generator = new HookGenerator(validationOptions);
     await generator.generate();
 

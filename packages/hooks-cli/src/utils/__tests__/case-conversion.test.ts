@@ -1,5 +1,10 @@
-import { test, expect, describe } from 'bun:test';
-import { pascalCase, camelCase, kebabCase, snakeCase } from '../case-conversion.js';
+import { describe, expect, test } from 'bun:test';
+import {
+  camelCase,
+  kebabCase,
+  pascalCase,
+  snakeCase,
+} from '../case-conversion.js';
 
 describe('case conversion utilities', () => {
   describe('pascalCase', () => {

@@ -467,7 +467,9 @@ export default {
         createTestPlugin(`concurrent-${i}`)
       );
 
-      plugins.forEach((plugin) => registry.register(plugin));
+      for (const plugin of plugins) {
+        registry.register(plugin);
+      }
 
       const context = createMockContext();
       const results = await registry.execute(context);

@@ -2,19 +2,26 @@
  * Template registry
  */
 
-import { basicHookTypeScript, basicHookJavaScript } from './hook/basic.js';
-import { validationHookTypeScript, validationHookJavaScript } from './hook/validation.js';
-import { securityHookTypeScript, securityHookJavaScript } from './hook/security.js';
-import { validatorTypeScript, validatorJavaScript } from './validator/index.js';
-import { middlewareTypeScript, middlewareJavaScript } from './middleware/index.js';
-import { testTypeScript, testJavaScript } from './test/index.js';
+import { basicHookJavaScript, basicHookTypeScript } from './hook/basic.js';
+import {
+  securityHookJavaScript,
+  securityHookTypeScript,
+} from './hook/security.js';
+import {
+  validationHookJavaScript,
+  validationHookTypeScript,
+} from './hook/validation.js';
+import {
+  middlewareJavaScript,
+  middlewareTypeScript,
+} from './middleware/index.js';
+import { testJavaScript, testTypeScript } from './test/index.js';
+import { validatorJavaScript, validatorTypeScript } from './validator/index.js';
 
 export type TemplateType = 'hook' | 'validator' | 'middleware' | 'test';
 export type HookTemplateVariant = 'basic' | 'validation' | 'security';
 
-export interface TemplateFunction {
-  (name: string): string;
-}
+export type TemplateFunction = (name: string) => string;
 
 export interface TemplateRegistry {
   hook: {
@@ -87,11 +94,13 @@ export function getTemplate(
 ): TemplateFunction {
   if (type === 'hook') {
     if (!variant) {
-      throw new Error('Hook template requires a variant (basic, validation, security)');
+      throw new Error(
+        'Hook template requires a variant (basic, validation, security)'
+      );
     }
     return templates.hook[variant][language];
   }
-  
+
   return templates[type][language];
 }
 

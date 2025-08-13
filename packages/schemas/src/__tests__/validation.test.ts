@@ -124,7 +124,7 @@ describe('validateClaudeInput', () => {
 
   test('handles unknown errors gracefully', () => {
     // Mock a scenario where an unexpected error occurs
-    const input = null;
+    const input: unknown = null;
 
     const result = validateClaudeInput(input);
 
@@ -299,7 +299,7 @@ describe('validateCompleteHookInput', () => {
     expect(result.success).toBe(false);
     expect(
       result.errors.some(
-        (e) => e instanceof ValidationError && e.field === 'tool_input'
+        (e) => e instanceof ValidationError && e.message.includes('tool_input')
       )
     ).toBe(true);
   });
@@ -338,7 +338,12 @@ describe('ValidationUtils', () => {
     });
 
     test('returns error messages for invalid input', () => {
-      const input = { session_id: 'ab' }; // too short - caught by schema validation
+      const input = {
+        session_id: 'ab', // too short - caught by schema validation
+        transcript_path: '/tmp/transcript.md',
+        cwd: '/project',
+        hook_event_name: 'SessionStart',
+      };
 
       const errors = ValidationUtils.getErrors(input);
       expect(errors.length).toBeGreaterThan(0);

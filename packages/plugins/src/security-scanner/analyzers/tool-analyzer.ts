@@ -4,7 +4,6 @@
  */
 
 import { readFile } from 'node:fs/promises';
-import type { SecurityFinding } from '../types/index.js';
 
 /**
  * Tool input interface for analysis
@@ -39,7 +38,7 @@ export async function extractEditContent(
 ): Promise<string> {
   try {
     const existingContent = await readFile(filePath, 'utf-8');
-    
+
     const oldString = toolInput.old_string;
     const newString = toolInput.new_string;
     const replaceAll = toolInput.replace_all;
@@ -47,11 +46,10 @@ export async function extractEditContent(
     if (oldString && newString !== undefined) {
       if (replaceAll) {
         return existingContent.replaceAll(oldString, newString);
-      } else {
-        return existingContent.replace(oldString, newString);
       }
+      return existingContent.replace(oldString, newString);
     }
-    
+
     return existingContent;
   } catch {
     // File doesn't exist or can't be read

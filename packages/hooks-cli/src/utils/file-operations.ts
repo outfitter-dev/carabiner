@@ -3,7 +3,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 export interface FileWriteOptions {

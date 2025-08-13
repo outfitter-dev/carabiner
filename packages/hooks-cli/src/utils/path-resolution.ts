@@ -34,6 +34,8 @@ export function getFilePath(
   extension: string,
   suffix?: string
 ): string {
-  const fileName = suffix ? `${name}.${suffix}.${extension}` : `${name}.${extension}`;
+  const fileName = suffix
+    ? `${name}.${suffix}.${extension}`
+    : `${name}.${extension}`;
   return join(directory, fileName);
 }

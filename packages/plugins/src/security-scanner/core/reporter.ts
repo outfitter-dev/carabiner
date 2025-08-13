@@ -3,7 +3,7 @@
  * @description Security finding reporting and formatting
  */
 
-import type { SecurityFinding, Severity } from '../types/index.js';
+import type { SecurityFinding } from '../types/index.js';
 
 /**
  * Security finding reporter
@@ -56,15 +56,15 @@ export class SecurityReporter {
   private logSingleFinding(finding: SecurityFinding): void {
     console.warn(`  ${finding.severity.toUpperCase()}: ${finding.title}`);
     console.warn(`    ${finding.description}`);
-    
+
     if (finding.line) {
       console.warn(
         `    Location: line ${finding.line}, column ${finding.column}`
       );
     }
-    
+
     console.warn(`    Matched: "${finding.matched}"`);
-    
+
     if (finding.remediation) {
       console.warn(`    Fix: ${finding.remediation}`);
     }
@@ -78,8 +78,8 @@ export class SecurityReporter {
     blockOnCritical: boolean,
     blockOnHigh: boolean
   ): boolean {
-    const criticalFindings = findings.filter(f => f.severity === 'critical');
-    const highFindings = findings.filter(f => f.severity === 'high');
+    const criticalFindings = findings.filter((f) => f.severity === 'critical');
+    const highFindings = findings.filter((f) => f.severity === 'high');
 
     return (
       (blockOnCritical && criticalFindings.length > 0) ||
@@ -91,8 +91,8 @@ export class SecurityReporter {
    * Generate metadata for findings
    */
   generateMetadata(findings: SecurityFinding[], blocked: boolean) {
-    const criticalFindings = findings.filter(f => f.severity === 'critical');
-    const highFindings = findings.filter(f => f.severity === 'high');
+    const criticalFindings = findings.filter((f) => f.severity === 'critical');
+    const highFindings = findings.filter((f) => f.severity === 'high');
 
     return {
       findings: findings.map((f) => ({
@@ -115,11 +115,10 @@ export class SecurityReporter {
    */
   generateMessage(findings: SecurityFinding[], blocked: boolean): string {
     const summary = this.formatFindings(findings);
-    
+
     if (blocked) {
       return `🔒 Security issues found - operation blocked: ${summary}`;
-    } else {
-      return `⚠️  Security issues found: ${summary}`;
     }
+    return `⚠️  Security issues found: ${summary}`;
   }
 }

@@ -3,9 +3,9 @@
  * @description Configuration management for security scanner
  */
 
+import { matchesPatterns } from '../matchers/pattern-matcher.js';
 import type { SecurityScannerConfig } from '../types/index.js';
 import { SecurityScannerConfigSchema } from '../types/index.js';
-import { matchesPatterns } from '../matchers/pattern-matcher.js';
 
 /**
  * Configuration manager for security scanner
@@ -27,9 +27,9 @@ export class SecurityScannerConfigManager {
   /**
    * Check if file should be scanned based on include/exclude patterns
    */
-  shouldScanFile(filePath: string): { 
-    shouldScan: boolean; 
-    reason?: string 
+  shouldScanFile(filePath: string): {
+    shouldScan: boolean;
+    reason?: string;
   } {
     // Check include patterns
     if (
@@ -38,7 +38,7 @@ export class SecurityScannerConfigManager {
     ) {
       return {
         shouldScan: false,
-        reason: 'File not in include patterns'
+        reason: 'File not in include patterns',
       };
     }
 
@@ -46,7 +46,7 @@ export class SecurityScannerConfigManager {
     if (matchesPatterns(filePath, this.config.excludePatterns)) {
       return {
         shouldScan: false,
-        reason: 'File matches exclude pattern'
+        reason: 'File matches exclude pattern',
       };
     }
 

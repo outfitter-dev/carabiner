@@ -265,21 +265,11 @@ export class PluginRegistry {
     context: HookContext,
     options: Partial<PluginExecutionOptions> = {}
   ): Promise<PluginResult[]> {
-    const execOptions: PluginExecutionOptions = {
-      timeout: this.options.defaultTimeout,
-      collectMetrics: this.options.collectMetrics,
-      continueOnFailure: this.options.continueOnFailure,
-      ...options,
-    };
-
+    const execOptions = this.buildExecutionOptions(options);
     const applicablePlugins = this.getApplicablePlugins(context);
     const results: PluginResult[] = [];
 
-    if (this.options.logLevel === 'debug') {
-      console.log(
-        `[Registry] Executing ${applicablePlugins.length} plugins for ${context.event}`
-      );
-    }
+    this.logPluginExecution(applicablePlugins, context);
 
     for (let i = 0; i < applicablePlugins.length; i++) {
       const plugin = applicablePlugins[i];
@@ -288,60 +278,22 @@ export class PluginRegistry {
       }
 
       const config = this.configs.get(plugin.name);
-
       if (!config?.enabled) {
         continue;
       }
 
-      try {
-        const result = await this.executePlugin(
-          plugin,
-          context,
-          config,
-          execOptions,
-          {
-            context,
-            config: config.config,
-            registry: this,
-            plugins: applicablePlugins,
-            index: i,
-            previousResults: results,
-          }
-        );
+      const shouldContinue = await this.executePluginStep(
+        plugin,
+        context,
+        config,
+        execOptions,
+        applicablePlugins,
+        i,
+        results
+      );
 
-        results.push(result);
-        this.emitEvent({
-          type: 'plugin-executed',
-          plugin,
-          result,
-          context,
-          timestamp: new Date(),
-        });
-
-        // Stop on blocking failure
-        if (!result.success && result.block && !execOptions.continueOnFailure) {
-          if (this.options.logLevel !== 'silent') {
-            console.warn(
-              `[Registry] Plugin ${plugin.name} blocked execution: ${result.message}`
-            );
-          }
-          break;
-        }
-      } catch (error) {
-        const errorResult = this.createErrorResult(plugin, error as Error);
-        results.push(errorResult);
-
-        this.emitEvent({
-          type: 'plugin-failed',
-          plugin,
-          error: error as Error,
-          context,
-          timestamp: new Date(),
-        });
-
-        if (!execOptions.continueOnFailure) {
-          break;
-        }
+      if (!shouldContinue) {
+        break;
       }
     }
 
@@ -407,6 +359,130 @@ export class PluginRegistry {
     }
   }
 
+  /**
+   * Build execution options from partial options
+   */
+  private buildExecutionOptions(
+    options: Partial<PluginExecutionOptions>
+  ): PluginExecutionOptions {
+    return {
+      timeout: this.options.defaultTimeout,
+      collectMetrics: this.options.collectMetrics,
+      continueOnFailure: this.options.continueOnFailure,
+      ...options,
+    };
+  }
+
+  /**
+   * Log plugin execution if debug mode is enabled
+   */
+  private logPluginExecution(
+    applicablePlugins: HookPlugin[],
+    context: HookContext
+  ): void {
+    if (this.options.logLevel === 'debug') {
+      console.log(
+        `[Registry] Executing ${applicablePlugins.length} plugins for ${context.event}`
+      );
+    }
+  }
+
+  /**
+   * Execute a single plugin step and handle results/errors
+   */
+  private async executePluginStep(
+    plugin: HookPlugin,
+    context: HookContext,
+    config: PluginConfig,
+    execOptions: PluginExecutionOptions,
+    applicablePlugins: HookPlugin[],
+    index: number,
+    results: PluginResult[]
+  ): Promise<boolean> {
+    try {
+      const result = await this.executePlugin(
+        plugin,
+        context,
+        config,
+        execOptions,
+        {
+          context,
+          config: config.config,
+          registry: this,
+          plugins: applicablePlugins,
+          index,
+          previousResults: results,
+        }
+      );
+
+      results.push(result);
+      this.emitEvent({
+        type: 'plugin-executed',
+        plugin,
+        result,
+        context,
+        timestamp: new Date(),
+      });
+
+      return this.shouldContinueAfterSuccess(result, execOptions, plugin);
+    } catch (error) {
+      return this.handlePluginExecutionError(
+        plugin,
+        error as Error,
+        context,
+        execOptions,
+        results
+      );
+    }
+  }
+
+  /**
+   * Check if execution should continue after successful plugin execution
+   */
+  private shouldContinueAfterSuccess(
+    result: PluginResult,
+    execOptions: PluginExecutionOptions,
+    plugin: HookPlugin
+  ): boolean {
+    if (
+      !result.success &&
+      result.block &&
+      !(execOptions.continueOnFailure ?? false)
+    ) {
+      if (this.options.logLevel !== 'silent') {
+        console.warn(
+          `[Registry] Plugin ${plugin.name} blocked execution: ${result.message}`
+        );
+      }
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Handle plugin execution error and return whether to continue
+   */
+  private handlePluginExecutionError(
+    plugin: HookPlugin,
+    error: Error,
+    context: HookContext,
+    execOptions: PluginExecutionOptions,
+    results: PluginResult[]
+  ): boolean {
+    const errorResult = this.createErrorResult(plugin, error);
+    results.push(errorResult);
+
+    this.emitEvent({
+      type: 'plugin-failed',
+      plugin,
+      error,
+      context,
+      timestamp: new Date(),
+    });
+
+    return execOptions.continueOnFailure ?? false;
+  }
+
   // === Plugin Discovery and Management ===
 
   /**
@@ -421,32 +497,84 @@ export class PluginRegistry {
         continue;
       }
 
-      // Check event filtering
-      const events = config.events || plugin.events;
-      if (events.length > 0 && !events.includes(context.event)) {
-        continue;
+      if (this.isPluginApplicableToContext(plugin, config, context)) {
+        applicable.push({ plugin, priority: config.priority });
       }
-
-      // Check tool filtering
-      if (config.tools && config.tools.length > 0) {
-        const toolName = 'toolName' in context ? context.toolName : null;
-        if (!(toolName && config.tools.includes(toolName))) {
-          continue;
-        }
-      }
-
-      // Check conditions
-      if (
-        config.conditions &&
-        !this.checkConditions(context, config.conditions)
-      ) {
-        continue;
-      }
-
-      applicable.push({ plugin, priority: config.priority });
     }
 
-    // Sort by priority (higher priority first)
+    return this.sortPluginsByPriority(applicable);
+  }
+
+  /**
+   * Check if a plugin is applicable to the given context
+   */
+  private isPluginApplicableToContext(
+    plugin: HookPlugin,
+    config: PluginConfig,
+    context: HookContext
+  ): boolean {
+    if (!this.isEventApplicable(plugin, config, context)) {
+      return false;
+    }
+
+    if (!this.isToolApplicable(config, context)) {
+      return false;
+    }
+
+    if (!this.areConditionsSatisfied(config, context)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if plugin handles the current event
+   */
+  private isEventApplicable(
+    plugin: HookPlugin,
+    config: PluginConfig,
+    context: HookContext
+  ): boolean {
+    const events = config.events || plugin.events;
+    return events.length === 0 || events.includes(context.event);
+  }
+
+  /**
+   * Check if plugin is applicable to the current tool
+   */
+  private isToolApplicable(
+    config: PluginConfig,
+    context: HookContext
+  ): boolean {
+    if (!config.tools || config.tools.length === 0) {
+      return true;
+    }
+
+    const toolName = 'toolName' in context ? context.toolName : null;
+    return !!(toolName && config.tools.includes(toolName));
+  }
+
+  /**
+   * Check if all plugin conditions are satisfied
+   */
+  private areConditionsSatisfied(
+    config: PluginConfig,
+    context: HookContext
+  ): boolean {
+    if (!config.conditions) {
+      return true;
+    }
+
+    return this.checkConditions(context, config.conditions);
+  }
+
+  /**
+   * Sort plugins by priority (higher priority first)
+   */
+  private sortPluginsByPriority(
+    applicable: Array<{ plugin: HookPlugin; priority: number }>
+  ): HookPlugin[] {
     return applicable
       .sort((a, b) => b.priority - a.priority)
       .map((item) => item.plugin);
@@ -492,7 +620,9 @@ export class PluginRegistry {
       return true;
     }
 
-    const contextValue = (context as any)[condition.field];
+    const contextValue = (context as unknown as Record<string, unknown>)[
+      condition.field
+    ];
     return this.compareValues(
       contextValue,
       condition.operator,
@@ -509,7 +639,7 @@ export class PluginRegistry {
     }
 
     const toolValue = condition.field
-      ? (context as any)[condition.field]
+      ? (context as unknown as Record<string, unknown>)[condition.field]
       : context.toolName;
     return this.compareValues(toolValue, condition.operator, condition.value);
   }

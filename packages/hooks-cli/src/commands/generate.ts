@@ -4,12 +4,12 @@
 
 import { BaseCommand, type CliConfig } from '../cli.js';
 import {
+  type GeneratorOptions,
   HookGenerator,
-  ValidatorGenerator,
+  type HookGeneratorOptions,
   MiddlewareGenerator,
   TestGenerator,
-  type HookGeneratorOptions,
-  type GeneratorOptions,
+  ValidatorGenerator,
 } from '../generators/index.js';
 import type { HookTemplateVariant } from '../templates/index.js';
 
@@ -41,7 +41,9 @@ export class GenerateCommand extends BaseCommand {
 
     const [type, name] = positionals;
     if (!(type && name)) {
-      throw new Error('Both type and name are required. Usage: generate <type> <name>');
+      throw new Error(
+        'Both type and name are required. Usage: generate <type> <name>'
+      );
     }
 
     const baseOptions: GeneratorOptions = {
@@ -52,11 +54,19 @@ export class GenerateCommand extends BaseCommand {
     };
 
     const template = this.getStringValue(values.template);
-    const generator = this.createGenerator(type.toLowerCase(), baseOptions, template);
+    const generator = this.createGenerator(
+      type.toLowerCase(),
+      baseOptions,
+      template
+    );
     await generator.generate();
   }
 
-  private createGenerator(type: string, baseOptions: GeneratorOptions, template?: string) {
+  private createGenerator(
+    type: string,
+    baseOptions: GeneratorOptions,
+    template?: string
+  ) {
     switch (type) {
       case 'hook': {
         const hookOptions: HookGeneratorOptions = {

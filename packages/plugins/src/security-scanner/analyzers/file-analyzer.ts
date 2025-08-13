@@ -3,8 +3,12 @@
  * @description File content security analysis
  */
 
-import type { SecurityRule, SecurityFinding, SecurityScannerConfig } from '../types/index.js';
 import { applyRuleToContent } from '../matchers/content-matcher.js';
+import type {
+  SecurityFinding,
+  SecurityRule,
+  SecurityScannerConfig,
+} from '../types/index.js';
 
 /**
  * Analyze file content for security issues

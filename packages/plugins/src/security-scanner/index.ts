@@ -91,6 +91,10 @@ const SecurityScannerConfigSchema = z
         '*.env',
         '*.config',
         '*.conf',
+        '*.pem',
+        '*.key',
+        '*.crt',
+        '*.cert',
       ]),
 
     /** File patterns to exclude from scanning */
@@ -115,7 +119,7 @@ const SecurityScannerConfigSchema = z
     blockOnCritical: z.boolean().default(true),
 
     /** Whether to block on high severity findings */
-    blockOnHigh: z.boolean().default(false),
+    blockOnHigh: z.boolean().default(true),
 
     /** Custom security rules */
     customRules: z
@@ -145,7 +149,7 @@ const SecurityScannerConfigSchema = z
   })
   .default({});
 
-type _SecurityScannerConfig = z.infer<typeof SecurityScannerConfigSchema>;
+type SecurityScannerConfig = z.infer<typeof SecurityScannerConfigSchema>;
 
 /**
  * Built-in security rules
@@ -155,12 +159,13 @@ const BUILT_IN_RULES: SecurityRule[] = [
   {
     id: 'hardcoded-api-key',
     name: 'Hardcoded API Key',
-    pattern: '(api[_-]?key|apikey)\\s*[:=]\\s*["\'][a-zA-Z0-9]{10,}["\']',
+    pattern: '(api[_-]?key|apikey)\\s*[:=]\\s*["\'][a-zA-Z0-9-_]{10,}["\']',
     severity: 'critical',
     category: 'secrets',
     description: 'Hardcoded API key detected',
     remediation:
       'Move API keys to environment variables or secure configuration',
+    flags: 'gi',
   },
   {
     id: 'aws-access-key',
@@ -171,6 +176,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
     description: 'AWS Access Key ID detected',
     remediation:
       'Remove AWS credentials and use IAM roles or environment variables',
+    flags: 'gi',
   },
   {
     id: 'private-key',
@@ -180,6 +186,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
     category: 'secrets',
     description: 'Private key detected',
     remediation: 'Remove private keys from code and store securely',
+    flags: 'gi',
   },
   {
     id: 'password-hardcoded',
@@ -190,6 +197,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
     description: 'Hardcoded password detected',
     remediation:
       'Use environment variables or secure configuration for passwords',
+    flags: 'gi',
   },
   {
     id: 'jwt-token',
@@ -199,6 +207,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
     category: 'secrets',
     description: 'JWT token detected',
     remediation: 'Avoid hardcoding JWT tokens in source code',
+    flags: 'gi',
   },
 
   // Command Injection
@@ -210,16 +219,18 @@ const BUILT_IN_RULES: SecurityRule[] = [
     category: 'injection',
     description: 'Potential command injection vulnerability',
     remediation: 'Sanitize input and use parameterized commands',
+    flags: 'gi',
   },
   {
     id: 'dangerous-bash-commands',
     name: 'Dangerous Bash Commands',
     pattern:
-      '\\b(rm\\s+-rf\\s+/|dd\\s+if=/dev/zero|:\\(\\)\\{\\||shutdown|halt|reboot)\\b',
+      '(rm\\s+-rf\\s+/|dd\\s+if=/dev/zero|shutdown|halt|reboot|chmod\\s+777)',
     severity: 'high',
     category: 'dangerous-commands',
     description: 'Dangerous system command detected',
     remediation: 'Review and secure dangerous system commands',
+    flags: 'gi',
   },
 
   // SQL Injection
@@ -231,17 +242,19 @@ const BUILT_IN_RULES: SecurityRule[] = [
     category: 'injection',
     description: 'Potential SQL injection vulnerability',
     remediation: 'Use parameterized queries or prepared statements',
+    flags: 'gi',
   },
 
   // Insecure Configurations
   {
     id: 'debug-mode',
     name: 'Debug Mode Enabled',
-    pattern: '(debug|DEBUG)\\s*[:=]\\s*(true|True|TRUE|1)',
+    pattern: '(debug)\\s*[:=]\\s*(true|1)',
     severity: 'medium',
     category: 'configuration',
     description: 'Debug mode enabled in configuration',
     remediation: 'Disable debug mode in production environments',
+    flags: 'gi',
   },
   {
     id: 'insecure-http',
@@ -252,6 +265,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
     description: 'Insecure HTTP URL detected',
     remediation: 'Use HTTPS URLs for secure communication',
     fileTypes: ['js', 'ts', 'py', 'java', 'go', 'php'],
+    flags: 'gi',
   },
 
   // Crypto Issues
@@ -263,6 +277,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
     category: 'cryptography',
     description: 'Weak cryptographic algorithm detected',
     remediation: 'Use stronger cryptographic algorithms like SHA-256 or AES',
+    flags: 'gi',
   },
 
   // File System Issues
@@ -274,6 +289,7 @@ const BUILT_IN_RULES: SecurityRule[] = [
     category: 'path-traversal',
     description: 'Potential path traversal vulnerability',
     remediation: 'Validate and sanitize file paths',
+    flags: 'gi',
   },
 ];
 
@@ -289,12 +305,15 @@ function getSeverityLevel(severity: Severity): number {
  * Check if file matches patterns
  */
 function matchesPatterns(filePath: string, patterns: string[]): boolean {
+  // Extract just the filename from the path for pattern matching
+  const fileName = filePath.split('/').pop() || filePath;
+
   return patterns.some((pattern) => {
     const regex = new RegExp(
-      pattern.replace(/\*/g, '.*').replace(/\?/g, '.'),
+      `^${pattern.replace(/\*/g, '.*').replace(/\?/g, '.')}$`,
       'i'
     );
-    return regex.test(filePath);
+    return regex.test(fileName);
   });
 }
 
@@ -446,6 +465,327 @@ function formatFindings(findings: SecurityFinding[]): string {
   return summary;
 }
 
+// Helper functions that operate on plugin context
+
+/**
+ * Validate if context is applicable for security scanning
+ */
+function isValidContext(context: HookContext): boolean {
+  if (context.event !== 'PreToolUse' || !('toolName' in context)) {
+    return false;
+  }
+
+  const toolName = context.toolName;
+  return ['Bash', 'Write', 'Edit', 'MultiEdit'].includes(toolName);
+}
+
+/**
+ * Create a success result with plugin metadata
+ */
+function createSuccessResult(
+  pluginName: string,
+  pluginVersion: string,
+  metadata?: Record<string, unknown>
+): PluginResult {
+  return {
+    success: true,
+    pluginName,
+    pluginVersion,
+    ...(metadata && { metadata }),
+  };
+}
+
+/**
+ * Create an error result
+ */
+function createErrorResult(
+  pluginName: string,
+  pluginVersion: string,
+  error: unknown
+): PluginResult {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  return {
+    success: false,
+    pluginName,
+    pluginVersion,
+    message: `Security scan failed: ${errorMessage}`,
+    metadata: { error: errorMessage },
+  };
+}
+
+/**
+ * Check if file should be scanned based on patterns
+ */
+function shouldScanFile(
+  filePath: string,
+  config: SecurityScannerConfig,
+  pluginName: string,
+  pluginVersion: string
+): PluginResult | null {
+  // Check include patterns
+  if (
+    config.includePatterns.length > 0 &&
+    !matchesPatterns(filePath, config.includePatterns)
+  ) {
+    return createSuccessResult(pluginName, pluginVersion, {
+      skipped: true,
+      reason: 'File not in include patterns',
+    });
+  }
+
+  // Check exclude patterns
+  if (matchesPatterns(filePath, config.excludePatterns)) {
+    return createSuccessResult(pluginName, pluginVersion, {
+      skipped: true,
+      reason: 'File matches exclude pattern',
+    });
+  }
+
+  return null; // Should scan
+}
+
+/**
+ * Get content for Edit tool operations
+ */
+async function getEditContent(
+  filePath: string,
+  toolInput: Record<string, unknown>
+): Promise<string> {
+  try {
+    const existingContent = await readFile(filePath, 'utf-8');
+    const oldString = toolInput?.old_string as string;
+    const newString = toolInput?.new_string as string;
+    const replaceAll = toolInput?.replace_all as boolean;
+
+    if (oldString && newString !== undefined) {
+      return replaceAll
+        ? existingContent.replaceAll(oldString, newString)
+        : existingContent.replace(oldString, newString);
+    }
+
+    return existingContent;
+  } catch (_error) {
+    // File doesn't exist or can't be read - use new content if available
+    return (toolInput?.content as string) || '';
+  }
+}
+
+/**
+ * Get content to scan based on tool type
+ */
+async function getContentToScan(
+  toolName: string,
+  filePath: string,
+  toolInput: Record<string, unknown>
+): Promise<string> {
+  if (toolName === 'Write') {
+    return (toolInput?.content as string) || '';
+  }
+
+  if (toolName === 'Edit') {
+    return getEditContent(filePath, toolInput);
+  }
+
+  if (toolName === 'MultiEdit') {
+    // For MultiEdit, scan existing content (complex edit simulation not implemented)
+    try {
+      return await readFile(filePath, 'utf-8');
+    } catch (_error) {
+      return (toolInput?.content as string) || '';
+    }
+  }
+
+  return '';
+}
+
+/**
+ * Scan bash command for security issues
+ */
+function scanBashCommand(
+  toolInput: Record<string, unknown>,
+  rules: SecurityRule[]
+): SecurityFinding[] {
+  const command = toolInput?.command as string;
+  return command ? scanCommand(command, rules) : [];
+}
+
+/**
+ * Scan file operation for security issues
+ */
+async function scanFileOperation(
+  toolName: string,
+  toolInput: Record<string, unknown>,
+  rules: SecurityRule[],
+  config: SecurityScannerConfig,
+  pluginName: string,
+  pluginVersion: string
+): Promise<SecurityFinding[] | PluginResult> {
+  const filePath = toolInput?.file_path as string;
+  if (!filePath) {
+    return [];
+  }
+
+  // Check if file should be scanned
+  const skipResult = shouldScanFile(
+    filePath,
+    config,
+    pluginName,
+    pluginVersion
+  );
+  if (skipResult) {
+    return skipResult; // Return skip result directly
+  }
+
+  const content = await getContentToScan(toolName, filePath, toolInput);
+  if (!content) {
+    return [];
+  }
+
+  // Check file size limit
+  if (content.length > config.maxFileSize) {
+    return {
+      success: true,
+      pluginName,
+      pluginVersion,
+      message: `File too large to scan (${content.length} > ${config.maxFileSize} bytes)`,
+      metadata: { skipped: true, reason: 'File too large' },
+    };
+  }
+
+  return scanContent(content, filePath, rules, config);
+}
+
+/**
+ * Scan for security issues based on tool type
+ */
+async function scanForSecurityIssues(
+  context: HookContext,
+  config: SecurityScannerConfig,
+  rules: SecurityRule[],
+  pluginName: string,
+  pluginVersion: string
+): Promise<SecurityFinding[] | PluginResult> {
+  const toolContext = context as HookContext & {
+    toolInput: Record<string, unknown>;
+  };
+  const { toolName } = context;
+  const { toolInput } = toolContext;
+
+  // Handle bash commands
+  if (toolName === 'Bash' && config.scanCommands) {
+    return scanBashCommand(toolInput, rules);
+  }
+
+  // Handle file operations
+  if (['Write', 'Edit', 'MultiEdit'].includes(toolName) && config.scanFiles) {
+    return scanFileOperation(
+      toolName,
+      toolInput,
+      rules,
+      config,
+      pluginName,
+      pluginVersion
+    );
+  }
+
+  return [];
+}
+
+/**
+ * Log security findings to console
+ */
+function logFindings(findings: SecurityFinding[]): void {
+  console.warn(`[SecurityScanner] ${formatFindings(findings)}`);
+
+  for (const finding of findings) {
+    console.warn(`  ${finding.severity.toUpperCase()}: ${finding.title}`);
+    console.warn(`    ${finding.description}`);
+    if (finding.line) {
+      console.warn(
+        `    Location: line ${finding.line}, column ${finding.column}`
+      );
+    }
+    console.warn(`    Matched: "${finding.matched}"`);
+    if (finding.remediation) {
+      console.warn(`    Fix: ${finding.remediation}`);
+    }
+  }
+}
+
+/**
+ * Determine if findings should block the operation
+ */
+function shouldBlockOperation(
+  findings: SecurityFinding[],
+  config: SecurityScannerConfig
+): boolean {
+  const criticalFindings = findings.filter((f) => f.severity === 'critical');
+  const highFindings = findings.filter((f) => f.severity === 'high');
+
+  return (
+    (config.blockOnCritical && criticalFindings.length > 0) ||
+    (config.blockOnHigh && highFindings.length > 0)
+  );
+}
+
+/**
+ * Process findings and create appropriate result
+ */
+function processFindings(
+  findings: SecurityFinding[],
+  config: SecurityScannerConfig,
+  pluginName: string,
+  pluginVersion: string
+): PluginResult {
+  // No findings - success
+  if (findings.length === 0) {
+    return {
+      success: true,
+      pluginName,
+      pluginVersion,
+      message: 'No security issues detected',
+      metadata: { scanned: true, findings: [] },
+    };
+  }
+
+  // Log findings if configured
+  if (config.logFindings) {
+    logFindings(findings);
+  }
+
+  // Determine if operation should be blocked
+  const shouldBlock = shouldBlockOperation(findings, config);
+  const criticalFindings = findings.filter((f) => f.severity === 'critical');
+  const highFindings = findings.filter((f) => f.severity === 'high');
+
+  const summary = formatFindings(findings);
+  const message = shouldBlock
+    ? `🔒 Security issues found - operation blocked: ${summary}`
+    : `⚠️  Security issues found: ${summary}`;
+
+  return {
+    success: !shouldBlock,
+    block: shouldBlock,
+    pluginName,
+    pluginVersion,
+    message,
+    metadata: {
+      findings: findings.map((f) => ({
+        id: f.id,
+        severity: f.severity,
+        title: f.title,
+        category: f.category,
+        line: f.line,
+        column: f.column,
+      })),
+      totalFindings: findings.length,
+      criticalFindings: criticalFindings.length,
+      highFindings: highFindings.length,
+      blocked: shouldBlock,
+    },
+  };
+}
+
 /**
  * Security Scanner Plugin
  *
@@ -507,216 +847,36 @@ export const securityScannerPlugin: HookPlugin = {
   configSchema: SecurityScannerConfigSchema,
   defaultConfig: {},
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complex security scanning logic will be refactored in future
   async apply(
     context: HookContext,
     config: Record<string, unknown> = {}
   ): Promise<PluginResult> {
-    // Only handle specific tools
-    if (context.event !== 'PreToolUse' || !('toolName' in context)) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-      };
+    // Early validation
+    if (!isValidContext(context)) {
+      return createSuccessResult(this.name, this.version);
     }
 
-    const toolName = context.toolName;
-    if (!['Bash', 'Write', 'Edit', 'MultiEdit'].includes(toolName)) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-      };
-    }
-
-    // Parse configuration
     const scannerConfig = SecurityScannerConfigSchema.parse(config);
-
-    // Combine built-in and custom rules
     const allRules = [...BUILT_IN_RULES, ...scannerConfig.customRules];
-    const findings: SecurityFinding[] = [];
-
-    const toolContext = context as HookContext & {
-      toolInput: Record<string, unknown>;
-    };
-    const toolInput = toolContext.toolInput;
 
     try {
-      if (toolName === 'Bash' && scannerConfig.scanCommands) {
-        // Scan bash command
-        const command = toolInput?.command as string;
-        if (command) {
-          const commandFindings = scanCommand(command, allRules);
-          findings.push(...commandFindings);
-        }
-      } else if (
-        ['Write', 'Edit', 'MultiEdit'].includes(toolName) &&
-        scannerConfig.scanFiles
-      ) {
-        // Scan file content
-        const filePath = toolInput?.file_path as string;
-        if (filePath) {
-          // Check if file should be scanned
-          if (
-            scannerConfig.includePatterns.length > 0 &&
-            !matchesPatterns(filePath, scannerConfig.includePatterns)
-          ) {
-            return {
-              success: true,
-              pluginName: this.name,
-              pluginVersion: this.version,
-              metadata: {
-                skipped: true,
-                reason: 'File not in include patterns',
-              },
-            };
-          }
-
-          if (matchesPatterns(filePath, scannerConfig.excludePatterns)) {
-            return {
-              success: true,
-              pluginName: this.name,
-              pluginVersion: this.version,
-              metadata: {
-                skipped: true,
-                reason: 'File matches exclude pattern',
-              },
-            };
-          }
-
-          let content = '';
-
-          if (toolName === 'Write') {
-            // Scan content being written
-            content = (toolInput?.content as string) || '';
-          } else if (toolName === 'Edit' || toolName === 'MultiEdit') {
-            // For edits, try to read existing file to scan full content
-            try {
-              const existingContent = await readFile(filePath, 'utf-8');
-
-              if (toolName === 'Edit') {
-                // Apply edit to get final content
-                const oldString = toolInput?.old_string as string;
-                const newString = toolInput?.new_string as string;
-                const replaceAll = toolInput?.replace_all as boolean;
-
-                if (oldString && newString !== undefined) {
-                  if (replaceAll) {
-                    content = existingContent.replaceAll(oldString, newString);
-                  } else {
-                    content = existingContent.replace(oldString, newString);
-                  }
-                } else {
-                  content = existingContent;
-                }
-              } else {
-                // For MultiEdit, just scan existing content
-                // (would need more complex logic to simulate all edits)
-                content = existingContent;
-              }
-            } catch (_error) {
-              // File doesn't exist or can't be read - use new content if available
-              content = (toolInput?.content as string) || '';
-            }
-          }
-
-          if (content) {
-            // Check file size limit
-            if (content.length > scannerConfig.maxFileSize) {
-              return {
-                success: true,
-                pluginName: this.name,
-                pluginVersion: this.version,
-                message: `File too large to scan (${content.length} > ${scannerConfig.maxFileSize} bytes)`,
-                metadata: { skipped: true, reason: 'File too large' },
-              };
-            }
-
-            const fileFindings = scanContent(
-              content,
-              filePath,
-              allRules,
-              scannerConfig
-            );
-            findings.push(...fileFindings);
-          }
-        }
-      }
-
-      // Process findings
-      if (findings.length === 0) {
-        return {
-          success: true,
-          pluginName: this.name,
-          pluginVersion: this.version,
-          message: 'No security issues detected',
-          metadata: { scanned: true, findings: [] },
-        };
-      }
-
-      // Log findings
-      if (scannerConfig.logFindings) {
-        console.warn(`[SecurityScanner] ${formatFindings(findings)}`);
-
-        for (const finding of findings) {
-          console.warn(`  ${finding.severity.toUpperCase()}: ${finding.title}`);
-          console.warn(`    ${finding.description}`);
-          if (finding.line) {
-            console.warn(
-              `    Location: line ${finding.line}, column ${finding.column}`
-            );
-          }
-          console.warn(`    Matched: "${finding.matched}"`);
-          if (finding.remediation) {
-            console.warn(`    Fix: ${finding.remediation}`);
-          }
-        }
-      }
-
-      // Determine if should block
-      const criticalFindings = findings.filter(
-        (f) => f.severity === 'critical'
+      const result = await scanForSecurityIssues(
+        context,
+        scannerConfig,
+        allRules,
+        this.name,
+        this.version
       );
-      const highFindings = findings.filter((f) => f.severity === 'high');
 
-      const shouldBlock =
-        (scannerConfig.blockOnCritical && criticalFindings.length > 0) ||
-        (scannerConfig.blockOnHigh && highFindings.length > 0);
+      // If result is already a PluginResult (skip case), return it directly
+      if ('success' in result) {
+        return result;
+      }
 
-      return {
-        success: !shouldBlock,
-        block: shouldBlock,
-        pluginName: this.name,
-        pluginVersion: this.version,
-        message: shouldBlock
-          ? `🔒 Security issues found - operation blocked: ${formatFindings(findings)}`
-          : `⚠️  Security issues found: ${formatFindings(findings)}`,
-        metadata: {
-          findings: findings.map((f) => ({
-            id: f.id,
-            severity: f.severity,
-            title: f.title,
-            category: f.category,
-            line: f.line,
-            column: f.column,
-          })),
-          totalFindings: findings.length,
-          criticalFindings: criticalFindings.length,
-          highFindings: highFindings.length,
-          blocked: shouldBlock,
-        },
-      };
+      // Otherwise, process the findings
+      return processFindings(result, scannerConfig, this.name, this.version);
     } catch (error) {
-      return {
-        success: false,
-        pluginName: this.name,
-        pluginVersion: this.version,
-        message: `Security scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        metadata: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-        },
-      };
+      return createErrorResult(this.name, this.version, error);
     }
   },
 

@@ -179,7 +179,7 @@ describe('Security Scanner Plugin', () => {
       const result = await securityScannerPlugin.apply(context);
 
       expect(result.success).toBe(false);
-      expect(result.metadata?.criticalFindings).toBeGreaterThan(0);
+      expect(result.metadata?.highFindings).toBeGreaterThan(0);
     });
 
     test('should detect JWT tokens', async () => {

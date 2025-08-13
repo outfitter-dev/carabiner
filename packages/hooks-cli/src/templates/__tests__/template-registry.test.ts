@@ -1,18 +1,18 @@
-import { test, expect, describe } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { getTemplate, hasTemplate, templates } from '../index.js';
 
 describe('template registry', () => {
   test('getTemplate returns correct hook template function', () => {
     const basicTs = getTemplate('hook', 'typescript', 'basic');
     const basicJs = getTemplate('hook', 'javascript', 'basic');
-    
+
     expect(typeof basicTs).toBe('function');
     expect(typeof basicJs).toBe('function');
-    
+
     // Test template function execution
     const tsContent = basicTs('test-hook');
     const jsContent = basicJs('test-hook');
-    
+
     expect(tsContent).toContain('import { runClaudeHook');
     expect(jsContent).toContain('const { runClaudeHook');
   });
@@ -20,13 +20,13 @@ describe('template registry', () => {
   test('getTemplate returns validator template function', () => {
     const validatorTs = getTemplate('validator', 'typescript');
     const validatorJs = getTemplate('validator', 'javascript');
-    
+
     expect(typeof validatorTs).toBe('function');
     expect(typeof validatorJs).toBe('function');
-    
+
     const tsContent = validatorTs('test-validator');
     const jsContent = validatorJs('test-validator');
-    
+
     expect(tsContent).toContain('TestValidatorValidator');
     expect(jsContent).toContain('TestValidatorValidator');
   });
@@ -34,13 +34,13 @@ describe('template registry', () => {
   test('getTemplate returns middleware template function', () => {
     const middlewareTs = getTemplate('middleware', 'typescript');
     const middlewareJs = getTemplate('middleware', 'javascript');
-    
+
     expect(typeof middlewareTs).toBe('function');
     expect(typeof middlewareJs).toBe('function');
-    
+
     const tsContent = middlewareTs('test-middleware');
     const jsContent = middlewareJs('test-middleware');
-    
+
     expect(tsContent).toContain('testMiddlewareMiddleware');
     expect(jsContent).toContain('testMiddlewareMiddleware');
   });
@@ -48,13 +48,13 @@ describe('template registry', () => {
   test('getTemplate returns test template function', () => {
     const testTs = getTemplate('test', 'typescript');
     const testJs = getTemplate('test', 'javascript');
-    
+
     expect(typeof testTs).toBe('function');
     expect(typeof testJs).toBe('function');
-    
+
     const tsContent = testTs('test-component');
     const jsContent = testJs('test-component');
-    
+
     expect(tsContent).toContain('handleTestComponent');
     expect(jsContent).toContain('handleTestComponent');
   });
@@ -86,7 +86,7 @@ describe('template registry', () => {
     expect(templates.hook.validation.javascript).toBeDefined();
     expect(templates.hook.security.typescript).toBeDefined();
     expect(templates.hook.security.javascript).toBeDefined();
-    
+
     // Test other templates
     expect(templates.validator.typescript).toBeDefined();
     expect(templates.validator.javascript).toBeDefined();

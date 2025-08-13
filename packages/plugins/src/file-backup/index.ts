@@ -196,6 +196,64 @@ async function getExistingBackups(
 }
 
 /**
+ * Remove a single backup file with logging
+ */
+async function removeBackupFile(
+  backupPath: string,
+  reason: string,
+  config: FileBackupConfig
+): Promise<void> {
+  try {
+    await unlink(backupPath);
+    if (config.logOperations) {
+      console.log(`[FileBackup] ${reason}: ${backupPath}`);
+    }
+  } catch (error) {
+    console.warn(`[FileBackup] Failed to remove backup ${backupPath}:`, error);
+  }
+}
+
+/**
+ * Remove backups exceeding maximum count
+ */
+async function removeBackupsByCount(
+  existing: Array<{ path: string; created: Date }>,
+  maxBackups: number,
+  config: FileBackupConfig
+): Promise<void> {
+  if (existing.length <= maxBackups) {
+    return;
+  }
+
+  const toRemove = existing.slice(maxBackups);
+
+  for (const backup of toRemove) {
+    await removeBackupFile(backup.path, 'Removed old backup', config);
+  }
+}
+
+/**
+ * Remove backups older than retention period
+ */
+async function removeBackupsByAge(
+  existing: Array<{ path: string; created: Date }>,
+  retentionDays: number,
+  config: FileBackupConfig
+): Promise<void> {
+  if (retentionDays <= 0) {
+    return;
+  }
+
+  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+
+  for (const backup of existing) {
+    if (backup.created < cutoff) {
+      await removeBackupFile(backup.path, 'Removed expired backup', config);
+    }
+  }
+}
+
+/**
  * Clean up old backups based on retention policy
  */
 async function cleanupOldBackups(
@@ -209,47 +267,129 @@ async function cleanupOldBackups(
     config.namingStrategy
   );
 
-  // Remove backups exceeding max count
-  if (existing.length > config.maxBackups) {
-    const toRemove = existing.slice(config.maxBackups);
+  await removeBackupsByCount(existing, config.maxBackups, config);
+  await removeBackupsByAge(existing, config.retentionDays, config);
+}
 
-    for (const backup of toRemove) {
-      try {
-        await unlink(backup.path);
-        if (config.logOperations) {
-          console.log(`[FileBackup] Removed old backup: ${backup.path}`);
-        }
-      } catch (error) {
-        console.warn(
-          `[FileBackup] Failed to remove backup ${backup.path}:`,
-          error
-        );
-      }
+/**
+ * Validate file constraints for backup
+ */
+function validateFileForBackup(
+  _filePath: string,
+  fileStats: import('node:fs').Stats,
+  config: FileBackupConfig
+): { valid: boolean; error?: string } {
+  if (fileStats.size < config.minFileSize) {
+    return {
+      valid: false,
+      error: `File too small (${fileStats.size} bytes < ${config.minFileSize} bytes)`,
+    };
+  }
+
+  if (config.maxFileSize > 0 && fileStats.size > config.maxFileSize) {
+    return {
+      valid: false,
+      error: `File too large (${fileStats.size} bytes > ${config.maxFileSize} bytes)`,
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Check if file should be skipped based on include/exclude patterns
+ */
+function shouldSkipFileBackup(
+  filePath: string,
+  config: FileBackupConfig
+): { skip: boolean; reason?: string } {
+  if (
+    config.includePatterns.length > 0 &&
+    !matchesPatterns(filePath, config.includePatterns)
+  ) {
+    return { skip: true, reason: 'File not in include patterns' };
+  }
+
+  if (matchesPatterns(filePath, config.excludePatterns)) {
+    return { skip: true, reason: 'File matches exclude pattern' };
+  }
+
+  return { skip: false };
+}
+
+/**
+ * Check if content is identical to latest backup
+ */
+async function isContentIdenticalToLatest(
+  content: Buffer,
+  existing: Array<{ path: string; created: Date }>
+): Promise<boolean> {
+  if (existing.length === 0) {
+    return false;
+  }
+
+  try {
+    const latestBackup = await readFile(existing[0].path);
+    return content.equals(latestBackup);
+  } catch (_error) {
+    return false;
+  }
+}
+
+/**
+ * Perform the actual backup operation
+ */
+async function performBackupOperation(
+  filePath: string,
+  backupDir: string,
+  config: FileBackupConfig
+): Promise<{ success: boolean; backupPath?: string; error?: string }> {
+  // Create backup directory if needed
+  if (config.createBackupDir) {
+    try {
+      await mkdir(backupDir, { recursive: true });
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to create backup directory: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
     }
   }
 
-  // Remove backups older than retention period
-  if (config.retentionDays > 0) {
-    const cutoff = new Date(
-      Date.now() - config.retentionDays * 24 * 60 * 60 * 1000
-    );
+  // Generate backup filename
+  const existing = await getExistingBackups(
+    filePath,
+    backupDir,
+    config.namingStrategy
+  );
+  const backupFilename = generateBackupFilename(
+    filePath,
+    config.namingStrategy,
+    existing.length + 1
+  );
+  const backupPath = join(backupDir, backupFilename);
 
-    for (const backup of existing) {
-      if (backup.created < cutoff) {
-        try {
-          await unlink(backup.path);
-          if (config.logOperations) {
-            console.log(`[FileBackup] Removed expired backup: ${backup.path}`);
-          }
-        } catch (error) {
-          console.warn(
-            `[FileBackup] Failed to remove expired backup ${backup.path}:`,
-            error
-          );
-        }
-      }
+  // Read original file content
+  const content = await readFile(filePath);
+
+  // Check if backup is identical to existing content (if enabled)
+  if (!config.backupIdentical) {
+    const isIdentical = await isContentIdenticalToLatest(content, existing);
+    if (isIdentical) {
+      return {
+        success: true,
+        error: 'Content identical to latest backup',
+      };
     }
   }
+
+  // Create backup
+  await writeFile(backupPath, content);
+
+  // Clean up old backups
+  await cleanupOldBackups(filePath, backupDir, config);
+
+  return { success: true, backupPath };
 }
 
 /**
@@ -269,31 +409,19 @@ async function createBackup(
       return { success: true };
     }
 
-    // Check file size constraints
-    if (fileStats.size < config.minFileSize) {
+    // Validate file constraints
+    const validation = validateFileForBackup(filePath, fileStats, config);
+    if (!validation.valid) {
       return {
-        success: true,
-        error: `File too small (${fileStats.size} bytes < ${config.minFileSize} bytes)`,
+        success: !validation.error?.includes('too large'),
+        error: validation.error,
       };
     }
 
-    if (config.maxFileSize > 0 && fileStats.size > config.maxFileSize) {
-      return {
-        success: false,
-        error: `File too large (${fileStats.size} bytes > ${config.maxFileSize} bytes)`,
-      };
-    }
-
-    // Check include/exclude patterns
-    if (
-      config.includePatterns.length > 0 &&
-      !matchesPatterns(filePath, config.includePatterns)
-    ) {
-      return { success: true, error: 'File not in include patterns' };
-    }
-
-    if (matchesPatterns(filePath, config.excludePatterns)) {
-      return { success: true, error: 'File matches exclude pattern' };
+    // Check if file should be skipped
+    const skipCheck = shouldSkipFileBackup(filePath, config);
+    if (skipCheck.skip) {
+      return { success: true, error: skipCheck.reason };
     }
 
     // Determine backup directory
@@ -301,62 +429,137 @@ async function createBackup(
       ? config.backupDir
       : join(dirname(filePath), config.backupDir);
 
-    // Create backup directory if needed
-    if (config.createBackupDir) {
-      try {
-        await mkdir(backupDir, { recursive: true });
-      } catch (error) {
-        return {
-          success: false,
-          error: `Failed to create backup directory: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        };
-      }
-    }
-
-    // Generate backup filename
-    const existing = await getExistingBackups(
-      filePath,
-      backupDir,
-      config.namingStrategy
-    );
-    const backupFilename = generateBackupFilename(
-      filePath,
-      config.namingStrategy,
-      existing.length + 1
-    );
-    const backupPath = join(backupDir, backupFilename);
-
-    // Read original file content
-    const content = await readFile(filePath);
-
-    // Check if backup is identical to existing content (if enabled)
-    if (!config.backupIdentical && existing.length > 0) {
-      try {
-        const latestBackup = await readFile(existing[0].path);
-        if (content.equals(latestBackup)) {
-          return {
-            success: true,
-            error: 'Content identical to latest backup',
-          };
-        }
-      } catch (_error) {
-        // Continue with backup if we can't read existing backup
-      }
-    }
-
-    // Create backup
-    await writeFile(backupPath, content);
-
-    // Clean up old backups
-    await cleanupOldBackups(filePath, backupDir, config);
-
-    return { success: true, backupPath };
+    // Perform backup operation
+    return await performBackupOperation(filePath, backupDir, config);
   } catch (error) {
     return {
       success: false,
       error: `Backup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
+}
+
+/**
+ * Check if tool should be processed for backup
+ */
+function shouldProcessTool(context: HookContext): boolean {
+  if (context.event !== 'PreToolUse' || !('toolName' in context)) {
+    return false;
+  }
+
+  const toolName = context.toolName;
+  return ['Write', 'Edit', 'MultiEdit'].includes(toolName);
+}
+
+/**
+ * Extract file paths from tool context
+ */
+function extractFilePathsFromTool(context: HookContext): string[] {
+  if (!('toolName' in context)) {
+    return [];
+  }
+
+  const fileContext = context as HookContext & {
+    toolInput: Record<string, unknown>;
+  };
+  const { toolName, toolInput } = fileContext;
+  const filePaths: string[] = [];
+
+  if (
+    (toolName === 'Write' || toolName === 'Edit' || toolName === 'MultiEdit') &&
+    toolInput?.file_path
+  ) {
+    filePaths.push(toolInput.file_path as string);
+  }
+
+  return filePaths;
+}
+
+/**
+ * Create success result
+ */
+function createSuccessResult(
+  pluginName: string,
+  pluginVersion: string
+): PluginResult {
+  return {
+    success: true,
+    pluginName,
+    pluginVersion,
+  };
+}
+
+/**
+ * Create skipped result
+ */
+function createSkippedResult(
+  pluginName: string,
+  pluginVersion: string,
+  reason: string
+): PluginResult {
+  return {
+    success: true,
+    pluginName,
+    pluginVersion,
+    metadata: { skipped: true, reason },
+  };
+}
+
+/**
+ * Process file backups and return aggregated result
+ */
+async function processFileBackups(
+  filePaths: string[],
+  backupConfig: FileBackupConfig,
+  pluginName: string,
+  pluginVersion: string
+): Promise<PluginResult> {
+  const results: Array<{ path: string; backup?: string; error?: string }> = [];
+  let hasErrors = false;
+
+  for (const filePath of filePaths) {
+    const backupResult = await createBackup(filePath, backupConfig);
+
+    if (backupResult.success) {
+      results.push({
+        path: filePath,
+        backup: backupResult.backupPath,
+        error: backupResult.error,
+      });
+
+      if (backupResult.backupPath && backupConfig.logOperations) {
+        console.log(`[FileBackup] Created backup: ${backupResult.backupPath}`);
+      }
+    } else {
+      results.push({
+        path: filePath,
+        error: backupResult.error,
+      });
+      hasErrors = true;
+
+      if (backupConfig.logOperations) {
+        console.error(
+          `[FileBackup] Failed to backup ${filePath}: ${backupResult.error}`
+        );
+      }
+    }
+  }
+
+  return {
+    success: !hasErrors,
+    pluginName,
+    pluginVersion,
+    message: hasErrors
+      ? `Some backups failed: ${results.filter((r) => r.error).length}/${results.length}`
+      : `Created ${results.filter((r) => r.backup).length} backups`,
+    metadata: {
+      backupResults: results,
+      totalFiles: filePaths.length,
+      successfulBackups: results.filter((r) => r.backup).length,
+      skippedBackups: results.filter((r) => r.error && !r.backup).length,
+      failedBackups: results.filter((r) => !r.backup && r.error).length,
+    },
+  };
 }
 
 /**
@@ -385,7 +588,7 @@ async function createBackup(
  *     "maxBackups": 10,
  *     "namingStrategy": "date",
  *     "includePatterns": ["*.js", "*.ts", "*.json"],
- *     "excludePatterns": ["*/ node_modules; /**", "*.test.*"],
+ *     "excludePatterns": ["node_modules/**", "*.test.*"],
  *     "maxFileSize": 5242880,
  *     "retentionDays": 7,
  *     "compress": false
@@ -410,110 +613,32 @@ export const fileBackupPlugin: HookPlugin = {
     context: HookContext,
     config: Record<string, unknown> = {}
   ): Promise<PluginResult> {
-    // Only handle file modification tools
-    if (context.event !== 'PreToolUse' || !('toolName' in context)) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-      };
+    // Early returns for non-applicable contexts
+    if (!shouldProcessTool(context)) {
+      return createSuccessResult(this.name, this.version);
     }
 
-    const toolName = context.toolName;
-    if (!['Write', 'Edit', 'MultiEdit'].includes(toolName)) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-      };
-    }
-
-    // Parse configuration
     const backupConfig = FileBackupConfigSchema.parse(config);
 
     if (!backupConfig.backupExisting) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-        metadata: { skipped: true, reason: 'Backup disabled' },
-      };
+      return createSkippedResult(this.name, this.version, 'Backup disabled');
     }
 
-    // Extract file paths based on tool type
-    const fileContext = context as HookContext & {
-      toolInput: Record<string, unknown>;
-    };
-    const toolInput = fileContext.toolInput;
-    const filePaths: string[] = [];
-
-    if (toolName === 'Write' || toolName === 'Edit') {
-      if (toolInput?.file_path) {
-        filePaths.push(toolInput.file_path);
-      }
-    } else if (toolName === 'MultiEdit' && toolInput?.file_path) {
-      filePaths.push(toolInput.file_path);
-    }
-
+    const filePaths = extractFilePathsFromTool(context);
     if (filePaths.length === 0) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-        metadata: { skipped: true, reason: 'No file paths found' },
-      };
+      return createSkippedResult(
+        this.name,
+        this.version,
+        'No file paths found'
+      );
     }
 
-    // Create backups for each file
-    const results: Array<{ path: string; backup?: string; error?: string }> =
-      [];
-    let hasErrors = false;
-
-    for (const filePath of filePaths) {
-      const backupResult = await createBackup(filePath, backupConfig);
-
-      if (backupResult.success) {
-        results.push({
-          path: filePath,
-          backup: backupResult.backupPath,
-          error: backupResult.error,
-        });
-
-        if (backupResult.backupPath && backupConfig.logOperations) {
-          console.log(
-            `[FileBackup] Created backup: ${backupResult.backupPath}`
-          );
-        }
-      } else {
-        results.push({
-          path: filePath,
-          error: backupResult.error,
-        });
-        hasErrors = true;
-
-        if (backupConfig.logOperations) {
-          console.error(
-            `[FileBackup] Failed to backup ${filePath}: ${backupResult.error}`
-          );
-        }
-      }
-    }
-
-    return {
-      success: !hasErrors,
-      pluginName: this.name,
-      pluginVersion: this.version,
-      message: hasErrors
-        ? `Some backups failed: ${results.filter((r) => r.error).length}/${results.length}`
-        : `Created ${results.filter((r) => r.backup).length} backups`,
-      metadata: {
-        backupResults: results,
-        totalFiles: filePaths.length,
-        successfulBackups: results.filter((r) => r.backup).length,
-        skippedBackups: results.filter((r) => r.error && !r.backup).length,
-        failedBackups: results.filter((r) => !r.backup && r.error).length,
-      },
-    };
+    return await processFileBackups(
+      filePaths,
+      backupConfig,
+      this.name,
+      this.version
+    );
   },
 
   /**

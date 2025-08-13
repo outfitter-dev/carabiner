@@ -193,45 +193,107 @@ export function validateCompleteHookInput(
   input: unknown
 ): CompleteValidationResult {
   const errors: (ValidationError | BrandValidationError)[] = [];
-  let claudeInput: ValidatedClaudeInput | undefined;
-  let toolInput: unknown;
 
   // Validate main input structure
-  const inputResult = validateClaudeInput(input);
-  if (inputResult.success) {
-    claudeInput = inputResult.data;
-
-    // If it's a tool hook, validate tool input
-    if (claudeInput) {
-      const original = claudeInput.original;
-      if ('tool_name' in original && 'tool_input' in original) {
-        const toolName = original.tool_name as ToolName;
-
-        if (toolName in toolInputSchemas) {
-          const toolResult = validateToolInputForTool(
-            toolName as keyof typeof toolInputSchemas,
-            original.tool_input
-          );
-          if (toolResult.success) {
-            toolInput = toolResult.data;
-          } else {
-            errors.push(toolResult.error!);
-          }
-        } else {
-          // Generic validation for unknown tools
-          const genericResult = validateGenericToolInput(original.tool_input);
-          if (genericResult.success) {
-            toolInput = genericResult.data;
-          } else {
-            errors.push(genericResult.error!);
-          }
-        }
-      }
-    }
-  } else {
-    errors.push(inputResult.error!);
+  const mainInputResult = validateMainInput(input);
+  if (!mainInputResult.claudeInput) {
+    errors.push(mainInputResult.error!);
+    return buildCompleteValidationResult(undefined, undefined, errors);
   }
 
+  // Validate tool input if present
+  const toolInputResult = validateToolInputIfPresent(
+    mainInputResult.claudeInput
+  );
+  if (toolInputResult.error) {
+    errors.push(toolInputResult.error);
+  }
+
+  return buildCompleteValidationResult(
+    mainInputResult.claudeInput,
+    toolInputResult.toolInput,
+    errors
+  );
+}
+
+/**
+ * Validate main Claude input
+ */
+function validateMainInput(input: unknown): {
+  claudeInput?: ValidatedClaudeInput;
+  error?: ValidationError | BrandValidationError;
+} {
+  const result = validateClaudeInput(input);
+  return {
+    claudeInput: result.data,
+    error: result.error,
+  };
+}
+
+/**
+ * Validate tool input if present in Claude input
+ */
+function validateToolInputIfPresent(claudeInput: ValidatedClaudeInput): {
+  toolInput?: unknown;
+  error?: ValidationError | BrandValidationError;
+} {
+  const original = claudeInput.original;
+
+  if (!('tool_name' in original && 'tool_input' in original)) {
+    return {};
+  }
+
+  const toolName = original.tool_name as ToolName;
+
+  if (toolName in toolInputSchemas) {
+    return validateKnownToolInput(toolName, original.tool_input);
+  }
+
+  return validateUnknownToolInput(original.tool_input);
+}
+
+/**
+ * Validate input for known tool
+ */
+function validateKnownToolInput(
+  toolName: ToolName,
+  toolInput: unknown
+): {
+  toolInput?: unknown;
+  error?: ValidationError | BrandValidationError;
+} {
+  const result = validateToolInputForTool(
+    toolName as keyof typeof toolInputSchemas,
+    toolInput
+  );
+  return {
+    toolInput: result.data,
+    error: result.error,
+  };
+}
+
+/**
+ * Validate input for unknown tool
+ */
+function validateUnknownToolInput(toolInput: unknown): {
+  toolInput?: unknown;
+  error?: ValidationError | BrandValidationError;
+} {
+  const result = validateGenericToolInput(toolInput);
+  return {
+    toolInput: result.data,
+    error: result.error,
+  };
+}
+
+/**
+ * Build complete validation result
+ */
+function buildCompleteValidationResult(
+  claudeInput?: ValidatedClaudeInput,
+  toolInput?: unknown,
+  errors: (ValidationError | BrandValidationError)[] = []
+): CompleteValidationResult {
   return {
     success: errors.length === 0,
     claudeInput,

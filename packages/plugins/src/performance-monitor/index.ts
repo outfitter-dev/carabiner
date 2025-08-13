@@ -370,6 +370,192 @@ class MetricsStore {
 let globalMetricsStore: MetricsStore | undefined;
 
 /**
+ * Check if monitoring should be skipped
+ */
+function shouldSkipMonitoring(
+  config: PerformanceMonitorConfig,
+  toolName: string | undefined,
+  operation: string
+): { skip: boolean; reason?: string } | null {
+  // Check if tool should be monitored
+  if (
+    config.monitorTools.length > 0 &&
+    toolName &&
+    !config.monitorTools.includes(toolName)
+  ) {
+    return { skip: true, reason: 'Tool not monitored' };
+  }
+
+  // Check if operation should be excluded
+  if (config.excludeOperations.includes(operation)) {
+    return { skip: true, reason: 'Operation excluded' };
+  }
+
+  return null;
+}
+
+/**
+ * Create skipped monitoring result
+ */
+function createSkippedMonitoringResult(
+  pluginName: string,
+  pluginVersion: string,
+  reason: string
+): PluginResult {
+  return {
+    success: true,
+    pluginName,
+    pluginVersion,
+    metadata: { skipped: true, reason },
+  };
+}
+
+/**
+ * Create default monitoring result
+ */
+function createDefaultMonitoringResult(
+  pluginName: string,
+  pluginVersion: string
+): PluginResult {
+  return {
+    success: true,
+    pluginName,
+    pluginVersion,
+  };
+}
+
+/**
+ * Handle PreToolUse monitoring
+ */
+function handlePreToolUseMonitoring(
+  operation: string,
+  config: PerformanceMonitorConfig,
+  pluginName: string,
+  pluginVersion: string
+): PluginResult {
+  const startTime = performance.now();
+  const startMemory = process.memoryUsage();
+
+  if (config.enableProfiling) {
+    performance.mark(`claude-hook-${operation}-start`);
+  }
+
+  return {
+    success: true,
+    pluginName,
+    pluginVersion,
+    metadata: {
+      monitoring: true,
+      startTime,
+      startMemory,
+      operation,
+    },
+  };
+}
+
+/**
+ * Extract file path from context
+ */
+function extractFilePathFromContext(context: HookContext): string | undefined {
+  const toolContext = context as HookContext & {
+    toolInput: Record<string, unknown>;
+  };
+  return toolContext.toolInput?.file_path as string | undefined;
+}
+
+/**
+ * Create performance metric
+ */
+function createPerformanceMetric(
+  operation: string,
+  startTime: number,
+  endTime: number,
+  duration: number,
+  memoryUsage: NodeJS.MemoryUsage,
+  success: boolean,
+  toolName: string | undefined,
+  filePath: string | undefined
+): PerformanceMetric {
+  return {
+    operation,
+    startTime,
+    endTime,
+    duration,
+    memoryUsage,
+    success,
+    toolName,
+    filePath,
+  };
+}
+
+/**
+ * Handle PostToolUse monitoring
+ */
+function handlePostToolUseMonitoring(
+  context: HookContext,
+  operation: string,
+  toolName: string | undefined,
+  config: PerformanceMonitorConfig,
+  pluginName: string,
+  pluginVersion: string
+): PluginResult {
+  const endTime = performance.now();
+  const endMemory = process.memoryUsage();
+
+  // Try to find corresponding PreToolUse timing (simplified - would need better correlation)
+  // For now, assume a reasonable duration
+  const startTime = endTime - 1000; // Placeholder
+  const duration = endTime - startTime;
+
+  if (config.enableProfiling) {
+    performance.mark(`claude-hook-${operation}-end`);
+    performance.measure(
+      `claude-hook-${operation}`,
+      `claude-hook-${operation}-start`,
+      `claude-hook-${operation}-end`
+    );
+  }
+
+  const filePath = extractFilePathFromContext(context);
+  const success = !('error' in context); // This would need proper context analysis
+
+  const metric = createPerformanceMetric(
+    operation,
+    startTime,
+    endTime,
+    duration,
+    endMemory,
+    success,
+    toolName,
+    filePath
+  );
+
+  globalMetricsStore?.addMetric(metric);
+
+  // Create result with performance info
+  const result: PluginResult = {
+    success: true,
+    pluginName,
+    pluginVersion,
+    metadata: {
+      metric: {
+        operation,
+        duration: Math.round(duration * 100) / 100, // Round to 2 decimals
+        memoryUsed: Math.round((endMemory.heapUsed / 1024 / 1024) * 100) / 100, // MB
+        success,
+      },
+    },
+  };
+
+  // Add warning if operation was slow
+  if (config.trackExecutionTime && duration > config.slowOperationThreshold) {
+    result.message = `⚠️  Slow operation: ${operation} took ${Math.round(duration)}ms`;
+  }
+
+  return result;
+}
+
+/**
  * Performance Monitor Plugin
  *
  * Monitors Claude Code operation performance including execution time,
@@ -424,7 +610,6 @@ export const performanceMonitorPlugin: HookPlugin = {
     context: HookContext,
     config: Record<string, unknown> = {}
   ): PluginResult {
-    // Parse configuration
     const monitorConfig = PerformanceMonitorConfigSchema.parse(config);
 
     // Initialize metrics store if not exists
@@ -433,129 +618,40 @@ export const performanceMonitorPlugin: HookPlugin = {
     }
 
     const toolName = 'toolName' in context ? context.toolName : undefined;
-
-    // Check if tool should be monitored
-    if (
-      monitorConfig.monitorTools.length > 0 &&
-      toolName &&
-      !monitorConfig.monitorTools.includes(toolName)
-    ) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-        metadata: { skipped: true, reason: 'Tool not monitored' },
-      };
-    }
-
-    // Check if operation should be excluded
     const operation = `${context.event}${toolName ? `_${toolName}` : ''}`;
-    if (monitorConfig.excludeOperations.includes(operation)) {
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-        metadata: { skipped: true, reason: 'Operation excluded' },
-      };
+
+    // Check if monitoring should be skipped
+    const skipResult = shouldSkipMonitoring(monitorConfig, toolName, operation);
+    if (skipResult) {
+      return createSkippedMonitoringResult(
+        this.name,
+        this.version,
+        skipResult.reason
+      );
     }
 
+    // Handle based on event type
     if (context.event === 'PreToolUse') {
-      // Start performance monitoring
-      const startTime = performance.now();
-      const startMemory = process.memoryUsage();
-
-      if (monitorConfig.enableProfiling) {
-        performance.mark(`claude-hook-${operation}-start`);
-      }
-
-      return {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-        metadata: {
-          monitoring: true,
-          startTime,
-          startMemory,
-          operation,
-        },
-      };
-    }
-    if (context.event === 'PostToolUse') {
-      // End performance monitoring and record metric
-      const endTime = performance.now();
-      const endMemory = process.memoryUsage();
-
-      // Try to find corresponding PreToolUse timing (simplified - would need better correlation)
-      // For now, assume a reasonable duration
-      const startTime = endTime - 1000; // Placeholder
-      const duration = endTime - startTime;
-
-      if (monitorConfig.enableProfiling) {
-        performance.mark(`claude-hook-${operation}-end`);
-        performance.measure(
-          `claude-hook-${operation}`,
-          `claude-hook-${operation}-start`,
-          `claude-hook-${operation}-end`
-        );
-      }
-
-      // Extract file path if available
-      let filePath: string | undefined;
-      const toolContext = context as HookContext & {
-        toolInput: Record<string, unknown>;
-      };
-      if (toolContext.toolInput?.file_path) {
-        filePath = toolContext.toolInput.file_path;
-      }
-
-      // Determine success based on context (simplified)
-      const success = !('error' in context); // This would need proper context analysis
-
-      const metric: PerformanceMetric = {
+      return handlePreToolUseMonitoring(
         operation,
-        startTime,
-        endTime,
-        duration,
-        memoryUsage: endMemory,
-        success,
-        toolName,
-        filePath,
-      };
-
-      globalMetricsStore.addMetric(metric);
-
-      // Create result with performance info
-      const result: PluginResult = {
-        success: true,
-        pluginName: this.name,
-        pluginVersion: this.version,
-        metadata: {
-          metric: {
-            operation,
-            duration: Math.round(duration * 100) / 100, // Round to 2 decimals
-            memoryUsed:
-              Math.round((endMemory.heapUsed / 1024 / 1024) * 100) / 100, // MB
-            success,
-          },
-        },
-      };
-
-      // Add warning if operation was slow
-      if (
-        monitorConfig.trackExecutionTime &&
-        duration > monitorConfig.slowOperationThreshold
-      ) {
-        result.message = `⚠️  Slow operation: ${operation} took ${Math.round(duration)}ms`;
-      }
-
-      return result;
+        monitorConfig,
+        this.name,
+        this.version
+      );
     }
 
-    return {
-      success: true,
-      pluginName: this.name,
-      pluginVersion: this.version,
-    };
+    if (context.event === 'PostToolUse') {
+      return handlePostToolUseMonitoring(
+        context,
+        operation,
+        toolName,
+        monitorConfig,
+        this.name,
+        this.version
+      );
+    }
+
+    return createDefaultMonitoringResult(this.name, this.version);
   },
 
   /**

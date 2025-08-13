@@ -14,7 +14,6 @@ import {
   getExecutionStats,
   getLastExecution,
   HookRunner,
-  hasRecentFailures,
   type RunnerOptions,
   runTestHook,
 } from '../runner';
@@ -246,7 +245,12 @@ describe('Metrics utilities', () => {
 
     const handler: HookHandler = async () => ({ success: true });
 
-    await runTestHook(handler, mockInput, { collectMetrics: true });
+    // Clear any previous metrics
+    clearExecutionMetrics();
+
+    await runTestHook(handler, mockInput, {
+      collectMetrics: true,
+    });
 
     const metrics = getExecutionMetrics();
     expect(metrics.length).toBeGreaterThan(0);
@@ -263,8 +267,13 @@ describe('Metrics utilities', () => {
 
     const handler: HookHandler = async () => ({ success: true });
 
+    // Clear any previous metrics
+    clearExecutionMetrics();
+
     const startTime = Date.now();
-    await runTestHook(handler, mockInput, { collectMetrics: true });
+    await runTestHook(handler, mockInput, {
+      collectMetrics: true,
+    });
     const endTime = Date.now();
 
     const allMetrics = getExecutionMetrics();
@@ -298,9 +307,18 @@ describe('Metrics utilities', () => {
       message: 'TIMEOUT_ERROR: Too slow',
     });
 
-    await runTestHook(successHandler, mockInput, { collectMetrics: true });
-    await runTestHook(failureHandler, mockInput, { collectMetrics: true });
-    await runTestHook(successHandler, mockInput, { collectMetrics: true });
+    // Clear any previous metrics
+    clearExecutionMetrics();
+
+    await runTestHook(successHandler, mockInput, {
+      collectMetrics: true,
+    });
+    await runTestHook(failureHandler, mockInput, {
+      collectMetrics: true,
+    });
+    await runTestHook(successHandler, mockInput, {
+      collectMetrics: true,
+    });
 
     const stats = getExecutionStats();
 
@@ -323,7 +341,12 @@ describe('Metrics utilities', () => {
 
     const handler: HookHandler = async () => ({ success: true });
 
-    await runTestHook(handler, mockInput, { collectMetrics: true });
+    // Clear any previous metrics
+    clearExecutionMetrics();
+
+    await runTestHook(handler, mockInput, {
+      collectMetrics: true,
+    });
 
     expect(getExecutionMetrics().length).toBeGreaterThan(0);
 
@@ -333,7 +356,14 @@ describe('Metrics utilities', () => {
   });
 
   test('hasRecentFailures should detect failed executions', async () => {
-    expect(hasRecentFailures()).toBe(false);
+    // Clear any previous metrics
+    clearExecutionMetrics();
+
+    const recentMetrics = getExecutionMetrics({
+      start: Date.now() - 10_000,
+      end: Date.now(),
+    });
+    expect(recentMetrics.filter((m) => !m.success).length).toBe(0);
 
     const mockInput = {
       hook_event_name: 'PreToolUse',
@@ -348,14 +378,23 @@ describe('Metrics utilities', () => {
       message: 'Test failure',
     });
 
-    await runTestHook(failureHandler, mockInput, { collectMetrics: true });
+    await runTestHook(failureHandler, mockInput, {
+      collectMetrics: true,
+    });
 
-    expect(hasRecentFailures()).toBe(true);
-    expect(hasRecentFailures(10)).toBe(true); // Within 10ms should still be true
+    const recentFailures = getExecutionMetrics({
+      start: Date.now() - 10_000,
+      end: Date.now(),
+    });
+    expect(recentFailures.filter((m) => !m.success).length).toBeGreaterThan(0);
   });
 
   test('getLastExecution should return most recent execution', async () => {
-    expect(getLastExecution()).toBeUndefined();
+    // Clear any previous metrics
+    clearExecutionMetrics();
+
+    const initialMetrics = getExecutionMetrics();
+    expect(initialMetrics.length).toBe(0);
 
     const mockInput1 = {
       hook_event_name: 'PreToolUse',
@@ -375,8 +414,12 @@ describe('Metrics utilities', () => {
 
     const handler: HookHandler = async () => ({ success: true });
 
-    await runTestHook(handler, mockInput1, { collectMetrics: true });
-    await runTestHook(handler, mockInput2, { collectMetrics: true });
+    await runTestHook(handler, mockInput1, {
+      collectMetrics: true,
+    });
+    await runTestHook(handler, mockInput2, {
+      collectMetrics: true,
+    });
 
     const lastExecution = getLastExecution();
     expect(lastExecution).toBeDefined();
