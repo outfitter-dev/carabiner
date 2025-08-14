@@ -39,16 +39,18 @@ jobs:
       - name: Calculate bundle sizes
         id: pr-size
         run: |
+          set -euo pipefail
+          shopt -s nullglob
           total_size=0
           for dist in packages/*/dist; do
             if [ -d "$dist" ]; then
-              size=$(du -sb "$dist" | cut -f1)
+              size="$(du -sb "$dist" | cut -f1)"
               total_size=$((total_size + size))
-              echo "$(basename $(dirname $dist)): $(numfmt --to=iec $size)"
+              printf '%s: %s\n' "$(basename "$(dirname "$dist")")" "$(numfmt --to=iec "$size")"
             fi
           done
-          echo "total_size=$total_size" >> $GITHUB_OUTPUT
-          echo "Total: $(numfmt --to=iec $total_size)"
+          echo "total_size=$total_size" >> "$GITHUB_OUTPUT"
+          echo "Total: $(numfmt --to=iec "$total_size")"
 
       - name: Checkout base branch
         uses: actions/checkout@v4
@@ -68,14 +70,17 @@ jobs:
         id: base-size
         working-directory: base
         run: |
+          set -euo pipefail
+          shopt -s nullglob
           total_size=0
           for dist in packages/*/dist; do
             if [ -d "$dist" ]; then
-              size=$(du -sb "$dist" | cut -f1)
+              size="$(du -sb "$dist" | cut -f1)"
               total_size=$((total_size + size))
+              printf '%s: %s\n' "$(basename "$(dirname "$dist")")" "$(numfmt --to=iec "$size")"
             fi
           done
-          echo "total_size=$total_size" >> $GITHUB_OUTPUT
+          echo "total_size=$total_size" >> "$GITHUB_OUTPUT"
 
       - name: Comment size change
         uses: actions/github-script@v7
@@ -110,3 +115,25 @@ jobs:
               repo: context.repo.repo,
               body: message
             });
+
+      - name: Write bundle size summary
+        env:
+          PR_SIZE: ${{ steps.pr-size.outputs.total_size }}
+          BASE_SIZE: ${{ steps.base-size.outputs.total_size }}
+        run: |
+          pr_size="${PR_SIZE:-0}"
+          base_size="${BASE_SIZE:-0}"
+          diff=$((pr_size - base_size))
+          percent="0.00"
+          if [ "$base_size" -gt 0 ]; then
+            percent=$(awk "BEGIN { printf \"%.2f\", ($diff / $base_size) * 100 }")
+          fi
+          {
+            echo "## Bundle Size Report"
+            echo ""
+            echo "| Metric | Size |"
+            echo "|--------|------|"
+            echo "| Base | $(numfmt --to=iec "$base_size") |"
+            echo "| PR | $(numfmt --to=iec "$pr_size") |"
+            echo "| Diff | $( [ "$diff" -gt 0 ] && echo "+" || true )$(numfmt --to=iec "${diff#-}") (${percent}%) |"
+          } >> "$GITHUB_STEP_SUMMARY"
