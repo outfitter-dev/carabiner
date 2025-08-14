@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main
-      - 'feat/**'
-      - 'fix/**'
+      - "feat/**"
+      - "fix/**"
   pull_request:
     branches:
       - main
@@ -18,8 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUN_VERSION: '1.1.38'
-  NODE_VERSION: '20'
+  BUN_VERSION: "1.1.38"
+  NODE_VERSION: "20"
 
 jobs:
   lint:

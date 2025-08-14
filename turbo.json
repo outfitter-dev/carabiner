@@ -3,13 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [
-        "dist/**",
-        "build/**",
-        ".next/**",
-        "!.next/cache/**",
-        "!dist/.tsbuildinfo"
-      ]
+      "outputs": ["dist/**", "build/**", ".next/**", "!.next/cache/**", "!dist/.tsbuildinfo"]
     },
     "dev": {
       "cache": false,
@@ -23,12 +17,7 @@
     "typecheck": {
       "dependsOn": ["^build"],
       "outputs": ["dist/.tsbuildinfo"],
-      "inputs": [
-        "src/**/*.ts",
-        "src/**/*.tsx",
-        "tsconfig.json",
-        "tsconfig.build.json"
-      ]
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "tsconfig.json", "tsconfig.build.json"]
     },
     "clean": {
       "cache": false,

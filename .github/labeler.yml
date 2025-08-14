@@ -2,37 +2,37 @@
 
 changed-files:
   # Package-specific labels
-  'package: hooks-core':
+  "package: hooks-core":
     - packages/hooks-core/**/*
 
-  'package: hooks-cli':
+  "package: hooks-cli":
     - packages/hooks-cli/**/*
 
-  'package: hooks-config':
+  "package: hooks-config":
     - packages/hooks-config/**/*
 
-  'package: hooks-validators':
+  "package: hooks-validators":
     - packages/hooks-validators/**/*
 
-  'package: hooks-testing':
+  "package: hooks-testing":
     - packages/hooks-testing/**/*
 
-  'package: examples':
+  "package: examples":
     - packages/examples/**/*
 
   # Type labels
   documentation:
-    - '**/*.md'
+    - "**/*.md"
     - docs/**/*
     - .agent/**/*.md
 
   tests:
-    - '**/*.test.ts'
-    - '**/*.test.tsx'
-    - '**/*.spec.ts'
-    - '**/*.spec.tsx'
-    - '**/test/**'
-    - '**/__tests__/**'
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/*.spec.ts"
+    - "**/*.spec.tsx"
+    - "**/test/**"
+    - "**/__tests__/**"
 
   ci/cd:
     - .github/workflows/**/*
@@ -50,23 +50,23 @@ changed-files:
     - packages/*/tsconfig.json
     - apps/*/tsconfig.json
     - turbo.json
-    - biome.jsonc
+    - biome.json
     - .prettierrc
 
   security:
-    - '**/*auth*'
-    - '**/*security*'
-    - '**/*permission*'
-    - '**/*validate*'
-    - '**/*sanitize*'
+    - "**/*auth*"
+    - "**/*security*"
+    - "**/*permission*"
+    - "**/*validate*"
+    - "**/*sanitize*"
 
   performance:
-    - '**/*perf*'
-    - '**/*optimize*'
-    - '**/*cache*'
-    - '**/*worker*'
+    - "**/*perf*"
+    - "**/*optimize*"
+    - "**/*cache*"
+    - "**/*worker*"
 
   breaking-change:
     - packages/*/src/types.ts
     - packages/*/src/index.ts
-    - '**/*breaking*'
+    - "**/*breaking*"

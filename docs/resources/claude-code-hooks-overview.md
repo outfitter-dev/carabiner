@@ -23,6 +23,7 @@ Claude Code hooks are a powerful configuration mechanism that allows you to exec
    ```
 
 3. **Add to settings** (`.claude/settings.json`):
+
    ```json
    {
      "hooks": {
