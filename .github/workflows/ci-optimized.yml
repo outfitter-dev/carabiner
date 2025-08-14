@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
-  BUN_VERSION: "1.1.38"
+  BUN_VERSION: "1.2.20"
   NODE_VERSION: "20"
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}

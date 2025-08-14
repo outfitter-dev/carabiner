@@ -264,14 +264,14 @@ const HookUtils = {
    * Check if running in CI
    */
   isCI() {
-    return Boolean(process.env.CI);
+    return Boolean(Bun.env.CI);
   },
 
   /**
    * Get current user
    */
   getCurrentUser() {
-    return process.env.USER || process.env.USERNAME || 'unknown';
+    return Bun.env.USER || Bun.env.USERNAME || 'unknown';
   }
 };
 
@@ -585,7 +585,7 @@ async function handlePreToolUse() {
   try {
     // Basic security validation
     validateHookSecurity(context, {
-      env: process.env.NODE_ENV || 'development'
+      env: Bun.env.NODE_ENV || 'development'
     });
 
     return HookResults.success(\`Validation passed for \${context.toolName}\`);

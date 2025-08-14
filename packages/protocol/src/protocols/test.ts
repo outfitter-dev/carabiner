@@ -258,7 +258,7 @@ export class TestProtocol implements HookProtocol {
    */
   private createTypedContext(input: Record<string, unknown>): HookContext {
     const environment = {
-      CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
+      CLAUDE_PROJECT_DIR: Bun.env.CLAUDE_PROJECT_DIR,
       ...this.options.environment,
     };
 
@@ -323,7 +323,7 @@ export class TestProtocol implements HookProtocol {
         transcriptPath: createTranscriptPath('/test/transcript.md'),
         cwd: createDirectoryPath('/test/dir'),
         environment: {
-          CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
+          CLAUDE_PROJECT_DIR: Bun.env.CLAUDE_PROJECT_DIR,
           ...this.options.environment,
         },
       }

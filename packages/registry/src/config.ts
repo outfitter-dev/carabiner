@@ -240,7 +240,7 @@ export class ConfigLoader {
   constructor(options: Partial<ConfigLoaderOptions> = {}) {
     this.options = {
       baseDir: process.cwd(),
-      environment: process.env.NODE_ENV || 'development',
+      environment: Bun.env.NODE_ENV || 'development',
       enableHotReload: false,
       hotReloadDebounce: 300,
       validate: true,

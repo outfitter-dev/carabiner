@@ -84,7 +84,7 @@ async function handler(ctx) {
 
   try {
     // Apply security validation based on environment
-    const environment = process.env.NODE_ENV || 'development';
+    const environment = Bun.env.NODE_ENV || 'development';
     
     switch (environment) {
       case 'production':

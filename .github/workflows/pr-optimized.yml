@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUN_VERSION: "1.1.38"
+  BUN_VERSION: "1.2.20"
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
@@ -106,12 +106,12 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          
+
           # Initialize metrics
           declare -A package_sizes
           total_size=0
           json_output="{"
-          
+
           for dist in packages/*/dist apps/*/dist; do
             if [ -d "$dist" ]; then
               pkg_name="$(basename "$(dirname "$dist")")"
@@ -123,12 +123,12 @@ jobs:
               json_output="$json_output\"$pkg_name\":$size,"
             fi
           done
-          
+
           json_output="${json_output%,}}"
-          
+
           echo "total_size=$total_size" >> "$GITHUB_OUTPUT"
           echo "packages=$json_output" >> "$GITHUB_OUTPUT"
-          
+
           # Generate markdown table
           {
             echo "### 📦 Bundle Sizes"
@@ -159,18 +159,18 @@ jobs:
         run: |
           bun install --frozen-lockfile
           bun run build
-          
+
           set -euo pipefail
           shopt -s nullglob
           total_size=0
-          
+
           for dist in packages/*/dist apps/*/dist; do
             if [ -d "$dist" ]; then
               size="$(du -sb "$dist" | cut -f1)"
               total_size=$((total_size + size))
             fi
           done
-          
+
           echo "total_size=$total_size" >> "$GITHUB_OUTPUT"
 
       - name: Generate size comparison report
@@ -181,17 +181,17 @@ jobs:
             const prSize = ${{ steps.pr-size.outputs.total_size }};
             const baseSize = ${{ steps.base-size.outputs.total_size }};
             const packages = ${{ steps.pr-size.outputs.packages }};
-            
+
             const diff = prSize - baseSize;
             const percentChange = baseSize > 0 ? ((diff / baseSize) * 100).toFixed(2) : 0;
-            
+
             const formatBytes = (bytes) => {
               const sizes = ['B', 'KB', 'MB', 'GB'];
               if (bytes === 0) return '0 B';
               const i = Math.floor(Math.log(bytes) / Math.log(1024));
               return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
             };
-            
+
             // Determine status emoji and message
             let emoji, status;
             if (Math.abs(percentChange) < 1) {
@@ -209,46 +209,46 @@ jobs:
               emoji = '📉';
               status = 'Size decreased';
             }
-            
+
             const bundleReport = fs.readFileSync('bundle-report.md', 'utf8');
-            
+
             const message = `
             ## ${emoji} Bundle Size Report - ${status}
-            
+
             ${bundleReport}
-            
+
             ### 📊 Comparison with base branch
-            
+
             | Metric | Size | Change |
             |--------|------|--------|
             | Base | ${formatBytes(baseSize)} | - |
             | PR | ${formatBytes(prSize)} | ${diff > 0 ? '+' : ''}${formatBytes(Math.abs(diff))} (${diff > 0 ? '+' : ''}${percentChange}%) |
-            
+
             ${Math.abs(percentChange) > 10 ? '> ⚠️ **Warning:** Significant bundle size change detected. Please review.' : ''}
             ${Math.abs(percentChange) > 20 ? '> 🚨 **Alert:** Bundle size changed by more than 20%. This requires careful review.' : ''}
-            
+
             <details>
             <summary>View detailed metrics</summary>
-            
+
             \`\`\`json
             ${JSON.stringify(packages, null, 2)}
             \`\`\`
-            
+
             </details>
             `;
-            
+
             // Find and update or create comment
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
+
             const botComment = comments.find(comment => 
               comment.user.type === 'Bot' && 
               comment.body.includes('Bundle Size Report')
             );
-            
+
             if (botComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
@@ -313,7 +313,7 @@ jobs:
           script: |
             const { additions, deletions } = context.payload.pull_request;
             const totalChanges = additions + deletions;
-            
+
             let sizeLabel;
             if (totalChanges < 10) {
               sizeLabel = 'size/XS';
@@ -326,14 +326,14 @@ jobs:
             } else {
               sizeLabel = 'size/XL';
             }
-            
+
             // Remove existing size labels
             const { data: labels } = await github.rest.issues.listLabelsOnIssue({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
+
             const sizeLabels = labels.filter(label => label.name.startsWith('size/'));
             for (const label of sizeLabels) {
               await github.rest.issues.removeLabel({
@@ -343,7 +343,7 @@ jobs:
                 name: label.name,
               });
             }
-            
+
             // Add new size label
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
@@ -384,9 +384,9 @@ jobs:
           timeout 300 bun test || true
           end_time=$(date +%s)
           duration=$((end_time - start_time))
-          
+
           echo "Test suite duration: ${duration}s"
-          
+
           # Fail if tests take too long
           if [ $duration -gt 180 ]; then
             echo "⚠️ Tests took longer than 3 minutes"
@@ -406,12 +406,12 @@ jobs:
           script: |
             const needs = ${{ toJSON(needs) }};
             const pr = context.payload.pull_request;
-            
+
             let summary = `## 📋 PR Validation Summary\n\n`;
             summary += `**PR #${pr.number}:** ${pr.title}\n`;
             summary += `**Author:** @${pr.user.login}\n`;
             summary += `**Branch:** \`${pr.head.ref}\` → \`${pr.base.ref}\`\n\n`;
-            
+
             summary += `### 🔍 Change Detection\n\n`;
             summary += `| Area | Changed |\n`;
             summary += `|------|------|\n`;
@@ -419,11 +419,11 @@ jobs:
             summary += `| Apps | ${needs.changes.outputs.apps === 'true' ? '✅' : '➖'} |\n`;
             summary += `| Docs | ${needs.changes.outputs.docs === 'true' ? '✅' : '➖'} |\n`;
             summary += `| CI/CD | ${needs.changes.outputs.ci === 'true' ? '✅' : '➖'} |\n\n`;
-            
+
             summary += `### ✅ Validation Status\n\n`;
             summary += `| Check | Status |\n`;
             summary += `|-------|--------|\n`;
-            
+
             for (const [job, data] of Object.entries(needs)) {
               if (job !== 'changes' && data.result) {
                 const icon = data.result === 'success' ? '✅' : 
@@ -433,9 +433,9 @@ jobs:
                 summary += `| ${jobName} | ${icon} ${data.result} |\n`;
               }
             }
-            
+
             // Add footer
             summary += `\n---\n`;
             summary += `🤖 _Generated by GitHub Actions at ${new Date().toISOString()}_`;
-            
+
             core.summary.addRaw(summary).write();

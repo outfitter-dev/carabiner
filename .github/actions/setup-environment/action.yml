@@ -1,28 +1,28 @@
-name: 'Setup Environment'
-description: 'Composite action to setup Bun and restore caches'
+name: "Setup Environment"
+description: "Composite action to setup Bun and restore caches"
 inputs:
   bun-version:
-    description: 'Bun version to install'
+    description: "Bun version to install"
     required: false
-    default: '1.1.38'
+    default: "1.2.20"
   install-deps:
-    description: 'Whether to install dependencies'
+    description: "Whether to install dependencies"
     required: false
-    default: 'true'
+    default: "true"
   turbo-token:
-    description: 'Turbo token for remote caching'
+    description: "Turbo token for remote caching"
     required: false
   turbo-team:
-    description: 'Turbo team for remote caching'
+    description: "Turbo team for remote caching"
     required: false
 
 outputs:
   cache-hit:
-    description: 'Whether dependency cache was hit'
+    description: "Whether dependency cache was hit"
     value: ${{ steps.deps-cache.outputs.cache-hit }}
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2

@@ -9,7 +9,7 @@ import type { HookEvent, ToolName } from './types';
 /**
  * Logger configuration based on environment
  */
-const isDevelopment = process.env.NODE_ENV === 'development' || Bun.env.DEBUG;
+const isDevelopment = Bun.env.NODE_ENV === 'development' || Bun.env.DEBUG;
 const logLevel = Bun.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info');
 
 /**
