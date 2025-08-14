@@ -61,7 +61,7 @@
     "@outfitter/registry": "workspace:*",
     "@outfitter/types": "workspace:*",
     "@outfitter/execution": "workspace:*",
-    "zod": "^3.22.4"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
