@@ -1,5 +1,5 @@
 /**
- * @grapple/protocol - Test Protocol Implementation
+ * @outfitter/protocol - Test Protocol Implementation
  *
  * Implements a testing protocol that allows for easy unit testing of hooks
  * without requiring actual I/O operations. Provides full control over input

@@ -1,5 +1,5 @@
 /**
- * @grapple/protocol - HTTP Protocol Implementation
+ * @outfitter/protocol - HTTP Protocol Implementation
  *
  * Implements an HTTP-based protocol that can receive hook inputs via POST
  * requests and return results as HTTP responses. Useful for webhook-style

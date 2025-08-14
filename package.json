@@ -1,23 +1,13 @@
 {
-  "name": "@outfitter/grapple",
-  "version": "1.0.0",
+  "name": "@outfitter/carabiner",
+  "version": "0.1.0-beta",
   "description": "A monorepo dedicated to tooling for Claude Code hooks",
-  "type": "module",
   "private": true,
-  "keywords": [
-    "claude-code",
-    "hooks",
-    "tooling",
-    "monorepo",
-    "bun",
-    "typescript"
-  ],
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/outfitter-dev/grapple.git"
+  "engines": {
+    "node": ">=20",
+    "bun": "1.2.20"
   },
+  "packageManager": "bun@1.2.20",
   "workspaces": {
     "packages": [
       "apps/*",
@@ -31,41 +21,45 @@
   },
   "scripts": {
     "build": "turbo build",
+    "build:all": "turbo build",
     "build:packages": "turbo build --filter='./packages/*'",
-    "build:examples": "turbo build --filter='./packages/examples'",
     "dev": "turbo dev",
     "test": "turbo test",
+    "test:all": "turbo test",
     "test:ci": "turbo test --concurrency=1",
+    "lint": "bunx ultracite lint .",
+    "lint:fix": "bunx ultracite format .",
+    "lint:md": "markdownlint-cli2 .",
+    "format": "bunx ultracite format .",
+    "format:fix": "bunx ultracite format .",
+    "format:md": "markdownlint-cli2 . --fix",
+    "type-check": "tsc --noEmit",
+    "typecheck": "turbo typecheck",
+    "typecheck:all": "tsc --noEmit",
+    "check": "bunx ultracite format .",
+    "check:ci": "bunx ultracite lint .",
+    "check:all": "bun run format && bun run lint && bun run lint:md && bun run type-check",
+    "ci": "bun run format && bun run lint && bun run lint:md && bun run type-check && bun test",
+    "ci:local": "bun run format:fix && bun run lint && bun run lint:md && bun run type-check && bun test",
+    "ci:full": "bun run lint && bun run typecheck && bun run test:ci && bun run build",
     "syncpack:check": "syncpack lint",
-    "format": "bun x ultracite@latest format && prettier --write \"**/*.{json,yaml,yml}\" \"!**/node_modules/**\" \"!**/dist/**\" && markdownlint-cli2 --fix \"**/*.{md,mdx,mdc}\" \"!**/node_modules/**\" \"!**/dist/**\"",
-    "format:check": "bun x ultracite@latest lint",
-    "format:check:all": "bun x ultracite@latest lint && prettier --check \"**/*.{json,yaml,yml}\" \"!**/node_modules/**\" \"!**/dist/**\" && markdownlint-cli2 \"**/*.{md,mdx,mdc}\" \"!**/node_modules/**\" \"!**/dist/**\" && (stylelint \"**/*.css\" \"!**/node_modules/**\" \"!**/dist/**\" --cache || echo 'No CSS files found')",
-    "lint": "bun x ultracite@latest lint && markdownlint-cli2 \"**/*.{md,mdx,mdc}\" \"!**/node_modules/**\" \"!**/dist/**\" && (stylelint \"**/*.css\" \"!**/node_modules/**\" \"!**/dist/**\" --cache || echo 'No CSS files found')",
-    "lint:fix": "bun x ultracite@latest format && prettier --write \"**/*.{json,yaml,yml}\" \"!**/node_modules/**\" \"!**/dist/**\" && markdownlint-cli2 --fix \"**/*.{md,mdx,mdc}\" \"!**/node_modules/**\" \"!**/dist/**\" && (stylelint --fix \"**/*.css\" \"!**/node_modules/**\" \"!**/dist/**\" --cache || echo 'No CSS files found')",
-    "lint:md": "markdownlint-cli2 \"**/*.{md,mdx,mdc}\" \"!**/node_modules/**\" \"!**/dist/**\"",
-    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.{md,mdx,mdc}\" \"!**/node_modules/**\" \"!**/dist/**\"",
     "lint:css": "stylelint \"**/*.css\" \"!**/node_modules/**\" \"!**/dist/**\" --cache",
     "lint:css:fix": "stylelint --fix \"**/*.css\" \"!**/node_modules/**\" \"!**/dist/**\" --cache",
     "lint:packages": "find packages -name 'package.json' -path '*/packages/*/package.json' -exec dirname {} \\; | xargs publint",
-    "typecheck": "turbo typecheck",
-    "typecheck:core": "turbo typecheck --filter=@claude-code/hooks-core --filter=@claude-code/hooks-config --filter=@claude-code/hooks-validators --filter=@claude-code/hooks-cli --filter=@claude-code/hooks-testing",
-    "typecheck:all": "tsc --noEmit",
-    "ci:full": "bun run lint && bun run typecheck && bun run test:ci && bun run build",
     "setup:tests": "bun scripts/setup-tests.ts",
-    "prepare": "lefthook install",
-    "lefthook:run": "lefthook run",
     "changeset": "changeset",
     "changeset:version": "changeset version && bun install --lockfile-only",
     "changeset:publish": "bun run build:packages && changeset publish",
     "release:check": "bun run ci:full && bun run lint:packages",
     "verify:build": "bun scripts/verify-build.ts",
     "verify:imports": "bun scripts/smoke-import.ts",
-    "clean": "turbo clean && find packages -name 'dist' -type d -exec rm -rf {} + 2>/dev/null || true"
+    "clean": "turbo clean && find packages -name 'dist' -type d -exec rm -rf {} + 2>/dev/null || true",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.0",
+    "@biomejs/biome": "^2.2.0",
     "@changesets/cli": "^2.29.5",
-    "@types/bun": "^1.2.20",
+    "@types/bun": "latest",
     "@types/node": "^24.2.1",
     "lefthook": "^1.12.3",
     "markdownlint-cli2": "^0.18.1",
@@ -80,5 +74,23 @@
     "typescript": "^5.9.2",
     "ultracite": "^5.1.5"
   },
-  "packageManager": "bun@1.2.20"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/outfitter-dev/carabiner.git"
+  },
+  "homepage": "https://github.com/outfitter-dev/carabiner#readme",
+  "bugs": {
+    "url": "https://github.com/outfitter-dev/carabiner/issues"
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "tooling",
+    "monorepo",
+    "bun",
+    "typescript"
+  ],
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "type": "module"
 }

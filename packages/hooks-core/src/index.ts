@@ -30,9 +30,6 @@ export {
   createFileContext,
   createHookContext,
   executeHook,
-  exitWithError,
-  // Deprecated - use outputHookResult instead
-  exitWithResult,
   getSessionInfo,
   HookLogger,
   HookResults,

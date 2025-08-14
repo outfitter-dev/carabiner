@@ -267,9 +267,8 @@ export interface HookResult {
  * Alternative to simple exit codes
  */
 export interface ClaudeHookOutput {
-  action: 'continue' | 'block' | 'modify';
+  action: 'continue' | 'block';
   message?: string;
-  modified_input?: Record<string, unknown>; // For PreToolUse input modification
   data?: Record<string, unknown>;
 }
 

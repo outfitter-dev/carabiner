@@ -1,4 +1,4 @@
-# Claude Code Hooks TypeScript Library
+# Carabiner - Claude Code Hooks TypeScript Library
 
 A comprehensive TypeScript library for building type-safe, maintainable Claude Code hooks with modern development practices.
 
@@ -21,11 +21,11 @@ Transform Claude Code hook development from manual shell scripting to **type-saf
 
 # Install the core library
 
-npm install @claude-code/hooks-core
+npm install @outfitter/hooks-core
 
 # Or install the full suite
 
-npm install @claude-code/hooks-core @claude-code/hooks-validators @claude-code/hooks-testing @claude-code/hooks-cli
+npm install @outfitter/hooks-core @outfitter/hooks-validators @outfitter/hooks-testing @outfitter/hooks-cli
 
 ```
 
@@ -52,7 +52,7 @@ packages/
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
 
 // This hook runs for ALL tools (universal)
 runClaudeHook(async (context) => {
@@ -83,7 +83,7 @@ runClaudeHook(async (context) => {
 
 #!/usr/bin/env bun
 
-import { HookBuilder, middleware, runClaudeHook } from '@claude-code/hooks-core';
+import { HookBuilder, middleware, runClaudeHook } from '@outfitter/hooks-core';
 
 // Tool-specific hook - ONLY runs for Bash commands
 const bashSecurityHook = HookBuilder
@@ -143,7 +143,7 @@ if (import.meta.main) {
 
 ```typescript
 // hooks-config.ts
-import { defineHook } from '@claude-code/hooks-core';
+import { defineHook } from '@outfitter/hooks-core';
 
 export const projectHooks = [
   // Universal security check (all tools)
@@ -245,7 +245,7 @@ const bashHook = HookBuilder
 ## 🧪 Testing
 
 ```typescript
-import { createMockContext, testHook } from '@claude-code/hooks-testing';
+import { createMockContext, testHook } from '@outfitter/hooks-testing';
 
 describe('Security Hook', () => {
   test('blocks dangerous commands', async () => {
@@ -277,7 +277,7 @@ describe('Security Hook', () => {
 ## 🔐 Security & Validation
 
 ```typescript
-import { SecurityValidators } from '@claude-code/hooks-validators';
+import { SecurityValidators } from '@outfitter/hooks-validators';
 
 runClaudeHook(async (context) => {
   // Environment-specific validation
@@ -303,23 +303,23 @@ runClaudeHook(async (context) => {
 
 # Initialize hooks in your project
 
-npx @claude-code/hooks-cli init
+npx @outfitter/hooks-cli init
 
 # Generate hook templates
 
-npx @claude-code/hooks-cli generate \
+npx @outfitter/hooks-cli generate \
   --type PreToolUse \
   --tool Bash \
   --name security-check
 
 # Build and validate hooks
 
-npx @claude-code/hooks-cli build --output .claude/settings.json
-npx @claude-code/hooks-cli test --hook ./hooks/pre-tool-use.ts
+npx @outfitter/hooks-cli build --output .claude/settings.json
+npx @outfitter/hooks-cli test --hook ./hooks/pre-tool-use.ts
 
 # Development mode with watch
 
-npx @claude-code/hooks-cli dev --watch
+npx @outfitter/hooks-cli dev --watch
 
 ```
 

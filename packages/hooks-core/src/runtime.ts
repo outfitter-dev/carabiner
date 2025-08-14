@@ -355,7 +355,8 @@ export async function executeHook(
  */
 export function outputHookResult(
   result: HookResult,
-  mode: HookOutputMode = 'exit-code'
+  mode: HookOutputMode = 'exit-code',
+  exitHandler: (code: number) => never = (code) => process.exit(code)
 ): never {
   if (mode === 'json') {
     // Structured JSON output for advanced control
@@ -374,7 +375,7 @@ export function outputHookResult(
     };
     // Must use console.log for Claude Code communication protocol
     console.log(JSON.stringify(claudeOutput));
-    process.exit(0); // Always exit 0 for JSON mode, let JSON control behavior
+    return exitHandler(0); // Always exit 0 for JSON mode, let JSON control behavior
   } else {
     // Traditional exit code mode - must use console for Claude Code communication
     if (result.message) {
@@ -387,11 +388,11 @@ export function outputHookResult(
 
     // Exit codes: 0 = success, 2 = blocking error, 1 = non-blocking error
     if (result.success) {
-      process.exit(0);
+      return exitHandler(0);
     } else if (result.block) {
-      process.exit(2);
+      return exitHandler(2);
     } else {
-      process.exit(1);
+      return exitHandler(1);
     }
   }
 }
@@ -560,22 +561,3 @@ export function createFileContext(
 // HookLogger is now exported from logger.ts with proper pino implementation
 export { HookLogger } from './logger';
 
-/**
- * Process exit utilities for hook scripts - deprecated, use outputHookResult instead
- * @deprecated Use outputHookResult for consistent exit handling
- */
-export function exitWithResult(result: HookResult): never {
-  return outputHookResult(result, 'exit-code');
-}
-
-/**
- * @deprecated Use outputHookResult for consistent error handling
- */
-export function exitWithError(error: Error, shouldBlock = true): never {
-  const result: HookResult = {
-    success: false,
-    message: error.message,
-    block: shouldBlock,
-  };
-  return outputHookResult(result, 'exit-code');
-}

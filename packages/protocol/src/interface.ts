@@ -1,5 +1,5 @@
 /**
- * @grapple/protocol - Protocol abstraction interface
+ * @outfitter/protocol - Protocol abstraction interface
  *
  * Defines the contract for I/O protocols that decouple the hooks system
  * from specific transport mechanisms like stdin/stdout, HTTP, or testing.

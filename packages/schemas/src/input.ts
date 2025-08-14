@@ -97,9 +97,8 @@ export const hookResultSchema = z.object({
  * Claude hook output schema
  */
 export const claudeHookOutputSchema = z.object({
-  action: z.enum(['continue', 'block', 'modify']),
+  action: z.enum(['continue', 'block']),
   message: z.string().optional(),
-  modified_input: z.record(z.string(), z.unknown()).optional(),
   data: z.record(z.string(), z.unknown()).optional(),
 });
 

@@ -1,5 +1,5 @@
 /**
- * @grapple/protocol - Stdin/Stdout Protocol Implementation
+ * @outfitter/protocol - Stdin/Stdout Protocol Implementation
  *
  * Implements the classic Claude Code hooks protocol that reads JSON input
  * from stdin and writes results to stdout/stderr.

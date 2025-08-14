@@ -27,47 +27,35 @@ Claude Code uses a hierarchical settings system with the following precedence or
 
 #### macOS
 
-````text
-
-Enterprise: /Library/Application Support/ClaudeCode/managed-settings.json
-User:       ~/.claude/settings.json
-Project:    .claude/settings.json
-Local:      .claude/settings.local.json
-
-```text
+- Enterprise: /Library/Application Support/ClaudeCode/managed-settings.json
+- User: ~/.claude/settings.json
+- Project: .claude/settings.json
+- Local: .claude/settings.local.json
 
 #### Windows
 
-```text
-
-Enterprise: %ProgramData%\ClaudeCode\managed-settings.json
-User:       %USERPROFILE%\.claude\settings.json
-Project:    .claude\settings.json
-Local:      .claude\settings.local.json
-
-```text
+- Enterprise: %ProgramData%\ClaudeCode\managed-settings.json
+- User: %USERPROFILE%\.claude\settings.json
+- Project: .claude\settings.json
+- Local: .claude\settings.local.json
 
 #### Linux
 
-```text
-
-Enterprise: /etc/claude-code/managed-settings.json
-User:       ~/.claude/settings.json
-Project:    .claude/settings.json
-Local:      .claude/settings.local.json
-
-```text
+- Enterprise: /etc/claude-code/managed-settings.json
+- User: ~/.claude/settings.json
+- Project: .claude/settings.json
+- Local: .claude/settings.local.json
 
 ## Hook Configuration Structure
 
 ### Basic Hook Structure
 
-```json
+```jsonc
 {
   "hooks": {
     "<HookEvent>": "<command>",
     "<HookEvent>": {
-      "<ToolName>": "<command>"
+      "<ToolName>": "<command>",
     },
     "<HookEvent>": {
       "<ToolName>": {
@@ -75,13 +63,12 @@ Local:      .claude/settings.local.json
         "timeoutMs": 5000,
         "filters": {
           /* filter configuration */
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
 }
-
-```text
+```
 
 ### Hook Events
 
@@ -139,8 +126,7 @@ Common tool names for hooks (Claude Code v0.4+):
     "custom_field": "value" // Custom field matching
   }
 }
-
-```text
+```
 
 ## Matcher Behavior and Parallel Execution
 
@@ -160,8 +146,7 @@ When multiple hooks match the same event, **all matching hooks execute in parall
     }
   }
 }
-
-```text
+```
 
 > **Important**: This differs from most pattern-matching systems. When a `Write` operation occurs in the above example, **three hooks execute in parallel**: universal-check, permission-check, and backup-file.
 
@@ -179,8 +164,7 @@ When multiple hooks match the same event, **all matching hooks execute in parall
     "Stop": "echo 'Response completed'"
   }
 }
-
-```text
+```
 
 ### 2. Tool-Specific Hooks
 
@@ -215,8 +199,7 @@ When multiple hooks match the same event, **all matching hooks execute in parall
     }
   }
 }
-
-```text
+```
 
 ### 3. Pattern-Based Hook Matching
 
@@ -259,8 +242,7 @@ When multiple hooks match the same event, **all matching hooks execute in parall
     }
   }
 }
-
-```text
+```
 
 ### 4. Development vs Production Configuration
 
@@ -283,8 +265,7 @@ Development (`.claude/settings.local.json`):
     }
   }
 }
-
-```text
+```
 
 Production (`.claude/settings.json`):
 
@@ -309,8 +290,7 @@ Production (`.claude/settings.json`):
     }
   }
 }
-
-```text
+```
 
 ## Advanced Configuration Patterns
 
@@ -331,13 +311,11 @@ Production (`.claude/settings.json`):
     }
   }
 }
-
-```text
+```
 
 Corresponding TypeScript hook (`scripts/conditional-hook.ts`):
 
 ```typescript
-
 #!/usr/bin/env bun
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -350,8 +328,7 @@ if (isProduction && strictMode) {
 } else {
   console.log('Using relaxed development rules');
 }
-
-```text
+```
 
 ### 2. Multi-Stage Hook Pipeline
 
@@ -372,8 +349,7 @@ if (isProduction && strictMode) {
     }
   }
 }
-
-```text
+```
 
 Multi-stage hook (`scripts/multi-stage-pre-hook.ts`):
 
@@ -437,7 +413,7 @@ async function main() {
 
 main();
 
-```text
+```
 
 ### 3. Dynamic Hook Loading
 
@@ -452,8 +428,7 @@ main();
     }
   }
 }
-
-```text
+```
 
 Dynamic hook loader (`scripts/dynamic-hook-loader.ts`):
 
@@ -482,7 +457,7 @@ if (existsSync(toolHookPath)) {
   await import('./default-pre-hook.ts');
 }
 
-```text
+```
 
 ## Environment-Specific Configuration
 
@@ -497,8 +472,7 @@ if (existsSync(toolHookPath)) {
     }
   }
 }
-
-```text
+```
 
 Environment setup hook (`scripts/environment-setup.ts`):
 
@@ -581,7 +555,7 @@ console.log(`Active validators: ${config.validators.join(', ')}`);
 process.env.CLAUDE_ENVIRONMENT = currentEnv;
 process.env.CLAUDE_VALIDATORS = config.validators.join(',');
 
-```text
+```
 
 ### 2. Workspace-Specific Configuration
 
@@ -600,8 +574,7 @@ process.env.CLAUDE_VALIDATORS = config.validators.join(',');
     }
   }
 }
-
-```text
+```
 
 Workspace configuration (`scripts/workspace-config.ts`):
 
@@ -688,7 +661,7 @@ process.env.CLAUDE_WORKSPACE_FRAMEWORK = config.framework || '';
 process.env.CLAUDE_STRICT_MODE = config.strictMode.toString();
 process.env.CLAUDE_CUSTOM_RULES = config.customRules.join(',');
 
-```text
+```
 
 ## Configuration Validation
 
@@ -730,8 +703,7 @@ export function validateSettings(settings: unknown): boolean {
     return false;
   }
 }
-
-```text
+```
 
 ### 2. Configuration Testing
 
@@ -805,8 +777,6 @@ const configFiles = [
 ];
 
 configFiles.forEach(testHookConfiguration);
-
-```text
+```
 
 This comprehensive configuration guide provides all the necessary information for setting up and managing Claude Code hooks across different environments and use cases.
-````

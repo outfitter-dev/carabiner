@@ -8,6 +8,7 @@ import {
   createFileContext,
   createHookContext,
   HookResults,
+  outputHookResult,
   safeHookExecution,
 } from '../runtime';
 import type { HookContext, HookHandler } from '../types';
@@ -230,5 +231,84 @@ describe('Runtime - HookResults Utility', () => {
     expect(result.success).toBe(true);
     expect(result.message).toBe('Warning message');
     expect(result.data).toEqual({ level: 'warning' });
+  });
+});
+
+describe('Runtime - Output Handling', () => {
+  test('should be testable with custom exit handler', () => {
+    const result = HookResults.success('Test message');
+    let exitCode: number | undefined;
+    
+    const mockExitHandler = (code: number): never => {
+      exitCode = code;
+      throw new Error(`Mock exit with code ${code}`);
+    };
+
+    expect(() => {
+      outputHookResult(result, 'exit-code', mockExitHandler);
+    }).toThrow('Mock exit with code 0');
+    
+    expect(exitCode).toBe(0);
+  });
+
+  test('should handle blocking errors with exit code 2', () => {
+    const result = HookResults.block('Blocked operation');
+    let exitCode: number | undefined;
+    
+    const mockExitHandler = (code: number): never => {
+      exitCode = code;
+      throw new Error(`Mock exit with code ${code}`);
+    };
+
+    expect(() => {
+      outputHookResult(result, 'exit-code', mockExitHandler);
+    }).toThrow('Mock exit with code 2');
+    
+    expect(exitCode).toBe(2);
+  });
+
+  test('should handle non-blocking errors with exit code 1', () => {
+    const result = HookResults.failure('Non-blocking error');
+    let exitCode: number | undefined;
+    
+    const mockExitHandler = (code: number): never => {
+      exitCode = code;
+      throw new Error(`Mock exit with code ${code}`);
+    };
+
+    expect(() => {
+      outputHookResult(result, 'exit-code', mockExitHandler);
+    }).toThrow('Mock exit with code 1');
+    
+    expect(exitCode).toBe(1);
+  });
+
+  test('should handle JSON mode with custom exit handler', () => {
+    const result = HookResults.success('Test message');
+    let exitCode: number | undefined;
+    let consoleOutput: string | undefined;
+    
+    // Mock console.log to capture JSON output
+    const originalLog = console.log;
+    console.log = (message: string) => {
+      consoleOutput = message;
+    };
+    
+    const mockExitHandler = (code: number): never => {
+      exitCode = code;
+      throw new Error(`Mock exit with code ${code}`);
+    };
+
+    try {
+      expect(() => {
+        outputHookResult(result, 'json', mockExitHandler);
+      }).toThrow('Mock exit with code 0'); // JSON mode always exits 0
+      
+      expect(exitCode).toBe(0);
+      expect(consoleOutput).toBe('{"action":"continue","message":"Test message"}');
+    } finally {
+      // Restore console.log
+      console.log = originalLog;
+    }
   });
 });

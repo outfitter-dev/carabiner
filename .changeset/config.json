@@ -5,15 +5,15 @@
   "fixed": [],
   "linked": [
     [
-      "@claude-code/hooks-core",
-      "@claude-code/hooks-validators",
-      "@claude-code/hooks-config",
-      "@claude-code/hooks-testing",
-      "@claude-code/hooks-cli"
+      "@outfitter/hooks-core",
+      "@outfitter/hooks-validators",
+      "@outfitter/hooks-config",
+      "@outfitter/hooks-testing",
+      "@outfitter/hooks-cli"
     ]
   ],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@outfitter/grapple", "@claude-code/hooks-examples"]
+  "ignore": ["@outfitter/hooks-examples"]
 }

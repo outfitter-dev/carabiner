@@ -78,9 +78,8 @@ export interface HookMetadata {
  * Simple hook output for Claude Code communication
  */
 export interface ClaudeHookOutput {
-  readonly action: 'continue' | 'block' | 'modify';
+  readonly action: 'continue' | 'block';
   readonly message?: string;
-  readonly modified_input?: Record<string, unknown>; // For PreToolUse input modification
   readonly data?: Record<string, unknown>;
 }
 

@@ -410,10 +410,9 @@ describe('claudeHookOutputSchema', () => {
       { action: 'continue' },
       { action: 'block', message: 'Security violation' },
       {
-        action: 'modify',
-        message: 'Input modified',
-        modified_input: { command: 'safe-command' },
-        data: { original: 'dangerous-command' },
+        action: 'block',
+        message: 'Security check complete',
+        data: { level: 'high', timestamp: '2024-01-01T00:00:00Z' },
       },
     ];
 
