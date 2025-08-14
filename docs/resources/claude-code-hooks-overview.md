@@ -58,41 +58,34 @@ Claude Code hooks are event-driven commands that execute automatically at specif
 ### Available Hook Events
 
 1. **PreToolUse**: Executes before a tool is used
-
    - **Purpose**: Validate inputs, add context, or prevent execution
    - **Common use**: Input validation, security checks
    - **Exit behavior**: Exit code 2 blocks the tool and shows stderr to Claude
 
 2. **PostToolUse**: Executes after a tool completes successfully
-
    - **Purpose**: Process outputs, trigger follow-up actions
    - **Common use**: Code formatting, file processing
    - **Exit behavior**: Non-zero exits mark hook as failed but don't block
 
 3. **UserPromptSubmit**: Executes when a user submits a prompt
-
    - **Purpose**: Add context or validate user inputs
    - **Common use**: Timestamp injection, prompt preprocessing
    - **Note**: `USER_PROMPT` environment variable is only available in this context
 
 4. **SessionStart**: Executes when starting a new session
-
    - **Purpose**: Initialize session-specific state
    - **Common use**: Environment setup, context loading
    - **Note**: `CLAUDE_TOOL_NAME` is not available in this context
 
 5. **Stop**: Executes when Claude Code finishes responding
-
    - **Purpose**: Clean up or trigger post-response actions
    - **Common use**: Logging, state persistence
 
 6. **SubagentStop**: Executes when a subagent finishes responding
-
    - **Purpose**: Handle subagent completion
    - **Common use**: Subagent result processing
 
 7. **Notification**: Executes on certain system notifications
-
    - **Purpose**: Handle system-level events
    - **Common use**: Status monitoring, alerts
 
