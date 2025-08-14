@@ -63,7 +63,7 @@
     "clean": "turbo clean && find packages -name 'dist' -type d -exec rm -rf {} + 2>/dev/null || true"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.1.4",
+    "@biomejs/biome": "2.2.0",
     "@changesets/cli": "^2.27.9",
     "@types/bun": "*",
     "@types/node": "^24.2.1",
@@ -79,7 +79,7 @@
     "type-fest": "^4.41.0",
     "typedoc": "^0.28.10",
     "typescript": "^5.9.2",
-    "ultracite": "5.1.2",
+    "ultracite": "5.1.5",
     "vitest": "^3.2.4"
   },
   "packageManager": "bun@1.1.44"
