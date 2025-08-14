@@ -45,9 +45,9 @@
     "type-fest": "^4.41.0"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.19",
-    "typescript": "^5.7.2",
-    "ultracite": "5.1.1"
+    "@types/bun": "*",
+    "typescript": "^5.9.2",
+    "ultracite": "5.1.2"
   },
   "publishConfig": {
     "access": "public"

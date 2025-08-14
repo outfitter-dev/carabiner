@@ -22,7 +22,7 @@
     "@outfitter/hooks-testing": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.19",
-    "typescript": "^5.7.2"
+    "@types/bun": "*",
+    "typescript": "^5.9.2"
   }
 }

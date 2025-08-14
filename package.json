@@ -36,7 +36,7 @@
     "dev": "turbo dev",
     "test": "turbo test",
     "test:ci": "turbo test --concurrency=1",
-    "syncpack:check": "syncpack list",
+    "syncpack:check": "syncpack lint",
     "format": "bun x ultracite@latest format && prettier --write \"**/*.{json,yaml,yml}\" && markdownlint-cli2 --fix \"**/*.{md,mdx,mdc}\"",
     "format:check": "bun x ultracite@latest lint",
     "format:check:all": "bun x ultracite@latest lint && prettier --check \"**/*.{json,yaml,yml}\" && markdownlint-cli2 \"**/*.{md,mdx,mdc}\" && (stylelint \"**/*.css\" || echo 'No CSS files found')",
@@ -65,7 +65,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.1.4",
     "@changesets/cli": "^2.27.9",
-    "@types/bun": "^1.2.20",
+    "@types/bun": "*",
     "@types/node": "^24.2.1",
     "@vitest/coverage-v8": "^3.2.4",
     "lefthook": "^1.12.2",
