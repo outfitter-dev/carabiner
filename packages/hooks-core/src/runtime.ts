@@ -101,6 +101,7 @@ export function parseToolInput<T extends ToolName>(
 /**
  * Create hook context from Claude Code JSON input
  */
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: clarity prioritized over splitting tiny branches
 export function createHookContext<
   TEvent extends HookEvent,
   TTool extends ToolName = ToolName,
@@ -141,8 +142,8 @@ export function createHookContext<
   if (isClaudeUserPromptInput(claudeInput)) {
     const promptContext = {
       ...baseContext,
-      toolName: 'UserPromptSubmit' as TTool,
-      toolInput: {} as GetToolInput<TTool>,
+      toolName: undefined,
+      toolInput: undefined as unknown as GetToolInput<TTool>,
       toolResponse: undefined,
       userPrompt: claudeInput.prompt,
       message: undefined,
@@ -153,8 +154,8 @@ export function createHookContext<
   if (isClaudeNotificationInput(claudeInput)) {
     const notificationContext = {
       ...baseContext,
-      toolName: claudeInput.hook_event_name as TTool,
-      toolInput: {} as GetToolInput<TTool>,
+      toolName: undefined,
+      toolInput: undefined as unknown as GetToolInput<TTool>,
       toolResponse: undefined,
       userPrompt: undefined,
       message: claudeInput.message,
@@ -165,8 +166,8 @@ export function createHookContext<
   // Fallback for unknown event types
   return {
     ...baseContext,
-    toolName: '' as TTool,
-    toolInput: {} as GetToolInput<TTool>,
+    toolName: undefined,
+    toolInput: undefined as unknown as GetToolInput<TTool>,
     toolResponse: undefined,
     userPrompt: undefined,
     message: undefined,
@@ -281,6 +282,7 @@ export function isNotebookEditToolInput(
 /**
  * Execute hook with timeout and error handling
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: error and timeout handling requires multiple branches
 export async function executeHook(
   handler: HookHandler,
   context: HookContext,
@@ -374,27 +376,29 @@ export function outputHookResult(
       data: result.data,
     };
     // Must use console.log for Claude Code communication protocol
+    // biome-ignore lint/suspicious/noConsole: console.log is part of Claude protocol contract
     console.log(JSON.stringify(claudeOutput));
     return exitHandler(0); // Always exit 0 for JSON mode, let JSON control behavior
-  } else {
-    // Traditional exit code mode - must use console for Claude Code communication
-    if (result.message) {
-      if (result.success) {
-        console.log(result.message);
-      } else {
-        console.error(result.message);
-      }
-    }
-
-    // Exit codes: 0 = success, 2 = blocking error, 1 = non-blocking error
+  }
+  // Traditional exit code mode - must use console for Claude Code communication
+  if (result.message) {
     if (result.success) {
-      return exitHandler(0);
-    } else if (result.block) {
-      return exitHandler(2);
+      // biome-ignore lint/suspicious/noConsole: console.log is part of Claude protocol contract
+      console.log(result.message);
     } else {
-      return exitHandler(1);
+      // biome-ignore lint/suspicious/noConsole: console.error is part of Claude protocol contract
+      console.error(result.message);
     }
   }
+
+  // Exit codes: 0 = success, 2 = blocking error, 1 = non-blocking error
+  if (result.success) {
+    return exitHandler(0);
+  }
+  if (result.block) {
+    return exitHandler(2);
+  }
+  return exitHandler(1);
 }
 
 /**
@@ -560,4 +564,3 @@ export function createFileContext(
 
 // HookLogger is now exported from logger.ts with proper pino implementation
 export { HookLogger } from './logger';
-

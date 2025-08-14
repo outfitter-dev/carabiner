@@ -8,16 +8,16 @@ import type { LiteralUnion, Simplify } from 'type-fest';
 /**
  * JSON parsing result for stdin input
  */
-export interface ParsedStdinInput<T = unknown> {
+export type ParsedStdinInput<T = unknown> = {
   success: true;
   data: T;
-}
+};
 
-export interface ParsedStdinError {
+export type ParsedStdinError = {
   success: false;
   error: string;
   rawInput?: string;
-}
+};
 
 export type StdinParseResult<T = unknown> =
   | ParsedStdinInput<T>
@@ -58,39 +58,39 @@ export type ToolName = LiteralUnion<
  * Base input structure received from Claude Code via stdin
  * All hooks receive this minimal structure, with event-specific additions
  */
-export interface ClaudeHookInput {
+export type ClaudeHookInput = {
   readonly session_id: string;
   readonly transcript_path: string;
   readonly cwd: string;
   readonly hook_event_name: HookEvent;
   readonly matcher?: string; // What triggered this hook
-}
+};
 
 /**
  * Extended input for PreToolUse and PostToolUse hooks
  */
-export interface ClaudeToolHookInput extends ClaudeHookInput {
+export type ClaudeToolHookInput = ClaudeHookInput & {
   readonly hook_event_name: 'PreToolUse' | 'PostToolUse';
   readonly tool_name: ToolName;
   readonly tool_input: Record<string, unknown>;
   readonly tool_response?: Record<string, unknown>; // PostToolUse only
-}
+};
 
 /**
  * Extended input for UserPromptSubmit hooks
  */
-export interface ClaudeUserPromptInput extends ClaudeHookInput {
+export type ClaudeUserPromptInput = ClaudeHookInput & {
   readonly hook_event_name: 'UserPromptSubmit';
   readonly prompt: string;
-}
+};
 
 /**
  * Extended input for notification events
  */
-export interface ClaudeNotificationInput extends ClaudeHookInput {
+export type ClaudeNotificationInput = ClaudeHookInput & {
   readonly hook_event_name: 'SessionStart' | 'Stop' | 'SubagentStop';
   readonly message?: string;
-}
+};
 
 /**
  * Union of all possible Claude hook input types
@@ -104,97 +104,97 @@ export type ClaudeHookInputVariant =
  * Environment variables provided by Claude Code runtime
  * Only CLAUDE_PROJECT_DIR is actually provided according to docs
  */
-export interface HookEnvironment {
+export type HookEnvironment = {
   readonly CLAUDE_PROJECT_DIR?: string;
-}
+};
 
 /**
  * Tool input type definitions with strict mapping
  */
-export interface BashToolInput {
+export type BashToolInput = {
   command: string;
   description?: string;
   timeout?: number;
-}
+};
 
-export interface WriteToolInput {
+export type WriteToolInput = {
   file_path: string;
   content: string;
-}
+};
 
-export interface EditToolInput {
+export type EditToolInput = {
   file_path: string;
   old_string: string;
   new_string: string;
   replace_all?: boolean;
-}
+};
 
-export interface MultiEditInput {
+export type MultiEditInput = {
   file_path: string;
   edits: Array<{
     old_string: string;
     new_string: string;
     replace_all?: boolean;
   }>;
-}
+};
 
-export interface ReadToolInput {
+export type ReadToolInput = {
   file_path: string;
   limit?: number;
   offset?: number;
-}
+};
 
-export interface GlobToolInput {
+export type GlobToolInput = {
   pattern: string;
   path?: string;
-}
+};
 
-export interface GrepToolInput {
+export type GrepToolInput = {
   pattern: string;
   path?: string;
   glob?: string;
   output_mode?: 'content' | 'files_with_matches' | 'count';
   head_limit?: number;
   multiline?: boolean;
-}
+};
 
-export interface LSToolInput {
+export type LSToolInput = {
   path: string;
   ignore?: string[];
-}
+};
 
-export interface TodoWriteToolInput {
+export type TodoWriteToolInput = {
   todos: Array<{
     content: string;
     status: 'pending' | 'in_progress' | 'completed';
     id: string;
   }>;
-}
+};
 
-export interface WebFetchToolInput {
+export type WebFetchToolInput = {
   url: string;
   prompt: string;
-}
+};
 
-export interface WebSearchToolInput {
+export type WebSearchToolInput = {
   query: string;
   allowed_domains?: string[];
   blocked_domains?: string[];
-}
+};
 
-export interface NotebookEditToolInput {
+export type NotebookEditToolInput = {
   notebook_path: string;
   new_source: string;
   cell_id?: string;
   cell_type?: 'code' | 'markdown';
   edit_mode?: 'replace' | 'insert' | 'delete';
-}
+};
 
 /**
  * Strict mapping of tool names to their input types
  * Provides compile-time safety for tool-specific logic
  */
-export interface ToolInputMap {
+export type ToolInputMap = {
   Bash: BashToolInput;
   Edit: EditToolInput;
   MultiEdit: MultiEditInput;
@@ -207,7 +207,7 @@ export interface ToolInputMap {
   WebFetch: WebFetchToolInput;
   WebSearch: WebSearchToolInput;
   NotebookEdit: NotebookEditToolInput;
-}
+};
 
 /**
  * Generic tool input type (fallback for unknown tools)
@@ -229,28 +229,28 @@ export type GetToolInput<T extends ToolName> = T extends keyof ToolInputMap
 /**
  * Hook execution context - updated to match actual Claude Code input structure
  */
-export interface HookContext<
+export type HookContext<
   TEvent extends HookEvent = HookEvent,
   TTool extends ToolName = ToolName,
-> {
+> = {
   readonly event: TEvent;
   readonly sessionId: string;
   readonly transcriptPath: string;
   readonly cwd: string;
   readonly matcher?: string;
-  readonly toolName: TTool;
-  readonly toolInput: GetToolInput<TTool>;
+  readonly toolName?: TTool; // Optional for non-tool events
+  readonly toolInput?: GetToolInput<TTool>; // Optional for non-tool events
   readonly toolResponse?: Record<string, unknown>; // For PostToolUse
   readonly userPrompt?: string; // For UserPromptSubmit
   readonly message?: string; // For notification events
   readonly environment: HookEnvironment;
   readonly rawInput: ClaudeHookInputVariant; // Access to original input
-}
+};
 
 /**
  * Hook execution result - supports both exit codes and JSON output
  */
-export interface HookResult {
+export type HookResult = {
   success: boolean;
   message?: string;
   block?: boolean; // For PreToolUse hooks - true blocks tool execution
@@ -260,17 +260,17 @@ export interface HookResult {
     timestamp?: string;
     hookVersion?: string;
   };
-}
+};
 
 /**
  * Structured JSON output for advanced hook control
  * Alternative to simple exit codes
  */
-export interface ClaudeHookOutput {
+export type ClaudeHookOutput = {
   action: 'continue' | 'block';
   message?: string;
   data?: Record<string, unknown>;
-}
+};
 
 /**
  * Hook output mode - determines how results are returned to Claude
@@ -296,46 +296,46 @@ export type TypedHookHandler<
 /**
  * Hook configuration for a specific tool
  */
-export interface ToolHookConfig {
+export type ToolHookConfig = {
   command: string;
   timeout?: number;
   enabled?: boolean;
   detached?: boolean;
-}
+};
 
 /**
  * Complete hook configuration structure
  */
-export interface HookConfiguration {
+export type HookConfiguration = {
   PreToolUse?: Partial<Record<ToolName, ToolHookConfig>>;
   PostToolUse?: Partial<Record<ToolName, ToolHookConfig>>;
   UserPromptSubmit?: ToolHookConfig;
   SessionStart?: ToolHookConfig;
   Stop?: ToolHookConfig;
   SubagentStop?: ToolHookConfig;
-}
+};
 
 /**
  * Hook execution options
  */
-export interface HookExecutionOptions {
+export type HookExecutionOptions = {
   timeout?: number;
   throwOnError?: boolean;
   captureOutput?: boolean;
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
   outputMode?: HookOutputMode; // How to return results to Claude
-}
+};
 
 /**
  * Hook registry entry
  */
-export interface HookRegistryEntry<TEvent extends HookEvent = HookEvent> {
+export type HookRegistryEntry<TEvent extends HookEvent = HookEvent> = {
   event: TEvent;
   handler: HookHandler<TEvent>;
   priority?: number;
   enabled?: boolean;
   tool?: ToolName; // NEW: Optional tool targeting for scoped hooks
-}
+};
 
 /**
  * Utility types for better developer experience
@@ -405,7 +405,7 @@ export class HookTimeoutError extends HookError {
 /**
  * Builder pattern types for fluent hook creation
  */
-export interface HookBuilder<TEvent extends HookEvent = HookEvent> {
+export type HookBuilder<TEvent extends HookEvent = HookEvent> = {
   forEvent<E extends HookEvent>(event: E): HookBuilder<E>;
   forTool<T extends ToolName>(toolName: T): HookBuilder<TEvent>;
   withHandler<E extends TEvent>(handler: HookHandler<E>): HookBuilder<E>;
@@ -414,7 +414,7 @@ export interface HookBuilder<TEvent extends HookEvent = HookEvent> {
     condition: (context: HookContext<TEvent>) => boolean
   ): HookBuilder<TEvent>;
   build(): HookRegistryEntry<TEvent>;
-}
+};
 
 /**
  * Simplified hook result for quick success/failure
@@ -426,14 +426,14 @@ export type SimpleHookResult = Simplify<
 /**
  * Hook execution stats for monitoring
  */
-export interface HookExecutionStats {
+export type HookExecutionStats = {
   totalExecutions: number;
   successfulExecutions: number;
   failedExecutions: number;
   blockedExecutions: number;
   averageExecutionTime: number;
   lastExecutionTime?: string;
-}
+};
 
 /**
  * Type guards for Claude input validation

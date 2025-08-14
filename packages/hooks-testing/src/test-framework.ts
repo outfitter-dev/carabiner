@@ -15,7 +15,7 @@ import { mockEnv } from './mock';
 /**
  * Test suite configuration
  */
-export interface TestSuiteConfig {
+export type TestSuiteConfig = {
   name: string;
   description?: string;
   timeout?: number;
@@ -23,12 +23,12 @@ export interface TestSuiteConfig {
   afterEach?: () => void | Promise<void>;
   beforeAll?: () => void | Promise<void>;
   afterAll?: () => void | Promise<void>;
-}
+};
 
 /**
  * Hook test case configuration
  */
-export interface HookTestConfig {
+export type HookTestConfig = {
   name: string;
   description?: string;
   context: HookContext;
@@ -41,24 +41,24 @@ export interface HookTestConfig {
     result: HookResult,
     context: HookContext
   ) => void | Promise<void>;
-}
+};
 
 /**
  * Test execution result
  */
-export interface TestExecutionResult {
+export type TestExecutionResult = {
   name: string;
   passed: boolean;
   duration: number;
   error?: Error;
   result?: HookResult;
   skipped?: boolean;
-}
+};
 
 /**
  * Test suite result
  */
-export interface TestSuiteResult {
+export type TestSuiteResult = {
   name: string;
   tests: TestExecutionResult[];
   passed: boolean;
@@ -69,12 +69,13 @@ export interface TestSuiteResult {
     failed: number;
     skipped: number;
   };
-}
+};
 
 /**
  * Hook test runner
  */
 export class HookTestRunner {
+  // biome-ignore lint/style/useReadonlyClassProperties: suites mutated by suite() calls
   private suites: TestSuite[] = [];
   private currentSuite: TestSuite | null = null;
 
@@ -164,9 +165,13 @@ export class HookTestRunner {
  * Test suite class
  */
 export class TestSuite {
+  // biome-ignore lint/style/useReadonlyClassProperties: tests mutated by addTest()
   private tests: HookTest[] = [];
 
-  constructor(public config: TestSuiteConfig) {}
+  constructor(config: TestSuiteConfig) {
+    this.config = config;
+  }
+  readonly config: TestSuiteConfig;
 
   /**
    * Add test to suite
@@ -273,17 +278,20 @@ export class TestSuite {
  * Individual hook test
  */
 export class HookTest {
-  constructor(
-    private handler: HookHandler,
-    public config: HookTestConfig
-  ) {}
+  constructor(handler: HookHandler, config: HookTestConfig) {
+    this.handler = handler;
+    this.config = config;
+  }
+  private readonly handler: HookHandler;
+  readonly config: HookTestConfig;
 
   /**
    * Run the test
    */
   async run(suiteTimeout?: number): Promise<TestExecutionResult> {
     const startTime = Date.now();
-    const timeout = this.config.timeout || suiteTimeout || 30_000;
+    const DEFAULT_TEST_TIMEOUT_MS = 30_000;
+    const timeout = this.config.timeout || suiteTimeout || DEFAULT_TEST_TIMEOUT_MS;
 
     try {
       // Set up environment if specified
@@ -347,7 +355,7 @@ export class HookTest {
           throw new Error(`Expected property '${key}' not found in result`);
         }
 
-        const actualValue = result[key];
+        const actualValue = (result as Record<string, unknown>)[key];
         if (actualValue !== expectedValue) {
           throw new Error(
             `Expected ${key} to be ${expectedValue}, got ${actualValue}`
@@ -479,14 +487,18 @@ export async function runTests(): Promise<void> {
 
   for (const suiteResult of results) {
     const icon = suiteResult.passed ? '✅' : '❌';
+    // biome-ignore lint/suspicious/noConsole: printing test results is intended for CLI UX
     console.log(`${icon} ${suiteResult.name}`);
 
     for (const testResult of suiteResult.tests) {
       if (testResult.skipped) {
+        // biome-ignore lint/suspicious/noConsole: printing test results is intended for CLI UX
         console.log(`  ⏭️  ${testResult.name} (skipped)`);
       } else if (testResult.passed) {
+        // biome-ignore lint/suspicious/noConsole: printing test results is intended for CLI UX
         console.log(`  ✅ ${testResult.name} (${testResult.duration}ms)`);
       } else if (testResult.error) {
+        // biome-ignore lint/suspicious/noConsole: printing test results is intended for CLI UX
         console.log(`  ❌ ${testResult.name}: ${testResult.error.message}`);
       }
     }

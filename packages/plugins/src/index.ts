@@ -77,22 +77,30 @@
  * };
  * ```
  */
+import auditLoggerPlugin from './audit-logger/index';
+import fileBackupPlugin from './file-backup/index';
+import gitSafetyPlugin from './git-safety/index';
+import performanceMonitorPlugin from './performance-monitor/index';
+import securityScannerPlugin from './security-scanner/index';
 
 export { default as auditLoggerPlugin } from './audit-logger/index';
 export { default as fileBackupPlugin } from './file-backup/index';
-// Individual plugin exports
 export { default as gitSafetyPlugin } from './git-safety/index';
 export { default as performanceMonitorPlugin } from './performance-monitor/index';
 export { default as securityScannerPlugin } from './security-scanner/index';
 
 // Plugin collection configuration interface
-export interface PluginCollectionConfig {
+export type PluginCollectionConfig = {
   gitSafety?: boolean | Record<string, unknown>;
   fileBackup?: boolean | Record<string, unknown>;
   securityScanner?: boolean | Record<string, unknown>;
   performanceMonitor?: boolean | Record<string, unknown>;
   auditLogger?: boolean | Record<string, unknown>;
-}
+};
+
+// Common constants
+const BYTES_PER_KILOBYTE = 1024;
+const ONE_MEGABYTE = BYTES_PER_KILOBYTE * BYTES_PER_KILOBYTE;
 
 /**
  * Create a collection of plugins with optional configuration
@@ -104,44 +112,23 @@ export function createPluginCollection(config: PluginCollectionConfig = {}) {
   const plugins: Array<{ plugin: unknown; config?: Record<string, unknown> }> =
     [];
 
-  // TODO: Implement actual plugin instances
-  // The plugins referenced below are placeholders and need to be implemented
-
   if (config.gitSafety !== false) {
     const gitSafetyConfig =
       typeof config.gitSafety === 'object' ? config.gitSafety : {};
-    plugins.push({
-      plugin: {
-        name: 'git-safety',
-        version: '1.0.0',
-        description: 'Git safety plugin placeholder',
-      },
-      config: gitSafetyConfig,
-    });
+    plugins.push({ plugin: gitSafetyPlugin, config: gitSafetyConfig });
   }
 
   if (config.fileBackup !== false) {
     const fileBackupConfig =
       typeof config.fileBackup === 'object' ? config.fileBackup : {};
-    plugins.push({
-      plugin: {
-        name: 'file-backup',
-        version: '1.0.0',
-        description: 'File backup plugin placeholder',
-      },
-      config: fileBackupConfig,
-    });
+    plugins.push({ plugin: fileBackupPlugin, config: fileBackupConfig });
   }
 
   if (config.securityScanner !== false) {
     const securityScannerConfig =
       typeof config.securityScanner === 'object' ? config.securityScanner : {};
     plugins.push({
-      plugin: {
-        name: 'security-scanner',
-        version: '1.0.0',
-        description: 'Security scanner plugin placeholder',
-      },
+      plugin: securityScannerPlugin,
       config: securityScannerConfig,
     });
   }
@@ -152,11 +139,7 @@ export function createPluginCollection(config: PluginCollectionConfig = {}) {
         ? config.performanceMonitor
         : {};
     plugins.push({
-      plugin: {
-        name: 'performance-monitor',
-        version: '1.0.0',
-        description: 'Performance monitor plugin placeholder',
-      },
+      plugin: performanceMonitorPlugin,
       config: performanceMonitorConfig,
     });
   }
@@ -164,14 +147,7 @@ export function createPluginCollection(config: PluginCollectionConfig = {}) {
   if (config.auditLogger !== false) {
     const auditLoggerConfig =
       typeof config.auditLogger === 'object' ? config.auditLogger : {};
-    plugins.push({
-      plugin: {
-        name: 'audit-logger',
-        version: '1.0.0',
-        description: 'Audit logger plugin placeholder',
-      },
-      config: auditLoggerConfig,
-    });
+    plugins.push({ plugin: auditLoggerPlugin, config: auditLoggerConfig });
   }
 
   return plugins;
@@ -181,33 +157,12 @@ export function createPluginCollection(config: PluginCollectionConfig = {}) {
  * Get all available plugins as an array
  */
 export function getAllPlugins() {
-  // TODO: Replace with actual plugin implementations
   return [
-    {
-      name: 'git-safety',
-      version: '1.0.0',
-      description: 'Git safety plugin placeholder',
-    },
-    {
-      name: 'file-backup',
-      version: '1.0.0',
-      description: 'File backup plugin placeholder',
-    },
-    {
-      name: 'security-scanner',
-      version: '1.0.0',
-      description: 'Security scanner plugin placeholder',
-    },
-    {
-      name: 'performance-monitor',
-      version: '1.0.0',
-      description: 'Performance monitor plugin placeholder',
-    },
-    {
-      name: 'audit-logger',
-      version: '1.0.0',
-      description: 'Audit logger plugin placeholder',
-    },
+    gitSafetyPlugin,
+    fileBackupPlugin,
+    securityScannerPlugin,
+    performanceMonitorPlugin,
+    auditLoggerPlugin,
   ];
 }
 
@@ -215,36 +170,14 @@ export function getAllPlugins() {
  * Get plugin by name
  */
 export function getPluginByName(name: string) {
-  // TODO: Replace with actual plugin implementations
-  const plugins = {
-    'git-safety': {
-      name: 'git-safety',
-      version: '1.0.0',
-      description: 'Git safety plugin placeholder',
-    },
-    'file-backup': {
-      name: 'file-backup',
-      version: '1.0.0',
-      description: 'File backup plugin placeholder',
-    },
-    'security-scanner': {
-      name: 'security-scanner',
-      version: '1.0.0',
-      description: 'Security scanner plugin placeholder',
-    },
-    'performance-monitor': {
-      name: 'performance-monitor',
-      version: '1.0.0',
-      description: 'Performance monitor plugin placeholder',
-    },
-    'audit-logger': {
-      name: 'audit-logger',
-      version: '1.0.0',
-      description: 'Audit logger plugin placeholder',
-    },
-  };
-
-  return plugins[name as keyof typeof plugins];
+  const map = {
+    'git-safety': gitSafetyPlugin,
+    'file-backup': fileBackupPlugin,
+    'security-scanner': securityScannerPlugin,
+    'performance-monitor': performanceMonitorPlugin,
+    'audit-logger': auditLoggerPlugin,
+  } as const;
+  return map[name as keyof typeof map];
 }
 
 /**
@@ -374,7 +307,7 @@ export function createDevelopmentConfiguration(): PluginCollectionConfig {
       backupDir: '.dev-backups',
       maxBackups: 3,
       namingStrategy: 'numbered',
-      maxFileSize: 1024 * 1024, // 1MB
+      maxFileSize: ONE_MEGABYTE, // 1MB
     },
     securityScanner: {
       scanFiles: true,

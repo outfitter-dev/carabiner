@@ -4,7 +4,7 @@
  */
 
 import { extname, resolve } from 'node:path';
-import type { HookContext } from '@outfitter/hooks-core';
+import type { HookContext, ToolInput } from '@outfitter/hooks-core';
 import {
   isBashToolInput,
   isEditToolInput,
@@ -13,41 +13,55 @@ import {
 
 // Regex patterns defined at module level for performance
 const DYNAMIC_REQUIRE_PATTERN = /require\s*\(\s*[^"'][^)]*[^"']\s*\)/;
+const STRICT_SUDO_PATTERN = /sudo\s+/;
+const STRICT_NETWORK_PATTERN = /curl|wget|nc|telnet|ssh|ftp|sftp/;
+const DEV_FILE_EXT_BLOCK_PATTERNS = [
+  /\.dev\./,
+  /\.local\./,
+  /\.test\./,
+  /\.spec\./,
+  /\.debug\./,
+];
 
 /**
  * Security validation error
  */
 export class SecurityValidationError extends Error {
+  readonly rule: string;
+  readonly severity: 'low' | 'medium' | 'high' | 'critical';
+
   constructor(
     message: string,
-    public readonly rule: string,
-    public readonly severity: 'low' | 'medium' | 'high' | 'critical' = 'high'
+    rule: string,
+    severity: 'low' | 'medium' | 'high' | 'critical' = 'high'
   ) {
     super(message);
     this.name = 'SecurityValidationError';
+    this.rule = rule;
+    this.severity = severity;
   }
 }
 
 /**
  * Security rule configuration
  */
-export interface SecurityRuleConfig {
+export type SecurityRuleConfig = {
   enabled: boolean;
   severity: 'low' | 'medium' | 'high' | 'critical';
   blockOnViolation: boolean;
   customPatterns?: RegExp[];
   exemptions?: string[];
-}
+};
 
 /**
  * Security validation options
  */
-export interface SecurityOptions {
+export type SecurityOptions = {
   env?: 'development' | 'production' | 'test';
   strictMode?: boolean;
   allowOverrides?: boolean;
   customRules?: Record<string, SecurityRuleConfig>;
-}
+};
 
 /**
  * Default security rules
@@ -227,7 +241,7 @@ export function validateBashCommand(
   // Additional strict mode checks
   if (options.strictMode) {
     // Block any sudo usage in strict mode
-    if (/sudo\s+/.test(command)) {
+    if (STRICT_SUDO_PATTERN.test(command)) {
       throw new SecurityValidationError(
         'sudo commands blocked in strict mode',
         'strictMode',
@@ -236,7 +250,7 @@ export function validateBashCommand(
     }
 
     // Block network access in strict mode
-    if (/curl|wget|nc|telnet|ssh|ftp|sftp/.test(command)) {
+    if (STRICT_NETWORK_PATTERN.test(command)) {
       throw new SecurityValidationError(
         'Network commands blocked in strict mode',
         'strictMode',
@@ -287,15 +301,9 @@ export function validateFilePath(
   // Production environment checks
   if (options.env === 'production') {
     // Block access to development files in production
-    const devPatterns = [
-      /\.dev\./,
-      /\.local\./,
-      /\.test\./,
-      /\.spec\./,
-      /\.debug\./,
-    ];
-
-    const devPattern = devPatterns.find((pattern) => pattern.test(filePath));
+    const devPattern = DEV_FILE_EXT_BLOCK_PATTERNS.find((pattern) =>
+      pattern.test(filePath)
+    );
     if (devPattern) {
       throw new SecurityValidationError(
         `Development file access blocked in production: ${filePath}`,
@@ -315,14 +323,23 @@ export function validateFileContent(
   options: SecurityOptions = {}
 ): void {
   const rules = { ...DEFAULT_SECURITY_RULES, ...(options.customRules || {}) };
-
   if (!rules.secretsInContent?.enabled) {
     return;
   }
 
   const ext = extname(filePath);
 
-  // Check for secrets
+  detectSecretsInContent(content);
+  validateLanguageSpecificContent(content, ext);
+  if (['.sh', '.bash', '.zsh'].includes(ext)) {
+    validateBashCommand(content, options);
+  }
+  if (['.yml', '.yaml', '.json'].includes(ext)) {
+    validateConfigLikeContent(content, filePath, ext);
+  }
+}
+
+function detectSecretsInContent(content: string): void {
   const secretPattern = SECRET_PATTERNS.find((pattern) =>
     pattern.test(content)
   );
@@ -333,80 +350,72 @@ export function validateFileContent(
       'high'
     );
   }
+}
 
-  // Language-specific validations
-  if (['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'].includes(ext)) {
-    // Check for dangerous JavaScript patterns
-    if (content.includes('eval(') || content.includes('Function(')) {
-      throw new SecurityValidationError(
-        'Code contains potentially dangerous eval/Function calls',
-        'dangerousCode',
-        'high'
-      );
-    }
+function validateLanguageSpecificContent(content: string, ext: string): void {
+  if (!['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'].includes(ext)) {
+    return;
+  }
 
-    // Check for dynamic requires with user input
-    if (DYNAMIC_REQUIRE_PATTERN.test(content)) {
+  if (content.includes('eval(') || content.includes('Function(')) {
+    throw new SecurityValidationError(
+      'Code contains potentially dangerous eval/Function calls',
+      'dangerousCode',
+      'high'
+    );
+  }
+
+  if (DYNAMIC_REQUIRE_PATTERN.test(content)) {
+    throw new SecurityValidationError(
+      'Dynamic require() with potential user input detected',
+      'dangerousCode',
+      'medium'
+    );
+  }
+
+  if (
+    content.includes('child_process') &&
+    (content.includes('exec(') || content.includes('spawn('))
+  ) {
+    throw new SecurityValidationError(
+      'Process execution detected in code',
+      'processExecution',
+      'medium'
+    );
+  }
+}
+
+function validateConfigLikeContent(
+  content: string,
+  filePath: string,
+  ext: string
+): void {
+  try {
+    const data = ext === '.json' ? JSON.parse(content) : content.toLowerCase();
+    const configStr = typeof data === 'string' ? data : JSON.stringify(data);
+    const credentialKeys = [
+      'password',
+      'secret',
+      'key',
+      'token',
+      'credential',
+      'auth',
+      'apikey',
+      'access_key',
+      'private_key',
+    ];
+    const hasCredentials = credentialKeys.some((key) =>
+      configStr.includes(key.toLowerCase())
+    );
+    if (hasCredentials && !filePath.includes('.example')) {
       throw new SecurityValidationError(
-        'Dynamic require() with potential user input detected',
-        'dangerousCode',
+        'Configuration file may contain credentials',
+        'secretsInContent',
         'medium'
       );
     }
-
-    // Check for process execution
-    if (
-      content.includes('child_process') &&
-      (content.includes('exec(') || content.includes('spawn('))
-    ) {
-      throw new SecurityValidationError(
-        'Process execution detected in code',
-        'processExecution',
-        'medium'
-      );
-    }
-  }
-
-  // Shell script validation
-  if (['.sh', '.bash', '.zsh'].includes(ext)) {
-    validateBashCommand(content, options);
-  }
-
-  // YAML/JSON config validation
-  if (['.yml', '.yaml', '.json'].includes(ext)) {
-    try {
-      const data =
-        ext === '.json' ? JSON.parse(content) : content.toLowerCase();
-
-      const configStr = typeof data === 'string' ? data : JSON.stringify(data);
-
-      // Look for credential-like keys
-      const credentialKeys = [
-        'password',
-        'secret',
-        'key',
-        'token',
-        'credential',
-        'auth',
-        'apikey',
-        'access_key',
-        'private_key',
-      ];
-
-      const hasCredentials = credentialKeys.some((key) =>
-        configStr.includes(key.toLowerCase())
-      );
-
-      if (hasCredentials && !filePath.includes('.example')) {
-        throw new SecurityValidationError(
-          'Configuration file may contain credentials',
-          'secretsInContent',
-          'medium'
-        );
-      }
-    } catch {
-      // Ignore parse errors for validation
-    }
+  } catch {
+    // Ignore parse errors for validation
   }
 }
 
@@ -417,8 +426,12 @@ function validateBashToolSecurity(
   context: HookContext,
   options: SecurityOptions
 ): void {
-  if (isBashToolInput(context.toolInput)) {
-    validateBashCommand(context.toolInput.command, options);
+  const input = context.toolInput as unknown as ToolInput | undefined;
+  if (!input) {
+    return;
+  }
+  if (isBashToolInput(input)) {
+    validateBashCommand(input.command, options);
   }
 }
 
@@ -429,13 +442,14 @@ function validateWriteToolSecurity(
   context: HookContext,
   options: SecurityOptions
 ): void {
-  if (isWriteToolInput(context.toolInput)) {
-    validateFilePath(context.toolInput.file_path, context.cwd, options);
-    validateFileContent(
-      context.toolInput.content,
-      context.toolInput.file_path,
-      options
-    );
+  const input = context.toolInput as unknown as ToolInput | undefined;
+  if (!input) {
+    return;
+  }
+  if (isWriteToolInput(input)) {
+    const write = input;
+    validateFilePath(write.file_path, context.cwd, options);
+    validateFileContent(write.content, write.file_path, options);
   }
 }
 
@@ -446,13 +460,14 @@ function validateEditToolSecurity(
   context: HookContext,
   options: SecurityOptions
 ): void {
-  if (isEditToolInput(context.toolInput)) {
-    validateFilePath(context.toolInput.file_path, context.cwd, options);
-    validateFileContent(
-      context.toolInput.new_string,
-      context.toolInput.file_path,
-      options
-    );
+  const input = context.toolInput as unknown as ToolInput | undefined;
+  if (!input) {
+    return;
+  }
+  if (isEditToolInput(input)) {
+    const edit = input;
+    validateFilePath(edit.file_path, context.cwd, options);
+    validateFileContent(edit.new_string, edit.file_path, options);
   }
 }
 

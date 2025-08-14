@@ -19,8 +19,8 @@ import type {
  * Central hook registry with composite key system for tool scoping
  */
 export class HookRegistry {
-  private hooks = new Map<string, HookRegistryEntry<HookEvent>[]>();
-  private stats = new Map<string, HookExecutionStats>();
+  private readonly hooks = new Map<string, HookRegistryEntry<HookEvent>[]>();
+  private readonly stats = new Map<string, HookExecutionStats>();
 
   /**
    * Generate registry key: universal hooks use "{event}", tool-specific use "{event}:{tool}"
@@ -225,10 +225,10 @@ export class HookRegistry {
     const statsArray: HookExecutionStats[] = [];
 
     for (const [key, stats] of this.stats.entries()) {
-      if (event && !key.includes(event)) {
+      if (event !== undefined && !key.includes(event)) {
         continue;
       }
-      if (toolName && !key.includes(toolName)) {
+      if (toolName !== undefined && !key.includes(toolName)) {
         continue;
       }
 
@@ -243,7 +243,7 @@ export class HookRegistry {
    */
   private updateStats(
     event: HookEvent,
-    toolName: ToolName,
+    toolName: ToolName | undefined,
     success: boolean,
     duration: number
   ): void {

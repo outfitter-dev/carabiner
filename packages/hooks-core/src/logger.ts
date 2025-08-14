@@ -72,19 +72,27 @@ export const builderLogger = logger.child({ component: 'builder' });
  * Type-safe logging utilities
  */
 export const HookLogger = {
-  info(event: HookEvent, toolName: ToolName, message: string): void {
+  info(
+    event: HookEvent,
+    toolName: ToolName | undefined,
+    message: string
+  ): void {
     const log = createHookLogger(event, toolName);
     log.info(message);
   },
 
-  warn(event: HookEvent, toolName: ToolName, message: string): void {
+  warn(
+    event: HookEvent,
+    toolName: ToolName | undefined,
+    message: string
+  ): void {
     const log = createHookLogger(event, toolName);
     log.warn(message);
   },
 
   error(
     event: HookEvent,
-    toolName: ToolName,
+    toolName: ToolName | undefined,
     message: string,
     error?: Error
   ): void {
@@ -98,7 +106,7 @@ export const HookLogger = {
 
   debug(
     event: HookEvent,
-    toolName: ToolName,
+    toolName: ToolName | undefined,
     message: string,
     data?: unknown
   ): void {
