@@ -6,10 +6,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "noEmit": false,
     "composite": true,
     "incremental": true
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules", "src/**/__tests__/**", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
 }
