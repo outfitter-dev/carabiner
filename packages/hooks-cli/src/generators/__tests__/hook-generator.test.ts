@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { existsSync } from 'node:fs';
-import { rmdir, unlink } from 'node:fs/promises';
+import { existsSync, mkdirSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { HookGeneratorOptions } from '../hook-generator.js';
 import { HookGenerator } from '../hook-generator.js';
 
 describe('HookGenerator', () => {
-  const testWorkspace = '/tmp/hooks-cli-test';
+  const testWorkspace = join(tmpdir(), `hooks-cli-test-${Date.now()}`);
   const testOptions: HookGeneratorOptions = {
     workspacePath: testWorkspace,
     name: 'test-hook',
@@ -17,18 +18,13 @@ describe('HookGenerator', () => {
 
   beforeEach(async () => {
     // Ensure test workspace exists
-    await Bun.write(join(testWorkspace, 'hooks', '.gitkeep'), '');
+    mkdirSync(join(testWorkspace, 'hooks'), { recursive: true });
   });
 
   afterEach(async () => {
     // Clean up test files
     try {
-      const hookPath = join(testWorkspace, 'hooks', 'test-hook.ts');
-      if (existsSync(hookPath)) {
-        await unlink(hookPath);
-      }
-      await rmdir(join(testWorkspace, 'hooks'), { recursive: true });
-      await rmdir(testWorkspace, { recursive: true });
+      await rm(testWorkspace, { recursive: true, force: true });
     } catch {
       // Ignore cleanup errors
     }
