@@ -3,7 +3,14 @@
   "compilerOptions": {
     "noEmit": false,
     "allowImportingTsExtensions": false,
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "incremental": true,
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./tsconfig.build.tsbuildinfo"
   },
   "exclude": ["**/*.test.ts", "**/*.spec.ts", "src/__tests__"]
 }
