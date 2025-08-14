@@ -6,7 +6,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadConfig } from '@outfitter/hooks-config';
-import { BaseCommand, type CliConfig } from '../cli';
+import { BaseCommand, type CliConfig } from '../types';
 
 // Regex patterns at top level
 const HOOK_FILE_REGEX = /\.(ts|js)$/;

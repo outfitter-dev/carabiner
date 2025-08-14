@@ -6,7 +6,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { DEFAULT_CONFIG } from '@outfitter/hooks-config';
-import { BaseCommand, type CliConfig } from '../cli';
+import { BaseCommand, type CliConfig } from '../types';
 
 export class InitCommand extends BaseCommand {
   name = 'init';

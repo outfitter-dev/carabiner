@@ -5,32 +5,11 @@
  * Command-line interface for managing Claude Code hooks
  */
 
-import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import pino from 'pino';
+import type { CliConfig, Command } from './types';
 // Import commands dynamically to avoid circular dependencies
-
-/**
- * CLI configuration
- */
-export interface CliConfig {
-  version: string;
-  workspacePath: string;
-  verbose: boolean;
-  debug: boolean;
-}
-
-/**
- * Command interface
- */
-interface Command {
-  name: string;
-  description: string;
-  usage: string;
-  options: Record<string, string>;
-  execute(args: string[], config: CliConfig): Promise<void>;
-}
 
 /**
  * CLI class
@@ -269,118 +248,6 @@ export class ClaudeHooksCli {
     // Also log internally
     this.logger.info(message);
   }
-}
-
-/**
- * Abstract base command class
- */
-export abstract class BaseCommand implements Command {
-  abstract name: string;
-  abstract description: string;
-  abstract usage: string;
-  abstract options: Record<string, string>;
-
-  protected cli: ClaudeHooksCli | null = null;
-
-  /**
-   * Parse command arguments
-   */
-  protected parseArgs(
-    args: string[],
-    options: Record<string, unknown>
-  ): {
-    values: Record<string, string | boolean | undefined>;
-    positionals: string[];
-  } {
-    try {
-      const result = parseArgs({
-        args,
-        allowPositionals: true,
-        // biome-ignore lint/suspicious/noExplicitAny: parseArgs requires flexible options type
-        options: options as any,
-      });
-      return {
-        values: result.values as Record<string, string | boolean | undefined>,
-        positionals: result.positionals,
-      };
-    } catch (error) {
-      throw new Error(
-        `Invalid arguments: ${error instanceof Error ? error.message : error}`
-      );
-    }
-  }
-
-  /**
-   * Show command help
-   */
-  protected showHelp(): void {
-    console.log(`\nUsage: claude-hooks ${this.name} ${this.usage}\n`);
-    console.log(this.description);
-
-    if (Object.keys(this.options).length > 0) {
-      console.log('\nOptions:');
-      for (const [option, desc] of Object.entries(this.options)) {
-        console.log(`  ${option.padEnd(20)} ${desc}`);
-      }
-    }
-  }
-
-  /**
-   * Get boolean value from parsed args with fallback
-   */
-  protected getBooleanValue(
-    value: string | boolean | undefined,
-    defaultValue = false
-  ): boolean {
-    if (typeof value === 'boolean') {
-      return value;
-    }
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true';
-    }
-    return defaultValue;
-  }
-
-  /**
-   * Get string value from parsed args with fallback
-   */
-  protected getStringValue(
-    value: string | boolean | undefined,
-    defaultValue = ''
-  ): string {
-    if (typeof value === 'string') {
-      return value;
-    }
-    if (typeof value === 'boolean') {
-      return value.toString();
-    }
-    return defaultValue;
-  }
-
-  /**
-   * Check if workspace is a Claude Code hooks project
-   */
-  protected isHooksProject(workspacePath: string): boolean {
-    const claudeDir = join(workspacePath, '.claude');
-    const hooksDir = join(workspacePath, 'hooks');
-    return existsSync(claudeDir) || existsSync(hooksDir);
-  }
-
-  /**
-   * Get hooks directory path
-   */
-  protected getHooksDir(workspacePath: string): string {
-    return join(workspacePath, 'hooks');
-  }
-
-  /**
-   * Get Claude directory path
-   */
-  protected getClaudeDir(workspacePath: string): string {
-    return join(workspacePath, '.claude');
-  }
-
-  abstract execute(args: string[], config: CliConfig): Promise<void>;
 }
 
 /**

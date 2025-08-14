@@ -2,7 +2,6 @@
  * Generate command - Creates new hooks and templates
  */
 
-import { BaseCommand, type CliConfig } from '../cli.js';
 import {
   type GeneratorOptions,
   HookGenerator,
@@ -12,6 +11,7 @@ import {
   ValidatorGenerator,
 } from '../generators/index.js';
 import type { HookTemplateVariant } from '../templates/index.js';
+import { BaseCommand, type CliConfig } from '../types';
 
 export class GenerateCommand extends BaseCommand {
   name = 'generate';

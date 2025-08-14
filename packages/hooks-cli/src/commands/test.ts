@@ -10,7 +10,7 @@ import { join } from 'node:path';
 // Matches *.test.* or *.spec.* across ts/tsx/js/jsx
 const TEST_FILE_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx)$/;
 
-import { BaseCommand, type CliConfig } from '../cli';
+import { BaseCommand, type CliConfig } from '../types';
 
 export class TestCommand extends BaseCommand {
   name = 'test';
