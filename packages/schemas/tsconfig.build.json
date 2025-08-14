@@ -10,7 +10,7 @@
     "composite": true,
     "incremental": true,
     "outDir": "./dist",
-    "tsBuildInfoFile": "./tsconfig.build.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "exclude": ["**/*.test.ts", "**/*.spec.ts", "src/__tests__"],
   "references": [

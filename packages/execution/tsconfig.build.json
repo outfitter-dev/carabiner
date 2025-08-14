@@ -8,7 +8,7 @@
     "incremental": true,
     "noEmit": false,
     "allowImportingTsExtensions": false,
-    "tsBuildInfoFile": "./tsconfig.build.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "exclude": ["src/**/__tests__", "src/**/*.test.ts"],
   "references": [

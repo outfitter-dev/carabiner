@@ -7,7 +7,7 @@
     "incremental": true,
     "noEmit": false,
     "allowImportingTsExtensions": false,
-    "tsBuildInfoFile": "./tsconfig.build.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "references": [
     { "path": "../execution/tsconfig.build.json" },

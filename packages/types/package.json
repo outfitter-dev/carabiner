@@ -34,7 +34,7 @@
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --project tsconfig.build.json --watch",
-    "typecheck": "tsc --project tsconfig.build.json --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:watch": "bun test --watch"
   },

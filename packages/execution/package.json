@@ -30,7 +30,7 @@
     "directory": "packages/execution"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc --project tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
     "test": "bun test",
     "test:watch": "bun test --watch",

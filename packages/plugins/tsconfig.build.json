@@ -9,7 +9,7 @@
     "noEmit": false,
     "allowImportingTsExtensions": false,
     "outDir": "./dist",
-    "tsBuildInfoFile": "./tsconfig.build.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "exclude": ["**/*.test.ts", "**/__tests__/**/*"],
   "references": [

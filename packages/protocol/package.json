@@ -15,7 +15,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc --project tsconfig.build.json",
     "dev": "tsc -b --watch",
     "test": "bun test",
     "test:watch": "bun test --watch",
