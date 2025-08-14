@@ -60,9 +60,10 @@ export {
 // Export all types
 export type * from './types';
 
-// Version export (derived from package.json)
-import type { PackageJson } from 'type-fest';
-import pkgJson from '../package.json' with { type: 'json' };
-
-const pkg = pkgJson as PackageJson;
-export const VERSION = pkg.version || '0.0.0';
+// Version export (prefer env; fallback to package.json when supported)
+export const VERSION: string =
+  (typeof process !== 'undefined' &&
+    process.env &&
+    process.env.npm_package_version) ||
+  (typeof Bun !== 'undefined' && Bun.env && Bun.env.npm_package_version) ||
+  '0.0.0';

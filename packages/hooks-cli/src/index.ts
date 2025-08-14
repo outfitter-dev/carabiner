@@ -13,6 +13,10 @@ export { TestCommand } from './commands/test';
 export { ValidateCommand } from './commands/validate';
 export { BaseCommand, type CliConfig, type Command } from './types';
 
-// Version export (derived from package.json)
-import pkg from '../package.json' with { type: 'json' };
-export const VERSION = pkg.version as string;
+// Version export (prefer env; keep string type)
+export const VERSION: string =
+  (typeof process !== 'undefined' &&
+    process.env &&
+    process.env.npm_package_version) ||
+  (typeof Bun !== 'undefined' && Bun.env && Bun.env.npm_package_version) ||
+  '0.0.0';

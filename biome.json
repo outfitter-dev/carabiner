@@ -11,8 +11,8 @@
     }
   },
   "files": {
-    "ignoreUnknown": true,
-    "includes": ["!**/*.{md,mdx,mdc,css,scss,less,yaml,yml}"]
+    "ignoreUnknown": false,
+    "includes": ["**/*.{ts,tsx,js,jsx,cjs,mjs}"]
   },
   "vcs": {
     "useIgnoreFile": true
