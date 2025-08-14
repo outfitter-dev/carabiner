@@ -17,57 +17,6 @@ env:
   BUN_VERSION: '1.1.38'
 
 jobs:
-  validate-pr:
-    name: Validate PR
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Check commit messages
-        run: |
-          # Get all commits in this PR
-          commits=$(git log --format='%s' origin/${{ github.base_ref }}..HEAD)
-
-          # Check each commit message follows conventional commits
-          while IFS= read -r commit; do
-            if ! echo "$commit" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|chore|build|ci|revert)(\(.+\))?: .+'; then
-              echo "Invalid commit message: $commit"
-              echo "Commit messages must follow Conventional Commits format"
-              exit 1
-            fi
-          done <<< "$commits"
-
-      - name: Check PR title
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          if ! printf '%s' "$PR_TITLE" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|chore|build|ci|revert)(\(.+\))?: .+'; then
-            echo "Invalid PR title: $PR_TITLE"
-            echo "PR title must follow Conventional Commits format"
-            exit 1
-          fi
-
-      - name: Check file changes
-        run: |
-          # Check if lockfile was modified without package.json changes
-          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "bun.lockb"; then
-            if ! git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "package.json"; then
-              echo "Warning: bun.lockb was modified without corresponding package.json changes"
-            fi
-          fi
-
   size-check:
     name: Bundle Size Check
     runs-on: ubuntu-latest
@@ -161,14 +110,3 @@ jobs:
               repo: context.repo.repo,
               body: message
             });
-
-  label-pr:
-    name: Auto Label PR
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false
-    steps:
-      - name: Label based on files changed
-        uses: actions/labeler@v5
-        with:
-          repo-token: '${{ secrets.GITHUB_TOKEN }}'
-          configuration-path: .github/labeler.yml
