@@ -36,7 +36,7 @@
     "dev": "turbo dev",
     "test": "turbo test",
     "test:ci": "turbo test --concurrency=1",
-    "syncpack:check": "syncpack list-mismatches",
+    "syncpack:check": "syncpack list",
     "format": "bun x ultracite@latest format && prettier --write \"**/*.{json,yaml,yml}\" && markdownlint-cli2 --fix \"**/*.{md,mdx,mdc}\"",
     "format:check": "bun x ultracite@latest lint",
     "format:check:all": "bun x ultracite@latest lint && prettier --check \"**/*.{json,yaml,yml}\" && markdownlint-cli2 \"**/*.{md,mdx,mdc}\" && (stylelint \"**/*.css\" || echo 'No CSS files found')",
