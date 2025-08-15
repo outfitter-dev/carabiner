@@ -7,12 +7,12 @@ import {
   writeFileWithChecks,
 } from '../utils/file-operations.js';
 
-export interface GeneratorOptions {
+export type GeneratorOptions = {
   workspacePath: string;
   name: string;
   useTypeScript: boolean;
   force: boolean;
-}
+};
 
 export abstract class BaseGenerator {
   protected readonly options: GeneratorOptions;

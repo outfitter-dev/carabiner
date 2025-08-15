@@ -1,6 +1,7 @@
 /**
  * Builder pattern implementation for fluent hook creation
- * Provides a chainable API for creating type-safe hooks
+ * @deprecated Use hook-factories module for immutable, type-safe hook creation
+ * Provides a chainable API for creating type-safe hooks with immutable state
  */
 
 import type {
@@ -10,67 +11,128 @@ import type {
   HookMiddleware,
   HookRegistryEntry,
   HookResult,
-  HookBuilder as IHookBuilder,
   ToolName,
 } from './types';
 
+// Re-export the new immutable factories for backward compatibility
+export { hookFactories, hookPresets, hookUtils } from './hook-factories';
+
 /**
- * Hook builder implementation with fluent interface
+ * Immutable builder state - makes illegal states unrepresentable
  */
-export class HookBuilder<TEvent extends HookEvent = HookEvent>
-  implements IHookBuilder<TEvent>
-{
-  // biome-ignore lint/style/useReadonlyClassProperties: These fields are configured via builder chaining methods
-  private _event?: TEvent;
-  private _toolName?: ToolName;
-  // biome-ignore lint/style/useReadonlyClassProperties: Handler is set once via withHandler but not in constructor
-  private _handler?: HookHandler<TEvent>;
-  private _timeout?: number;
-  private _condition?: (context: HookContext<TEvent>) => boolean;
-  private _priority = 0;
-  private _enabled = true;
-  // biome-ignore lint/style/useReadonlyClassProperties: Middleware array is appended via withMiddleware during chaining
-  private _middleware: HookMiddleware<HookContext<TEvent>>[] = [];
+type BuilderState<TEvent extends HookEvent = HookEvent> = {
+  readonly event?: TEvent;
+  readonly toolName?: ToolName;
+  readonly handler?: HookHandler<TEvent>;
+  readonly timeout?: number;
+  readonly condition?: (context: HookContext<TEvent>) => boolean;
+  readonly priority: number;
+  readonly enabled: boolean;
+  readonly middleware: readonly HookMiddleware<HookContext<TEvent>>[];
+};
+
+/**
+ * Type-safe builder states for compile-time validation
+ */
+type PartialBuilderState<TEvent extends HookEvent> = BuilderState<TEvent> & {
+  readonly event?: TEvent;
+  readonly handler?: HookHandler<TEvent>;
+};
+
+type CompleteBuilderState<TEvent extends HookEvent> = BuilderState<TEvent> & {
+  readonly event: TEvent;
+  readonly handler: HookHandler<TEvent>;
+};
+
+/**
+ * Type predicate to ensure complete state at build time
+ */
+function isCompleteState<TEvent extends HookEvent>(
+  state: PartialBuilderState<TEvent>
+): state is CompleteBuilderState<TEvent> {
+  return state.event !== undefined && state.handler !== undefined;
+}
+
+/**
+ * Hook builder implementation with fluent interface and immutable state
+ */
+export class HookBuilder<TEvent extends HookEvent = HookEvent> {
+  private readonly state: PartialBuilderState<TEvent>;
+
+  constructor(state?: Partial<BuilderState<TEvent>>) {
+    this.state = {
+      priority: 0,
+      enabled: true,
+      middleware: [],
+      ...state,
+    };
+  }
 
   /**
    * Specify the hook event type
    */
   forEvent<E extends HookEvent>(event: E): HookBuilder<E> {
-    const builder = new HookBuilder<E>();
-    builder._event = event;
-    builder._toolName = this._toolName;
-    builder._timeout = this._timeout;
-    builder._priority = this._priority;
-    builder._enabled = this._enabled;
-    builder._middleware = this._middleware as unknown as HookMiddleware<
-      HookContext<E>
-    >[];
-    return builder;
+    return new HookBuilder<E>({
+      event,
+      toolName: this.state.toolName,
+      timeout: this.state.timeout,
+      priority: this.state.priority,
+      enabled: this.state.enabled,
+      // Reset handler and middleware when changing event type for type safety
+      handler: undefined,
+      condition: undefined,
+      middleware: [],
+    });
   }
 
   /**
    * Specify the target tool name
    */
   forTool<T extends ToolName>(toolName: T): HookBuilder<TEvent> {
-    this._toolName = toolName;
-    return this;
+    return new HookBuilder<TEvent>({
+      ...this.state,
+      toolName,
+    });
   }
 
   /**
    * Set the hook handler function
    */
   withHandler<E extends TEvent>(handler: HookHandler<E>): HookBuilder<E> {
-    const builder = this as unknown as HookBuilder<E>;
-    builder._handler = handler;
-    return builder;
+    // For type safety with generics, we need to handle different cases
+    // If E equals TEvent, we can preserve middleware safely
+    // Otherwise, we need to reset it to avoid type conflicts
+
+    // Check if types are the same at runtime - if event hasn't changed, preserve middleware
+    const canPreserveMiddleware = this.state.event !== undefined;
+
+    return new HookBuilder<E>({
+      event: this.state.event as E,
+      toolName: this.state.toolName,
+      handler,
+      timeout: this.state.timeout,
+      condition: this.state.condition as
+        | ((context: HookContext<E>) => boolean)
+        | undefined,
+      priority: this.state.priority,
+      enabled: this.state.enabled,
+      // Only preserve middleware if event was already set and hasn't changed
+      middleware: canPreserveMiddleware
+        ? (this.state.middleware as unknown as readonly HookMiddleware<
+            HookContext<E>
+          >[])
+        : [],
+    });
   }
 
   /**
    * Set execution timeout in milliseconds
    */
   withTimeout(timeout: number): HookBuilder<TEvent> {
-    this._timeout = timeout;
-    return this;
+    return new HookBuilder<TEvent>({
+      ...this.state,
+      timeout,
+    });
   }
 
   /**
@@ -79,24 +141,30 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
   withCondition(
     condition: (context: HookContext<TEvent>) => boolean
   ): HookBuilder<TEvent> {
-    this._condition = condition;
-    return this;
+    return new HookBuilder<TEvent>({
+      ...this.state,
+      condition,
+    });
   }
 
   /**
    * Set hook priority (higher numbers execute first)
    */
   withPriority(priority: number): HookBuilder<TEvent> {
-    this._priority = priority;
-    return this;
+    return new HookBuilder<TEvent>({
+      ...this.state,
+      priority,
+    });
   }
 
   /**
    * Set hook enabled state
    */
   enabled(enabled = true): HookBuilder<TEvent> {
-    this._enabled = enabled;
-    return this;
+    return new HookBuilder<TEvent>({
+      ...this.state,
+      enabled,
+    });
   }
 
   /**
@@ -105,56 +173,66 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
   withMiddleware(
     middlewareFunc: HookMiddleware<HookContext<TEvent>>
   ): HookBuilder<TEvent> {
-    this._middleware.push(middlewareFunc);
-    return this;
+    return new HookBuilder<TEvent>({
+      ...this.state,
+      middleware: [...this.state.middleware, middlewareFunc],
+    });
   }
 
   /**
-   * Build the hook registry entry
+   * Build the hook registry entry with compile-time safety
    */
   build(): HookRegistryEntry<TEvent> {
-    if (!this._event) {
-      throw new Error('Hook event is required');
+    if (!isCompleteState(this.state)) {
+      // Maintain backward compatibility with existing error messages
+      if (!this.state.event) {
+        throw new Error('Hook event is required');
+      }
+      if (!this.state.handler) {
+        throw new Error('Hook handler is required');
+      }
+
+      // Fallback for any other missing fields
+      throw new Error('Hook builder is incomplete');
     }
 
-    if (!this._handler) {
-      throw new Error('Hook handler is required');
-    }
-
-    let finalHandler = this._handler;
+    const completeState = this.state as CompleteBuilderState<TEvent>;
+    let finalHandler = completeState.handler;
 
     // Wrap with condition if provided
-    if (this._condition) {
+    if (completeState.condition) {
       const originalHandler = finalHandler;
-      const condition = this._condition;
+      const condition = completeState.condition;
 
-      finalHandler = async (context: HookContext<TEvent>) => {
+      finalHandler = async (
+        context: HookContext<TEvent>
+      ): Promise<HookResult> => {
         const shouldExecute = await Promise.resolve(condition(context));
         if (!shouldExecute) {
           return { success: true, message: 'Hook skipped due to condition' };
         }
-        return await Promise.resolve(originalHandler(context));
+        return Promise.resolve(originalHandler(context));
       };
     }
 
-    // Apply middleware
-    if (this._middleware.length > 0) {
-      finalHandler = this._middleware.reduceRight(
-        (nextHandler, middlewareFunc) => async (context: HookContext<TEvent>) =>
-          await middlewareFunc(
-            context,
-            async (ctx) => await Promise.resolve(nextHandler(ctx))
-          ),
+    // Apply middleware stack if present
+    if (completeState.middleware.length > 0) {
+      finalHandler = completeState.middleware.reduceRight(
+        (nextHandler, middlewareFunc) =>
+          async (context: HookContext<TEvent>): Promise<HookResult> =>
+            middlewareFunc(context, async (ctx) =>
+              Promise.resolve(nextHandler(ctx))
+            ),
         finalHandler
       );
     }
 
     return {
-      event: this._event,
+      event: completeState.event,
       handler: finalHandler,
-      priority: this._priority,
-      enabled: this._enabled,
-      tool: this._toolName, // FIX: Now properly included
+      priority: completeState.priority,
+      enabled: completeState.enabled,
+      tool: completeState.toolName,
     };
   }
 
@@ -180,6 +258,7 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
 
 /**
  * Functional API for creating hooks
+ * @deprecated Use hookFactories from ./hook-factories instead
  */
 export const createHook = {
   /**

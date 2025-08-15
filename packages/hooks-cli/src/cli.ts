@@ -15,9 +15,9 @@ import type { CliConfig, Command } from './types';
  * CLI class
  */
 export class ClaudeHooksCli {
-  private commands: Map<string, Command> = new Map();
-  private config: CliConfig;
-  private logger: pino.Logger;
+  private readonly commands: Map<string, Command> = new Map();
+  private readonly config: CliConfig;
+  private readonly logger: pino.Logger;
 
   constructor() {
     this.config = {
@@ -97,7 +97,6 @@ export class ClaudeHooksCli {
     }
 
     if (values.version) {
-      console.log(`claude-hooks version ${this.config.version}`);
       process.exit(0);
     }
 
@@ -141,8 +140,6 @@ export class ClaudeHooksCli {
         `Command failed: ${error instanceof Error ? error.message : error}`
       );
       if (this.config.debug && error instanceof Error && error.stack) {
-        console.error('\nStack trace:');
-        console.error(error.stack);
       }
       process.exit(1);
     }
@@ -157,43 +154,22 @@ export class ClaudeHooksCli {
       await this.registerCommands();
     }
 
-    console.log('Claude Code Hooks CLI');
-    console.log(`Version: ${this.config.version}\n`);
-    console.log('Usage: claude-hooks [options] <command> [command-options]\n');
-    console.log('Options:');
-    console.log('  -h, --help      Show help');
-    console.log('  -v, --version   Show version');
-    console.log('  --verbose       Enable verbose output');
-    console.log('  --debug         Enable debug output');
-    console.log('  -w, --workspace Set workspace path\n');
-    console.log('Commands:');
-
-    for (const command of this.commands.values()) {
-      console.log(`  ${command.name.padEnd(12)} ${command.description}`);
+    for (const _command of this.commands.values()) {
     }
-
-    console.log(
-      '\nRun "claude-hooks <command> --help" for command-specific help'
-    );
   }
 
   /**
    * Show available commands
    */
   private showAvailableCommands(): void {
-    console.log('\nAvailable commands:');
-    for (const command of this.commands.values()) {
-      console.log(`  ${command.name.padEnd(12)} ${command.description}`);
+    for (const _command of this.commands.values()) {
     }
   }
 
   /**
    * Log message (user-facing output)
    */
-  log(message: string): void {
-    // User-facing output uses console
-    console.log(message);
-  }
+  log(_message: string): void {}
 
   /**
    * Log verbose message (internal logging)
@@ -213,8 +189,6 @@ export class ClaudeHooksCli {
    * Log error message (user-facing)
    */
   error(message: string): void {
-    // User-facing errors use console
-    console.error(`[ERROR] ${message}`);
     // Also log internally
     this.logger.error(message);
   }
@@ -223,8 +197,6 @@ export class ClaudeHooksCli {
    * Log warning message (user-facing)
    */
   warn(message: string): void {
-    // User-facing warnings use console
-    console.warn(`[WARN] ${message}`);
     // Also log internally
     this.logger.warn(message);
   }
@@ -233,8 +205,6 @@ export class ClaudeHooksCli {
    * Log success message (user-facing)
    */
   success(message: string): void {
-    // User-facing success uses console
-    console.log(`✅ ${message}`);
     // Also log internally
     this.logger.info({ type: 'success' }, message);
   }
@@ -243,8 +213,6 @@ export class ClaudeHooksCli {
    * Log info message (user-facing)
    */
   info(message: string): void {
-    // User-facing info uses console
-    console.info(`ℹ️  ${message}`);
     // Also log internally
     this.logger.info(message);
   }
@@ -260,8 +228,7 @@ async function main(): Promise<void> {
 
 // Run CLI if this file is executed directly
 if (import.meta.main) {
-  main().catch((error) => {
-    console.error('Fatal error:', error);
+  main().catch((_error) => {
     process.exit(1);
   });
 }

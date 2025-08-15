@@ -1,27 +1,27 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseArgs } from 'node:util';
+import { type ParseArgsConfig, parseArgs } from 'node:util';
 
 /**
  * CLI configuration
  */
-export interface CliConfig {
+export type CliConfig = {
   version: string;
   workspacePath: string;
   verbose: boolean;
   debug: boolean;
-}
+};
 
 /**
  * Command interface
  */
-export interface Command {
+export type Command = {
   name: string;
   description: string;
   usage: string;
   options: Record<string, string>;
   execute(args: string[], config: CliConfig): Promise<void>;
-}
+};
 
 /**
  * Base command class
@@ -39,7 +39,7 @@ export abstract class BaseCommand implements Command {
    */
   protected parseArgs(
     args: string[],
-    options: Record<string, unknown>
+    options: ParseArgsConfig['options']
   ): {
     values: Record<string, string | boolean | undefined>;
     positionals: string[];
@@ -48,8 +48,7 @@ export abstract class BaseCommand implements Command {
       const result = parseArgs({
         args,
         allowPositionals: true,
-        // biome-ignore lint/suspicious/noExplicitAny: parseArgs requires flexible options type
-        options: options as any,
+        options,
       });
       return {
         values: result.values as Record<string, string | boolean | undefined>,
@@ -66,13 +65,9 @@ export abstract class BaseCommand implements Command {
    * Show command help
    */
   protected showHelp(): void {
-    console.log(`\nUsage: claude-hooks ${this.name} ${this.usage}\n`);
-    console.log(this.description);
-
     if (Object.keys(this.options).length > 0) {
-      console.log('\nOptions:');
-      for (const [option, desc] of Object.entries(this.options)) {
-        console.log(`  ${option.padEnd(20)} ${desc}`);
+      for (const [_option, _desc] of Object.entries(this.options)) {
+        // TODO: Implement help display formatting
       }
     }
   }

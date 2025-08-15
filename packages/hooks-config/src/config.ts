@@ -33,34 +33,34 @@ export type ConfigFormat = 'json' | 'js' | 'ts';
 /**
  * Configuration loading options
  */
-export interface ConfigOptions {
+export type ConfigOptions = {
   format?: ConfigFormat;
   validate?: boolean;
   createDefault?: boolean;
   mergeDefaults?: boolean;
-}
+};
 
 /**
  * Partial tool hook config for environment overrides
  */
-export interface PartialToolHookConfig {
+export type PartialToolHookConfig = {
   command?: string;
   timeout?: number;
   enabled?: boolean;
   detached?: boolean;
-}
+};
 
 /**
  * Environment-specific hook configuration structure
  */
-export interface EnvironmentHookConfiguration {
+export type EnvironmentHookConfiguration = {
   PreToolUse?: Partial<Record<ToolName, PartialToolHookConfig>>;
   PostToolUse?: Partial<Record<ToolName, PartialToolHookConfig>>;
   UserPromptSubmit?: PartialToolHookConfig;
   SessionStart?: PartialToolHookConfig;
   Stop?: PartialToolHookConfig;
   SubagentStop?: PartialToolHookConfig;
-}
+};
 
 /**
  * Extended hook configuration with metadata
@@ -179,12 +179,13 @@ export const DEFAULT_CONFIG: ExtendedHookConfiguration = {
  * Configuration manager class
  */
 export class ConfigManager {
-  private config: ExtendedHookConfiguration | null = null;
+  private readonly config: ExtendedHookConfiguration | null = null;
   private configPath: string | null = null;
-  private watchCallbacks: Array<(config: ExtendedHookConfiguration) => void> =
-    [];
+  private readonly watchCallbacks: Array<
+    (config: ExtendedHookConfiguration) => void
+  > = [];
 
-  constructor(private workspacePath: string) {}
+  constructor(private readonly workspacePath: string) {}
 
   /**
    * Get workspace path

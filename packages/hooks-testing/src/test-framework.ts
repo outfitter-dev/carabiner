@@ -1,6 +1,6 @@
 /**
- * Test framework utilities for Claude Code hooks
- * Provides structured testing patterns and utilities
+ * Hook testing utilities - functional composition over classes
+ * Direct integration with Bun's test runner, no custom framework
  */
 
 import type {
@@ -13,20 +13,7 @@ import type { MockEnvironmentConfig } from './mock';
 import { mockEnv } from './mock';
 
 /**
- * Test suite configuration
- */
-export type TestSuiteConfig = {
-  name: string;
-  description?: string;
-  timeout?: number;
-  beforeEach?: () => void | Promise<void>;
-  afterEach?: () => void | Promise<void>;
-  beforeAll?: () => void | Promise<void>;
-  afterAll?: () => void | Promise<void>;
-};
-
-/**
- * Hook test case configuration
+ * Hook test configuration
  */
 export type HookTestConfig = {
   name: string;
@@ -34,8 +21,6 @@ export type HookTestConfig = {
   context: HookContext;
   environment?: MockEnvironmentConfig;
   timeout?: number;
-  skip?: boolean;
-  only?: boolean;
   expectedResult?: Partial<HookResult>;
   customAssertions?: (
     result: HookResult,
@@ -44,344 +29,91 @@ export type HookTestConfig = {
 };
 
 /**
- * Test execution result
+ * Execute a hook test with validation and environment setup
+ * Returns the result for further validation if needed
  */
-export type TestExecutionResult = {
-  name: string;
-  passed: boolean;
-  duration: number;
-  error?: Error;
-  result?: HookResult;
-  skipped?: boolean;
-};
+export async function runHookTest(
+  handler: HookHandler,
+  config: HookTestConfig
+): Promise<HookResult> {
+  const DEFAULT_TIMEOUT_MS = 30_000;
+  const timeout = config.timeout || DEFAULT_TIMEOUT_MS;
 
-/**
- * Test suite result
- */
-export type TestSuiteResult = {
-  name: string;
-  tests: TestExecutionResult[];
-  passed: boolean;
-  duration: number;
-  stats: {
-    total: number;
-    passed: number;
-    failed: number;
-    skipped: number;
-  };
-};
-
-/**
- * Hook test runner
- */
-export class HookTestRunner {
-  // biome-ignore lint/style/useReadonlyClassProperties: suites mutated by suite() calls
-  private suites: TestSuite[] = [];
-  private currentSuite: TestSuite | null = null;
-
-  /**
-   * Create a test suite
-   */
-  suite(config: TestSuiteConfig, suiteFn: () => void): void {
-    const newSuite = new TestSuite(config);
-    this.suites.push(newSuite);
-
-    const previousSuite = this.currentSuite;
-    this.currentSuite = newSuite;
-
-    try {
-      suiteFn();
-    } finally {
-      this.currentSuite = previousSuite;
-    }
-  }
-
-  /**
-   * Add a test to the current suite
-   */
-  test(handler: HookHandler, testConfig: HookTestConfig): void {
-    if (!this.currentSuite) {
-      throw new Error('test() must be called within a suite()');
+  try {
+    // Set up environment if specified
+    if (config.environment) {
+      mockEnv.setup(config.environment);
     }
 
-    this.currentSuite.addTest(handler, testConfig);
-  }
+    // Execute hook with timeout
+    const result = await Promise.race([
+      executeHook(handler, config.context),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`Test timeout after ${timeout}ms`)),
+          timeout
+        )
+      ),
+    ]);
 
-  /**
-   * Run all test suites
-   */
-  async run(): Promise<TestSuiteResult[]> {
-    const results: TestSuiteResult[] = [];
+    // Perform built-in assertions
+    await performAssertions(result, config);
 
-    for (const testSuite of this.suites) {
-      const result = await testSuite.run();
-      results.push(result);
-    }
-
-    return results;
-  }
-
-  /**
-   * Run a specific suite by name
-   */
-  async runSuite(name: string): Promise<TestSuiteResult | null> {
-    const targetSuite = this.suites.find((s) => s.config.name === name);
-    return targetSuite ? await targetSuite.run() : null;
-  }
-
-  /**
-   * Get test statistics across all suites
-   */
-  getStats(results: TestSuiteResult[]): {
-    suites: number;
-    tests: number;
-    passed: number;
-    failed: number;
-    skipped: number;
-    duration: number;
-  } {
-    return results.reduce(
-      (stats, suiteResult) => ({
-        suites: stats.suites + 1,
-        tests: stats.tests + suiteResult.stats.total,
-        passed: stats.passed + suiteResult.stats.passed,
-        failed: stats.failed + suiteResult.stats.failed,
-        skipped: stats.skipped + suiteResult.stats.skipped,
-        duration: stats.duration + suiteResult.duration,
-      }),
-      {
-        suites: 0,
-        tests: 0,
-        passed: 0,
-        failed: 0,
-        skipped: 0,
-        duration: 0,
-      }
-    );
-  }
-}
-
-/**
- * Test suite class
- */
-export class TestSuite {
-  // biome-ignore lint/style/useReadonlyClassProperties: tests mutated by addTest()
-  private tests: HookTest[] = [];
-
-  constructor(config: TestSuiteConfig) {
-    this.config = config;
-  }
-  readonly config: TestSuiteConfig;
-
-  /**
-   * Add test to suite
-   */
-  addTest(handler: HookHandler, testConfig: HookTestConfig): void {
-    this.tests.push(new HookTest(handler, testConfig));
-  }
-
-  /**
-   * Run all tests in suite
-   */
-  async run(): Promise<TestSuiteResult> {
-    const startTime = Date.now();
-    const results: TestExecutionResult[] = [];
-
-    // Run beforeAll
-    if (this.config.beforeAll) {
-      await Promise.resolve(this.config.beforeAll());
-    }
-
-    // Filter tests (skip, only)
-    const testsToRun = this.getTestsToRun();
-
-    for (const testCase of testsToRun) {
-      // Run beforeEach
-      if (this.config.beforeEach) {
-        await Promise.resolve(this.config.beforeEach());
-      }
-
-      const result = await testCase.run(this.config.timeout);
-      results.push(result);
-
-      // Run afterEach
-      if (this.config.afterEach) {
-        await Promise.resolve(this.config.afterEach());
-      }
-    }
-
-    // Add skipped tests
-    for (const testCase of this.tests) {
-      if (!testsToRun.includes(testCase)) {
-        results.push({
-          name: testCase.config.name,
-          passed: true,
-          duration: 0,
-          skipped: true,
-        });
-      }
-    }
-
-    // Run afterAll
-    if (this.config.afterAll) {
-      await Promise.resolve(this.config.afterAll());
-    }
-
-    const duration = Date.now() - startTime;
-    const stats = this.calculateStats(results);
-
-    return {
-      name: this.config.name,
-      tests: results,
-      passed: stats.failed === 0,
-      duration,
-      stats,
-    };
-  }
-
-  /**
-   * Get tests to run based on skip/only flags
-   */
-  private getTestsToRun(): HookTest[] {
-    // If any test has 'only', run only those
-    const onlyTests = this.tests.filter((t) => t.config.only);
-    if (onlyTests.length > 0) {
-      return onlyTests;
-    }
-
-    // Otherwise run all non-skipped tests
-    return this.tests.filter((t) => !t.config.skip);
-  }
-
-  /**
-   * Calculate test statistics
-   */
-  private calculateStats(results: TestExecutionResult[]) {
-    return results.reduce(
-      (stats, result) => ({
-        total: stats.total + 1,
-        passed: stats.passed + (result.passed ? 1 : 0),
-        failed: stats.failed + (result.passed || result.skipped ? 0 : 1),
-        skipped: stats.skipped + (result.skipped ? 1 : 0),
-      }),
-      {
-        total: 0,
-        passed: 0,
-        failed: 0,
-        skipped: 0,
-      }
-    );
-  }
-}
-
-/**
- * Individual hook test
- */
-export class HookTest {
-  constructor(handler: HookHandler, config: HookTestConfig) {
-    this.handler = handler;
-    this.config = config;
-  }
-  private readonly handler: HookHandler;
-  readonly config: HookTestConfig;
-
-  /**
-   * Run the test
-   */
-  async run(suiteTimeout?: number): Promise<TestExecutionResult> {
-    const startTime = Date.now();
-    const DEFAULT_TEST_TIMEOUT_MS = 30_000;
-    const timeout = this.config.timeout || suiteTimeout || DEFAULT_TEST_TIMEOUT_MS;
-
-    try {
-      // Set up environment if specified
-      if (this.config.environment) {
-        mockEnv.setup(this.config.environment);
-      }
-
-      // Execute hook with timeout
-      const result = await Promise.race([
-        executeHook(this.handler, this.config.context),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error(`Test timeout after ${timeout}ms`)),
-            timeout
-          )
-        ),
-      ]);
-
-      // Perform assertions
-      await this.performAssertions(result);
-
-      return {
-        name: this.config.name,
-        passed: true,
-        duration: Date.now() - startTime,
-        result,
-      };
-    } catch (error) {
-      return {
-        name: this.config.name,
-        passed: false,
-        duration: Date.now() - startTime,
-        error: error instanceof Error ? error : new Error(String(error)),
-      };
-    } finally {
-      // Clean up environment
-      if (this.config.environment) {
-        mockEnv.restore();
-      }
-    }
-  }
-
-  /**
-   * Perform test assertions
-   */
-  private async performAssertions(result: HookResult): Promise<void> {
-    // Check expected result if specified
-    if (this.config.expectedResult) {
-      for (const [key, expectedValue] of Object.entries(
-        this.config.expectedResult
-      )) {
-        // Type-safe property access with proper type guard
-        function hasProperty<K extends string>(
-          obj: unknown,
-          prop: K
-        ): obj is Record<K, unknown> {
-          return typeof obj === 'object' && obj !== null && prop in obj;
-        }
-
-        if (!hasProperty(result, key)) {
-          throw new Error(`Expected property '${key}' not found in result`);
-        }
-
-        const actualValue = (result as Record<string, unknown>)[key];
-        if (actualValue !== expectedValue) {
-          throw new Error(
-            `Expected ${key} to be ${expectedValue}, got ${actualValue}`
-          );
-        }
-      }
-    }
-
-    // Run custom assertions
-    if (this.config.customAssertions) {
-      await Promise.resolve(
-        this.config.customAssertions(result, this.config.context)
-      );
+    return result;
+  } finally {
+    // Clean up environment
+    if (config.environment) {
+      mockEnv.restore();
     }
   }
 }
 
 /**
- * Test builders for common patterns
+ * Perform test assertions on hook result
+ */
+async function performAssertions(
+  result: HookResult,
+  config: HookTestConfig
+): Promise<void> {
+  // Check expected result if specified
+  if (config.expectedResult) {
+    for (const [key, expectedValue] of Object.entries(config.expectedResult)) {
+      // Type-safe property access with proper type guard
+      function hasProperty<K extends string>(
+        obj: unknown,
+        prop: K
+      ): obj is Record<K, unknown> {
+        return typeof obj === 'object' && obj !== null && prop in obj;
+      }
+
+      if (!hasProperty(result, key)) {
+        throw new Error(`Expected property '${key}' not found in result`);
+      }
+
+      const actualValue = (result as Record<string, unknown>)[key];
+      if (actualValue !== expectedValue) {
+        throw new Error(
+          `Expected ${key} to be ${expectedValue}, got ${actualValue}`
+        );
+      }
+    }
+  }
+
+  // Run custom assertions
+  if (config.customAssertions) {
+    await Promise.resolve(config.customAssertions(result, config.context));
+  }
+}
+
+/**
+ * Test builders for common hook testing patterns
+ * Pure functions that return test configurations
  */
 export const testBuilders = {
   /**
    * Build security validation test
    */
   securityValidation(
-    _handler: HookHandler,
     maliciousContext: HookContext,
     expectedBlocked = true
   ): HookTestConfig {
@@ -403,11 +135,7 @@ export const testBuilders = {
   /**
    * Build performance test
    */
-  performance(
-    _handler: HookHandler,
-    context: HookContext,
-    maxDurationMs: number
-  ): HookTestConfig {
+  performance(context: HookContext, maxDurationMs: number): HookTestConfig {
     return {
       name: `should complete within ${maxDurationMs}ms`,
       context,
@@ -425,10 +153,7 @@ export const testBuilders = {
   /**
    * Build error handling test
    */
-  errorHandling(
-    _handler: HookHandler,
-    faultyContext: HookContext
-  ): HookTestConfig {
+  errorHandling(faultyContext: HookContext): HookTestConfig {
     return {
       name: 'should handle errors gracefully',
       context: faultyContext,
@@ -446,11 +171,7 @@ export const testBuilders = {
   /**
    * Build success case test
    */
-  successCase(
-    _handler: HookHandler,
-    context: HookContext,
-    expectedMessage?: string
-  ): HookTestConfig {
+  successCase(context: HookContext, expectedMessage?: string): HookTestConfig {
     return {
       name: 'should succeed with valid input',
       context,
@@ -460,52 +181,26 @@ export const testBuilders = {
       },
     };
   },
-};
+} as const;
 
 /**
- * Global test runner instance
+ * Convenience function to create and run a hook test within Bun's test framework
+ * Use this directly in your test files with Bun's test() function
  */
-export const testRunner = new HookTestRunner();
-
-/**
- * Convenience functions for creating tests
- */
-export function suite(config: TestSuiteConfig, suiteFn: () => void): void {
-  testRunner.suite(config, suiteFn);
-}
-
-export function test(handler: HookHandler, config: HookTestConfig): void {
-  testRunner.test(handler, config);
+export async function hookTest(
+  handler: HookHandler,
+  config: HookTestConfig
+): Promise<void> {
+  await runHookTest(handler, config);
 }
 
 /**
- * Run all tests and report results
+ * Create multiple test cases for the same handler
+ * Returns an array of test functions ready for Bun's test runner
  */
-export async function runTests(): Promise<void> {
-  const results = await testRunner.run();
-  const stats = testRunner.getStats(results);
-
-  for (const suiteResult of results) {
-    const icon = suiteResult.passed ? '✅' : '❌';
-    // biome-ignore lint/suspicious/noConsole: printing test results is intended for CLI UX
-    console.log(`${icon} ${suiteResult.name}`);
-
-    for (const testResult of suiteResult.tests) {
-      if (testResult.skipped) {
-        // biome-ignore lint/suspicious/noConsole: printing test results is intended for CLI UX
-        console.log(`  ⏭️  ${testResult.name} (skipped)`);
-      } else if (testResult.passed) {
-        // biome-ignore lint/suspicious/noConsole: printing test results is intended for CLI UX
-        console.log(`  ✅ ${testResult.name} (${testResult.duration}ms)`);
-      } else if (testResult.error) {
-        // biome-ignore lint/suspicious/noConsole: printing test results is intended for CLI UX
-        console.log(`  ❌ ${testResult.name}: ${testResult.error.message}`);
-      }
-    }
-  }
-
-  // Exit with appropriate code
-  if (stats.failed > 0) {
-    process.exit(1);
-  }
+export function createHookTests(
+  handler: HookHandler,
+  configs: readonly HookTestConfig[]
+): readonly (() => Promise<void>)[] {
+  return configs.map((config) => () => runHookTest(handler, config));
 }

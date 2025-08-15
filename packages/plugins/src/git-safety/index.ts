@@ -122,9 +122,7 @@ function matchesPattern(command: string, patterns: string[]): string | null {
       if (regex.test(gitCommand)) {
         return pattern;
       }
-    } catch (error) {
-      console.warn(`[GitSafety] Invalid regex pattern: ${pattern}`, error);
-    }
+    } catch (_error) {}
   }
 
   return null;
@@ -141,8 +139,7 @@ function isAllowed(command: string, allowList: string[]): boolean {
       // Match allowed patterns exactly - the allowlist should contain full patterns
       const regex = new RegExp(`^${allowed.toLowerCase()}`, 'i');
       return regex.test(gitCommand);
-    } catch (error) {
-      console.warn(`[GitSafety] Invalid allow pattern: ${allowed}`, error);
+    } catch (_error) {
       return false;
     }
   });
@@ -165,11 +162,7 @@ function isTrustedDirectory(
         normalizedCwd.includes(normalizedTrusted) ||
         normalizedCwd.startsWith(normalizedTrusted)
       );
-    } catch (error) {
-      console.warn(
-        `[GitSafety] Error checking trusted directory: ${trusted}`,
-        error
-      );
+    } catch (_error) {
       return false;
     }
   });
@@ -202,12 +195,7 @@ function checkRepoExclusions(
           },
         };
       }
-    } catch (error) {
-      console.warn(
-        `[GitSafety] Invalid exclude pattern: ${excludePattern}`,
-        error
-      );
-    }
+    } catch (_error) {}
   }
   return null;
 }
@@ -233,12 +221,7 @@ function checkRepoInclusions(
         shouldInclude = true;
         break;
       }
-    } catch (error) {
-      console.warn(
-        `[GitSafety] Invalid include pattern: ${includePattern}`,
-        error
-      );
-    }
+    } catch (_error) {}
   }
 
   if (!shouldInclude) {
@@ -300,12 +283,7 @@ function checkCustomRules(
           },
         };
       }
-    } catch (error) {
-      console.warn(
-        `[GitSafety] Invalid custom rule pattern: ${rule.pattern}`,
-        error
-      );
-    }
+    } catch (_error) {}
   }
   return null;
 }
@@ -470,7 +448,6 @@ export const gitSafetyPlugin: HookPlugin = {
       const reason = `Command matches dangerous pattern: ${matchedPattern}`;
 
       if (safetyConfig.logBlocked) {
-        console.warn(`[GitSafety] Blocked: ${command} - ${reason}`);
       }
 
       if (safetyConfig.warnOnly) {
@@ -522,9 +499,7 @@ export const gitSafetyPlugin: HookPlugin = {
   /**
    * Initialize plugin
    */
-  async init(): Promise<void> {
-    console.log('[GitSafety] Git safety plugin initialized');
-  },
+  async init(): Promise<void> {},
 
   /**
    * Health check

@@ -8,7 +8,7 @@ import { readFile } from 'node:fs/promises';
 /**
  * Tool input interface for analysis
  */
-export interface ToolInput {
+export type ToolInput = {
   command?: string;
   file_path?: string;
   content?: string;
@@ -20,7 +20,7 @@ export interface ToolInput {
     new_string: string;
     replace_all?: boolean;
   }>;
-}
+};
 
 /**
  * Extract content from Write tool input

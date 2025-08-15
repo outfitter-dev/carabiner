@@ -4,7 +4,8 @@
  * Updated to match the actual Claude Code hooks API
  */
 
-import { runtimeLogger } from './logger';
+import { createHookContext } from './context-factories';
+import { executeHookSafely, executionValidation } from './execution-utils';
 import type {
   ClaudeHookInputVariant,
   ClaudeHookOutput,
@@ -18,18 +19,9 @@ import type {
   HookOutputMode,
   HookResult,
   StdinParseResult,
-  ToolInput,
-  ToolInputMap,
   ToolName,
 } from './types';
-import {
-  HookError,
-  HookInputError,
-  HookTimeoutError,
-  isClaudeNotificationInput,
-  isClaudeToolHookInput,
-  isClaudeUserPromptInput,
-} from './types';
+import { HookInputError } from './types';
 
 /**
  * Parse JSON input from stdin
@@ -79,6 +71,7 @@ export async function parseStdinInput(): Promise<
 
 /**
  * Parse hook environment variables (only CLAUDE_PROJECT_DIR is provided)
+ * @deprecated Use parseHookEnvironment from context-factories instead
  */
 export function parseHookEnvironment(): HookEnvironment {
   return {
@@ -87,270 +80,54 @@ export function parseHookEnvironment(): HookEnvironment {
 }
 
 /**
- * Validate tool input against known schemas
+ * Type-safe tool input validation using Zod schemas
+ * Eliminates unsafe 'as' assertions with proper runtime validation
+ * @deprecated Use parseToolInput from validation-utils module instead
  */
 export function parseToolInput<T extends ToolName>(
-  _toolName: T,
+  toolName: T,
   toolInput: Record<string, unknown>
 ): GetToolInput<T> {
-  // Type-safe parsing would go here
-  // For now, we'll trust the input structure from Claude
-  return toolInput as GetToolInput<T>;
+  const { parseToolInput: parseToolInputSafe } = require('./validation-utils');
+  return parseToolInputSafe(toolName, toolInput);
 }
 
 /**
- * Create hook context from Claude Code JSON input
+ * @deprecated Use createHookContext from context-factories module instead
+ * This function has been replaced with type-safe factory functions
  */
-// biome-ignore lint/complexity/noExcessiveLinesPerFunction: clarity prioritized over splitting tiny branches
-export function createHookContext<
-  TEvent extends HookEvent,
-  TTool extends ToolName = ToolName,
->(
-  claudeInput: ClaudeHookInputVariant,
-  overrides?: Partial<HookContext<TEvent, TTool>>
-): HookContext<TEvent, TTool> {
-  const env = parseHookEnvironment();
-
-  // Base context shared by all hook types
-  const baseContext = {
-    event: claudeInput.hook_event_name as TEvent,
-    sessionId: claudeInput.session_id,
-    transcriptPath: claudeInput.transcript_path,
-    cwd: claudeInput.cwd,
-    matcher: claudeInput.matcher,
-    environment: env,
-    rawInput: claudeInput,
-    ...overrides,
-  };
-
-  // Event-specific context creation
-  if (isClaudeToolHookInput(claudeInput)) {
-    const toolContext = {
-      ...baseContext,
-      toolName: claudeInput.tool_name as TTool,
-      toolInput: parseToolInput(
-        claudeInput.tool_name as TTool,
-        claudeInput.tool_input
-      ),
-      toolResponse: claudeInput.tool_response,
-      userPrompt: undefined,
-      message: undefined,
-    };
-    return toolContext as HookContext<TEvent, TTool>;
-  }
-
-  if (isClaudeUserPromptInput(claudeInput)) {
-    const promptContext = {
-      ...baseContext,
-      toolName: undefined,
-      toolInput: undefined as unknown as GetToolInput<TTool>,
-      toolResponse: undefined,
-      userPrompt: claudeInput.prompt,
-      message: undefined,
-    };
-    return promptContext as HookContext<TEvent, TTool>;
-  }
-
-  if (isClaudeNotificationInput(claudeInput)) {
-    const notificationContext = {
-      ...baseContext,
-      toolName: undefined,
-      toolInput: undefined as unknown as GetToolInput<TTool>,
-      toolResponse: undefined,
-      userPrompt: undefined,
-      message: claudeInput.message,
-    };
-    return notificationContext as HookContext<TEvent, TTool>;
-  }
-
-  // Fallback for unknown event types
-  return {
-    ...baseContext,
-    toolName: undefined,
-    toolInput: undefined as unknown as GetToolInput<TTool>,
-    toolResponse: undefined,
-    userPrompt: undefined,
-    message: undefined,
-  } as HookContext<TEvent, TTool>;
-}
+export { createHookContext };
 
 /**
- * Type guards for tool input validation
+ * Type-safe tool input validation - now delegated to validation-utils module
+ * @deprecated Import these functions directly from validation-utils module
  */
-export function isBashToolInput(
-  input: ToolInput
-): input is ToolInputMap['Bash'] {
-  return typeof input === 'object' && input !== null && 'command' in input;
-}
 
-export function isWriteToolInput(
-  input: ToolInput
-): input is ToolInputMap['Write'] {
-  return (
-    typeof input === 'object' &&
-    input !== null &&
-    'file_path' in input &&
-    'content' in input
-  );
-}
-
-export function isEditToolInput(
-  input: ToolInput
-): input is ToolInputMap['Edit'] {
-  return (
-    typeof input === 'object' &&
-    input !== null &&
-    'file_path' in input &&
-    'old_string' in input &&
-    'new_string' in input
-  );
-}
-
-export function isReadToolInput(
-  input: ToolInput
-): input is ToolInputMap['Read'] {
-  return typeof input === 'object' && input !== null && 'file_path' in input;
-}
-
-export function isMultiEditToolInput(
-  input: ToolInput
-): input is ToolInputMap['MultiEdit'] {
-  return (
-    typeof input === 'object' &&
-    input !== null &&
-    'file_path' in input &&
-    'edits' in input &&
-    Array.isArray(input.edits)
-  );
-}
-
-export function isGlobToolInput(
-  input: ToolInput
-): input is ToolInputMap['Glob'] {
-  return typeof input === 'object' && input !== null && 'pattern' in input;
-}
-
-export function isGrepToolInput(
-  input: ToolInput
-): input is ToolInputMap['Grep'] {
-  return typeof input === 'object' && input !== null && 'pattern' in input;
-}
-
-export function isLSToolInput(input: ToolInput): input is ToolInputMap['LS'] {
-  return typeof input === 'object' && input !== null && 'path' in input;
-}
-
-export function isTodoWriteToolInput(
-  input: ToolInput
-): input is ToolInputMap['TodoWrite'] {
-  return (
-    typeof input === 'object' &&
-    input !== null &&
-    'todos' in input &&
-    Array.isArray(input.todos)
-  );
-}
-
-export function isWebFetchToolInput(
-  input: ToolInput
-): input is ToolInputMap['WebFetch'] {
-  return (
-    typeof input === 'object' &&
-    input !== null &&
-    'url' in input &&
-    'prompt' in input
-  );
-}
-
-export function isWebSearchToolInput(
-  input: ToolInput
-): input is ToolInputMap['WebSearch'] {
-  return typeof input === 'object' && input !== null && 'query' in input;
-}
-
-export function isNotebookEditToolInput(
-  input: ToolInput
-): input is ToolInputMap['NotebookEdit'] {
-  return (
-    typeof input === 'object' &&
-    input !== null &&
-    'notebook_path' in input &&
-    'new_source' in input
-  );
-}
+// Re-export validation utilities for backward compatibility
+export {
+  assertValidToolInput,
+  isBashToolInput,
+  isEditToolInput,
+  isGlobToolInput,
+  isGrepToolInput,
+  isLSToolInput,
+  isMultiEditToolInput,
+  isNotebookEditToolInput,
+  isReadToolInput,
+  isTodoWriteToolInput,
+  isValidToolInput,
+  isWebFetchToolInput,
+  isWebSearchToolInput,
+  isWriteToolInput,
+  type ToolInputValidationResult,
+  validateToolInputWithDetails,
+} from './validation-utils';
 
 /**
- * Execute hook with timeout and error handling
+ * @deprecated Use executeHookSafely from execution-utils module instead
+ * This function has been replaced with a decomposed, type-safe implementation
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: error and timeout handling requires multiple branches
-export async function executeHook(
-  handler: HookHandler,
-  context: HookContext,
-  options: HookExecutionOptions = {}
-): Promise<HookResult> {
-  const startTime = Date.now();
-  const { timeout = 30_000, throwOnError = false } = options;
-
-  try {
-    // Create timeout promise
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new HookTimeoutError(timeout, context)), timeout);
-    });
-
-    // Execute handler with timeout
-    const result = await Promise.race([
-      Promise.resolve(handler(context)),
-      timeoutPromise,
-    ]);
-
-    // Add execution metadata
-    const duration = Date.now() - startTime;
-    return {
-      ...result,
-      metadata: {
-        ...result.metadata,
-        duration,
-        timestamp: new Date().toISOString(),
-        hookVersion: '0.2.0',
-      },
-    };
-  } catch (error) {
-    const duration = Date.now() - startTime;
-
-    if (error instanceof HookTimeoutError) {
-      runtimeLogger.error(
-        { timeout, context },
-        `Hook execution timed out after ${timeout}ms`
-      );
-    } else {
-      runtimeLogger.error(
-        { error, context },
-        `Hook execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
-
-    if (throwOnError) {
-      throw error instanceof HookError
-        ? error
-        : new HookError(
-            error instanceof Error ? error.message : 'Unknown error',
-            context,
-            error instanceof Error ? error : undefined
-          );
-    }
-
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Unknown error',
-      block: context.event === 'PreToolUse', // Block on PreToolUse failures by default
-      metadata: {
-        duration,
-        timestamp: new Date().toISOString(),
-        hookVersion: '0.2.0',
-      },
-    };
-  }
-}
+export { executeHookSafely as executeHook };
 
 /**
  * Output hook result to Claude Code - supports both exit codes and JSON
@@ -419,8 +196,12 @@ export async function runClaudeHook(
     // Create context from Claude input
     const context = createHookContext(parseResult.data);
 
+    // Validate context and options before execution
+    executionValidation.validateContext(context);
+    executionValidation.validateOptions(options);
+
     // Execute the hook
-    const result = await executeHook(handler, context, options);
+    const result = await executeHookSafely(handler, context, options);
 
     // Output result to Claude
     outputHookResult(result, options.outputMode);
@@ -504,23 +285,10 @@ export async function safeHookExecution<T extends HookContext>(
 }
 
 /**
- * Context validation utilities
+ * @deprecated Use executionValidation.validateContext from execution-utils instead
  */
 export function validateHookContext(context: HookContext): void {
-  if (!context.event) {
-    throw new HookError('Invalid hook context: missing event', context);
-  }
-
-  if (!context.sessionId) {
-    throw new HookError('Invalid hook context: missing session ID', context);
-  }
-
-  if (!context.cwd) {
-    throw new HookError(
-      'Invalid hook context: missing current working directory',
-      context
-    );
-  }
+  executionValidation.validateContext(context);
 }
 
 /**

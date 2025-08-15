@@ -31,7 +31,7 @@ import { ProtocolInputError, ProtocolParseError } from '../interface';
 /**
  * Configuration options for HttpProtocol
  */
-export interface HttpProtocolOptions {
+export type HttpProtocolOptions = {
   /**
    * Maximum request body size in bytes
    * @default 1048576 (1MB)
@@ -60,7 +60,7 @@ export interface HttpProtocolOptions {
     headers?: string[];
     credentials?: boolean;
   };
-}
+};
 
 /**
  * Protocol implementation for HTTP-based hook execution
@@ -258,9 +258,9 @@ export class HttpProtocol implements HookProtocol {
   private buildErrorResponse(headers: Headers): Response {
     const errorBody = this.options.includeErrorDetails
       ? {
-          error: this.error!.message,
-          type: this.error!.name,
-          ...(this.error!.stack && { stack: this.error!.stack }),
+          error: this.error?.message,
+          type: this.error?.name,
+          ...(this.error?.stack && { stack: this.error?.stack }),
         }
       : { error: 'Hook execution failed' };
 
@@ -274,7 +274,7 @@ export class HttpProtocol implements HookProtocol {
    * Build success response
    */
   private buildSuccessResponse(headers: Headers): Response {
-    const status = this.result!.success ? 200 : 400;
+    const status = this.result?.success ? 200 : 400;
     return new Response(JSON.stringify(this.result), {
       status,
       headers,

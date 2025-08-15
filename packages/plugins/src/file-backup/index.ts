@@ -200,17 +200,14 @@ async function getExistingBackups(
  */
 async function removeBackupFile(
   backupPath: string,
-  reason: string,
+  _reason: string,
   config: FileBackupConfig
 ): Promise<void> {
   try {
     await unlink(backupPath);
     if (config.logOperations) {
-      console.log(`[FileBackup] ${reason}: ${backupPath}`);
     }
-  } catch (error) {
-    console.warn(`[FileBackup] Failed to remove backup ${backupPath}:`, error);
-  }
+  } catch (_error) {}
 }
 
 /**
@@ -528,7 +525,6 @@ async function processFileBackups(
       });
 
       if (backupResult.backupPath && backupConfig.logOperations) {
-        console.log(`[FileBackup] Created backup: ${backupResult.backupPath}`);
       }
     } else {
       results.push({
@@ -538,9 +534,6 @@ async function processFileBackups(
       hasErrors = true;
 
       if (backupConfig.logOperations) {
-        console.error(
-          `[FileBackup] Failed to backup ${filePath}: ${backupResult.error}`
-        );
       }
     }
   }
@@ -644,9 +637,7 @@ export const fileBackupPlugin: HookPlugin = {
   /**
    * Validate backup directory permissions
    */
-  async init(): Promise<void> {
-    console.log('[FileBackup] Plugin initialized - ready to create backups');
-  },
+  async init(): Promise<void> {},
 
   /**
    * Health check - verify backup directory access

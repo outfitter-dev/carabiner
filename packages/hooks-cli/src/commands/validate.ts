@@ -2,15 +2,65 @@
  * Validate command - Validates hook configuration and files
  */
 
-import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { loadConfig } from '@outfitter/hooks-config';
 import { BaseCommand, type CliConfig } from '../types';
+import { configurationValidator, hookFileValidator } from '../validation-utils';
 
-// Regex patterns at top level
-const HOOK_FILE_REGEX = /\.(ts|js)$/;
-const BUN_RUN_REGEX = /bun\s+run\s+(?:-S\s+)?(?:"([^"]+)"|'([^']+)'|(\S+))/;
+/**
+ * Report validation results to console
+ */
+function reportValidationResults(
+  report: import('../validation-types').ValidationReport,
+  verbose: boolean
+): void {
+  if (verbose) {
+    process.stdout.write(`Validation Summary:
+- Errors: ${report.summary.totalErrors}
+- Warnings: ${report.summary.totalWarnings}
+- Checked Files: ${report.summary.checkedFiles}
+- Validated Hooks: ${report.summary.validatedHooks}\n`);
+  }
+
+  // Report errors
+  for (const error of report.errors) {
+    process.stderr.write(`❌ ${error.type.toUpperCase()}: ${error.message}\n`);
+    process.stderr.write(`   Path: ${error.path}\n`);
+    if (error.suggestion) {
+      process.stderr.write(`   Suggestion: ${error.suggestion}\n`);
+    }
+  }
+
+  // Report warnings if verbose
+  if (verbose && report.warnings.length > 0) {
+    for (const warning of report.warnings) {
+      process.stderr.write(
+        `⚠️  ${warning.type.toUpperCase()}: ${warning.message}\n`
+      );
+      process.stderr.write(`   Path: ${warning.path}\n`);
+      if (warning.recommendation) {
+        process.stderr.write(`   Recommendation: ${warning.recommendation}\n`);
+      }
+    }
+  }
+}
+
+/**
+ * Validation options parsed from command line arguments
+ */
+type ValidationOptions = {
+  validateConfig: boolean;
+  validateHooks: boolean;
+  autoFix: boolean;
+  verbose: boolean;
+};
+
+/**
+ * Combined validation results from both config and hooks validation
+ */
+type CombinedValidationResults = {
+  configReport: import('../validation-types').ValidationReport | null;
+  hooksReport: import('../validation-types').ValidationReport | null;
+  hasErrors: boolean;
+};
 
 export class ValidateCommand extends BaseCommand {
   name = 'validate';
@@ -38,46 +88,14 @@ export class ValidateCommand extends BaseCommand {
       return;
     }
 
-    const validateConfig = !this.getBooleanValue(values.hooks);
-    const validateHooks = !this.getBooleanValue(values.config);
-    const autoFix = this.getBooleanValue(values.fix);
-    const verbose = this.getBooleanValue(values.verbose) || config.verbose;
-
-    let hasErrors = false;
+    const options = this.parseValidationOptions(values, config);
 
     try {
-      if (validateConfig) {
-        const configErrors = await this.validateConfiguration(
-          config.workspacePath,
-          verbose,
-          autoFix
-        );
-        if (configErrors > 0) {
-          hasErrors = true;
-        }
-      }
-
-      if (validateHooks) {
-        const hookErrors = await this.validateHookFiles(
-          config.workspacePath,
-          verbose,
-          autoFix
-        );
-        if (hookErrors > 0) {
-          hasErrors = true;
-        }
-      }
-
-      if (hasErrors) {
-        if (!autoFix) {
-          process.stderr.write(
-            'Validation found issues. Re-run with --fix to attempt automatic remediation.\n'
-          );
-        }
-        process.exit(1);
-      } else if (verbose) {
-        process.stdout.write('Validation passed.\n');
-      }
+      const results = await this.performValidation(
+        options,
+        config.workspacePath
+      );
+      this.handleValidationResults(results, options);
     } catch (error) {
       const message = `Validation failed: ${error instanceof Error ? error.message : String(error)}`;
       throw new Error(message, { cause: error as unknown });
@@ -85,340 +103,140 @@ export class ValidateCommand extends BaseCommand {
   }
 
   /**
-   * Validate configuration files
+   * Parse command line values into validation options
    */
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: configuration validation requires complex logic
+  private parseValidationOptions(
+    values: Record<string, unknown>,
+    config: CliConfig
+  ): ValidationOptions {
+    return {
+      validateConfig: !this.getBooleanValue(
+        values.hooks as string | boolean | undefined
+      ),
+      validateHooks: !this.getBooleanValue(
+        values.config as string | boolean | undefined
+      ),
+      autoFix: this.getBooleanValue(values.fix as string | boolean | undefined),
+      verbose:
+        this.getBooleanValue(values.verbose as string | boolean | undefined) ||
+        config.verbose,
+    };
+  }
+
+  /**
+   * Execute validation for both configuration and hooks based on options
+   */
+  private async performValidation(
+    options: ValidationOptions,
+    workspacePath: string
+  ): Promise<CombinedValidationResults> {
+    let configReport: import('../validation-types').ValidationReport | null =
+      null;
+    let hooksReport: import('../validation-types').ValidationReport | null =
+      null;
+    let hasErrors = false;
+
+    if (options.validateConfig) {
+      configReport = await this.validateConfiguration(
+        workspacePath,
+        options.verbose
+      );
+      hasErrors = hasErrors || !configReport.configurationValid;
+    }
+
+    if (options.validateHooks) {
+      hooksReport = await this.validateHookFiles(
+        workspacePath,
+        options.verbose
+      );
+      hasErrors = hasErrors || !hooksReport.hookFilesValid;
+    }
+
+    return { configReport, hooksReport, hasErrors };
+  }
+
+  /**
+   * Validate configuration and report results
+   */
   private async validateConfiguration(
     workspacePath: string,
-    verbose: boolean,
-    autoFix: boolean
-  ): Promise<number> {
-    let errors = 0;
-
-    try {
-      // Check if configuration exists
-      const configPaths = [
-        '.claude/hooks.json',
-        '.claude/hooks.config.ts',
-        '.claude/hooks.config.js',
-      ];
-
-      let configExists = false;
-
-      for (const path of configPaths) {
-        const fullPath = join(workspacePath, path);
-        if (existsSync(fullPath)) {
-          configExists = true;
-          // Config path found: path
-          break;
-        }
-      }
-
-      if (!configExists) {
-        return ++errors;
-      }
-
-      if (verbose) {
-        // TODO: Log configuration found
-      }
-
-      // Load and validate configuration
-      const config = await loadConfig(workspacePath, { validate: true });
-
-      if (verbose) {
-        // TODO: Log configuration loaded successfully
-      }
-
-      // Validate Claude settings
-      const settingsPath = join(workspacePath, '.claude/settings.json');
-      if (existsSync(settingsPath)) {
-        const settings = JSON.parse(await readFile(settingsPath, 'utf-8'));
-
-        if (!settings.hooks) {
-          if (autoFix) {
-            // TODO: Implement auto-fix for missing hooks section
-          } else {
-            // TODO: Log error about missing hooks section
-          }
-          errors++;
-        } else if (verbose) {
-          // TODO: Log Claude settings validation passed
-        }
-      } else {
-        errors++;
-      }
-
-      // Validate hook commands exist
-      errors += this.validateHookCommands(
-        config,
-        workspacePath,
-        verbose,
-        autoFix
-      );
-    } catch (_error) {
-      errors++;
-    }
-
-    return errors;
+    verbose: boolean
+  ): Promise<import('../validation-types').ValidationReport> {
+    const report =
+      await configurationValidator.validateConfiguration(workspacePath);
+    reportValidationResults(report, verbose);
+    return report;
   }
 
   /**
-   * Validate hook commands exist
-   */
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: hook validation requires complex nested logic
-  private validateHookCommands(
-    // biome-ignore lint/suspicious/noExplicitAny: configuration structure is dynamic
-    config: any,
-    workspacePath: string,
-    verbose: boolean,
-    _autoFix: boolean
-  ): number {
-    let errors = 0;
-
-    // Check each configured hook
-    for (const [event, eventConfig] of Object.entries(config)) {
-      if (
-        event.startsWith('$') ||
-        ['templates', 'variables', 'environments'].includes(event)
-      ) {
-        continue;
-      }
-
-      if (eventConfig && typeof eventConfig === 'object') {
-        if ('command' in eventConfig) {
-          // Single hook config
-          errors += this.validateCommand(
-            // biome-ignore lint/suspicious/noExplicitAny: event config structure varies
-            eventConfig as any,
-            event,
-            '',
-            workspacePath,
-            verbose,
-            _autoFix
-          );
-        } else {
-          // Tool-specific configs
-          for (const [tool, toolConfig] of Object.entries(eventConfig)) {
-            if (
-              toolConfig &&
-              typeof toolConfig === 'object' &&
-              'command' in toolConfig
-            ) {
-              errors += this.validateCommand(
-                // biome-ignore lint/suspicious/noExplicitAny: tool config structure varies
-                toolConfig as any,
-                event,
-                tool,
-                workspacePath,
-                verbose,
-                _autoFix
-              );
-            }
-          }
-        }
-      }
-    }
-
-    return errors;
-  }
-
-  /**
-   * Validate a specific hook command
-   */
-  private validateCommand(
-    hookConfig: { command: string; enabled?: boolean },
-    _event: string,
-    _tool: string,
-    workspacePath: string,
-    verbose: boolean,
-    autoFix: boolean
-  ): number {
-    // Hook name for context: tool ? `${event}:${tool}` : event
-
-    if (hookConfig.enabled === false) {
-      if (verbose) {
-        // TODO: Log hook is disabled, skipping validation
-      }
-      return 0;
-    }
-
-    // Extract file path from command
-    const command = hookConfig.command;
-    const match = command.match(BUN_RUN_REGEX);
-    const scriptPath = match?.[1] ?? match?.[2] ?? match?.[3];
-    if (scriptPath) {
-      const fullPath = join(workspacePath, scriptPath);
-
-      if (!existsSync(fullPath)) {
-        if (autoFix) {
-          // TODO: Implement auto-generation of missing hook files
-        } else {
-          // TODO: Log hook file not found
-        }
-        return 1;
-      }
-      if (verbose) {
-        // TODO: Log hook file exists
-      }
-    } else if (verbose) {
-      // TODO: Log non-standard command format
-    }
-
-    return 0;
-  }
-
-  /**
-   * Validate hook files
+   * Validate hook files and report results
    */
   private async validateHookFiles(
     workspacePath: string,
-    verbose: boolean,
+    verbose: boolean
+  ): Promise<import('../validation-types').ValidationReport> {
+    const report = await hookFileValidator.validateHookFiles(workspacePath);
+    reportValidationResults(report, verbose);
+    return report;
+  }
+
+  /**
+   * Handle validation results and determine exit behavior
+   */
+  private handleValidationResults(
+    results: CombinedValidationResults,
+    options: ValidationOptions
+  ): void {
+    if (results.hasErrors) {
+      this.handleValidationErrors(results, options.autoFix);
+      process.exit(1);
+    } else if (options.verbose) {
+      process.stdout.write('✅ All validation checks passed.\n');
+    }
+  }
+
+  /**
+   * Handle validation errors and provide appropriate feedback
+   */
+  private handleValidationErrors(
+    results: CombinedValidationResults,
     autoFix: boolean
-  ): Promise<number> {
-    let errors = 0;
-
-    const hooksDir = join(workspacePath, 'hooks');
-
-    if (!existsSync(hooksDir)) {
-      return ++errors;
+  ): void {
+    if (!autoFix) {
+      const fixableErrorCount = this.countFixableErrors(results);
+      this.displayErrorGuidance(fixableErrorCount);
     }
+  }
 
-    if (verbose) {
-      // TODO: Log validating hook files
-    }
+  /**
+   * Count total number of fixable errors across all reports
+   */
+  private countFixableErrors(results: CombinedValidationResults): number {
+    const configFixable =
+      results.configReport?.errors.filter((e) => e.fixable) ?? [];
+    const hooksFixable =
+      results.hooksReport?.errors.filter((e) => e.fixable) ?? [];
+    return configFixable.length + hooksFixable.length;
+  }
 
-    // Find all hook files
-    const hookFiles = await this.findHookFiles(hooksDir);
-
-    if (hookFiles.length === 0) {
-      // TODO: Log no hook files found
-    } else if (verbose) {
-      // TODO: Log found X hook files to validate
-    }
-
-    // Validate each hook file
-    for (const filePath of hookFiles) {
-      errors += await this.validateHookFile(
-        filePath,
-        workspacePath,
-        verbose,
-        autoFix
+  /**
+   * Display appropriate error guidance based on fixable error count
+   */
+  private displayErrorGuidance(fixableErrorCount: number): void {
+    if (fixableErrorCount > 0) {
+      process.stderr.write(
+        `Validation found ${fixableErrorCount} fixable issues. Re-run with --fix to attempt automatic remediation.\n`
+      );
+    } else {
+      process.stderr.write(
+        'Validation found issues that require manual fixing.\n'
       );
     }
-
-    return errors;
   }
 
   /**
-   * Find all hook files
+   * @deprecated These methods have been replaced with type-safe validation utilities in validation-utils.ts
+   * The new implementation eliminates `any` types and complex functions by using discriminated unions
+   * and composable validation functions.
    */
-  private async findHookFiles(hooksDir: string): Promise<string[]> {
-    const { readdir } = await import('node:fs/promises');
-    const files: string[] = [];
-
-    try {
-      const entries = await readdir(hooksDir, { withFileTypes: true });
-
-      for (const entry of entries) {
-        if (
-          entry.isFile() &&
-          HOOK_FILE_REGEX.test(entry.name) &&
-          !entry.name.endsWith('.d.ts') &&
-          !entry.name.includes('.test.') &&
-          !entry.name.includes('.spec.')
-        ) {
-          files.push(join(hooksDir, entry.name));
-        }
-      }
-    } catch (error) {
-      // Directory doesn't exist or can't be read
-      if (error instanceof Error) {
-        // TODO: Log could not read hooks directory
-      }
-    }
-
-    return files;
-  }
-
-  /**
-   * Validate a single hook file
-   */
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: file validation requires extensive checks
-  private async validateHookFile(
-    filePath: string,
-    _workspacePath: string,
-    verbose: boolean,
-    autoFix: boolean
-  ): Promise<number> {
-    // File path relative to workspace: relative(_workspacePath, filePath)
-    let errors = 0;
-
-    try {
-      // Check file exists and is readable
-      if (!existsSync(filePath)) {
-        return ++errors;
-      }
-
-      // Check file permissions (executable)
-      const { stat } = await import('node:fs/promises');
-      const stats = await stat(filePath);
-
-      // On Unix systems, check if file is executable
-      if (process.platform !== 'win32') {
-        // biome-ignore lint/nursery/noBitwiseOperators: file permission checking requires bitwise operations
-        const isExecutable = Boolean(stats.mode & 0o111);
-        if (!isExecutable) {
-          if (autoFix) {
-            const { chmod } = await import('node:fs/promises');
-            // biome-ignore lint/nursery/noBitwiseOperators: file permission setting requires bitwise operations
-            await chmod(filePath, stats.mode | 0o755);
-          } else {
-            errors++;
-          }
-        }
-      }
-
-      // Basic syntax check by reading the file
-      const content = await readFile(filePath, 'utf-8');
-
-      // Check for shebang
-      if (!content.startsWith('#!')) {
-        if (autoFix) {
-          const fixedContent = `#!/usr/bin/env bun\n\n${content}`;
-          const { writeFile } = await import('node:fs/promises');
-          await writeFile(filePath, fixedContent);
-        } else {
-          errors++;
-        }
-      }
-
-      // Check for basic imports (TypeScript/JavaScript)
-      const hasImports =
-        content.includes('@outfitter/hooks-core') ||
-        content.includes('require(') ||
-        content.includes('import');
-
-      if (!hasImports) {
-        errors++;
-      }
-
-      // Check for main execution block
-      const hasMainBlock =
-        content.includes('import.meta.main') ||
-        content.includes('require.main === module');
-
-      if (!hasMainBlock) {
-        errors++;
-      }
-
-      if (verbose && errors === 0) {
-        // TODO: Log hook file validated
-      }
-    } catch (_error) {
-      // TODO: Log failed to validate hook file
-      errors++;
-    }
-
-    return errors;
-  }
 }

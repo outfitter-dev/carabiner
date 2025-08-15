@@ -136,23 +136,23 @@ export type EnvironmentConfig = NonNullable<
 /**
  * Configuration load result
  */
-export interface ConfigLoadResult {
+export type ConfigLoadResult = {
   config: HookConfig;
   source: string;
   duration: number;
   environment?: string;
-}
+};
 
 /**
  * Configuration change event
  */
-export interface ConfigChangeEvent {
+export type ConfigChangeEvent = {
   type: 'loaded' | 'changed' | 'error';
   config?: HookConfig;
   error?: Error;
   source: string;
   timestamp: Date;
-}
+};
 
 /**
  * Configuration change listener
@@ -164,7 +164,7 @@ export type ConfigChangeListener = (
 /**
  * Configuration loader options
  */
-export interface ConfigLoaderOptions {
+export type ConfigLoaderOptions = {
   /** Base directory for resolving relative paths */
   baseDir: string;
   /** Environment to load (defaults to NODE_ENV or 'development') */
@@ -177,16 +177,16 @@ export interface ConfigLoaderOptions {
   validate: boolean;
   /** Default configuration to merge with */
   defaults: Partial<HookConfig>;
-}
+};
 
 /**
  * Configuration file module interface
  */
-interface ConfigModule {
+type ConfigModule = {
   default?: HookConfig | (() => HookConfig) | (() => Promise<HookConfig>);
   config?: HookConfig | (() => HookConfig) | (() => Promise<HookConfig>);
   [key: string]: unknown;
-}
+};
 
 /**
  * Configuration loader class
@@ -552,9 +552,7 @@ export class ConfigLoader {
       const watcher = watch(filePath, { signal: this.watcher.signal });
 
       const debouncedHandler = this.debounce((path: string) => {
-        this.handleConfigChange(path).catch((error) => {
-          console.error('[ConfigLoader] Error handling config change:', error);
-        });
+        this.handleConfigChange(path).catch((_error) => {});
       }, this.options.hotReloadDebounce);
 
       for await (const event of watcher) {
@@ -562,9 +560,8 @@ export class ConfigLoader {
           debouncedHandler(filePath);
         }
       }
-    } catch (error) {
+    } catch (_error) {
       if (!this.watcher.signal.aborted) {
-        console.error(`[ConfigLoader] Error watching ${filePath}:`, error);
       }
     }
   }
@@ -631,9 +628,7 @@ export class ConfigLoader {
     const promises = this.changeListeners.map(async (listener) => {
       try {
         await listener(event);
-      } catch (error) {
-        console.error('[ConfigLoader] Change listener error:', error);
-      }
+      } catch (_error) {}
     });
 
     await Promise.all(promises);

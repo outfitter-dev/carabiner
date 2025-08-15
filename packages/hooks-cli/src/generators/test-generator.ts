@@ -20,7 +20,5 @@ export class TestGenerator extends BaseGenerator {
     );
 
     await this.writeFile(filePath, content);
-
-    console.log(`Generated test: ${filePath}`);
   }
 }

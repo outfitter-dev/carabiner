@@ -6,10 +6,10 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
-export interface FileWriteOptions {
+export type FileWriteOptions = {
   force?: boolean;
   createDirs?: boolean;
-}
+};
 
 /**
  * Write file with safety checks and directory creation

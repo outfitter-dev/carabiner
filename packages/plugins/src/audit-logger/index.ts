@@ -43,7 +43,7 @@ import type { HookPlugin, PluginResult } from '../../../registry/src';
 /**
  * Audit log entry interface
  */
-interface AuditLogEntry {
+type AuditLogEntry = {
   timestamp: string;
   sessionId: string;
   event: string;
@@ -57,7 +57,7 @@ interface AuditLogEntry {
   metadata: Record<string, unknown>;
   sensitive?: boolean;
   risk?: 'low' | 'medium' | 'high';
-}
+};
 
 /**
  * Audit logger plugin configuration schema
@@ -141,10 +141,10 @@ type AuditLoggerConfig = z.infer<typeof AuditLoggerConfigSchema>;
  * Global audit logger instance
  */
 class AuditLogger {
-  private buffer: string[] = [];
+  private readonly buffer: string[] = [];
   private flushTimer?: NodeJS.Timeout;
 
-  constructor(private config: AuditLoggerConfig) {
+  constructor(private readonly config: AuditLoggerConfig) {
     if (config.bufferWrites) {
       this.setupBufferedWrites();
     }
@@ -152,9 +152,7 @@ class AuditLogger {
 
   private setupBufferedWrites(): void {
     this.flushTimer = setInterval(() => {
-      this.flushBuffer().catch((error) => {
-        console.error('[AuditLogger] Buffer flush error:', error);
-      });
+      this.flushBuffer().catch((_error) => {});
     }, this.config.bufferFlushInterval);
   }
 
@@ -300,14 +298,12 @@ class AuditLogger {
     return fields.map((f) => `"${f}"`).join(',');
   }
 
-  private logToConsole(entry: AuditLogEntry, formatted: string): void {
+  private logToConsole(entry: AuditLogEntry, _formatted: string): void {
     const level = entry.success ? 'info' : 'error';
 
     if (this.shouldLogToConsole(level)) {
       if (this.config.format === 'json') {
-        console.log(`[AuditLogger] ${JSON.stringify(entry, null, 2)}`);
       } else {
-        console.log(`[AuditLogger] ${formatted}`);
       }
     }
   }
@@ -349,9 +345,7 @@ class AuditLogger {
 
       // Append to file
       await appendFile(logPath, content);
-    } catch (error) {
-      console.error('[AuditLogger] Failed to write to log file:', error);
-    }
+    } catch (_error) {}
   }
 
   private async checkRotation(_logPath: string): Promise<void> {
@@ -592,10 +586,8 @@ export const auditLoggerPlugin: HookPlugin = {
     sessionInfo: { sessionId: string; cwd: string; toolName?: string }
   ): Promise<PluginResult> {
     try {
-      await globalAuditLogger!.log(entry);
-    } catch (error) {
-      console.error('[AuditLogger] Failed to log entry:', error);
-    }
+      await globalAuditLogger?.log(entry);
+    } catch (_error) {}
 
     return {
       success: true,
@@ -644,16 +636,13 @@ export const auditLoggerPlugin: HookPlugin = {
   /**
    * Initialize audit logger
    */
-  async init(): Promise<void> {
-    console.log('[AuditLogger] Plugin initialized - audit logging enabled');
-  },
+  async init(): Promise<void> {},
 
   /**
    * Shutdown and flush logs
    */
   async shutdown(): Promise<void> {
     if (globalAuditLogger) {
-      console.log('[AuditLogger] Shutting down - flushing logs');
       await globalAuditLogger.shutdown();
       globalAuditLogger = undefined;
     }

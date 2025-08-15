@@ -31,7 +31,7 @@ import {
 /**
  * Configuration options for hook execution
  */
-export interface ExecutionOptions {
+export type ExecutionOptions = {
   /** Maximum execution time in milliseconds (default: 30000) */
   readonly timeout?: number;
 
@@ -55,7 +55,7 @@ export interface ExecutionOptions {
 
   /** Failure exit code (default: 1) */
   readonly failureExitCode?: number;
-}
+};
 
 /**
  * Default execution options optimized for typical hook usage
