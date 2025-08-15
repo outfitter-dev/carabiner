@@ -45,7 +45,7 @@
     "syncpack:check": "syncpack lint",
     "lint:css": "stylelint \"**/*.css\" \"!**/node_modules/**\" \"!**/dist/**\" --cache",
     "lint:css:fix": "stylelint --fix \"**/*.css\" \"!**/node_modules/**\" \"!**/dist/**\" --cache",
-    "lint:packages": "find packages -name 'package.json' -path '*/packages/*/package.json' -exec dirname {} \\; | xargs publint",
+    "lint:packages": "find packages -name 'package.json' -path '*/packages/*/package.json' -exec dirname {} \\; | xargs -I {} bash -c 'cd \"{}\" && publint'",
     "setup:tests": "bun scripts/setup-tests.ts",
     "changeset": "changeset",
     "changeset:version": "changeset version && bun install --lockfile-only",
@@ -53,7 +53,7 @@
     "release:check": "bun run ci:full && bun run lint:packages",
     "verify:build": "bun scripts/verify-build.ts",
     "verify:imports": "bun scripts/smoke-import.ts",
-    "clean": "turbo clean && find packages -name 'dist' -type d -exec rm -rf {} + 2>/dev/null || true",
+    "clean": "turbo clean && (find packages -name 'dist' -type d -exec rm -rf {} + 2>/dev/null || true)",
     "prepare": "lefthook install"
   },
   "devDependencies": {

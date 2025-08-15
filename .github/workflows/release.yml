@@ -68,12 +68,19 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "bump=${{ github.event.inputs.release-type }}" >> $GITHUB_OUTPUT
           else
-            # Analyze commit messages to determine version bump
-            commits=$(git log --format='%s' $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git log --format='%s')
-            
-            if echo "$commits" | grep -qE '^(feat|feature)(\(.+\))?!:'; then
+            # Analyse commit messages (subject + body) since last tag (or all if none)
+            range="$(git describe --tags --abbrev=0 2>/dev/null || echo "")"
+            if [ -n "$range" ]; then
+              commits="$(git log --pretty=format:%B "$range"..HEAD)"
+            else
+              commits="$(git log --pretty=format:%B)"
+            fi
+
+            # Major: any type with a bang or BREAKING CHANGE footer
+            if echo "$commits" | grep -qiE '(^[^:!]+![: ]|BREAKING[ -]CHANGE)'; then
               echo "bump=major" >> $GITHUB_OUTPUT
-            elif echo "$commits" | grep -qE '^(feat|feature)(\(.+\))?:'; then
+            # Minor: feat/feature (case-insensitive)
+            elif echo "$commits" | grep -qiE '^(feat|feature)(\(.+\))?:'; then
               echo "bump=minor" >> $GITHUB_OUTPUT
             else
               echo "bump=patch" >> $GITHUB_OUTPUT
@@ -107,8 +114,8 @@ jobs:
               patch=$((patch + 1))
               ;;
             prerelease)
-              patch=$((patch + 1))
-              new_version="$major.$minor.$patch-beta.0"
+              # Use semver CLI to compute next pre-release, preserving/setting preid=beta
+              new_version="$(bunx --yes semver -i prerelease "$current_version" --preid beta)"
               ;;
           esac
 
@@ -124,9 +131,22 @@ jobs:
             if [ -f "$pkg" ]; then
               node -e "
                 const fs = require('fs');
-                const pkg = JSON.parse(fs.readFileSync('$pkg', 'utf8'));
-                pkg.version = '$new_version';
-                fs.writeFileSync('$pkg', JSON.stringify(pkg, null, 2) + '\\n');
+                const p = '$pkg';
+                const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+                data.version = '$new_version';
+                const bumpDeps = (obj) => {
+                  if (!obj) return;
+                  for (const k of Object.keys(obj)) {
+                    // Update local workspace deps (adjust the predicate to your scopes/names)
+                    if (/^@grapple\//.test(k) || /^@outfitter\//.test(k)) {
+                      obj[k] = '$new_version';
+                    }
+                  }
+                };
+                bumpDeps(data.dependencies);
+                bumpDeps(data.devDependencies);
+                bumpDeps(data.peerDependencies);
+                fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\\n');
               "
             fi
           done
@@ -139,6 +159,9 @@ jobs:
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
           "
 
+          # Refresh lockfile without modifying installed node_modules
+          bun install --lockfile-only
+
       - name: Generate changelog
         id: changelog
         run: |
@@ -148,17 +171,25 @@ jobs:
           echo "## v${{ env.new_version }} - $(date +%Y-%m-%d)" >> CHANGELOG_TEMP.md
           echo "" >> CHANGELOG_TEMP.md
 
+          # Determine log range
+          last_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -n "$last_tag" ]; then
+            range="$last_tag..HEAD"
+          else
+            range="HEAD"
+          fi
+
           # Group commits by type
           echo "### Features" >> CHANGELOG_TEMP.md
-          git log --format='* %s (%h)' $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | grep -E '^.*feat(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -E '^.*feat(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
 
           echo "" >> CHANGELOG_TEMP.md
           echo "### Bug Fixes" >> CHANGELOG_TEMP.md
-          git log --format='* %s (%h)' $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | grep -E '^.*fix(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -E '^.*fix(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
 
           echo "" >> CHANGELOG_TEMP.md
           echo "### Other Changes" >> CHANGELOG_TEMP.md
-          git log --format='* %s (%h)' $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD | grep -vE '^.*(feat|fix)(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -vE '^.*(feat|fix)(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
 
           # Prepend to existing changelog
           if [ -f CHANGELOG.md ]; then
@@ -204,17 +235,17 @@ jobs:
             dir=$(dirname "$pkg")
             if [ -f "$dir/package.json" ]; then
               cd "$dir"
-              
+
               # Check if package is private
               is_private=$(node -p "require('./package.json').private || false")
-              
+
               if [ "$is_private" != "true" ]; then
                 echo "Publishing $(basename $dir)..."
                 npm publish --access public
               else
                 echo "Skipping private package $(basename $dir)"
               fi
-              
+
               cd - > /dev/null
             fi
           done

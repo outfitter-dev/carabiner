@@ -119,7 +119,7 @@ Recommended settings for `main` branch:
 
 - Require PR before merging
 - Require status checks: `CI Status`
-- Require branches to be up to date
+- Require branches to be up-to-date
 - Include administrators
 - Allow force pushes: Only for release automation
 

@@ -82,6 +82,7 @@ jobs:
           key: ${{ steps.deps-cache-key.outputs.key }}
           restore-keys: |
             deps-${{ runner.os }}-bun-${{ env.BUN_VERSION }}-
+          compression-level: 9
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -96,6 +97,7 @@ jobs:
           key: build-pr-${{ github.event.pull_request.head.sha }}
           restore-keys: |
             build-pr-
+          compression-level: 9
 
       - name: Build packages
         if: steps.build-cache.outputs.cache-hit != 'true'
@@ -118,7 +120,7 @@ jobs:
               size="$(du -sb "$dist" | cut -f1)"
               package_sizes[$pkg_name]=$size
               total_size=$((total_size + size))
-              
+
               # Build JSON for detailed output
               json_output="$json_output\"$pkg_name\":$size,"
             fi
@@ -135,14 +137,14 @@ jobs:
             echo ""
             echo "| Package | Size | Gzipped |"
             echo "|---------|------|---------|"
-            
+
             for pkg in "${!package_sizes[@]}"; do
               size=${package_sizes[$pkg]}
               # Estimate gzipped size (roughly 25-30% of original)
               gzip_size=$((size * 28 / 100))
               echo "| $pkg | $(numfmt --to=iec $size) | ~$(numfmt --to=iec $gzip_size) |"
             done | sort
-            
+
             echo ""
             echo "**Total:** $(numfmt --to=iec $total_size)"
           } > bundle-report.md
@@ -178,9 +180,9 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const prSize = ${{ steps.pr-size.outputs.total_size }};
-            const baseSize = ${{ steps.base-size.outputs.total_size }};
-            const packages = ${{ steps.pr-size.outputs.packages }};
+            const prSize = parseInt(`${{ steps['pr-size'].outputs.total_size }}`, 10);
+            const baseSize = parseInt(`${{ steps['base-size'].outputs.total_size }}`, 10);
+            const packages = JSON.parse(`${{ toJSON(steps['pr-size'].outputs.packages) }}`);
 
             const diff = prSize - baseSize;
             const percentChange = baseSize > 0 ? ((diff / baseSize) * 100).toFixed(2) : 0;
@@ -244,8 +246,8 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const botComment = comments.find(comment => 
-              comment.user.type === 'Bot' && 
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
               comment.body.includes('Bundle Size Report')
             );
 
@@ -297,7 +299,7 @@ jobs:
   auto-label:
     name: Auto Label
     runs-on: ubuntu-latest
-    if: github.event.action == 'opened'
+    if: contains(fromJSON('["opened","synchronize","reopened","ready_for_review"]'), github.event.action)
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -381,11 +383,22 @@ jobs:
         run: |
           # Time the test suite
           start_time=$(date +%s)
-          timeout 300 bun test || true
+          if timeout 300 bun test; then
+            test_status=0
+          else
+            test_status=$?
+          fi
           end_time=$(date +%s)
           duration=$((end_time - start_time))
 
           echo "Test suite duration: ${duration}s"
+          echo "Test exit code: ${test_status:-0}"
+
+          # Optionally fail on non-timeout test failures
+          if [ "${test_status:-0}" -ne 0 ] && [ "${test_status:-0}" -ne 124 ]; then
+            echo "❌ Tests failed (non-timeout)."
+            exit 1
+          fi
 
           # Fail if tests take too long
           if [ $duration -gt 180 ]; then
@@ -426,8 +439,8 @@ jobs:
 
             for (const [job, data] of Object.entries(needs)) {
               if (job !== 'changes' && data.result) {
-                const icon = data.result === 'success' ? '✅' : 
-                            data.result === 'failure' ? '❌' : 
+                const icon = data.result === 'success' ? '✅' :
+                            data.result === 'failure' ? '❌' :
                             data.result === 'skipped' ? '⏭️' : '⚠️';
                 const jobName = job.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 summary += `| ${jobName} | ${icon} ${data.result} |\n`;
