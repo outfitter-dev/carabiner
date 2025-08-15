@@ -7,11 +7,13 @@ import {
   createBashContext,
   createFileContext,
   createHookContext,
+  executeHook,
   HookResults,
   outputHookResult,
   safeHookExecution,
 } from '../runtime';
 import type { HookContext, HookHandler } from '../types';
+import { createTestContext } from '@outfitter/types';
 
 describe('Runtime - Context Creation', () => {
   test('should create Bash context correctly', () => {
@@ -54,16 +56,14 @@ describe('Runtime - Hook Execution', () => {
       return HookResults.success('Hook executed', { test: true });
     };
 
-    const context: HookContext = {
-      event: 'PreToolUse',
+    const context = createTestContext({
+      hookEventName: 'PreToolUse',
       toolName: 'Bash',
-      sessionId: 'test',
-      transcriptPath: '/test',
-      cwd: '/test',
+      sessionId: 'test-session',
+      transcriptPath: '/test/transcript.md',
+      cwd: '/test/workspace',
       toolInput: { command: 'test' },
-      environment: {},
-      rawInput: {} as any,
-    };
+    });
 
     const result = await safeHookExecution(handler, context);
 
@@ -77,16 +77,14 @@ describe('Runtime - Hook Execution', () => {
       throw new Error('Test error');
     };
 
-    const context: HookContext = {
-      event: 'PreToolUse',
+    const context = createTestContext({
+      hookEventName: 'PreToolUse',
       toolName: 'Bash',
-      sessionId: 'test',
-      transcriptPath: '/test',
-      cwd: '/test',
+      sessionId: 'test-session',
+      transcriptPath: '/test/transcript.md',
+      cwd: '/test/workspace',
       toolInput: { command: 'test' },
-      environment: {},
-      rawInput: {} as any,
-    };
+    });
 
     const result = await safeHookExecution(handler, context);
 
@@ -99,16 +97,14 @@ describe('Runtime - Hook Execution', () => {
       return HookResults.block('Operation blocked');
     };
 
-    const context: HookContext = {
-      event: 'PreToolUse',
+    const context = createTestContext({
+      hookEventName: 'PreToolUse',
       toolName: 'Bash',
-      sessionId: 'test',
-      transcriptPath: '/test',
-      cwd: '/test',
+      sessionId: 'test-session',
+      transcriptPath: '/test/transcript.md',
+      cwd: '/test/workspace',
       toolInput: { command: 'rm -rf /' },
-      environment: {},
-      rawInput: {} as any,
-    };
+    });
 
     const result = await safeHookExecution(handler, context);
 
@@ -309,6 +305,131 @@ describe('Runtime - Output Handling', () => {
     } finally {
       // Restore console.log
       console.log = originalLog;
+    }
+  });
+});
+
+describe('Runtime - executeHook', () => {
+  test('should execute hook successfully and clear timeout', async () => {
+    const handler: HookHandler = async () => {
+      return HookResults.success('Hook executed successfully');
+    };
+
+    const context: HookContext = {
+      event: 'PreToolUse',
+      toolName: 'Bash',
+      sessionId: 'test',
+      transcriptPath: '/test',
+      cwd: '/test',
+      toolInput: { command: 'echo test' },
+      environment: {},
+      rawInput: {} as any,
+    };
+
+    const result = await executeHook(handler, context, { timeout: 1000 });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toBe('Hook executed successfully');
+    expect(result.metadata?.duration).toBeGreaterThanOrEqual(0);
+    expect(result.metadata?.timestamp).toBeDefined();
+  });
+
+  test('should timeout and clear timer properly', async () => {
+    const handler: HookHandler = async () => {
+      // Simulate slow hook that exceeds timeout
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return HookResults.success('Should not reach here');
+    };
+
+    const context: HookContext = {
+      event: 'PreToolUse',
+      toolName: 'Bash',
+      sessionId: 'test',
+      transcriptPath: '/test',
+      cwd: '/test',
+      toolInput: { command: 'echo test' },
+      environment: {},
+      rawInput: {} as any,
+    };
+
+    const result = await executeHook(handler, context, { timeout: 50, throwOnError: false });
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('timed out');
+    expect(result.metadata?.duration).toBeGreaterThanOrEqual(50);
+  });
+
+  test('should complete before timeout and clear timer', async () => {
+    let timerCleared = false;
+    const originalClearTimeout = globalThis.clearTimeout;
+    
+    // Mock clearTimeout to verify it's called
+    globalThis.clearTimeout = (timer: any) => {
+      timerCleared = true;
+      originalClearTimeout(timer);
+    };
+
+    try {
+      const handler: HookHandler = async () => {
+        // Complete quickly, well before timeout
+        await new Promise(resolve => setTimeout(resolve, 10));
+        return HookResults.success('Completed quickly');
+      };
+
+      const context: HookContext = {
+        event: 'PreToolUse',
+        toolName: 'Bash',
+        sessionId: 'test',
+        transcriptPath: '/test',
+        cwd: '/test',
+        toolInput: { command: 'echo test' },
+        environment: {},
+        rawInput: {} as any,
+      };
+
+      const result = await executeHook(handler, context, { timeout: 1000 });
+
+      expect(result.success).toBe(true);
+      expect(result.message).toBe('Completed quickly');
+      expect(timerCleared).toBe(true); // Verify timer was cleared
+    } finally {
+      // Restore original clearTimeout
+      globalThis.clearTimeout = originalClearTimeout;
+    }
+  });
+
+  test('should handle errors and still clear timeout', async () => {
+    let timerCleared = false;
+    const originalClearTimeout = globalThis.clearTimeout;
+    
+    globalThis.clearTimeout = (timer: any) => {
+      timerCleared = true;
+      originalClearTimeout(timer);
+    };
+
+    try {
+      const handler: HookHandler = async () => {
+        throw new Error('Handler error');
+      };
+
+      const context: HookContext = {
+        event: 'PreToolUse',
+        toolName: 'Bash',
+        sessionId: 'test',
+        transcriptPath: '/test',
+        cwd: '/test',
+        toolInput: { command: 'echo test' },
+        environment: {},
+        rawInput: {} as any,
+      };
+
+      const result = await executeHook(handler, context, { timeout: 1000, throwOnError: false });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Handler error');
+      expect(timerCleared).toBe(true); // Timer should be cleared even on errors
+    } finally {
+      globalThis.clearTimeout = originalClearTimeout;
     }
   });
 });

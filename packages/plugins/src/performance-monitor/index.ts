@@ -12,7 +12,7 @@
 import { PerformanceObserver, performance } from 'node:perf_hooks';
 import type { HookContext } from '@outfitter/types';
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '../../../registry/src';
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * Performance metric interface
@@ -549,7 +549,10 @@ function handlePostToolUseMonitoring(
 
   // Add warning if operation was slow
   if (config.trackExecutionTime && duration > config.slowOperationThreshold) {
-    result.message = `⚠️  Slow operation: ${operation} took ${Math.round(duration)}ms`;
+    return {
+      ...result,
+      message: `⚠️  Slow operation: ${operation} took ${Math.round(duration)}ms`,
+    };
   }
 
   return result;
@@ -603,7 +606,7 @@ export const performanceMonitorPlugin: HookPlugin = {
   events: ['PreToolUse', 'PostToolUse'],
   priority: 10, // Low priority to avoid affecting other plugins
 
-  configSchema: PerformanceMonitorConfigSchema,
+  configSchema: PerformanceMonitorConfigSchema as z.ZodType<Record<string, unknown>>,
   defaultConfig: {},
 
   apply(
@@ -626,7 +629,7 @@ export const performanceMonitorPlugin: HookPlugin = {
       return createSkippedMonitoringResult(
         this.name,
         this.version,
-        skipResult.reason
+        skipResult.reason || 'Monitoring skipped'
       );
     }
 

@@ -42,9 +42,7 @@
   "dependencies": {
     "@outfitter/hooks-config": "workspace:*",
     "@outfitter/hooks-core": "workspace:*",
-    "@outfitter/hooks-validators": "workspace:*",
-    "pino": "^9.8.0",
-    "pino-pretty": "^13.1.1"
+    "@outfitter/hooks-validators": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "*",

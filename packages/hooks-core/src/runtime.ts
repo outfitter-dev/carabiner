@@ -33,14 +33,26 @@ import {
 
 /**
  * Parse JSON input from stdin
+ * Enhanced with security validation
  */
 export async function parseStdinInput(): Promise<
   StdinParseResult<ClaudeHookInputVariant>
 > {
   try {
-    // Read from stdin
+    // Read from stdin with size limits for security
+    const MAX_INPUT_SIZE = 1024 * 1024; // 1MB limit
+    const inputBytes = await Bun.stdin.bytes();
+    
+    if (inputBytes.length > MAX_INPUT_SIZE) {
+      return {
+        success: false,
+        error: `Input exceeds maximum size limit (${MAX_INPUT_SIZE} bytes)`,
+        rawInput: '[INPUT TOO LARGE]',
+      };
+    }
+
     const decoder = new TextDecoder();
-    const input = decoder.decode(await Bun.stdin.bytes());
+    const input = decoder.decode(inputBytes);
 
     if (!input.trim()) {
       return {
@@ -50,8 +62,19 @@ export async function parseStdinInput(): Promise<
       };
     }
 
-    // Parse JSON
-    const parsedData = JSON.parse(input.trim()) as ClaudeHookInputVariant;
+    // Security: Remove null bytes and control characters before parsing
+    const sanitizedInput = input.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '').trim();
+    
+    if (sanitizedInput !== input.trim()) {
+      return {
+        success: false,
+        error: 'Input contains invalid control characters',
+        rawInput: '[SANITIZED]',
+      };
+    }
+
+    // Parse JSON with additional validation
+    const parsedData = JSON.parse(sanitizedInput) as ClaudeHookInputVariant;
 
     // Basic validation
     if (
@@ -79,11 +102,28 @@ export async function parseStdinInput(): Promise<
 
 /**
  * Parse hook environment variables (only CLAUDE_PROJECT_DIR is provided)
+ * Enhanced with security sanitization
  */
 export function parseHookEnvironment(): HookEnvironment {
-  return {
-    CLAUDE_PROJECT_DIR: Bun.env.CLAUDE_PROJECT_DIR,
-  };
+  const claudeProjectDir = Bun.env.CLAUDE_PROJECT_DIR;
+  
+  // Security: Validate CLAUDE_PROJECT_DIR path
+  if (claudeProjectDir) {
+    // Remove any null bytes or control characters
+    const sanitized = claudeProjectDir.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
+    
+    // Ensure it's an absolute path and not a relative one
+    if (!sanitized.startsWith('/') || sanitized.includes('../')) {
+      throw new HookInputError(
+        'Invalid CLAUDE_PROJECT_DIR environment variable',
+        claudeProjectDir
+      );
+    }
+    
+    return { CLAUDE_PROJECT_DIR: sanitized };
+  }
+  
+  return { CLAUDE_PROJECT_DIR: undefined };
 }
 
 /**
@@ -289,10 +329,11 @@ export async function executeHook(
   const startTime = Date.now();
   const { timeout = 30_000, throwOnError = false } = options;
 
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    // Create timeout promise
+    // Create timeout promise with clearable timer
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new HookTimeoutError(timeout, context)), timeout);
+      timer = setTimeout(() => reject(new HookTimeoutError(timeout, context)), timeout);
     });
 
     // Execute handler with timeout
@@ -317,13 +358,13 @@ export async function executeHook(
 
     if (error instanceof HookTimeoutError) {
       runtimeLogger.error(
-        { timeout, context },
-        `Hook execution timed out after ${timeout}ms`
+        `Hook execution timed out after ${timeout}ms`,
+        { timeout, context }
       );
     } else {
       runtimeLogger.error(
-        { error, context },
-        `Hook execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Hook execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { error, context }
       );
     }
 
@@ -347,6 +388,11 @@ export async function executeHook(
         hookVersion: '0.2.0',
       },
     };
+  } finally {
+    // Always clear the timeout to prevent memory leaks
+    if (timer) {
+      clearTimeout(timer);
+    }
   }
 }
 

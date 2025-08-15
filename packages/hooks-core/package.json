@@ -43,16 +43,16 @@
   ],
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
+  "dependencies": {
+    "pino": "^9.8.0"
+  },
   "devDependencies": {
     "@types/bun": "*",
+    "pino-pretty": "^13.1.1",
     "type-fest": "^4.41.0",
     "typescript": "^5.9.2"
   },
   "peerDependencies": {
     "type-fest": "^4.41.0"
-  },
-  "dependencies": {
-    "pino": "^9.8.0",
-    "pino-pretty": "^13.1.1"
   }
 }

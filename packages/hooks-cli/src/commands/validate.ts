@@ -5,7 +5,8 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { loadConfig } from '@outfitter/hooks-config';
+import { loadConfig, type ExtendedHookConfiguration } from '@outfitter/hooks-config';
+import type { ToolHookConfig } from '@outfitter/hooks-core';
 import { BaseCommand, type CliConfig } from '../types';
 
 // Regex patterns at top level
@@ -167,8 +168,7 @@ export class ValidateCommand extends BaseCommand {
    */
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: hook validation requires complex nested logic
   private validateHookCommands(
-    // biome-ignore lint/suspicious/noExplicitAny: configuration structure is dynamic
-    config: any,
+    config: ExtendedHookConfiguration,
     workspacePath: string,
     verbose: boolean,
     _autoFix: boolean
@@ -188,8 +188,7 @@ export class ValidateCommand extends BaseCommand {
         if ('command' in eventConfig) {
           // Single hook config
           errors += this.validateCommand(
-            // biome-ignore lint/suspicious/noExplicitAny: event config structure varies
-            eventConfig as any,
+            eventConfig as ToolHookConfig,
             event,
             '',
             workspacePath,
@@ -205,8 +204,7 @@ export class ValidateCommand extends BaseCommand {
               'command' in toolConfig
             ) {
               errors += this.validateCommand(
-                // biome-ignore lint/suspicious/noExplicitAny: tool config structure varies
-                toolConfig as any,
+                toolConfig as ToolHookConfig,
                 event,
                 tool,
                 workspacePath,
@@ -226,7 +224,7 @@ export class ValidateCommand extends BaseCommand {
    * Validate a specific hook command
    */
   private validateCommand(
-    hookConfig: { command: string; enabled?: boolean },
+    hookConfig: ToolHookConfig,
     _event: string,
     _tool: string,
     workspacePath: string,

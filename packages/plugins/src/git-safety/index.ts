@@ -8,18 +8,9 @@
  */
 
 import type { HookContext } from '@outfitter/types';
+import { isBashHookContext } from '@outfitter/types';
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '../../../registry/src';
-
-interface BashHookContext extends HookContext {
-  readonly toolName: 'Bash';
-  readonly toolInput: {
-    readonly command: string;
-    readonly description?: string;
-    readonly timeout?: number;
-  };
-  readonly cwd: string;
-}
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * Git safety plugin configuration schema
@@ -103,7 +94,6 @@ const GitSafetyConfigSchema = z
   })
   .default({});
 
-type _GitSafetyConfig = z.infer<typeof GitSafetyConfigSchema>;
 
 /**
  * Check if command matches any pattern
@@ -357,7 +347,7 @@ export const gitSafetyPlugin: HookPlugin = {
   tools: ['Bash'],
   priority: 90, // High priority to intercept dangerous commands
 
-  configSchema: GitSafetyConfigSchema,
+  configSchema: GitSafetyConfigSchema as z.ZodType<Record<string, unknown>>,
   defaultConfig: {},
 
   async apply(
@@ -373,8 +363,7 @@ export const gitSafetyPlugin: HookPlugin = {
       };
     }
 
-    const bashContext = context as BashHookContext;
-    if (bashContext.toolName !== 'Bash') {
+    if (!isBashHookContext(context)) {
       return {
         success: true,
         pluginName: this.name,
@@ -384,11 +373,11 @@ export const gitSafetyPlugin: HookPlugin = {
 
     // Parse configuration
     const safetyConfig = GitSafetyConfigSchema.parse(config);
-    const command = bashContext.toolInput.command;
+    const command = context.toolInput.command;
 
     // Check repository exclusions/inclusions
     const excludeResult = checkRepoExclusions(
-      bashContext.cwd,
+      context.cwd,
       safetyConfig.excludeRepos,
       this.name,
       this.version
@@ -398,7 +387,7 @@ export const gitSafetyPlugin: HookPlugin = {
     }
 
     const includeResult = checkRepoInclusions(
-      bashContext.cwd,
+      context.cwd,
       safetyConfig.includeRepos,
       this.name,
       this.version
@@ -439,7 +428,7 @@ export const gitSafetyPlugin: HookPlugin = {
     // Check trusted directories
     if (
       safetyConfig.trustedDirectories.length > 0 &&
-      isTrustedDirectory(bashContext.cwd, safetyConfig.trustedDirectories)
+      isTrustedDirectory(context.cwd, safetyConfig.trustedDirectories)
     ) {
       return {
         success: true,

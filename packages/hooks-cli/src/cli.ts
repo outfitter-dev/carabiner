@@ -1,14 +1,23 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 /**
  * Claude Code hooks CLI
  * Command-line interface for managing Claude Code hooks
  */
 
-import { resolve } from 'node:path';
+import { join, dirname } from 'node:path';
 import { parseArgs } from 'node:util';
-import pino from 'pino';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import type { CliConfig, Command } from './types';
+import { createCliLogger, type Logger } from '@outfitter/hooks-core';
+// Statically import commands to guarantee inclusion in compiled binary
+import { InitCommand } from './commands/init';
+import { GenerateCommand } from './commands/generate';
+import { ValidateCommand } from './commands/validate';
+import { ConfigCommand } from './commands/config';
+import { TestCommand } from './commands/test';
+import { createWorkspaceValidator } from './security/workspace-validator';
 // Import commands dynamically to avoid circular dependencies
 
 /**
@@ -17,36 +26,37 @@ import type { CliConfig, Command } from './types';
 export class ClaudeHooksCli {
   private commands: Map<string, Command> = new Map();
   private config: CliConfig;
-  private logger: pino.Logger;
+  private logger: Logger;
 
   constructor() {
+    // Read version from package.json for accurate version reporting
+    let version = '0.1.0';
+    try {
+      // In compiled binary, we need to find the package.json differently
+      const isCompiled = typeof Bun !== 'undefined' && Bun.main === import.meta.path;
+      if (isCompiled) {
+        // For compiled binaries, version will be injected at build time
+        version = process.env.CLI_VERSION || '0.1.0';
+      } else {
+        // For development, read from package.json
+        const packagePath = join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
+        const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
+        version = packageJson.version;
+      }
+    } catch (error) {
+      // Fallback to hardcoded version if reading fails
+      console.warn('Warning: Could not read version from package.json, using fallback');
+    }
+
     this.config = {
-      version: '0.1.0',
+      version,
       workspacePath: process.cwd(),
       verbose: false,
       debug: false,
     };
 
-    // Initialize logger
-    let logLevel: string;
-    if (this.config.debug) {
-      logLevel = 'debug';
-    } else if (this.config.verbose) {
-      logLevel = 'info';
-    } else {
-      logLevel = 'warn';
-    }
-    this.logger = pino({
-      level: logLevel,
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname',
-        },
-      },
-    });
+    // Initialize logger with CLI-specific context
+    this.logger = createCliLogger('main');
 
     // Commands will be registered lazily
   }
@@ -55,12 +65,6 @@ export class ClaudeHooksCli {
    * Register all commands
    */
   private async registerCommands(): Promise<void> {
-    const { InitCommand } = await import('./commands/init');
-    const { GenerateCommand } = await import('./commands/generate');
-    const { ValidateCommand } = await import('./commands/validate');
-    const { ConfigCommand } = await import('./commands/config');
-    const { TestCommand } = await import('./commands/test');
-
     const commands = [
       new InitCommand(),
       new GenerateCommand(),
@@ -104,18 +108,49 @@ export class ClaudeHooksCli {
     // Update config based on parsed options
     if (values.verbose) {
       this.config.verbose = true;
-      this.logger.level = 'info';
     }
     if (values.debug) {
       this.config.debug = true;
-      this.logger.level = 'debug';
+    }
+    
+    // Create new logger with updated context if debug/verbose mode changed
+    if (values.debug || values.verbose) {
+      this.logger = createCliLogger('main').child({
+        verbose: this.config.verbose,
+        debug: this.config.debug,
+      });
     }
     if (values.workspace) {
-      this.config.workspacePath = resolve(values.workspace);
+      // Security: Validate workspace path using secure validator
+      try {
+        const validator = createWorkspaceValidator(values.workspace);
+        this.config.workspacePath = validator.getWorkspaceRoot();
+        this.logger.debug(`Validated workspace path: ${this.config.workspacePath}`);
+      } catch (error) {
+        this.error(`Invalid workspace path: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        process.exit(1);
+      }
     }
 
     const command = positionals[0];
     const commandArgs = positionals.slice(1);
+
+    // Security: Validate command input
+    if (command) {
+      // Sanitize command name (basic validation)
+      if (!/^[a-zA-Z][a-zA-Z0-9\-_]*$/.test(command)) {
+        this.error(`Invalid command name: ${command}`);
+        process.exit(1);
+      }
+
+      // Validate command arguments for security
+      for (const arg of commandArgs) {
+        if (typeof arg === 'string' && (arg.includes('../') || arg.includes('\x00'))) {
+          this.error('Invalid characters in command arguments');
+          process.exit(1);
+        }
+      }
+    }
 
     if (!command) {
       await this.showHelp();
@@ -236,7 +271,7 @@ export class ClaudeHooksCli {
     // User-facing success uses console
     console.log(`✅ ${message}`);
     // Also log internally
-    this.logger.info({ type: 'success' }, message);
+    this.logger.info(message, { type: 'success' });
   }
 
   /**

@@ -35,7 +35,8 @@
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@outfitter/hooks-core": "workspace:*"
+    "@outfitter/hooks-core": "workspace:*",
+    "@outfitter/error-management": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "*",

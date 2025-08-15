@@ -32,9 +32,101 @@ env:
   BUN_VERSION: "1.2.20"
 
 jobs:
+  build-binaries:
+    name: Build Binaries
+    runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, 'chore(release)')"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+            binary-name: claude-hooks-linux
+          - os: macos-latest # ARM64
+            target: macos-arm64
+            binary-name: claude-hooks-macos-arm64
+          - os: macos-13 # Intel x64
+            target: macos-x64
+            binary-name: claude-hooks-macos-x64
+          - os: windows-latest
+            target: windows-x64
+            binary-name: claude-hooks-windows.exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build packages (required for CLI dependencies)
+        run: bun run build
+
+      - name: Build binary
+        run: |
+          cd packages/hooks-cli
+          # Read version from package.json
+          CLI_VERSION=$(node -p "require('./package.json').version")
+          echo "Building binary version: $CLI_VERSION"
+
+          # Create production build with all dependencies bundled
+          bun build src/cli.ts \
+            --compile \
+            --minify \
+            --sourcemap=external \
+            --target=bun \
+            --outfile=../../${{ matrix.binary-name }} \
+            --define "process.env.CLI_VERSION=\"$CLI_VERSION\""
+        shell: bash
+
+      - name: Test binary - version check
+        run: |
+          # Make binary executable on Unix systems
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            chmod +x ./${{ matrix.binary-name }}
+            ./${{ matrix.binary-name }} --version
+          else
+            ./${{ matrix.binary-name }} --version
+          fi
+        shell: bash
+
+      - name: Test binary - help command
+        run: |
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ./${{ matrix.binary-name }} validate --help
+          else
+            ./${{ matrix.binary-name }} validate --help
+          fi
+        shell: bash
+
+      - name: Test binary - basic functionality
+        run: |
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ./${{ matrix.binary-name }} --help
+          else
+            ./${{ matrix.binary-name }} --help
+          fi
+        shell: bash
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target }}
+          path: ${{ matrix.binary-name }}
+          retention-days: 7
+
   release:
     name: Release
     runs-on: ubuntu-latest
+    needs: build-binaries
     if: "!contains(github.event.head_commit.message, 'chore(release)')"
     steps:
       - name: Checkout code
@@ -211,16 +303,45 @@ jobs:
       - name: Push changes
         run: git push origin main
 
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./binaries/
+
+      - name: Organize binary files
+        run: |
+          mkdir -p release-assets
+          find binaries -name "claude-hooks-*" -type f -exec cp {} release-assets/ \;
+          ls -la release-assets/
+
+          # Verify all expected binaries are present
+          expected_binaries=("claude-hooks-linux" "claude-hooks-macos-arm64" "claude-hooks-macos-x64" "claude-hooks-windows.exe")
+          for binary in "${expected_binaries[@]}"; do
+            if [ -f "release-assets/$binary" ]; then
+              echo "✅ Found $binary"
+              file "release-assets/$binary" || true
+            else
+              echo "❌ Missing $binary"
+              exit 1
+            fi
+          done
+
+      - name: Create GitHub Release with Assets
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ env.new_version }}
-          release_name: Release v${{ env.new_version }}
+          name: Release v${{ env.new_version }}
           body_path: CHANGELOG.md
           draft: false
           prerelease: ${{ steps.version.outputs.bump == 'prerelease' }}
+          files: |
+            release-assets/claude-hooks-linux
+            release-assets/claude-hooks-macos-arm64
+            release-assets/claude-hooks-macos-x64
+            release-assets/claude-hooks-windows.exe
+          generate_release_notes: true
 
       - name: Publish to NPM
         if: steps.version.outputs.bump != 'prerelease'

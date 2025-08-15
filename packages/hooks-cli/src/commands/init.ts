@@ -545,7 +545,7 @@ async function handlePreToolUse(): Promise<HookResult> {
   try {
     // Basic security validation
     validateHookSecurity(context, {
-      env: Bun.env.NODE_ENV as any || 'development'
+      env: (Bun.env.NODE_ENV as string) || 'development'
     });
 
     return HookResults.success(\`Validation passed for \${context.toolName}\`);

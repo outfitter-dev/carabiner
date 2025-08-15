@@ -12,7 +12,7 @@
 import { readFile } from 'node:fs/promises';
 import type { HookContext } from '@outfitter/types';
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '../../../registry/src';
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * Security finding severity levels
@@ -322,7 +322,7 @@ function matchesPatterns(filePath: string, patterns: string[]): boolean {
  */
 function getFileExtension(filePath: string): string {
   const match = filePath.match(/\.([^.]+)$/);
-  return match ? match[1].toLowerCase() : '';
+  return match?.[1]?.toLowerCase() || '';
 }
 
 /**
@@ -335,7 +335,7 @@ function scanContent(
   config: SecurityScannerConfig
 ): SecurityFinding[] {
   const findings: SecurityFinding[] = [];
-  const _lines = content.split('\n');
+  // const lines = content.split('\n'); // Available for future line-specific analysis
   const fileExt = getFileExtension(filePath);
 
   for (const rule of rules) {
@@ -668,7 +668,7 @@ async function scanForSecurityIssues(
   const toolContext = context as HookContext & {
     toolInput: Record<string, unknown>;
   };
-  const { toolName } = context;
+  const toolName = 'toolName' in context ? context.toolName : undefined;
   const { toolInput } = toolContext;
 
   // Handle bash commands
@@ -677,7 +677,7 @@ async function scanForSecurityIssues(
   }
 
   // Handle file operations
-  if (['Write', 'Edit', 'MultiEdit'].includes(toolName) && config.scanFiles) {
+  if (toolName && ['Write', 'Edit', 'MultiEdit'].includes(toolName) && config.scanFiles) {
     return scanFileOperation(
       toolName,
       toolInput,
@@ -844,7 +844,7 @@ export const securityScannerPlugin: HookPlugin = {
   tools: ['Bash', 'Write', 'Edit', 'MultiEdit'],
   priority: 85, // High priority to catch issues early
 
-  configSchema: SecurityScannerConfigSchema,
+  configSchema: SecurityScannerConfigSchema as z.ZodType<Record<string, unknown>>,
   defaultConfig: {},
 
   async apply(

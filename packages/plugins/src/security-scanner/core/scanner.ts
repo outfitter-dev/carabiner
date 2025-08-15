@@ -164,7 +164,8 @@ export class SecurityScanner {
    */
   generateReport(scanResult: ScanResult) {
     const { findings } = scanResult;
-    const _config = this.configManager.getConfig();
+    // Get current config for future use
+    // const config = this.configManager.getConfig();
     const blockingConfig = this.configManager.getBlockingConfig();
 
     if (findings.length === 0) {

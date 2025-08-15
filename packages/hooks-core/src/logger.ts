@@ -1,45 +1,27 @@
 /**
- * Centralized logging configuration using Pino
- * Provides structured logging for hook execution
+ * Legacy logger interface for backward compatibility
+ * 
+ * @deprecated Use the new logging system from './logging' instead
+ * This file provides backward compatibility for existing code
  */
 
-import pino from 'pino';
+import { 
+  createLogger, 
+  createCliLogger as createNewCliLogger,
+  coreLogger as newCoreLogger,
+  runtimeLogger as newRuntimeLogger,
+  registryLogger as newRegistryLogger,
+  builderLogger as newBuilderLogger
+} from './logging';
 import type { HookEvent, ToolName } from './types';
 
 /**
- * Logger configuration based on environment
+ * Legacy base logger - now uses the new system
  */
-const isDevelopment = Bun.env.NODE_ENV === 'development' || Bun.env.DEBUG;
-const logLevel = Bun.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info');
+export const logger = createLogger('hooks-core-legacy');
 
 /**
- * Create the base logger instance
- */
-export const logger = pino({
-  level: logLevel,
-  transport: isDevelopment
-    ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname',
-        },
-      }
-    : undefined,
-  formatters: {
-    level: (label: string) => {
-      return { level: label };
-    },
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-  serializers: {
-    error: pino.stdSerializers.err,
-  },
-});
-
-/**
- * Hook-specific logger factory
+ * Hook-specific logger factory (legacy)
  */
 export function createHookLogger(event: HookEvent, toolName?: ToolName) {
   return logger.child({
@@ -51,35 +33,32 @@ export function createHookLogger(event: HookEvent, toolName?: ToolName) {
 }
 
 /**
- * CLI-specific logger factory
+ * CLI-specific logger factory (legacy)
  */
 export function createCliLogger(command?: string) {
-  return logger.child({
-    component: 'cli',
-    command,
-  });
+  return createNewCliLogger(command);
 }
 
 /**
- * Exported logger instances for different components
+ * Exported logger instances for different components (legacy)
  */
-export const coreLogger = logger.child({ component: 'core' });
-export const runtimeLogger = logger.child({ component: 'runtime' });
-export const registryLogger = logger.child({ component: 'registry' });
-export const builderLogger = logger.child({ component: 'builder' });
+export const coreLogger = newCoreLogger;
+export const runtimeLogger = newRuntimeLogger;
+export const registryLogger = newRegistryLogger;
+export const builderLogger = newBuilderLogger;
 
 /**
- * Type-safe logging utilities
+ * Type-safe logging utilities (legacy)
  */
 export const HookLogger = {
   info(event: HookEvent, toolName: ToolName, message: string): void {
-    const log = createHookLogger(event, toolName);
-    log.info(message);
+    const logger = createLogger('hook-legacy');
+    logger.info(message, { event, toolName });
   },
 
   warn(event: HookEvent, toolName: ToolName, message: string): void {
-    const log = createHookLogger(event, toolName);
-    log.warn(message);
+    const logger = createLogger('hook-legacy');
+    logger.warn(message, { event, toolName });
   },
 
   error(
@@ -88,11 +67,11 @@ export const HookLogger = {
     message: string,
     error?: Error
   ): void {
-    const log = createHookLogger(event, toolName);
+    const logger = createLogger('hook-legacy');
     if (error) {
-      log.error({ error }, message);
+      logger.error(error, message, { event, toolName });
     } else {
-      log.error(message);
+      logger.error(message, { event, toolName });
     }
   },
 
@@ -102,11 +81,7 @@ export const HookLogger = {
     message: string,
     data?: unknown
   ): void {
-    const log = createHookLogger(event, toolName);
-    if (data) {
-      log.debug({ data }, message);
-    } else {
-      log.debug(message);
-    }
+    const logger = createLogger('hook-legacy');
+    logger.debug(message, { event, toolName, data });
   },
 };

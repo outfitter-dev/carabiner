@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
+import type { ParseArgsConfig } from 'node:util';
 
 /**
  * CLI configuration
@@ -39,7 +40,7 @@ export abstract class BaseCommand implements Command {
    */
   protected parseArgs(
     args: string[],
-    options: Record<string, unknown>
+    options: ParseArgsConfig['options']
   ): {
     values: Record<string, string | boolean | undefined>;
     positionals: string[];
@@ -48,8 +49,7 @@ export abstract class BaseCommand implements Command {
       const result = parseArgs({
         args,
         allowPositionals: true,
-        // biome-ignore lint/suspicious/noExplicitAny: parseArgs requires flexible options type
-        options: options as any,
+        options,
       });
       return {
         values: result.values as Record<string, string | boolean | undefined>,

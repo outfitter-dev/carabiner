@@ -15,30 +15,11 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { hostname, userInfo } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { HookContext } from '@outfitter/types';
+import { isBashHookContext, isFileHookContext } from '@outfitter/types';
 
-interface BashToolContext extends HookContext {
-  readonly toolName: 'Bash';
-  readonly toolInput: {
-    readonly command: string;
-    readonly description?: string;
-    readonly timeout?: number;
-  };
-}
-
-interface FileOperationContext extends HookContext {
-  readonly toolName: 'Write' | 'Edit' | 'Read';
-  readonly toolInput: {
-    readonly file_path?: string;
-    readonly content?: string;
-    readonly old_string?: string;
-    readonly new_string?: string;
-  };
-}
-
-type AuditableContext = BashToolContext | FileOperationContext | HookContext;
 
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '../../../registry/src';
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * Audit log entry interface
@@ -202,7 +183,7 @@ class AuditLogger {
       case 'operations':
         return ['PreToolUse', 'PostToolUse'].includes(entry.event);
       case 'security':
-        return entry.risk === 'high' || entry.sensitive;
+        return entry.risk === 'high' || Boolean(entry.sensitive);
       case 'errors':
         return !entry.success;
       default:
@@ -378,22 +359,17 @@ let globalAuditLogger: AuditLogger | undefined;
  * Extract risk level from operation
  */
 function assessOperationRisk(context: HookContext): 'low' | 'medium' | 'high' {
-  const toolName = 'toolName' in context ? context.toolName : undefined;
-
   // High risk operations
-  if (toolName === 'Bash') {
-    if (context.toolName === 'Bash' && 'toolInput' in context) {
-      const bashContext = context as BashToolContext;
-      const command = bashContext.toolInput.command;
-      if (command && /\b(rm\s+-rf|sudo|chmod|chown)\b/.test(command)) {
-        return 'high';
-      }
+  if (isBashHookContext(context)) {
+    const command = context.toolInput.command;
+    if (command && /\b(rm\s+-rf|sudo|chmod|chown)\b/.test(command)) {
+      return 'high';
     }
     return 'medium';
   }
 
   // Medium risk operations
-  if (['Write', 'Edit', 'MultiEdit'].includes(toolName || '')) {
+  if (isFileHookContext(context)) {
     return 'medium';
   }
 
@@ -405,26 +381,28 @@ function assessOperationRisk(context: HookContext): 'low' | 'medium' | 'high' {
  * Check if operation contains sensitive information
  */
 function containsSensitiveInfo(context: HookContext): boolean {
-  if (!('toolInput' in context && context.toolInput)) {
-    return false;
+  const sensitivePatterns = [
+    /password\s*[:=]/i,
+    /api[_-]?key\s*[:=]/i,
+    /secret\s*[:=]/i,
+    /token\s*[:=]/i,
+    /-----BEGIN [A-Z]+ PRIVATE KEY-----/,
+    /AKIA[0-9A-Z]{16}/,
+  ];
+
+  // Check bash commands for sensitive info
+  if (isBashHookContext(context)) {
+    return sensitivePatterns.some((pattern) => pattern.test(context.toolInput.command));
   }
 
-  const toolContext = context as AuditableContext;
-
-  // Check for potential secrets in content
-  const content =
-    toolContext.toolInput?.content || toolContext.toolInput?.new_string || '';
-  if (typeof content === 'string') {
-    const sensitivePatterns = [
-      /password\s*[:=]/i,
-      /api[_-]?key\s*[:=]/i,
-      /secret\s*[:=]/i,
-      /token\s*[:=]/i,
-      /-----BEGIN [A-Z]+ PRIVATE KEY-----/,
-      /AKIA[0-9A-Z]{16}/,
-    ];
-
-    return sensitivePatterns.some((pattern) => pattern.test(content));
+  // Check file content for sensitive info
+  if (isFileHookContext(context)) {
+    const content = ('content' in context.toolInput && context.toolInput.content) ||
+                   ('new_string' in context.toolInput && context.toolInput.new_string) ||
+                   '';
+    if (typeof content === 'string') {
+      return sensitivePatterns.some((pattern) => pattern.test(content));
+    }
   }
 
   return false;
@@ -479,47 +457,53 @@ export const auditLoggerPlugin: HookPlugin = {
   description: 'Comprehensive audit logging of Claude Code operations',
   author: 'Outfitter Team',
 
-  events: ['PreToolUse', 'PostToolUse', 'SessionStart', 'Stop', 'UserPrompt'],
+  events: ['PreToolUse', 'PostToolUse', 'SessionStart', 'Stop', 'UserPromptSubmit'],
   priority: 5, // Very low priority to run after other plugins
 
-  configSchema: AuditLoggerConfigSchema,
+  configSchema: AuditLoggerConfigSchema as z.ZodType<Record<string, unknown>>,
   defaultConfig: {},
 
-  createSkippedResult(reason: string): PluginResult {
-    return {
-      success: true,
-      pluginName: this.name,
-      pluginVersion: this.version,
-      metadata: { skipped: true, reason },
-    };
-  },
 
-  extractSessionInfo(context: HookContext) {
-    return {
+  async apply(
+    context: HookContext,
+    config: Record<string, unknown> = {}
+  ): Promise<PluginResult> {
+    const auditConfig = AuditLoggerConfigSchema.parse(config);
+
+    if (!auditConfig.enabled) {
+      return {
+        success: true,
+        pluginName: this.name,
+        pluginVersion: this.version,
+        metadata: { skipped: true, reason: 'Logging disabled' },
+      };
+    }
+
+    // Initialize logger if not exists
+    if (!globalAuditLogger) {
+      globalAuditLogger = new AuditLogger(auditConfig);
+    }
+
+    // Extract session info
+    const sessionInfo = {
       sessionId: 'sessionId' in context ? String(context.sessionId) : 'unknown',
       cwd: 'cwd' in context ? String(context.cwd) : process.cwd(),
       toolName: 'toolName' in context ? context.toolName : undefined,
     };
-  },
 
-  getUserInfo() {
-    return {
+    // Get user info
+    const userData = {
       user: userInfo().username,
       host: hostname(),
     };
-  },
 
-  assessContext(context: HookContext) {
-    return {
+    // Assess context
+    const riskAssessment = {
       risk: assessOperationRisk(context),
       sensitive: containsSensitiveInfo(context),
     };
-  },
 
-  buildMetadata(
-    context: HookContext,
-    auditConfig: AuditLoggerConfig
-  ): Record<string, unknown> {
+    // Build metadata
     const metadata: Record<string, unknown> = {
       event: context.event,
       ...auditConfig.customFields,
@@ -528,48 +512,27 @@ export const auditLoggerPlugin: HookPlugin = {
     const toolName = 'toolName' in context ? context.toolName : undefined;
     if (toolName) {
       metadata.toolName = toolName;
-      this.addToolSpecificMetadata(
-        context as AuditableContext,
-        auditConfig,
-        metadata
-      );
-    }
-
-    return metadata;
-  },
-
-  addToolSpecificMetadata(
-    toolContext: AuditableContext,
-    auditConfig: AuditLoggerConfig,
-    metadata: Record<string, unknown>
-  ): void {
-    if (!toolContext.toolInput) {
-      return;
-    }
-
-    const toolName = toolContext.toolName;
-    if (toolName === 'Bash') {
-      metadata.command = toolContext.toolInput.command;
-      if (auditConfig.logCommands) {
-        metadata.fullCommand = toolContext.toolInput;
-      }
-    } else if (['Write', 'Edit', 'MultiEdit'].includes(toolName)) {
-      metadata.filePath = toolContext.toolInput.file_path;
-      if (auditConfig.logFileChanges && auditConfig.includeSensitive) {
-        metadata.content =
-          toolContext.toolInput.content || toolContext.toolInput.new_string;
+      
+      // Add tool-specific metadata for known context types
+      if (isBashHookContext(context) && toolName === 'Bash') {
+        metadata.command = context.toolInput.command;
+        if (auditConfig.logCommands) {
+          metadata.fullCommand = context.toolInput;
+        }
+      } else if (isFileHookContext(context) && ['Write', 'Edit', 'MultiEdit'].includes(toolName)) {
+        metadata.filePath = context.toolInput.file_path;
+        if (auditConfig.logFileChanges && auditConfig.includeSensitive) {
+          if (toolName === 'Write' && 'content' in context.toolInput) {
+            metadata.content = context.toolInput.content;
+          } else if (toolName === 'Edit' && 'new_string' in context.toolInput) {
+            metadata.content = context.toolInput.new_string;
+          }
+        }
       }
     }
-  },
 
-  createAuditEntry(
-    sessionInfo: { sessionId: string; cwd: string; toolName?: string },
-    userData: { user: string; host: string },
-    riskAssessment: { risk: 'low' | 'medium' | 'high'; sensitive: boolean },
-    metadata: Record<string, unknown>,
-    context: HookContext
-  ): AuditLogEntry {
-    return {
+    // Create audit entry
+    const entry: AuditLogEntry = {
       timestamp: new Date().toISOString(),
       sessionId: sessionInfo.sessionId,
       event: context.event,
@@ -585,14 +548,10 @@ export const auditLoggerPlugin: HookPlugin = {
       sensitive: riskAssessment.sensitive,
       risk: riskAssessment.risk,
     };
-  },
 
-  async logEntryAndCreateResult(
-    entry: AuditLogEntry,
-    sessionInfo: { sessionId: string; cwd: string; toolName?: string }
-  ): Promise<PluginResult> {
+    // Log entry and return result
     try {
-      await globalAuditLogger!.log(entry);
+      await globalAuditLogger.log(entry);
     } catch (error) {
       console.error('[AuditLogger] Failed to log entry:', error);
     }
@@ -608,37 +567,6 @@ export const auditLoggerPlugin: HookPlugin = {
         sensitive: entry.sensitive,
       },
     };
-  },
-
-  async apply(
-    context: HookContext,
-    config: Record<string, unknown> = {}
-  ): Promise<PluginResult> {
-    const auditConfig = AuditLoggerConfigSchema.parse(config);
-
-    if (!auditConfig.enabled) {
-      return this.createSkippedResult('Logging disabled');
-    }
-
-    // Initialize logger if not exists
-    if (!globalAuditLogger) {
-      globalAuditLogger = new AuditLogger(auditConfig);
-    }
-
-    const sessionInfo = this.extractSessionInfo(context);
-    const userData = this.getUserInfo();
-    const riskAssessment = this.assessContext(context);
-    const metadata = this.buildMetadata(context, auditConfig);
-
-    const entry = this.createAuditEntry(
-      sessionInfo,
-      userData,
-      riskAssessment,
-      metadata,
-      context
-    );
-
-    return await this.logEntryAndCreateResult(entry, sessionInfo);
   },
 
   /**

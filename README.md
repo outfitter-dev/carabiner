@@ -1,6 +1,6 @@
-# Carabiner - Claude Code Hooks TypeScript Library
+# Grapple (Carabiner) - Claude Code Hooks TypeScript Library
 
-A comprehensive TypeScript library for building type-safe, maintainable Claude Code hooks with modern development practices.
+A comprehensive, production-ready TypeScript monorepo for building type-safe, maintainable Claude Code hooks with modern development practices and enterprise-grade tooling.
 
 ## 🚀 Overview
 
@@ -17,16 +17,45 @@ Transform Claude Code hook development from manual shell scripting to **type-saf
 
 ## 📦 Installation
 
+### 🚀 Quick Install (Recommended)
+
+**Standalone Binary - No Dependencies Required**
+
 ```bash
+# Install latest version
+curl -fsSL https://raw.githubusercontent.com/outfitter-dev/carabiner/main/scripts/install.sh | bash
 
+# Or install to specific directory
+curl -fsSL https://raw.githubusercontent.com/outfitter-dev/carabiner/main/scripts/install.sh | bash -s -- --dir /usr/local/bin
+```
+
+**Manual Binary Download**
+
+Download the latest binary for your platform from [GitHub Releases](https://github.com/outfitter-dev/carabiner/releases/latest):
+
+- **Linux x64**: `claude-hooks-linux`  
+- **macOS ARM64**: `claude-hooks-macos-arm64`
+- **macOS Intel**: `claude-hooks-macos-x64`
+- **Windows x64**: `claude-hooks-windows.exe`
+
+```bash
+# Make executable (Unix/macOS)
+chmod +x claude-hooks-*
+
+# Test installation
+./claude-hooks-linux --version
+```
+
+### 📚 Library Installation
+
+**For Development with TypeScript**
+
+```bash
 # Install the core library
-
 npm install @outfitter/hooks-core
 
 # Or install the full suite
-
 npm install @outfitter/hooks-core @outfitter/hooks-validators @outfitter/hooks-testing @outfitter/hooks-cli
-
 ```
 
 ## 🏗️ Architecture
@@ -379,25 +408,26 @@ HookBuilder.forPreToolUse().withHandler(handler);
 ## 📖 Documentation
 
 ### 🚀 Getting Started
+- **[Getting Started Guide](docs/getting-started.md)** - Install, create your first hook, and understand the basics
+- **[Configuration Guide](docs/configuration.md)** - Complete configuration reference with examples
+- **[CLI Reference](docs/cli-reference.md)** - All commands, options, and usage patterns
 
-- [📚 Complete Documentation](docs/README.md) - Comprehensive guides and references
-- [🏁 Getting Started Guide](docs/guides/getting-started.md) - Your first hook in minutes
-- [🧠 Core Concepts](docs/guides/core-concepts.md) - Understanding hook architecture
+### 📚 Developer Documentation  
+- **[API Reference](docs/api-reference/)** - Complete API documentation for all packages
+- **[Architecture Guide](docs/architecture.md)** - System design, concepts, and patterns
+- **[Examples & Tutorials](docs/examples/)** - Real-world scenarios and best practices
+
+### 🔧 Operations & Troubleshooting
+- **[Troubleshooting Guide](docs/troubleshooting.md)** - Common issues and solutions
+- **[Migration Guides](docs/migration-guides.md)** - Version upgrade instructions
 
 ### 📦 Package Documentation
-
-- [🔧 Core Package](packages/hooks-core/README.md) - Types, runtime, and execution engine
-- [⚙️ Configuration](packages/hooks-config/README.md) - Settings and template management
-- [🔐 Validators](packages/hooks-validators/README.md) - Security and validation rules
-- [🧪 Testing](packages/hooks-testing/README.md) - Testing framework and utilities
-- [💻 CLI Tools](packages/hooks-cli/README.md) - Command-line tools and scaffolding
-- [📖 Examples](packages/examples/README.md) - Complete working examples
-
-### 📋 Quick References
-
-- [🔌 API Reference](docs/api/) - Complete API documentation
-- [🛡️ Security Guide](docs/guides/security.md) - Security best practices
-- [🔧 Troubleshooting](docs/troubleshooting/) - Common issues and solutions
+- **[Core Package](packages/hooks-core/README.md)** - Types, runtime, and execution engine
+- **[CLI Tools](packages/hooks-cli/README.md)** - Command-line tools and scaffolding  
+- **[Validators](packages/hooks-validators/README.md)** - Security and validation rules
+- **[Testing Framework](packages/hooks-testing/README.md)** - Testing utilities and mocks
+- **[Configuration](packages/hooks-config/README.md)** - Settings and template management
+- **[Working Examples](packages/examples/README.md)** - Complete working examples
 
 ## 🚀 Development
 

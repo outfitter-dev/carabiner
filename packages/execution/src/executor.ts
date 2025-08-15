@@ -10,6 +10,13 @@
 import type { HookProtocol } from '@outfitter/protocol';
 import type { HookContext, HookHandler, HookResult } from '@outfitter/types';
 import {
+  executionLogger,
+  type HookExecutionContext,
+  type PerformanceMetrics,
+} from '@outfitter/hooks-core';
+// Local structural type to avoid name clashes with runtime exports
+type ExecutorLogger = ReturnType<typeof executionLogger.child>;
+import {
   ExecutionTimer,
   globalMetrics,
   type MemoryUsage,
@@ -88,10 +95,16 @@ const DEFAULT_OPTIONS: Required<ExecutionOptions> = {
 export class HookExecutor {
   private readonly protocol: HookProtocol;
   private readonly options: Required<ExecutionOptions>;
+  private readonly logger: ExecutorLogger;
 
   constructor(protocol: HookProtocol, options: ExecutionOptions = {}) {
     this.protocol = protocol;
     this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.logger = executionLogger.child({
+      component: 'executor',
+      timeout: this.options.timeout,
+      collectMetrics: this.options.collectMetrics,
+    });
   }
 
   /**
@@ -108,6 +121,12 @@ export class HookExecutor {
     const memoryBefore = snapshotMemoryUsage();
     let context: HookContext | null = null;
     let result: HookResult;
+    let executionContext: HookExecutionContext | null = null;
+
+    this.logger.debug('Starting hook execution', {
+      timeout: this.options.timeout,
+      collectMetrics: this.options.collectMetrics,
+    });
 
     try {
       // Phase 1: Input reading
@@ -116,7 +135,7 @@ export class HookExecutor {
 
       if (!isSuccess(inputResult)) {
         result = toHookResult(inputResult);
-        await this.handleFailure(result, timer, memoryBefore, null);
+        await this.handleFailure(result, timer, memoryBefore, null, null);
         return this.exit(this.options.failureExitCode);
       }
 
@@ -126,11 +145,15 @@ export class HookExecutor {
 
       if (!isSuccess(contextResult)) {
         result = toHookResult(contextResult);
-        await this.handleFailure(result, timer, memoryBefore, null);
+        await this.handleFailure(result, timer, memoryBefore, null, null);
         return this.exit(this.options.failureExitCode);
       }
 
       context = contextResult.value;
+      
+      // Create execution context for logging
+      executionContext = this.createExecutionContext(context);
+      this.logger.startExecution(executionContext);
 
       // Phase 3: Handler execution with timeout
       const executionResult = await this.executeHandler(handler, context);
@@ -138,7 +161,7 @@ export class HookExecutor {
 
       if (!isSuccess(executionResult)) {
         result = toHookResult(executionResult);
-        await this.handleFailure(result, timer, memoryBefore, context);
+        await this.handleFailure(result, timer, memoryBefore, context, executionContext);
         return this.exit(this.options.failureExitCode);
       }
 
@@ -149,7 +172,7 @@ export class HookExecutor {
         const validationResult = this.validateResult(result);
         if (!isSuccess(validationResult)) {
           result = toHookResult(validationResult);
-          await this.handleFailure(result, timer, memoryBefore, context);
+          await this.handleFailure(result, timer, memoryBefore, context, executionContext);
           return this.exit(this.options.failureExitCode);
         }
       }
@@ -159,12 +182,12 @@ export class HookExecutor {
 
       if (!isSuccess(outputResult)) {
         const errorResult = toHookResult(outputResult);
-        await this.handleFailure(errorResult, timer, memoryBefore, context);
+        await this.handleFailure(errorResult, timer, memoryBefore, context, executionContext);
         return this.exit(this.options.failureExitCode);
       }
 
       // Success: collect metrics and exit
-      this.handleSuccess(result, timer, memoryBefore, context);
+      this.handleSuccess(result, timer, memoryBefore, context, executionContext);
       return this.exit(this.options.successExitCode);
     } catch (error) {
       // Catch-all for any unhandled errors
@@ -174,7 +197,12 @@ export class HookExecutor {
         block: true,
       };
 
-      await this.handleFailure(errorResult, timer, memoryBefore, context);
+      if (executionContext && error instanceof Error) {
+        const metrics = this.createPerformanceMetrics(timer, memoryBefore, snapshotMemoryUsage());
+        this.logger.failExecution(executionContext, error, metrics);
+      }
+
+      await this.handleFailure(errorResult, timer, memoryBefore, context, executionContext);
       return this.exit(this.options.failureExitCode);
     }
   }
@@ -378,13 +406,46 @@ export class HookExecutor {
   }
 
   /**
+   * Create execution context for logging
+   */
+  private createExecutionContext(context: HookContext): HookExecutionContext {
+    return {
+      event: context.event,
+      toolName: 'toolName' in context ? context.toolName : undefined,
+      executionId: `exec_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      sessionId: Bun.env.CLAUDE_SESSION_ID,
+      projectDir: Bun.env.CLAUDE_PROJECT_DIR,
+      userId: Bun.env.CLAUDE_USER_ID,
+    };
+  }
+
+  /**
+   * Create performance metrics for logging
+   */
+  private createPerformanceMetrics(
+    timer: ExecutionTimer,
+    memoryBefore: MemoryUsage,
+    memoryAfter: MemoryUsage
+  ): PerformanceMetrics {
+    const timing = timer.getTiming();
+    return {
+      duration: timing.duration,
+      memoryBefore: memoryBefore.heapUsed,
+      memoryAfter: memoryAfter.heapUsed,
+      memoryDelta: memoryAfter.heapUsed - memoryBefore.heapUsed,
+      cpuUsage: process.cpuUsage ? process.cpuUsage().user / 1000000 : undefined,
+    };
+  }
+
+  /**
    * Handle successful execution
    */
   private handleSuccess(
     result: HookResult,
     timer: ExecutionTimer,
     memoryBefore: MemoryUsage,
-    context: HookContext
+    context: HookContext,
+    executionContext: HookExecutionContext | null
   ): void {
     if (this.options.collectMetrics) {
       const timing = timer.getTiming();
@@ -399,6 +460,13 @@ export class HookExecutor {
         this.options.additionalContext
       );
     }
+
+    // Log successful execution
+    if (executionContext) {
+      const memoryAfter = snapshotMemoryUsage();
+      const metrics = this.createPerformanceMetrics(timer, memoryBefore, memoryAfter);
+      this.logger.completeExecution(executionContext, result.success, metrics, result);
+    }
   }
 
   /**
@@ -408,7 +476,8 @@ export class HookExecutor {
     result: HookResult,
     timer: ExecutionTimer,
     memoryBefore: MemoryUsage,
-    context: HookContext | null
+    context: HookContext | null,
+    executionContext: HookExecutionContext | null
   ): Promise<void> {
     // Try to write error to protocol
     if (result.message) {
@@ -429,6 +498,21 @@ export class HookExecutor {
         memoryAfter,
         this.options.additionalContext
       );
+    }
+
+    // Log execution failure
+    if (executionContext) {
+      const memoryAfter = snapshotMemoryUsage();
+      const metrics = this.createPerformanceMetrics(timer, memoryBefore, memoryAfter);
+      const error = new ExecutionError(result.message || 'Hook execution failed', 'EXECUTION_FAILED');
+      this.logger.failExecution(executionContext, error, metrics);
+    } else {
+      // Log generic failure if no execution context
+      this.logger.error('Hook execution failed without context', {
+        message: result.message,
+        success: result.success,
+        block: result.block,
+      });
     }
   }
 

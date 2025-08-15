@@ -9,8 +9,21 @@ import { ConfigManager } from '@outfitter/hooks-config';
 import type { HookEvent, ToolName } from '@outfitter/hooks-core';
 import { BaseCommand, type CliConfig } from '../types';
 
-// Regex constants for better performance
-const BUN_RUN_REGEX = /bun run ["']?(.+?)["']?(?:\s|$)/;
+// Regex constants for better command parsing
+// Handles: bun run script, bun run -S script, quoted paths with spaces, etc.
+const BUN_RUN_REGEX = /bun\s+run\s+(?:-S\s+)?(?:"([^"]+)"|'([^']+)'|(\S+))/;
+
+// Security: Check for suspicious command patterns
+const SUSPICIOUS_PATTERNS = [
+  /[;&|`$(){}]/,  // Shell metacharacters
+  /\.\./,         // Directory traversal
+  /\/dev\//,      // Device files
+  /\/proc\//,     // Process files
+];
+
+function validateCommandSafety(command: string): boolean {
+  return !SUSPICIOUS_PATTERNS.some(pattern => pattern.test(command));
+}
 
 export class ConfigCommand extends BaseCommand {
   name = 'config';
@@ -383,10 +396,16 @@ Examples:
       return 0;
     }
 
-    const bunRunMatch = command.match(BUN_RUN_REGEX);
+    // Security validation
+    if (!validateCommandSafety(command)) {
+      process.stderr.write(`⚠️  Warning: Command contains suspicious patterns: ${command}\n`);
+      return 1;
+    }
 
-    if (bunRunMatch?.[1]) {
-      const scriptPath = bunRunMatch[1];
+    const bunRunMatch = command.match(BUN_RUN_REGEX);
+    const scriptPath = bunRunMatch?.[1] ?? bunRunMatch?.[2] ?? bunRunMatch?.[3];
+
+    if (scriptPath) {
       const resolved = isAbsolute(scriptPath)
         ? scriptPath
         : join(workspacePath, scriptPath);
@@ -394,6 +413,9 @@ Examples:
       if (!existsSync(resolved)) {
         return 1;
       }
+    } else if (command.includes('bun run')) {
+      // Log warning for unparseable bun run commands
+      process.stderr.write(`⚠️  Warning: Could not parse bun run command: ${command}\n`);
     }
 
     return 0;

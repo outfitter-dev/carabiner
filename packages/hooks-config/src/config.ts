@@ -4,22 +4,21 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import type {
   HookConfiguration,
   HookEvent,
   ToolHookConfig,
   ToolName,
 } from '@outfitter/hooks-core';
+// Note: Error management lives in a separate package. To avoid build-order
+// coupling here, we use a local error type and keep integration optional.
 
 /**
- * Hook configuration error
+ * @deprecated Use ConfigurationError from @outfitter/error-management instead
  */
 export class ConfigError extends Error {
-  constructor(
-    message: string,
-    public readonly code?: string
-  ) {
+  constructor(message: string, public readonly code?: string) {
     super(message);
     this.name = 'ConfigError';
   }
@@ -197,6 +196,13 @@ export class ConfigManager {
    * Load configuration from workspace
    */
   async load(options: ConfigOptions = {}): Promise<ExtendedHookConfiguration> {
+    return this._loadInternal(options);
+  }
+
+  /**
+   * Internal load implementation
+   */
+  private async _loadInternal(options: ConfigOptions = {}): Promise<ExtendedHookConfiguration> {
     const {
       format,
       validate = true,
@@ -245,6 +251,16 @@ export class ConfigManager {
    * Save configuration to file
    */
   async save(
+    config: ExtendedHookConfiguration,
+    format: ConfigFormat = 'json'
+  ): Promise<void> {
+    return this._saveInternal(config, format);
+  }
+
+  /**
+   * Internal save implementation
+   */
+  private async _saveInternal(
     config: ExtendedHookConfiguration,
     format: ConfigFormat = 'json'
   ): Promise<void> {
@@ -358,27 +374,22 @@ export class ConfigManager {
     config?: ToolHookConfig
   ): Promise<void> {
     const currentConfig = this.getConfig();
+    const nextConfig = { ...currentConfig } as ExtendedHookConfiguration;
 
     if (typeof toolOrConfig === 'string' && config) {
-      // Setting tool-specific config
-      if (
-        !currentConfig[event] ||
-        typeof currentConfig[event] !== 'object' ||
-        'command' in currentConfig[event]!
-      ) {
-        (currentConfig as Record<string, unknown>)[event] = {};
-      }
-      const eventConfig = currentConfig[event] as Record<
-        string,
-        ToolHookConfig
-      >;
-      eventConfig[toolOrConfig] = config;
+      // Setting tool-specific config - create immutable copy
+      const existing = nextConfig[event];
+      const eventMap = (existing && typeof existing === 'object' && !('command' in existing)) 
+        ? { ...existing } 
+        : {};
+      eventMap[toolOrConfig] = { ...config };
+      (nextConfig as Record<string, unknown>)[event] = eventMap;
     } else if (typeof toolOrConfig === 'object' && 'command' in toolOrConfig) {
-      // Setting event-level config
-      (currentConfig as Record<string, unknown>)[event] = toolOrConfig;
+      // Setting event-level config - create immutable copy
+      (nextConfig as Record<string, unknown>)[event] = { ...toolOrConfig };
     }
 
-    await this.updateConfig(currentConfig);
+    await this.updateConfig(nextConfig);
   }
 
   /**
@@ -389,13 +400,30 @@ export class ConfigManager {
     tool: ToolName | undefined,
     enabled: boolean
   ): Promise<void> {
+    const currentConfig = this.getConfig();
     const hookConfig = this.getHookConfig(event, tool);
     if (!hookConfig) {
       return;
     }
 
-    hookConfig.enabled = enabled;
-    await this.updateConfig(this.getConfig());
+    // Create immutable copy of config with enabled toggle
+    const nextHookConfig = { ...hookConfig, enabled };
+    
+    if (tool) {
+      // Tool-specific config update
+      const eventMap = { ...currentConfig[event] as Record<string, ToolHookConfig> };
+      eventMap[tool] = nextHookConfig;
+      await this.updateConfig({ 
+        ...currentConfig, 
+        [event]: eventMap 
+      } as ExtendedHookConfiguration);
+    } else {
+      // Event-level config update
+      await this.updateConfig({ 
+        ...currentConfig, 
+        [event]: nextHookConfig 
+      } as ExtendedHookConfiguration);
+    }
   }
 
   /**
@@ -512,7 +540,10 @@ export class ConfigManager {
 
     switch (format) {
       case 'json':
-        return JSON.parse(readFileSync(path, 'utf-8'));
+        const jsonConfig = JSON.parse(readFileSync(path, 'utf-8'));
+        // Security: Validate JSON configuration
+        this.validateConfigSecurity(jsonConfig);
+        return jsonConfig;
 
       case 'js':
       case 'ts':
@@ -528,19 +559,36 @@ export class ConfigManager {
 
   /**
    * Load JS or TS configuration file using dynamic import
+   * Enhanced with security validation
    */
   private async loadJsOrTsConfig(
     path: string
   ): Promise<ExtendedHookConfiguration> {
     try {
+      // Security: Validate the configuration file path
+      const resolvedPath = resolve(path);
+      const workspaceRoot = resolve(this.workspacePath);
+      
+      // Ensure the config file is within the workspace
+      if (!resolvedPath.startsWith(workspaceRoot)) {
+        throw new ConfigError(
+          `Configuration file outside workspace boundary: ${path}`,
+          'SECURITY_VIOLATION'
+        );
+      }
+
+      // Validate file extension
+      if (!resolvedPath.endsWith('.js') && !resolvedPath.endsWith('.ts')) {
+        throw new ConfigError(
+          `Invalid configuration file extension: ${path}`,
+          'INVALID_EXTENSION'
+        );
+      }
+
       // Check if we're running under Bun
       if (typeof Bun !== 'undefined') {
-        // Use dynamic import with absolute path for Bun
-        // Convert to absolute path if it's relative
-        const absolutePath = path.startsWith('/')
-          ? path
-          : join(this.workspacePath, path);
-        const module = await import(absolutePath);
+        // Use dynamic import with validated absolute path
+        const module = await import(resolvedPath);
 
         // Handle both default export and named exports
         const config = module.default || module;
@@ -551,6 +599,9 @@ export class ConfigManager {
             'INVALID_EXPORT'
           );
         }
+
+        // Security: Validate the loaded configuration
+        this.validateConfigSecurity(config);
 
         return config;
       }
@@ -681,6 +732,61 @@ const config: ExtendedHookConfiguration = ${JSON.stringify(config, null, 2)};
 
 export default config;
 `;
+  }
+
+  /**
+   * Validate configuration security
+   */
+  private validateConfigSecurity(config: ExtendedHookConfiguration): void {
+    // Check for dangerous command patterns in hook commands
+    const checkCommand = (cmd: string, context: string) => {
+      // Block commands with shell injection attempts
+      const dangerousPatterns = [
+        /[;&|`$(){}[\]]/,  // Shell metacharacters
+        /\.\.[\/\\]/,       // Directory traversal
+        /\/proc\//,         // Process filesystem access
+        /\/dev\//,          // Device access
+        /\beval\b/i,        // Code evaluation
+        /\bexec\b/i,        // Code execution
+        /system\s*\(/,      // System calls
+      ];
+
+      for (const pattern of dangerousPatterns) {
+        if (pattern.test(cmd)) {
+          throw new ConfigError(
+            `Dangerous command pattern detected in ${context}: ${cmd}`,
+            'SECURITY_VIOLATION'
+          );
+        }
+      }
+
+      // Ensure commands start with allowed executables
+      const allowedExecutables = ['bun', 'node', 'npm', 'yarn', 'pnpm'];
+      const executable = cmd.trim().split(/\s+/)[0];
+      if (!executable || !allowedExecutables.includes(executable)) {
+        throw new ConfigError(
+          `Unsafe executable in ${context}: ${executable}. Only ${allowedExecutables.join(', ')} are allowed.`,
+          'SECURITY_VIOLATION'
+        );
+      }
+    };
+
+    // Recursively check all commands in configuration
+    const checkConfigCommands = (obj: unknown, path: string = ''): void => {
+      if (!obj || typeof obj !== 'object') return;
+
+      for (const [key, value] of Object.entries(obj)) {
+        const currentPath = path ? `${path}.${key}` : key;
+        
+        if (key === 'command' && typeof value === 'string') {
+          checkCommand(value, currentPath);
+        } else if (typeof value === 'object' && value !== null) {
+          checkConfigCommands(value, currentPath);
+        }
+      }
+    };
+
+    checkConfigCommands(config);
   }
 
   /**

@@ -18,7 +18,7 @@ import {
 import { basename, dirname, extname, join } from 'node:path';
 import type { HookContext } from '@outfitter/types';
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '../../../registry/src';
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * File backup plugin configuration schema
@@ -126,7 +126,7 @@ function generateBackupFilename(
     }
     case 'date': {
       const date = new Date().toISOString().split('T')[0];
-      const time = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+      const time = (new Date().toTimeString().split(' ')[0] || '00-00-00').replace(/:/g, '-');
       return `${name}.${date}_${time}${ext}`;
     }
     default:
@@ -329,7 +329,7 @@ async function isContentIdenticalToLatest(
   }
 
   try {
-    const latestBackup = await readFile(existing[0].path);
+    const latestBackup = await readFile(existing[0]!.path);
     return content.equals(latestBackup);
   } catch (_error) {
     return false;
@@ -459,17 +459,18 @@ function extractFilePathsFromTool(context: HookContext): string[] {
     return [];
   }
 
-  const fileContext = context as HookContext & {
-    toolInput: Record<string, unknown>;
-  };
-  const { toolName, toolInput } = fileContext;
+  const toolName = 'toolName' in context ? context.toolName : undefined;
+  const toolInput = 'toolInput' in context ? context.toolInput : {};
   const filePaths: string[] = [];
 
   if (
     (toolName === 'Write' || toolName === 'Edit' || toolName === 'MultiEdit') &&
-    toolInput?.file_path
+    typeof toolInput === 'object' &&
+    toolInput !== null &&
+    'file_path' in toolInput &&
+    typeof toolInput.file_path === 'string'
   ) {
-    filePaths.push(toolInput.file_path as string);
+    filePaths.push(toolInput.file_path);
   }
 
   return filePaths;
@@ -606,7 +607,7 @@ export const fileBackupPlugin: HookPlugin = {
   tools: ['Write', 'Edit', 'MultiEdit'],
   priority: 80, // High priority to backup before modifications
 
-  configSchema: FileBackupConfigSchema,
+  configSchema: FileBackupConfigSchema as z.ZodType<Record<string, unknown>>,
   defaultConfig: {},
 
   async apply(

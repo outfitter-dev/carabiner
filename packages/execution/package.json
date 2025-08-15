@@ -40,6 +40,7 @@
     "clean": "rm -rf dist/"
   },
   "dependencies": {
+    "@outfitter/hooks-core": "workspace:*",
     "@outfitter/protocol": "workspace:*",
     "@outfitter/types": "workspace:*",
     "type-fest": "^4.41.0"

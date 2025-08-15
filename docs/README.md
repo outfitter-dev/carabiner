@@ -1,107 +1,121 @@
-# Claude Code Hooks Documentation
+# Grapple Documentation
 
-Welcome to the comprehensive documentation for the Claude Code Hooks TypeScript library. This documentation provides everything you need to build production-ready, type-safe hooks for Claude Code.
+Welcome to the comprehensive documentation for Grapple, the production-ready TypeScript library for building Claude Code hooks. This documentation provides everything you need to build robust, type-safe, and maintainable hooks.
 
 ## 📚 Documentation Structure
 
-### [Getting Started](./guides/getting-started.md)
+### 🚀 Getting Started
 
-- Installation and setup
-- First hook creation
-- Basic concepts and terminology
+**New to Grapple? Start here.**
 
-### [Core Concepts](./guides/core-concepts.md)
+- **[Getting Started Guide](getting-started.md)** - Install, create your first hook, and understand the basics
+- **[CLI Reference](cli-reference.md)** - Master the command-line tools with examples
+- **[Configuration Guide](configuration.md)** - Complete configuration reference and patterns
 
-- Hook events and lifecycle
-- Tool scoping and targeting
-- Runtime architecture changes
+### 📖 Developer Guide
 
-### [Migration Guide](./migration-guide.md)
+**Everything you need to build production hooks.**
 
-- Upgrading from legacy hooks
-- Runtime changes and improvements
+- **[API Reference](api-reference/)** - Complete API documentation for all packages
+- **[Architecture Guide](architecture.md)** - System design, concepts, and patterns
+- **[Examples & Tutorials](examples/)** - Real-world scenarios and best practices
 
-### Resources
+### 🔧 Operations & Support
 
-- [Configuration Reference](./resources/claude-code-hooks-configuration.md) - Complete configuration options
-- [Hook Overview](./resources/claude-code-hooks-overview.md) - Hook system overview
-- [TypeScript Integration](./resources/claude-code-hooks-typescript.md) - TypeScript usage patterns
-- [Troubleshooting](./resources/claude-code-hooks-troubleshooting.md) - Common issues and solutions
-- [Feature Index](./resources/claude-code-hooks-index.md) - Complete feature reference
+**Deploy, troubleshoot, and maintain your hooks.**
 
-### Planning Documents
+- **[Troubleshooting Guide](troubleshooting.md)** - Common issues and solutions
+- **[Migration Guides](migration-guides.md)** - Version upgrade instructions
 
-- [TypeScript Library Plan](./plans/claude-code-hooks-typescript-library.md) - Project planning and architecture
+### 📦 Package Documentation
+
+**Detailed documentation for each package.**
+
+- **[Core Package](../packages/hooks-core/README.md)** - Runtime, types, and execution engine
+- **[CLI Tools](../packages/hooks-cli/README.md)** - Development and management tools
+- **[Validators](../packages/hooks-validators/README.md)** - Security and validation rules
+- **[Testing Framework](../packages/hooks-testing/README.md)** - Testing utilities and mocks
+- **[Configuration](../packages/hooks-config/README.md)** - Settings and template management
+- **[Working Examples](../packages/examples/README.md)** - Complete working examples
 
 ## 🚀 Quick Start
 
+Ready to build your first hook? Here's the fastest path to success:
+
 ### 1. Installation
 
+Choose your installation method:
+
+**Binary (Recommended)**:
+
 ```bash
+# Install standalone binary - no dependencies required
+curl -fsSL https://raw.githubusercontent.com/outfitter-dev/carabiner/main/scripts/install.sh | bash
 
-# Install core library
-
-bun add @claude-code/hooks-core
-
-# Install additional packages as needed
-
-bun add @claude-code/hooks-validators
-bun add --dev @claude-code/hooks-testing
-npm install -g @claude-code/hooks-cli
-
-# Alternatively, invoke the CLI without a global install (Bun):
-
-# bunx will fetch and run the package on demand
-
-# bunx @claude-code/hooks-cli --help
-
+# Verify installation
+claude-hooks --version
 ```
 
-### 2. Initialize Project
+**Library Development**:
 
 ```bash
+# Install core library for TypeScript development
+npm install @outfitter/hooks-core
 
-# Initialize hooks in your project
+# Install full development suite
+npm install @outfitter/hooks-core @outfitter/hooks-cli @outfitter/hooks-validators @outfitter/hooks-testing
+```
 
-claude-hooks init --template security
+### 2. Initialize Your Project
 
+```bash
+# Create hooks with security template
+claude-hooks init --template security --typescript --strict
+
+# Or minimal setup
+claude-hooks init --template minimal
 ```
 
 ### 3. Create Your First Hook
 
 ```typescript
-
 #!/usr/bin/env bun
 
-import pino from 'pino';
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
-const logger = pino({ level: process.env.LOG_LEVEL ?? 'info' }, pino.destination(2)); // stderr
+import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
 
 runClaudeHook(async (context) => {
-  logger.info({ tool: context.toolName }, 'Validating tool usage');
+  console.log(`🔍 Validating ${context.toolName} usage`);
 
+  // Tool-specific validation
   if (context.toolName === 'Bash') {
     const { command } = context.toolInput as { command: string };
 
     if (command.includes('rm -rf /')) {
-      return HookResults.block('Dangerous command blocked!');
+      return HookResults.block('Dangerous command blocked for safety!');
     }
+
+    console.log(`✅ Bash command approved: ${command}`);
   }
 
   return HookResults.success('Validation passed');
 });
-
 ```
 
 ### 4. Test Your Hook
 
 ```bash
+# Test with CLI
+claude-hooks test --hook ./your-hook.ts
 
-# Test the hook
-
-echo '{"session_id":"test","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la"},"cwd":"/tmp","transcript_path":"/tmp/transcript.md"}' | bun path/to/your-hook.ts
-
+# Or test manually
+echo '{"session_id":"test","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la"},"cwd":"/tmp","transcript_path":"/tmp/transcript.md"}' | bun your-hook.ts
 ```
+
+### 5. Next Steps
+
+- **[Complete Tutorial](getting-started.md)** - Step-by-step guide with explanations
+- **[Real Examples](examples/)** - Production-ready patterns and best practices
+- **[API Reference](api-reference/)** - Explore all available APIs
 
 ## 🏗️ Library Architecture
 
@@ -210,25 +224,118 @@ This documentation follows these principles:
 
 See the [Migration Guide](./migration-guide.md) for detailed information on upgrading from previous versions.
 
-## 📞 Getting Help
+## 🌟 Key Features
 
-### Documentation Issues
+### ✅ Production Ready
 
-- **Missing information**: File an issue describing what's missing
-- **Incorrect information**: Submit a PR with corrections
-- **Unclear explanations**: Suggest improvements in issues
+- **Type Safety**: Full TypeScript strict mode with comprehensive type checking
+- **Error Handling**: Graceful error handling with detailed error messages
+- **Performance**: Optimized execution with timeout controls and middleware
+- **Security**: Environment-specific validation and audit logging
+- **Testing**: Complete test coverage with mocking framework
 
-### Code Issues
+### ✅ Runtime Architecture (v2.0)
 
-- **Bug reports**: Use the issue template with reproduction steps
-- **Feature requests**: Describe the use case and proposed API
-- **Questions**: Start with discussions before filing issues
+- **Stdin-Based Runtime**: Proper JSON input processing from Claude Code
+- **Tool Scoping**: Hooks correctly target specific tools or run universally
+- **Context Properties**: Aligned with Claude Code's actual JSON structure
+- **Improved Types**: More precise TypeScript definitions
 
-### Community Resources
+### ✅ Multiple APIs
 
-- **GitHub Discussions**: Ask questions and share patterns
-- **Issue Tracker**: Report bugs and request features
-- **Contributing Guide**: Learn how to contribute code and documentation
+Choose the approach that fits your needs:
+
+- **Function-Based**: Simple and direct for straightforward hooks
+- **Builder Pattern**: Fluent interface for complex hooks with middleware
+- **Declarative**: Configuration-driven approach for managing multiple hooks
+
+### ✅ Comprehensive Tooling
+
+- **CLI Tools**: Project scaffolding, testing, and development workflows
+- **Templates**: Security, formatting, audit, and custom templates
+- **Development Server**: Hot reloading and real-time testing
+- **Configuration Management**: Environment-specific settings
+
+## 🎯 Use Cases
+
+### Security & Compliance
+
+- **Command Validation**: Block dangerous bash commands and patterns
+- **File Access Control**: Restrict file operations to safe locations
+- **Audit Logging**: Comprehensive logging for compliance and debugging
+- **Environment-Specific Rules**: Different security levels for dev/prod
+
+### Development Workflows
+
+- **Auto-Formatting**: Format code after file writes and edits
+- **Linting Integration**: Run ESLint and other tools automatically
+- **Git Integration**: Auto-commit changes and push to remote
+- **Build Validation**: Run TypeScript compilation and tests
+
+### Monitoring & Analytics
+
+- **Performance Tracking**: Monitor hook execution times and resource usage
+- **Usage Analytics**: Track tool usage patterns and frequencies
+- **Error Reporting**: Capture and report hook failures
+- **Health Monitoring**: System health checks and alerting
+
+## 📞 Getting Help & Support
+
+### 📖 Documentation Resources
+
+Start with these comprehensive guides:
+
+- **[Getting Started](getting-started.md)** - Complete tutorial from installation to deployment
+- **[Troubleshooting](troubleshooting.md)** - Common issues and step-by-step solutions
+- **[Examples](examples/)** - Real-world patterns and production-ready code
+- **[API Reference](api-reference/)** - Complete API documentation
+
+### 🆘 Quick Help
+
+**Hook not executing?**
+
+1. Check file permissions: `chmod +x your-hook.ts`
+2. Validate configuration: `claude-hooks config validate`
+3. Test manually: `echo '{...}' | bun your-hook.ts`
+
+**TypeScript errors?**
+
+1. Check imports: `import { runClaudeHook } from '@outfitter/hooks-core'`
+2. Verify types: `bun run typecheck`
+3. Use type guards: `if (isBashToolInput(context.toolInput)) { ... }`
+
+**Performance issues?**
+
+1. Add timing: `claude-hooks test --verbose`
+2. Check timeouts: `claude-hooks config get PreToolUse.*.timeout`
+3. Profile hooks: Add middleware.timing()
+
+### 🐛 Report Issues
+
+When reporting bugs, include:
+
+```bash
+# System info
+echo "OS: $(uname -a)"
+echo "Node: $(node --version)"
+echo "Bun: $(bun --version)"
+echo "CLI: $(claude-hooks --version)"
+
+# Error reproduction
+claude-hooks test --verbose --hook ./problematic-hook.ts
+```
+
+### 💬 Community Resources
+
+- **[GitHub Discussions](https://github.com/outfitter-dev/carabiner/discussions)** - Ask questions and share patterns
+- **[GitHub Issues](https://github.com/outfitter-dev/carabiner/issues)** - Report bugs and request features
+- **[Contributing Guide](../CONTRIBUTING.md)** - Learn how to contribute code and documentation
+
+### 🔄 Stay Updated
+
+- **[Migration Guides](migration-guides.md)** - Version upgrade instructions
+- **[Release Notes](https://github.com/outfitter-dev/carabiner/releases)** - Latest features and fixes
+- **[Roadmap](https://github.com/outfitter-dev/carabiner/projects)** - Upcoming features
 
 ## 📋 Next Steps
 
