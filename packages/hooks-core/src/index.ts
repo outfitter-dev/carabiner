@@ -84,10 +84,9 @@ export {
   hasValidationSchemaForTool,
   isValidToolInput,
   parseToolInput as parseToolInputSafe,
+  safeParseToolInput,
   type ToolInputValidationResult,
-  toolInputValidators,
   validateMultipleToolInputs,
-  validateToolInputSafely,
   validateToolInputWithDetails,
 } from './validation-utils';
 

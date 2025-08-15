@@ -30,18 +30,6 @@ function parseHookEnvironment(): HookEnvironment {
   };
 }
 
-/**
- * Parse tool input against known schemas with full validation
- * Uses the new type-safe validation utilities
- */
-function _parseToolInput<T extends ToolName>(
-  toolName: T,
-  toolInput: Record<string, unknown>
-): GetToolInput<T> {
-  // Import from validation-utils to avoid circular dependency
-  const { parseToolInput: parseToolInputSafe } = require('./validation-utils');
-  return parseToolInputSafe(toolName, toolInput);
-}
 
 /**
  * Base context builder - shared properties across all hook types

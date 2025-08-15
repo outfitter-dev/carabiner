@@ -103,7 +103,7 @@ export const isNotebookEditToolInput = createToolInputValidator('NotebookEdit');
 export function isValidToolInput<T extends ToolName>(
   toolName: T,
   input: unknown
-): input is ToolInputMap[T] {
+): input is T extends keyof ToolInputMap ? ToolInputMap[T] : unknown {
   if (!(toolName in toolInputSchemas)) {
     return false;
   }
