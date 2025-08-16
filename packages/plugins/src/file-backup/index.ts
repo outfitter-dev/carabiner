@@ -328,7 +328,11 @@ async function isContentIdenticalToLatest(
   }
 
   try {
-    const latestBackup = await readFile(existing[0]?.path);
+    const latestBackupPath = existing[0]?.path;
+    if (!latestBackupPath) {
+      return false;
+    }
+    const latestBackup = await readFile(latestBackupPath);
     return content.equals(latestBackup);
   } catch (_error) {
     return false;
