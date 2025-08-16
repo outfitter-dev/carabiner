@@ -15,14 +15,14 @@ const BUN_RUN_REGEX = /bun\s+run\s+(?:-S\s+)?(?:"([^"]+)"|'([^']+)'|(\S+))/;
 
 // Security: Check for suspicious command patterns
 const SUSPICIOUS_PATTERNS = [
-  /[;&|`$(){}]/,  // Shell metacharacters
-  /\.\./,         // Directory traversal
-  /\/dev\//,      // Device files
-  /\/proc\//,     // Process files
+  /[;&|`$(){}]/, // Shell metacharacters
+  /\.\./, // Directory traversal
+  /\/dev\//, // Device files
+  /\/proc\//, // Process files
 ];
 
 function validateCommandSafety(command: string): boolean {
-  return !SUSPICIOUS_PATTERNS.some(pattern => pattern.test(command));
+  return !SUSPICIOUS_PATTERNS.some((pattern) => pattern.test(command));
 }
 
 export class ConfigCommand extends BaseCommand {
@@ -398,7 +398,9 @@ Examples:
 
     // Security validation
     if (!validateCommandSafety(command)) {
-      process.stderr.write(`⚠️  Warning: Command contains suspicious patterns: ${command}\n`);
+      process.stderr.write(
+        `⚠️  Warning: Command contains suspicious patterns: ${command}\n`
+      );
       return 1;
     }
 
@@ -415,7 +417,9 @@ Examples:
       }
     } else if (command.includes('bun run')) {
       // Log warning for unparseable bun run commands
-      process.stderr.write(`⚠️  Warning: Could not parse bun run command: ${command}\n`);
+      process.stderr.write(
+        `⚠️  Warning: Could not parse bun run command: ${command}\n`
+      );
     }
 
     return 0;

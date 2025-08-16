@@ -1,18 +1,22 @@
 /**
  * Error Recovery Mechanisms
- * 
+ *
  * Comprehensive error recovery strategies including retry logic,
  * circuit breakers, and fallback mechanisms
  */
 
+import { GrappleError } from './errors.js';
 import type {
-  RecoveryStrategy,
   CircuitBreakerConfig,
   CircuitState,
   IGrappleError,
+  RecoveryStrategy,
 } from './types.js';
-import { ErrorSeverity, ErrorCategory, CircuitState as State } from './types.js';
-import { GrappleError } from './errors.js';
+import {
+  ErrorCategory,
+  ErrorSeverity,
+  CircuitState as State,
+} from './types.js';
 
 /**
  * Default recovery strategy configuration
@@ -21,7 +25,7 @@ const DEFAULT_RECOVERY_STRATEGY: RecoveryStrategy = {
   maxRetries: 3,
   retryDelay: 1000,
   backoffMultiplier: 2,
-  maxRetryDelay: 30000,
+  maxRetryDelay: 30_000,
   useJitter: true,
   retryCondition: (error: IGrappleError) => error.isRetryable(),
 };
@@ -32,8 +36,8 @@ const DEFAULT_RECOVERY_STRATEGY: RecoveryStrategy = {
 const DEFAULT_CIRCUIT_CONFIG: CircuitBreakerConfig = {
   failureThreshold: 5,
   successThreshold: 2,
-  timeout: 60000, // 1 minute
-  monitoringPeriod: 300000, // 5 minutes
+  timeout: 60_000, // 1 minute
+  monitoringPeriod: 300_000, // 5 minutes
   expectedFailureRate: 0.5,
   minimumRequestVolume: 10,
 };
@@ -41,7 +45,7 @@ const DEFAULT_CIRCUIT_CONFIG: CircuitBreakerConfig = {
 /**
  * Add jitter to delay to prevent thundering herd
  */
-function addJitter(delay: number, factor: number = 0.1): number {
+function addJitter(delay: number, factor = 0.1): number {
   const jitter = delay * factor * Math.random();
   return Math.floor(delay + jitter);
 }
@@ -50,7 +54,7 @@ function addJitter(delay: number, factor: number = 0.1): number {
  * Sleep for specified milliseconds
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -76,40 +80,53 @@ export class RetryManager {
     while (attempt <= this.strategy.maxRetries) {
       try {
         const result = await Promise.resolve(operation());
-        
+
         // Log successful retry if not first attempt
         if (attempt > 0) {
-          console.info(`Operation '${operationName}' succeeded after ${attempt} retries`);
+          console.info(
+            `Operation '${operationName}' succeeded after ${attempt} retries`
+          );
         }
-        
+
         return result;
       } catch (error) {
-        const grappleError = error instanceof GrappleError 
-          ? error 
-          : new GrappleError(
-              error instanceof Error ? error.message : String(error),
-              9001, // INTERNAL_ERROR
-              ErrorCategory.RUNTIME,
-              ErrorSeverity.ERROR,
-              { cause: error instanceof Error ? error : undefined, operation: operationName }
-            );
+        const grappleError =
+          error instanceof GrappleError
+            ? error
+            : new GrappleError(
+                error instanceof Error ? error.message : String(error),
+                9001, // INTERNAL_ERROR
+                ErrorCategory.RUNTIME,
+                ErrorSeverity.ERROR,
+                {
+                  cause: error instanceof Error ? error : undefined,
+                  operation: operationName,
+                }
+              );
 
         lastError = grappleError;
         attempt++;
 
         // Check if we should retry
-        if (attempt > this.strategy.maxRetries || !this.strategy.retryCondition?.(grappleError)) {
+        if (
+          attempt > this.strategy.maxRetries ||
+          !this.strategy.retryCondition?.(grappleError)
+        ) {
           break;
         }
 
         // Calculate delay with exponential backoff
-        const baseDelay = this.strategy.retryDelay * Math.pow(this.strategy.backoffMultiplier, attempt - 1);
+        const baseDelay =
+          this.strategy.retryDelay *
+          this.strategy.backoffMultiplier ** (attempt - 1);
         const clampedDelay = Math.min(baseDelay, this.strategy.maxRetryDelay);
-        const finalDelay = this.strategy.useJitter ? addJitter(clampedDelay) : clampedDelay;
+        const finalDelay = this.strategy.useJitter
+          ? addJitter(clampedDelay)
+          : clampedDelay;
 
         console.warn(
           `Operation '${operationName}' failed (attempt ${attempt}/${this.strategy.maxRetries}). ` +
-          `Retrying in ${finalDelay}ms. Error: ${grappleError.toLogMessage()}`
+            `Retrying in ${finalDelay}ms. Error: ${grappleError.toLogMessage()}`
         );
 
         await sleep(finalDelay);
@@ -122,7 +139,9 @@ export class RetryManager {
         console.info(`Executing fallback for operation '${operationName}'`);
         return this.strategy.fallback() as T;
       } catch (fallbackError) {
-        console.error(`Fallback also failed for operation '${operationName}': ${fallbackError}`);
+        console.error(
+          `Fallback also failed for operation '${operationName}': ${fallbackError}`
+        );
       }
     }
 
@@ -204,11 +223,12 @@ export class CircuitBreaker {
   } {
     const now = Date.now();
     const recentFailures = this.failures.filter(
-      time => now - time < this.config.monitoringPeriod
+      (time) => now - time < this.config.monitoringPeriod
     );
-    
+
     const totalRequests = recentFailures.length + this.successCount;
-    const failureRate = totalRequests > 0 ? recentFailures.length / totalRequests : 0;
+    const failureRate =
+      totalRequests > 0 ? recentFailures.length / totalRequests : 0;
 
     return {
       state: this.state,
@@ -245,7 +265,10 @@ export class CircuitBreaker {
   private updateStateBeforeExecution(): void {
     const now = Date.now();
 
-    if (this.state === State.OPEN && now - this.lastFailureTime >= this.config.timeout) {
+    if (
+      this.state === State.OPEN &&
+      now - this.lastFailureTime >= this.config.timeout
+    ) {
       this.state = State.HALF_OPEN;
       this.successCount = 0;
       console.info('Circuit breaker transitioning to HALF_OPEN state');
@@ -253,7 +276,7 @@ export class CircuitBreaker {
 
     // Clean up old failure records
     const cutoff = now - this.config.monitoringPeriod;
-    const recentFailures = this.failures.filter(time => time > cutoff);
+    const recentFailures = this.failures.filter((time) => time > cutoff);
     this.failures.length = 0;
     this.failures.push(...recentFailures);
   }
@@ -264,10 +287,15 @@ export class CircuitBreaker {
   private onSuccess(): void {
     this.successCount++;
 
-    if (this.state === State.HALF_OPEN && this.successCount >= this.config.successThreshold) {
+    if (
+      this.state === State.HALF_OPEN &&
+      this.successCount >= this.config.successThreshold
+    ) {
       this.state = State.CLOSED;
       this.failureCount = 0;
-      console.info('Circuit breaker transitioning to CLOSED state after successful recovery');
+      console.info(
+        'Circuit breaker transitioning to CLOSED state after successful recovery'
+      );
     }
   }
 
@@ -283,10 +311,14 @@ export class CircuitBreaker {
     // Check if we should open the circuit
     if (this.state === State.CLOSED && this.shouldOpenCircuit()) {
       this.state = State.OPEN;
-      console.warn('Circuit breaker transitioning to OPEN state due to high failure rate');
+      console.warn(
+        'Circuit breaker transitioning to OPEN state due to high failure rate'
+      );
     } else if (this.state === State.HALF_OPEN) {
       this.state = State.OPEN;
-      console.warn('Circuit breaker returning to OPEN state after failed recovery attempt');
+      console.warn(
+        'Circuit breaker returning to OPEN state after failed recovery attempt'
+      );
     }
   }
 
@@ -296,7 +328,7 @@ export class CircuitBreaker {
   private shouldOpenCircuit(): boolean {
     const now = Date.now();
     const recentFailures = this.failures.filter(
-      time => now - time < this.config.monitoringPeriod
+      (time) => now - time < this.config.monitoringPeriod
     );
 
     // Need minimum request volume
@@ -377,7 +409,9 @@ export class GracefulDegradation {
     try {
       return await Promise.resolve(primary());
     } catch (error) {
-      console.warn(`Primary operation '${operationName}' failed, using fallback: ${error}`);
+      console.warn(
+        `Primary operation '${operationName}' failed, using fallback: ${error}`
+      );
       return await Promise.resolve(fallback());
     }
   }
@@ -395,11 +429,15 @@ export class GracefulDegradation {
       try {
         const result = await Promise.resolve(operation());
         if (errors.length > 0) {
-          console.info(`Operation '${operationName}' succeeded using fallback '${name}'`);
+          console.info(
+            `Operation '${operationName}' succeeded using fallback '${name}'`
+          );
         }
         return result;
       } catch (error) {
-        console.warn(`Fallback '${name}' failed for operation '${operationName}': ${error}`);
+        console.warn(
+          `Fallback '${name}' failed for operation '${operationName}': ${error}`
+        );
         errors.push(error instanceof Error ? error : new Error(String(error)));
       }
     }
@@ -413,8 +451,8 @@ export class GracefulDegradation {
       {
         operation: operationName,
         technicalDetails: {
-          failedOperations: operations.map(op => op.name),
-          errors: errors.map(e => e.message),
+          failedOperations: operations.map((op) => op.name),
+          errors: errors.map((e) => e.message),
         },
       }
     );
@@ -431,11 +469,15 @@ export class GracefulDegradation {
     try {
       return await Promise.resolve(operation());
     } catch (error) {
-      console.warn(`Operation '${operationName}' failed, performing cleanup: ${error}`);
+      console.warn(
+        `Operation '${operationName}' failed, performing cleanup: ${error}`
+      );
       try {
         await Promise.resolve(cleanup());
       } catch (cleanupError) {
-        console.error(`Cleanup failed for operation '${operationName}': ${cleanupError}`);
+        console.error(
+          `Cleanup failed for operation '${operationName}': ${cleanupError}`
+        );
       }
       throw error;
     }

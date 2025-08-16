@@ -5,7 +5,10 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { loadConfig, type ExtendedHookConfiguration } from '@outfitter/hooks-config';
+import {
+  type ExtendedHookConfiguration,
+  loadConfig,
+} from '@outfitter/hooks-config';
 import type { ToolHookConfig } from '@outfitter/hooks-core';
 import { BaseCommand, type CliConfig } from '../types';
 

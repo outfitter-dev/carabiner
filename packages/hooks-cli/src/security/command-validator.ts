@@ -8,7 +8,7 @@ import { SecurityValidationError } from '@outfitter/hooks-validators';
 /**
  * Command security configuration
  */
-export interface CommandSecurityConfig {
+export type CommandSecurityConfig = {
   /** Maximum command length */
   maxLength: number;
   /** Allowed command prefixes */
@@ -21,7 +21,7 @@ export interface CommandSecurityConfig {
   environmentMode: 'development' | 'production' | 'test';
   /** Enable strict validation */
   strictMode: boolean;
-}
+};
 
 /**
  * Default command security configuration
@@ -53,81 +53,116 @@ export const DEFAULT_COMMAND_CONFIG: CommandSecurityConfig = {
     'sed',
     'jq',
     'curl',
-    'wget'
+    'wget',
   ]),
   blockedPatterns: [
     // System destruction commands
-    /\brm\s+-rf\s+[\/~\$]/,
+    /\brm\s+-rf\s+[/~$]/,
     /\bsudo\s+(rm|dd|mkfs|fdisk|shutdown|reboot)/,
-    /\b(rm|rmdir)\s+.*[\/~]/,
-    /\bchmod\s+777\s+[\/~]/,
-    /\bchown\s+.*[\/~]/,
-    
+    /\b(rm|rmdir)\s+.*[/~]/,
+    /\bchmod\s+777\s+[/~]/,
+    /\bchown\s+.*[/~]/,
+
     // Process manipulation
     /\bkill(all)?\s+-9\s+(1|\$\$)/,
     /\bpkill\s+-f/,
     /\bnohup\s+.*&/,
-    
+
     // Network security risks
     /\b(curl|wget)\s+.*\|\s*(sh|bash|zsh|fish)/,
     /\bnc\s+.*-e\s*(sh|bash)/,
     /\btelnet\s+.*;\s*(sh|bash)/,
-    
+
     // File system manipulation
     />\s*\/dev\/(null|zero|random|urandom|sda|sdb)/,
     /\bmount\s+.*\/dev/,
     /\bumount\s+-f/,
     /\bchattr\s+[+-][ai]/,
-    
+
     // Privilege escalation
     /\bsu\s+-/,
     /\bsudo\s+(su|passwd|visudo)/,
     /\busermod\s+.*sudo/,
     /\bpasswd\s+(?!--help|--version)/,
-    
+
     // System information gathering
     /\/etc\/(passwd|shadow|hosts|ssh)/,
     /\/proc\/(self|pid|sys)/,
     /\/sys\/(class|bus|devices)/,
-    
+
     // Code execution patterns
-    /\beval\s*[\(\[]/,
-    /\bexec\s*[\(\[]/,
-    /\$\([^)]*[\|\;]/,
-    /`[^`]*[\|\;]/,
-    
+    /\beval\s*[([]/,
+    /\bexec\s*[([]/,
+    /\$\([^)]*[|;]/,
+    /`[^`]*[|;]/,
+
     // Environment manipulation
     /\bexport\s+(PATH|LD_LIBRARY_PATH|HOME)=/,
     /\bunset\s+(PATH|HOME|USER)/,
-    
+
     // Package management risks
     /\bnpm\s+(install|i)\s+.*-g.*\|\|/,
     /\bpip\s+install\s+.*--user.*&&/,
     /\byarn\s+add\s+.*--global.*\|\|/,
-    
+
     // Git security risks
     /\bgit\s+clone\s+.*\|\s*(sh|bash)/,
     /\bgit\s+config\s+--global\s+core\.autocrlf/,
     /\bgit\s+remote\s+add\s+.*http:/,
   ],
   allowedExecutables: new Set([
-    'bun', 'node', 'npm', 'yarn', 'pnpm', 'deno',
-    'python', 'python3', 'pip', 'pip3',
-    'git', 'gh', 'hub',
-    'ls', 'cat', 'head', 'tail', 'echo', 'printf',
-    'grep', 'egrep', 'fgrep', 'rg',
-    'find', 'locate',
-    'sort', 'uniq', 'wc', 'cut', 'tr',
-    'awk', 'sed', 'jq', 'yq',
-    'curl', 'wget',
-    'tar', 'gzip', 'gunzip', 'zip', 'unzip',
-    'diff', 'patch',
-    'make', 'cmake',
-    'docker', 'docker-compose',
-    'kubectl', 'helm'
+    'bun',
+    'node',
+    'npm',
+    'yarn',
+    'pnpm',
+    'deno',
+    'python',
+    'python3',
+    'pip',
+    'pip3',
+    'git',
+    'gh',
+    'hub',
+    'ls',
+    'cat',
+    'head',
+    'tail',
+    'echo',
+    'printf',
+    'grep',
+    'egrep',
+    'fgrep',
+    'rg',
+    'find',
+    'locate',
+    'sort',
+    'uniq',
+    'wc',
+    'cut',
+    'tr',
+    'awk',
+    'sed',
+    'jq',
+    'yq',
+    'curl',
+    'wget',
+    'tar',
+    'gzip',
+    'gunzip',
+    'zip',
+    'unzip',
+    'diff',
+    'patch',
+    'make',
+    'cmake',
+    'docker',
+    'docker-compose',
+    'kubectl',
+    'helm',
   ]),
   environmentMode: 'development',
-  strictMode: true
+  strictMode: true,
 };
 
 /**
@@ -139,7 +174,7 @@ const PRODUCTION_BLOCKED_PATTERNS = [
   /\byarn\s+publish/,
   /\bpnpm\s+publish/,
   /\bgit\s+push.*origin.*(main|master|prod|release)/,
-  
+
   // Infrastructure commands
   /\bdocker\s+(push|run.*--privileged|exec.*-it)/,
   /\bkubectl\s+(apply|delete|create).*prod/,
@@ -147,7 +182,7 @@ const PRODUCTION_BLOCKED_PATTERNS = [
   /\baws\s+.*delete/,
   /\bgcloud\s+.*delete/,
   /\baz\s+.*delete/,
-  
+
   // Database operations
   /\bpsql\s+.*drop/i,
   /\bmysql\s+.*drop/i,
@@ -196,12 +231,12 @@ export class CommandValidator {
       );
     }
 
+    // Check against blocked patterns first (they have critical severity)
+    this.checkBlockedPatterns(command);
+
     // Parse and validate command structure
     const commandParts = this.parseCommand(command);
     this.validateCommandStructure(commandParts);
-
-    // Check against blocked patterns
-    this.checkBlockedPatterns(command);
 
     // Environment-specific validation
     this.validateEnvironmentRestrictions(command);
@@ -246,7 +281,7 @@ export class CommandValidator {
       pipes: [],
       redirections: [],
       backgrounded: false,
-      chained: false
+      chained: false,
     };
 
     // Check for dangerous patterns first
@@ -255,7 +290,7 @@ export class CommandValidator {
 
     // Extract pipes
     if (command.includes('|')) {
-      result.pipes = command.split('|').map(part => part.trim());
+      result.pipes = command.split('|').map((part) => part.trim());
     }
 
     // Extract redirections
@@ -268,7 +303,7 @@ export class CommandValidator {
     // Parse main command
     const mainCommand = (command.split(/[|;&]/)[0] ?? '').trim();
     const parts = mainCommand ? mainCommand.split(/\s+/) : [];
-    
+
     if (parts.length > 0) {
       if (parts[0]) {
         result.executable = parts[0] as string;
@@ -282,7 +317,9 @@ export class CommandValidator {
   /**
    * Validate command structure
    */
-  private validateCommandStructure(commandParts: ReturnType<typeof this.parseCommand>): void {
+  private validateCommandStructure(
+    commandParts: ReturnType<typeof this.parseCommand>
+  ): void {
     // Validate executable
     if (!commandParts.executable) {
       throw new SecurityValidationError(
@@ -293,7 +330,10 @@ export class CommandValidator {
     }
 
     // Check if executable is allowed
-    if (this.config.strictMode && !this.config.allowedExecutables.has(commandParts.executable)) {
+    if (
+      this.config.strictMode &&
+      !this.config.allowedExecutables.has(commandParts.executable)
+    ) {
       throw new SecurityValidationError(
         `Executable not in allowed list: ${commandParts.executable}`,
         'commandStructure',
@@ -341,9 +381,15 @@ export class CommandValidator {
 
     // Validate redirections
     for (const redirect of commandParts.redirections) {
-      if (redirect.includes('>') && commandParts.args.some(arg => 
-        arg.includes('/dev/') || arg.includes('/proc/') || arg.includes('/sys/')
-      )) {
+      if (
+        redirect.includes('>') &&
+        commandParts.args.some(
+          (arg) =>
+            arg.includes('/dev/') ||
+            arg.includes('/proc/') ||
+            arg.includes('/sys/')
+        )
+      ) {
         throw new SecurityValidationError(
           'Redirecting to system devices/pseudo-filesystems is not allowed',
           'commandStructure',
@@ -413,8 +459,10 @@ export class CommandValidator {
     }
 
     // Block package installations without explicit approval
-    if (/\b(npm|yarn|pnpm|pip)\s+(install|add|i)\b/.test(command) && 
-        !command.includes('--production')) {
+    if (
+      /\b(npm|yarn|pnpm|pip)\s+(install|add|i)\b/.test(command) &&
+      !command.includes('--production')
+    ) {
       throw new SecurityValidationError(
         'Package installations must use --production flag in production',
         'productionSafety',
@@ -423,8 +471,10 @@ export class CommandValidator {
     }
 
     // Block file modifications in sensitive directories
-    if (/\b(rm|mv|cp|touch|mkdir)\b/.test(command) && 
-        /\/(etc|usr|bin|boot|root|home)/.test(command)) {
+    if (
+      /\b(rm|mv|cp|touch|mkdir)\b/.test(command) &&
+      /\/(etc|usr|bin|boot|root|home)/.test(command)
+    ) {
       throw new SecurityValidationError(
         'System directory modifications blocked in production',
         'productionSafety',
@@ -458,9 +508,20 @@ export class CommandValidator {
   /**
    * Validate strict mode restrictions
    */
-  private validateStrictMode(command: string, commandParts: ReturnType<typeof this.parseCommand>): void {
+  private validateStrictMode(
+    command: string,
+    commandParts: ReturnType<typeof this.parseCommand>
+  ): void {
     // No network access in strict mode
-    const networkCommands = ['curl', 'wget', 'nc', 'telnet', 'ssh', 'scp', 'rsync'];
+    const networkCommands = [
+      'curl',
+      'wget',
+      'nc',
+      'telnet',
+      'ssh',
+      'scp',
+      'rsync',
+    ];
     if (networkCommands.includes(commandParts.executable)) {
       throw new SecurityValidationError(
         `Network commands blocked in strict mode: ${commandParts.executable}`,
@@ -471,8 +532,10 @@ export class CommandValidator {
 
     // No package management in strict mode
     const packageManagers = ['npm', 'yarn', 'pnpm', 'pip', 'pip3'];
-    if (packageManagers.includes(commandParts.executable) && 
-        commandParts.args.some(arg => ['install', 'add', 'i'].includes(arg))) {
+    if (
+      packageManagers.includes(commandParts.executable) &&
+      commandParts.args.some((arg) => ['install', 'add', 'i'].includes(arg))
+    ) {
       throw new SecurityValidationError(
         'Package installations blocked in strict mode',
         'strictMode',
@@ -524,17 +587,27 @@ export class CommandValidator {
   /**
    * Create command validator for specific environment
    */
-  static forEnvironment(env: 'development' | 'production' | 'test', strictMode = false): CommandValidator {
+  static forEnvironment(
+    env: 'development' | 'production' | 'test',
+    strictMode = false
+  ): CommandValidator {
     const config: Partial<CommandSecurityConfig> = {
       environmentMode: env,
-      strictMode
+      strictMode,
     };
 
     if (env === 'production') {
       config.strictMode = true;
       config.allowedExecutables = new Set([
-        'bun', 'node', 'npm', 'git', 
-        'echo', 'cat', 'ls', 'grep', 'jq'
+        'bun',
+        'node',
+        'npm',
+        'git',
+        'echo',
+        'cat',
+        'ls',
+        'grep',
+        'jq',
       ]);
     }
 
@@ -546,7 +619,7 @@ export class CommandValidator {
  * Validate CLI command (utility function)
  */
 export function validateCommand(
-  command: string, 
+  command: string,
   environment: 'development' | 'production' | 'test' = 'development',
   strictMode = true
 ): void {
@@ -560,13 +633,13 @@ export function validateCommand(
 export function validateHookCommand(command: string): string {
   const validator = new CommandValidator({
     environmentMode: 'development',
-    strictMode: true
+    strictMode: true,
   });
 
   validator.validateCommand(command);
-  
+
   // Additional hook-specific validation
-  if (!command.startsWith('bun ') && !command.startsWith('node ')) {
+  if (!(command.startsWith('bun ') || command.startsWith('node '))) {
     throw new SecurityValidationError(
       'Hook commands must start with "bun" or "node"',
       'hookValidation',
@@ -580,9 +653,13 @@ export function validateHookCommand(command: string): string {
 /**
  * Create secure command builder
  */
-export function createSecureCommand(executable: string, args: string[], validator?: CommandValidator): string {
+export function createSecureCommand(
+  executable: string,
+  args: string[],
+  validator?: CommandValidator
+): string {
   const instance = validator || new CommandValidator();
-  
+
   // Validate executable
   if (!instance.getConfig().allowedExecutables.has(executable)) {
     throw new SecurityValidationError(
@@ -593,7 +670,7 @@ export function createSecureCommand(executable: string, args: string[], validato
   }
 
   // Sanitize arguments
-  const sanitizedArgs = args.map(arg => {
+  const sanitizedArgs = args.map((arg) => {
     // Basic sanitization - remove dangerous characters
     const sanitized = arg.replace(/[`$(){}[\]|&;<>]/g, '');
     if (sanitized !== arg) {
@@ -608,6 +685,6 @@ export function createSecureCommand(executable: string, args: string[], validato
 
   const command = `${executable} ${sanitizedArgs.join(' ')}`.trim();
   instance.validateCommand(command);
-  
+
   return command;
 }

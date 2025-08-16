@@ -34,7 +34,5 @@ export class HookGenerator extends BaseGenerator {
     );
 
     await this.writeFile(filePath, content);
-
-    console.log(`Generated ${this.template} hook: ${filePath}`);
   }
 }

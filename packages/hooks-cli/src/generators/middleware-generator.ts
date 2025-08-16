@@ -19,7 +19,5 @@ export class MiddlewareGenerator extends BaseGenerator {
     );
 
     await this.writeFile(filePath, content);
-
-    console.log(`Generated middleware: ${filePath}`);
   }
 }
