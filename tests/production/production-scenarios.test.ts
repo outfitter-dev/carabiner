@@ -18,6 +18,7 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import {
   chmodSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -47,6 +48,7 @@ class ProductionEnvironment {
     dirs.forEach((dir) => {
       const fullPath = join(this.tempDir, dir);
       if (!existsSync(fullPath)) {
+        mkdirSync(fullPath, { recursive: true });
         writeFileSync(join(fullPath, '.gitkeep'), '');
       }
     });

@@ -24,13 +24,14 @@ class ErrorSimulator {
     return async (_context: HookContext): Promise<HookResult> => {
       return new Promise((resolve, reject) => {
         const workTimer = setTimeout(() => {
+          clearTimeout(timeoutTimer);
           resolve({
             success: true,
             message: `Work completed after ${delayMs}ms`,
           });
         }, delayMs);
 
-        const _timeoutTimer = setTimeout(() => {
+        const timeoutTimer = setTimeout(() => {
           clearTimeout(workTimer);
           reject(new Error(`Operation timed out after ${timeoutMs}ms`));
         }, timeoutMs);
@@ -218,7 +219,7 @@ describe('Comprehensive Error Handling', () => {
       const scenarios = [
         { work: 50, timeout: 10, shouldTimeout: true },
         { work: 10, timeout: 50, shouldTimeout: false },
-        { work: 100, timeout: 100, shouldTimeout: true }, // Edge case
+        { work: 120, timeout: 100, shouldTimeout: true }, // Work takes longer than timeout
         { work: 0, timeout: 10, shouldTimeout: false },
       ];
 

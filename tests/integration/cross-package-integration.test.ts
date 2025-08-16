@@ -6,9 +6,15 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { HookConfiguration } from '@outfitter/types';
 
 /**
@@ -35,6 +41,9 @@ class TestWorkspace {
    */
   createHookFile(filename: string, content: string): string {
     const hookPath = join(this.path, filename);
+    // Ensure directory exists
+    const dir = dirname(hookPath);
+    mkdirSync(dir, { recursive: true });
     writeFileSync(hookPath, content);
     return hookPath;
   }
@@ -111,25 +120,48 @@ describe('Cross-Package Integration Tests', () => {
       // Test loading config through the config package
       const { ConfigManager } = await import('@outfitter/hooks-config');
 
-      const config: HookConfiguration = {
+      const config = {
         version: '1.0.0',
-        hooks: {
-          'pre-tool-use': {
-            handler: './hooks/security-check.ts',
+        PreToolUse: {
+          Bash: {
+            command: 'bun run ./hooks/security-check.ts',
             timeout: 5000,
+            enabled: true,
           },
         },
-        environment: {},
+        PostToolUse: {},
+        SessionStart: {
+          command: 'bun run hooks/session-start.ts',
+          timeout: 10_000,
+          enabled: true,
+        },
+        UserPromptSubmit: {
+          command: 'bun run hooks/user-prompt-submit.ts',
+          timeout: 5000,
+          enabled: false,
+        },
+        templates: {
+          typescript: {
+            command: 'bun run {hookPath}',
+            timeout: 10_000,
+            enabled: true,
+          },
+        },
+        variables: {
+          hookPath: 'hooks/{event}.ts',
+        },
+        environments: {},
       };
 
       workspace.createHooksConfig(config);
 
       const configManager = new ConfigManager(workspace.path);
-      const loadedConfig = await configManager.loadConfiguration();
+      const loadedConfig = await configManager.load();
 
       expect(loadedConfig.version).toBe('1.0.0');
-      expect(loadedConfig.hooks['pre-tool-use']).toBeDefined();
-      expect(loadedConfig.hooks['pre-tool-use'].timeout).toBe(5000);
+      expect(loadedConfig.PreToolUse).toBeDefined();
+      expect(loadedConfig.PreToolUse.Bash).toBeDefined();
+      expect(loadedConfig.PreToolUse.Bash.timeout).toBe(5000);
     });
 
     test('should execute hooks through hooks-core runtime', async () => {
@@ -196,7 +228,7 @@ export default async function(context) {
 
       // Test validation
       expect(async () => {
-        await configManager.loadConfiguration();
+        await configManager.load();
       }).not.toThrow();
     });
 
@@ -205,11 +237,12 @@ export default async function(context) {
 
       const invalidConfig = {
         version: '1.0.0',
-        hooks: {
-          'invalid-event': {
-            // Invalid hook event
-            handler: './hooks/test.ts',
+        InvalidEvent: {
+          // Invalid hook event - not in allowed list
+          Bash: {
+            command: 'bun run ./hooks/test.ts',
             timeout: 5000,
+            enabled: true,
           },
         },
       };
@@ -217,7 +250,7 @@ export default async function(context) {
       workspace.createHooksConfig(invalidConfig as HookConfiguration);
       const configManager = new ConfigManager(workspace.path);
 
-      await expect(configManager.loadConfiguration()).rejects.toThrow();
+      await expect(configManager.load()).rejects.toThrow();
     });
   });
 
@@ -233,16 +266,42 @@ export default async function(context) {
       clearExecutionMetrics();
 
       // Create a hook configuration
-      const config: HookConfiguration = {
+      const config = {
         version: '1.0.0',
-        hooks: {
-          'pre-tool-use': {
-            handler: './hooks/test-hook.ts',
+        PreToolUse: {
+          Bash: {
+            command: 'bun run ./hooks/test-hook.ts',
             timeout: 5000,
+            enabled: true,
           },
         },
-        environment: {
-          NODE_ENV: 'test',
+        PostToolUse: {},
+        SessionStart: {
+          command: 'bun run hooks/session-start.ts',
+          timeout: 10_000,
+          enabled: true,
+        },
+        UserPromptSubmit: {
+          command: 'bun run hooks/user-prompt-submit.ts',
+          timeout: 5000,
+          enabled: false,
+        },
+        templates: {
+          typescript: {
+            command: 'bun run {hookPath}',
+            timeout: 10_000,
+            enabled: true,
+          },
+        },
+        variables: {
+          hookPath: 'hooks/{event}.ts',
+        },
+        environments: {
+          test: {
+            PreToolUse: {
+              Bash: { timeout: 3000 },
+            },
+          },
         },
       };
 
@@ -269,9 +328,10 @@ export default async function(context) {
 
       // Load configuration
       const configManager = new ConfigManager(workspace.path);
-      const loadedConfig = await configManager.loadConfiguration();
+      const loadedConfig = await configManager.load();
 
-      expect(loadedConfig.hooks['pre-tool-use']).toBeDefined();
+      expect(loadedConfig.PreToolUse).toBeDefined();
+      expect(loadedConfig.PreToolUse.Bash).toBeDefined();
 
       // Verify metrics collection is available
       const initialMetrics = globalMetrics.getExecutionStats();
@@ -288,27 +348,49 @@ export default async function(context) {
 }
       `;
 
-      const config: HookConfiguration = {
+      const config = {
         version: '1.0.0',
-        hooks: {
-          'pre-tool-use': {
-            handler: './hooks/failing-hook.ts',
+        PreToolUse: {
+          Bash: {
+            command: 'bun run ./hooks/failing-hook.ts',
             timeout: 5000,
+            enabled: true,
           },
         },
-        environment: {},
+        PostToolUse: {},
+        SessionStart: {
+          command: 'bun run hooks/session-start.ts',
+          timeout: 10_000,
+          enabled: true,
+        },
+        UserPromptSubmit: {
+          command: 'bun run hooks/user-prompt-submit.ts',
+          timeout: 5000,
+          enabled: false,
+        },
+        templates: {
+          typescript: {
+            command: 'bun run {hookPath}',
+            timeout: 10_000,
+            enabled: true,
+          },
+        },
+        variables: {
+          hookPath: 'hooks/{event}.ts',
+        },
+        environments: {},
       };
 
       workspace.createHooksConfig(config);
       workspace.createHookFile('hooks/failing-hook.ts', failingHookContent);
 
       const configManager = new ConfigManager(workspace.path);
-      const loadedConfig = await configManager.loadConfiguration();
+      const loadedConfig = await configManager.load();
 
       // Configuration should load successfully even with failing hooks
       expect(loadedConfig).toBeDefined();
-      expect(loadedConfig.hooks['pre-tool-use'].handler).toBe(
-        './hooks/failing-hook.ts'
+      expect(loadedConfig.PreToolUse.Bash.command).toBe(
+        'bun run ./hooks/failing-hook.ts'
       );
     });
   });
@@ -333,7 +415,7 @@ export default async function(context) {
       const configManager = new ConfigManager(workspace.path);
 
       // Should reject unsafe paths
-      await expect(configManager.loadConfiguration()).rejects.toThrow(
+      await expect(configManager.load()).rejects.toThrow(
         /outside workspace boundary/
       );
     });
@@ -360,7 +442,7 @@ export default async function(context) {
       const configManager = new ConfigManager(workspace.path);
 
       // Should load safely with proper environment variables
-      const config = await configManager.loadConfiguration();
+      const config = await configManager.load();
       expect(config.environment.WORKSPACE_PATH).toBe(workspace.path);
     });
   });

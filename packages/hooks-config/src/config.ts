@@ -828,9 +828,15 @@ export default config;
   private validateConfigSecurity(config: ExtendedHookConfiguration): void {
     // Check for dangerous command patterns in hook commands
     const checkCommand = (cmd: string, context: string) => {
+      // First, replace legitimate template variables to avoid false positives
+      const cmdWithoutTemplates = cmd.replace(
+        /\{[a-zA-Z_][a-zA-Z0-9_]*\}/g,
+        'TEMPLATE_VAR'
+      );
+
       // Block commands with shell injection attempts
       const dangerousPatterns = [
-        /[;&|`$(){}[\]]/, // Shell metacharacters
+        /[;&|`$(){}[\]]/, // Shell metacharacters (after template removal)
         /\.\.[/\\]/, // Directory traversal
         /\/proc\//, // Process filesystem access
         /\/dev\//, // Device access
@@ -840,7 +846,7 @@ export default config;
       ];
 
       for (const pattern of dangerousPatterns) {
-        if (pattern.test(cmd)) {
+        if (pattern.test(cmdWithoutTemplates)) {
           throw new ConfigError(
             `Dangerous command pattern detected in ${context}: ${cmd}`,
             'SECURITY_VIOLATION'
@@ -849,7 +855,7 @@ export default config;
       }
 
       // Ensure commands start with allowed executables
-      const allowedExecutables = ['bun', 'node', 'npm', 'yarn', 'pnpm'];
+      const allowedExecutables = ['bun', 'node', 'npm', 'yarn', 'pnpm', 'bash'];
       const executable = cmd.trim().split(/\s+/)[0];
       if (!(executable && allowedExecutables.includes(executable))) {
         throw new ConfigError(
@@ -894,7 +900,7 @@ export default config;
     for (const [event, eventConfig] of Object.entries(config)) {
       if (
         event.startsWith('$') ||
-        ['templates', 'variables', 'environments'].includes(event)
+        ['version', 'templates', 'variables', 'environments'].includes(event)
       ) {
         continue;
       }

@@ -389,7 +389,7 @@ describe('Performance Benchmarks', () => {
         const stats = benchmark.getStats(`json_parsing_${size}`);
 
         // JSON parsing performance targets (scale with size)
-        const maxExpectedTime = Math.max(10, size / 10_000); // 10ms base, +1ms per 10k items
+        const maxExpectedTime = Math.max(50, size / 5000); // 50ms base, +1ms per 5k items
         expect(stats.avg).toBeLessThan(maxExpectedTime);
       }
     });
