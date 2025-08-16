@@ -31,23 +31,23 @@ export class SecurityValidationError extends Error {
 /**
  * Security rule configuration
  */
-export interface SecurityRuleConfig {
+export type SecurityRuleConfig = {
   enabled: boolean;
   severity: 'low' | 'medium' | 'high' | 'critical';
   blockOnViolation: boolean;
   customPatterns?: RegExp[];
   exemptions?: string[];
-}
+};
 
 /**
  * Security validation options
  */
-export interface SecurityOptions {
+export type SecurityOptions = {
   env?: 'development' | 'production' | 'test';
   strictMode?: boolean;
   allowOverrides?: boolean;
   customRules?: Record<string, SecurityRuleConfig>;
-}
+};
 
 /**
  * Default security rules

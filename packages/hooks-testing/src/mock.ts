@@ -17,7 +17,7 @@ import type {
 /**
  * Mock environment configuration
  */
-export interface MockEnvironmentConfig {
+export type MockEnvironmentConfig = {
   sessionId?: string;
   toolName?: ToolName;
   workspacePath?: string;
@@ -25,15 +25,15 @@ export interface MockEnvironmentConfig {
   toolOutput?: string;
   userPrompt?: string;
   additionalEnv?: Record<string, string>;
-}
+};
 
 /**
  * Mock hook context options
  */
-export interface MockContextOptions<
+export type MockContextOptions<
   TEvent extends HookEvent = HookEvent,
   TTool extends ToolName = ToolName,
-> {
+> = {
   event: TEvent;
   toolName?: TTool;
   sessionId?: string;
@@ -42,21 +42,21 @@ export interface MockContextOptions<
   toolOutput?: string;
   userPrompt?: string;
   environment?: Partial<HookEnvironment>;
-}
+};
 
 /**
  * Environment variable storage for restoration
  */
-interface EnvironmentSnapshot {
+type EnvironmentSnapshot = {
   [key: string]: string | undefined;
-}
+};
 
 /**
  * Mock environment manager
  */
 export class MockEnvironment {
   private originalEnv: EnvironmentSnapshot = {};
-  private mockVars: Set<string> = new Set();
+  private readonly mockVars: Set<string> = new Set();
 
   /**
    * Set up mock environment variables

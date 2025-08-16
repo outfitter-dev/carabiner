@@ -72,32 +72,32 @@ export type HookEvent =
 // TOOL INPUT TYPES - Strict mapping without Record<string, unknown>
 // ============================================================================
 
-export interface BashToolInput {
+export type BashToolInput = {
   readonly command: CommandString;
   readonly timeout?: number;
   readonly description?: string;
-}
+};
 
-export interface WriteToolInput {
+export type WriteToolInput = {
   readonly file_path: FilePath;
   readonly content: ToolContent;
-}
+};
 
-export interface EditToolInput {
+export type EditToolInput = {
   readonly file_path: FilePath;
   readonly old_string: string;
   readonly new_string: string;
   readonly replace_all?: boolean;
-}
+};
 
-export interface ReadToolInput {
+export type ReadToolInput = {
   readonly file_path: FilePath;
   readonly limit?: number;
   readonly offset?: number;
-}
+};
 
 // Strict tool input mapping - no unknown types
-export interface ToolInputMap {
+export type ToolInputMap = {
   readonly Bash: BashToolInput;
   readonly Write: WriteToolInput;
   readonly Edit: EditToolInput;
@@ -141,14 +141,14 @@ export interface ToolInputMap {
     readonly cell_type?: 'code' | 'markdown';
     readonly edit_mode?: 'replace' | 'insert' | 'delete';
   };
-}
+};
 
 // ============================================================================
 // CONTEXT TYPES - Perfect type inference without complex generics
 // ============================================================================
 
 // Base context shared by all events
-interface BaseHookContext {
+type BaseHookContext = {
   readonly sessionId: SessionId;
   readonly transcriptPath: FilePath;
   readonly cwd: FilePath;
@@ -156,7 +156,7 @@ interface BaseHookContext {
   readonly environment: {
     readonly CLAUDE_PROJECT_DIR?: string;
   };
-}
+};
 
 // Event-specific contexts using discriminated unions
 export type HookContext = BaseHookContext &
@@ -265,7 +265,7 @@ export const ToolSchemas = {
 // HOOK RESULT TYPES - No loose types
 // ============================================================================
 
-export interface HookResultSuccess {
+export type HookResultSuccess = {
   readonly success: true;
   readonly message?: string;
   readonly data?: Record<string, unknown>;
@@ -274,9 +274,9 @@ export interface HookResultSuccess {
     readonly timestamp?: string;
     readonly hookVersion?: string;
   };
-}
+};
 
-export interface HookResultFailure {
+export type HookResultFailure = {
   readonly success: false;
   readonly message: string;
   readonly block?: boolean;
@@ -286,7 +286,7 @@ export interface HookResultFailure {
     readonly timestamp?: string;
     readonly hookVersion?: string;
   };
-}
+};
 
 export type HookResult = HookResultSuccess | HookResultFailure;
 
@@ -328,10 +328,10 @@ export type EditHandler = HookHandler<ToolHookContext<'Edit'>>;
 // BUILDER PATTERN - Phantom types for state tracking
 // ============================================================================
 
-interface HookBuilderState {
+type HookBuilderState = {
   readonly hasEvent: boolean;
   readonly hasHandler: boolean;
-}
+};
 
 type BuilderComplete = { hasEvent: true; hasHandler: true };
 
@@ -385,12 +385,12 @@ export class HookBuilder<
 // REGISTRY TYPES - Discriminated unions for type safety
 // ============================================================================
 
-export interface HookRegistryEntry {
+export type HookRegistryEntry = {
   readonly event: HookEvent;
   readonly handler: HookHandler;
   readonly priority?: number;
   readonly enabled?: boolean;
-}
+};
 
 // Registry with type-safe lookup
 export class TypeSafeHookRegistry {
@@ -502,8 +502,6 @@ const writeHook: HookRegistryEntry = {
   handler: (context): HookResult => {
     // context.toolInput is perfectly typed as WriteToolInput
     const { file_path, content } = context.toolInput;
-    // Use the variables to demonstrate the type safety
-    console.log(`Writing to ${file_path}: ${content.length} characters`);
 
     // file_path is branded FilePath, content is branded ToolContent
     if (content.length > 500_000) {

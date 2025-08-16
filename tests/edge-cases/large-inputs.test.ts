@@ -1,12 +1,11 @@
 /**
  * Edge Case Tests - Large Inputs and Performance Boundaries
- * 
+ *
  * Tests system behavior with large payloads, unusual encodings,
  * and boundary conditions to ensure robustness in production.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import type { HookContext, HookResult } from '@outfitter/types';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 
 describe('Large Input Edge Cases', () => {
   let memoryUsageBefore: NodeJS.MemoryUsage;
@@ -28,9 +27,9 @@ describe('Large Input Edge Cases', () => {
       const largeObject = {
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: 'large-test-' + Math.random(),
+          requestId: `large-test-${Math.random()}`,
         },
-        data: Array(50000).fill(null).map((_, i) => ({
+        data: new Array(50_000).fill(null).map((_, i) => ({
           id: i,
           name: `item_${i}_${'x'.repeat(20)}`, // Make each item substantial
           description: `This is a test description for item ${i} `.repeat(5),
@@ -39,7 +38,7 @@ describe('Large Input Edge Cases', () => {
             level1: {
               level2: {
                 level3: `deep_value_${i}`,
-                array: Array(10).fill(`nested_item_${i}`),
+                array: new Array(10).fill(`nested_item_${i}`),
               },
             },
           },
@@ -54,7 +53,7 @@ describe('Large Input Edge Cases', () => {
       const parsed = JSON.parse(jsonString);
       const parseTime = performance.now() - startTime;
 
-      expect(parsed.data).toHaveLength(50000);
+      expect(parsed.data).toHaveLength(50_000);
       expect(parseTime).toBeLessThan(1000); // Should parse within 1 second
 
       // Check memory usage didn't explode
@@ -66,7 +65,7 @@ describe('Large Input Edge Cases', () => {
     test('should handle deeply nested JSON structures', async () => {
       // Create deeply nested structure
       let deepObject: any = { value: 'deep' };
-      
+
       // Create 1000 levels of nesting
       for (let i = 0; i < 1000; i++) {
         deepObject = {
@@ -77,7 +76,7 @@ describe('Large Input Edge Cases', () => {
       }
 
       const jsonString = JSON.stringify(deepObject);
-      
+
       const startTime = performance.now();
       const parsed = JSON.parse(jsonString);
       const parseTime = performance.now() - startTime;
@@ -89,20 +88,21 @@ describe('Large Input Edge Cases', () => {
       // Navigate to the bottom
       let current = parsed;
       let depth = 0;
-      while (current.nested && depth < 2000) { // Safety limit
+      while (current.nested && depth < 2000) {
+        // Safety limit
         current = current.nested;
         depth++;
       }
-      
+
       expect(depth).toBe(1000);
       expect(current.value).toBe('deep');
     });
 
     test('should handle large arrays with mixed data types', async () => {
       const largeArray = [];
-      
+
       // Create array with 100k mixed items
-      for (let i = 0; i < 100000; i++) {
+      for (let i = 0; i < 100_000; i++) {
         switch (i % 6) {
           case 0:
             largeArray.push(i);
@@ -132,9 +132,9 @@ describe('Large Input Edge Cases', () => {
       const parsed = JSON.parse(jsonString);
       const parseTime = performance.now() - startTime;
 
-      expect(parsed).toHaveLength(100000);
+      expect(parsed).toHaveLength(100_000);
       expect(parseTime).toBeLessThan(2000); // Should parse within 2 seconds
-      
+
       // Verify data integrity
       expect(parsed[0]).toBe(0);
       expect(parsed[1]).toBe('string_value_1');
@@ -156,7 +156,7 @@ describe('Large Input Edge Cases', () => {
         '𝕌𝕟𝕚𝕔𝕠𝕕𝕖 𝔪𝔞𝔱𝔥', // Math symbols
         '┌─┐\n│ │\n└─┘', // Box drawing
         '\u0000\u0001\u0002\u001F', // Control characters
-        'a'.repeat(10000), // Very long string
+        'a'.repeat(10_000), // Very long string
       ].join('\n');
 
       const encoded = JSON.stringify({ text: unicodeString });
@@ -170,9 +170,10 @@ describe('Large Input Edge Cases', () => {
 
     test('should handle binary-like data in strings', async () => {
       // Create string with binary data patterns
-      const binaryLikeString = Array(1000).fill(0).map((_, i) => 
-        String.fromCharCode(i % 256)
-      ).join('');
+      const binaryLikeString = new Array(1000)
+        .fill(0)
+        .map((_, i) => String.fromCharCode(i % 256))
+        .join('');
 
       const encoded = JSON.stringify({ binary: binaryLikeString });
       const decoded = JSON.parse(encoded);
@@ -183,7 +184,7 @@ describe('Large Input Edge Cases', () => {
 
     test('should handle very long strings efficiently', async () => {
       const veryLongString = 'x'.repeat(10 * 1024 * 1024); // 10MB string
-      
+
       const startTime = performance.now();
       const encoded = JSON.stringify({ longString: veryLongString });
       const encodeTime = performance.now() - startTime;
@@ -206,7 +207,7 @@ describe('Large Input Edge Cases', () => {
       for (let i = 0; i < 10; i++) {
         const promise = new Promise((resolve) => {
           // Create 100KB of data per operation
-          const data = Array(10000).fill(null).map((_, j) => ({
+          const data = new Array(10_000).fill(null).map((_, j) => ({
             operation: i,
             index: j,
             data: `operation_${i}_item_${j}_${'x'.repeat(10)}`,
@@ -234,19 +235,21 @@ describe('Large Input Edge Cases', () => {
       // Verify all operations completed
       results.forEach((result: any, index) => {
         expect(result.operation).toBe(index);
-        expect(result.itemCount).toBe(10000);
+        expect(result.itemCount).toBe(10_000);
       });
     });
 
     test('should recover from near-memory-limit scenarios', async () => {
       // This test attempts to use significant memory then recover
       const memoryBefore = process.memoryUsage().heapUsed;
-      
+
       try {
         // Create large data structures
         const largeArrays = [];
         for (let i = 0; i < 5; i++) {
-          largeArrays.push(Array(100000).fill(`large_string_${i}_${'x'.repeat(100)}`));
+          largeArrays.push(
+            new Array(100_000).fill(`large_string_${i}_${'x'.repeat(100)}`)
+          );
         }
 
         // Verify we're using more memory
@@ -255,21 +258,20 @@ describe('Large Input Edge Cases', () => {
 
         // Clear references
         largeArrays.length = 0;
-        
+
         // Force garbage collection if available
         if (global.gc) {
           global.gc();
         }
 
         // Wait a bit for GC
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Memory should be recovering
         const memoryAfter = process.memoryUsage().heapUsed;
-        
+
         // Note: GC is not deterministic, so we just verify the test completed
         expect(memoryAfter).toBeGreaterThan(0); // Basic sanity check
-        
       } catch (error) {
         // If we run out of memory, that's actually expected behavior
         expect(error).toBeInstanceOf(Error);
@@ -279,11 +281,11 @@ describe('Large Input Edge Cases', () => {
 
   describe('Performance Boundary Tests', () => {
     test('should maintain performance with increasing payload sizes', async () => {
-      const sizes = [1000, 10000, 50000, 100000];
+      const sizes = [1000, 10_000, 50_000, 100_000];
       const timings: number[] = [];
 
       for (const size of sizes) {
-        const data = Array(size).fill(null).map((_, i) => ({
+        const data = new Array(size).fill(null).map((_, i) => ({
           id: i,
           value: `item_${i}`,
           timestamp: Date.now(),
@@ -305,7 +307,7 @@ describe('Large Input Edge Cases', () => {
       for (let i = 1; i < timings.length; i++) {
         const ratio = timings[i] / timings[i - 1];
         const sizeRatio = sizes[i] / sizes[i - 1];
-        
+
         // Allow some slack for performance variance
         expect(ratio).toBeLessThan(sizeRatio * 5); // At most 5x slower per size increase
       }
@@ -314,8 +316,8 @@ describe('Large Input Edge Cases', () => {
     test('should handle timeout scenarios gracefully', async () => {
       // Simulate operations that might timeout
       const operations = [
-        { timeout: 10, work: 5 },   // Should complete
-        { timeout: 10, work: 50 },  // Should timeout
+        { timeout: 10, work: 5 }, // Should complete
+        { timeout: 10, work: 50 }, // Should timeout
         { timeout: 100, work: 20 }, // Should complete
       ];
 
@@ -346,7 +348,7 @@ describe('Large Input Edge Cases', () => {
 
   describe('Resource Cleanup Tests', () => {
     test('should properly clean up resources after large operations', async () => {
-      const initialMemory = process.memoryUsage().heapUsed;
+      const _initialMemory = process.memoryUsage().heapUsed;
       const resources: any[] = [];
 
       try {
@@ -354,7 +356,7 @@ describe('Large Input Edge Cases', () => {
         for (let i = 0; i < 1000; i++) {
           resources.push({
             id: i,
-            data: Array(1000).fill(`resource_${i}`),
+            data: new Array(1000).fill(`resource_${i}`),
             cleanup: () => {
               // Simulate cleanup
               return true;
@@ -365,22 +367,21 @@ describe('Large Input Edge Cases', () => {
         expect(resources).toHaveLength(1000);
 
         // Simulate resource usage
-        const processed = resources.map(resource => ({
+        const processed = resources.map((resource) => ({
           id: resource.id,
           processed: true,
           size: resource.data.length,
         }));
 
         expect(processed).toHaveLength(1000);
-
       } finally {
         // Cleanup
-        resources.forEach(resource => {
+        resources.forEach((resource) => {
           if (resource.cleanup) {
             resource.cleanup();
           }
         });
-        
+
         resources.length = 0;
 
         // Force GC if available

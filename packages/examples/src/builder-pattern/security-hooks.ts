@@ -267,12 +267,12 @@ async function validateSessionBehavior(_sessionId: string): Promise<void> {}
  * Rate limiting implementation
  */
 
-interface RateLimitResult {
+type RateLimitResult = {
   allowed: boolean;
   remaining: number;
   resetTime: number;
   message?: string;
-}
+};
 
 // Simple in-memory rate limiting (use Redis in production)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -322,11 +322,11 @@ async function checkRateLimit(
  * File access control
  */
 
-interface FileAccessResult {
+type FileAccessResult = {
   allowed: boolean;
   level: 'read' | 'write' | 'admin';
   reason?: string;
-}
+};
 
 async function checkFileAccess(
   filePath: string,

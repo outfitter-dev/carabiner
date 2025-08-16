@@ -1,16 +1,16 @@
 /**
  * Examples of how to use the production logging system
- * 
+ *
  * These examples demonstrate enterprise-grade logging practices
  * for different components in the Grapple monorepo.
  */
 
-import { 
-  createLogger, 
-  createHookLogger, 
-  createCliLogger, 
-  createProductionLogger,
+import {
+  createCliLogger,
   createDevelopmentLogger,
+  createHookLogger,
+  createLogger,
+  createProductionLogger,
 } from './factory';
 import type { HookExecutionContext, PerformanceMetrics } from './types';
 
@@ -23,17 +23,17 @@ import type { HookExecutionContext, PerformanceMetrics } from './types';
  */
 export function basicLoggingExample(): void {
   const logger = createLogger('my-service');
-  
+
   // Simple info logging
   logger.info('Service started successfully');
-  
+
   // Logging with context
   logger.info('Processing user request', {
     userId: 'user123', // Will be hashed for privacy
     requestId: 'req-abc-123',
     endpoint: '/api/data',
   });
-  
+
   // Error logging
   try {
     throw new Error('Database connection failed');
@@ -45,7 +45,7 @@ export function basicLoggingExample(): void {
       });
     }
   }
-  
+
   // Debug logging (only visible in development/debug mode)
   logger.debug('Cache hit for user data', {
     cacheKey: 'user:123:profile',
@@ -60,10 +60,12 @@ export function environmentSpecificLogging(): void {
   // Production logger - optimized for performance
   const prodLogger = createProductionLogger('api-service');
   prodLogger.info('Production service started');
-  
+
   // Development logger - verbose output with pretty printing
   const devLogger = createDevelopmentLogger('api-service');
-  devLogger.debug('Development mode active', { features: ['hot-reload', 'debug-tools'] });
+  devLogger.debug('Development mode active', {
+    features: ['hot-reload', 'debug-tools'],
+  });
 }
 
 /**
@@ -71,24 +73,24 @@ export function environmentSpecificLogging(): void {
  */
 export function childLoggerExample(): void {
   const baseLogger = createLogger('user-service');
-  
+
   // Create child logger with user context
   const userLogger = baseLogger.child({
     userId: 'user123', // Automatically hashed
     sessionId: 'session-abc-def',
     module: 'authentication',
   });
-  
+
   userLogger.info('User login attempt');
   userLogger.warn('Invalid password attempt', { attempts: 3 });
   userLogger.info('User authenticated successfully');
-  
+
   // Child of child - inheritance of context
   const auditLogger = userLogger.child({
     action: 'profile-update',
     timestamp: new Date().toISOString(),
   });
-  
+
   auditLogger.info('Profile update initiated');
 }
 
@@ -101,7 +103,7 @@ export function childLoggerExample(): void {
  */
 export function hookExecutionLogging(): void {
   const hookLogger = createHookLogger('PreToolUse', 'Bash');
-  
+
   // Create execution context
   const executionContext: HookExecutionContext = {
     event: 'PreToolUse',
@@ -111,16 +113,16 @@ export function hookExecutionLogging(): void {
     projectDir: '/workspace/my-project',
     userId: 'user123',
   };
-  
+
   // Log execution start
   hookLogger.startExecution(executionContext);
-  
+
   // Log user actions during execution
   hookLogger.logUserAction('validate-command', executionContext, {
     command: 'ls -la',
     validation: 'passed',
   });
-  
+
   // Simulate execution completion
   const performanceMetrics: PerformanceMetrics = {
     duration: 150, // ms
@@ -129,7 +131,7 @@ export function hookExecutionLogging(): void {
     memoryDelta: 1024 * 200, // 200KB increase
     cpuUsage: 12.5, // 12.5%
   };
-  
+
   hookLogger.completeExecution(executionContext, true, performanceMetrics, {
     success: true,
     message: 'Command executed successfully',
@@ -141,14 +143,14 @@ export function hookExecutionLogging(): void {
  */
 export function securityLogging(): void {
   const hookLogger = createHookLogger('PreToolUse', 'Bash');
-  
+
   const executionContext: HookExecutionContext = {
     event: 'PreToolUse',
     toolName: 'Bash',
     executionId: 'exec_security_123',
     sessionId: 'claude-session-456',
   };
-  
+
   // Log different severity security events
   hookLogger.logSecurityEvent(
     'suspicious_command_detected',
@@ -160,7 +162,7 @@ export function securityLogging(): void {
       blocked: true,
     }
   );
-  
+
   hookLogger.logSecurityEvent(
     'privilege_escalation_attempt',
     'critical',
@@ -171,7 +173,7 @@ export function securityLogging(): void {
       method: 'sudo',
     }
   );
-  
+
   hookLogger.logSecurityEvent(
     'file_access_outside_workspace',
     'medium',
@@ -189,16 +191,16 @@ export function securityLogging(): void {
  */
 export function hookFailureLogging(): void {
   const hookLogger = createHookLogger('PostToolUse', 'Edit');
-  
+
   const executionContext: HookExecutionContext = {
     event: 'PostToolUse',
     toolName: 'Edit',
     executionId: 'exec_fail_123',
     sessionId: 'claude-session-789',
   };
-  
+
   hookLogger.startExecution(executionContext);
-  
+
   try {
     // Simulate hook execution that fails
     throw new Error('File validation failed: syntax error on line 45');
@@ -209,7 +211,7 @@ export function hookFailureLogging(): void {
       memoryAfter: 1024 * 1024 * 1.1,
       memoryDelta: 1024 * 100,
     };
-    
+
     if (error instanceof Error) {
       hookLogger.failExecution(executionContext, error, performanceMetrics);
     }
@@ -225,18 +227,18 @@ export function hookFailureLogging(): void {
  */
 export function cliLogging(): void {
   const cliLogger = createCliLogger('generate');
-  
+
   cliLogger.info('Starting code generation', {
     template: 'security-hook',
     outputDir: './hooks',
     options: { typescript: true, tests: true },
   });
-  
+
   cliLogger.debug('Template loaded successfully', {
     templatePath: '/templates/security-hook.ts',
     variables: ['hookName', 'toolNames', 'validationRules'],
   });
-  
+
   cliLogger.info('Files generated successfully', {
     filesCreated: [
       './hooks/security-hook.ts',
@@ -244,7 +246,7 @@ export function cliLogging(): void {
     ],
     linesOfCode: 156,
   });
-  
+
   // CLI-specific success logging
   cliLogger.info('✅ Generation completed', {
     duration: '2.3s',
@@ -261,15 +263,15 @@ export function cliLogging(): void {
  */
 export function performanceLogging(): void {
   const logger = createLogger('performance-monitor');
-  
+
   const startTime = Date.now();
   const startMemory = process.memoryUsage().heapUsed;
-  
+
   // Simulate some work
   setTimeout(() => {
     const endTime = Date.now();
     const endMemory = process.memoryUsage().heapUsed;
-    
+
     logger.info('Operation completed', {
       performance: {
         duration: `${endTime - startTime}ms`,
@@ -291,7 +293,7 @@ export function performanceLogging(): void {
  */
 export function errorHandlingExample(): void {
   const logger = createLogger('error-handler');
-  
+
   // Different types of errors
   try {
     throw new TypeError('Invalid configuration object');
@@ -304,7 +306,7 @@ export function errorHandlingExample(): void {
       });
     }
   }
-  
+
   // Network errors
   try {
     throw new Error('ECONNREFUSED: Connection refused');
@@ -319,10 +321,12 @@ export function errorHandlingExample(): void {
       });
     }
   }
-  
+
   // Validation errors
   try {
-    throw new Error('Invalid hook configuration: missing required field "event"');
+    throw new Error(
+      'Invalid hook configuration: missing required field "event"'
+    );
   } catch (error) {
     if (error instanceof Error) {
       logger.error(error, 'Hook validation failed', {
@@ -344,7 +348,7 @@ export function errorHandlingExample(): void {
  */
 export function structuredDataLogging(): void {
   const logger = createLogger('data-processor');
-  
+
   // Log with structured metrics
   logger.info('Batch processing completed', {
     batch: {
@@ -385,14 +389,14 @@ export function structuredDataLogging(): void {
  */
 export function externalSystemLogging(): void {
   const logger = createLogger('integration');
-  
+
   // API call logging
   logger.info('External API call initiated', {
     api: {
       provider: 'anthropic',
       endpoint: '/v1/messages',
       method: 'POST',
-      timeout: 30000,
+      timeout: 30_000,
     },
     request: {
       id: 'req-123-abc',
@@ -400,7 +404,7 @@ export function externalSystemLogging(): void {
       // Note: actual request content will be sanitized
     },
   });
-  
+
   // Response logging
   logger.info('External API response received', {
     api: {

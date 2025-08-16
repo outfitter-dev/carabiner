@@ -86,13 +86,13 @@ export { default as performanceMonitorPlugin } from './performance-monitor/index
 export { default as securityScannerPlugin } from './security-scanner/index';
 
 // Plugin collection configuration interface
-export interface PluginCollectionConfig {
+export type PluginCollectionConfig = {
   gitSafety?: boolean | Record<string, unknown>;
   fileBackup?: boolean | Record<string, unknown>;
   securityScanner?: boolean | Record<string, unknown>;
   performanceMonitor?: boolean | Record<string, unknown>;
   auditLogger?: boolean | Record<string, unknown>;
-}
+};
 
 /**
  * Create a collection of plugins with optional configuration

@@ -7,15 +7,17 @@
  * boundaries and comprehensive metrics collection.
  */
 
-import type { HookProtocol } from '@outfitter/protocol';
-import type { HookContext, HookHandler, HookResult } from '@outfitter/types';
 import {
   executionLogger,
   type HookExecutionContext,
   type PerformanceMetrics,
 } from '@outfitter/hooks-core';
+import type { HookProtocol } from '@outfitter/protocol';
+import type { HookContext, HookHandler, HookResult } from '@outfitter/types';
+
 // Local structural type to avoid name clashes with runtime exports
 type ExecutorLogger = ReturnType<typeof executionLogger.child>;
+
 import {
   ExecutionTimer,
   globalMetrics,
@@ -38,7 +40,7 @@ import {
 /**
  * Configuration options for hook execution
  */
-export interface ExecutionOptions {
+export type ExecutionOptions = {
   /** Maximum execution time in milliseconds (default: 30000) */
   readonly timeout?: number;
 
@@ -62,7 +64,7 @@ export interface ExecutionOptions {
 
   /** Failure exit code (default: 1) */
   readonly failureExitCode?: number;
-}
+};
 
 /**
  * Default execution options optimized for typical hook usage
@@ -150,7 +152,7 @@ export class HookExecutor {
       }
 
       context = contextResult.value;
-      
+
       // Create execution context for logging
       executionContext = this.createExecutionContext(context);
       this.logger.startExecution(executionContext);
@@ -161,7 +163,13 @@ export class HookExecutor {
 
       if (!isSuccess(executionResult)) {
         result = toHookResult(executionResult);
-        await this.handleFailure(result, timer, memoryBefore, context, executionContext);
+        await this.handleFailure(
+          result,
+          timer,
+          memoryBefore,
+          context,
+          executionContext
+        );
         return this.exit(this.options.failureExitCode);
       }
 
@@ -172,7 +180,13 @@ export class HookExecutor {
         const validationResult = this.validateResult(result);
         if (!isSuccess(validationResult)) {
           result = toHookResult(validationResult);
-          await this.handleFailure(result, timer, memoryBefore, context, executionContext);
+          await this.handleFailure(
+            result,
+            timer,
+            memoryBefore,
+            context,
+            executionContext
+          );
           return this.exit(this.options.failureExitCode);
         }
       }
@@ -182,12 +196,24 @@ export class HookExecutor {
 
       if (!isSuccess(outputResult)) {
         const errorResult = toHookResult(outputResult);
-        await this.handleFailure(errorResult, timer, memoryBefore, context, executionContext);
+        await this.handleFailure(
+          errorResult,
+          timer,
+          memoryBefore,
+          context,
+          executionContext
+        );
         return this.exit(this.options.failureExitCode);
       }
 
       // Success: collect metrics and exit
-      this.handleSuccess(result, timer, memoryBefore, context, executionContext);
+      this.handleSuccess(
+        result,
+        timer,
+        memoryBefore,
+        context,
+        executionContext
+      );
       return this.exit(this.options.successExitCode);
     } catch (error) {
       // Catch-all for any unhandled errors
@@ -198,11 +224,21 @@ export class HookExecutor {
       };
 
       if (executionContext && error instanceof Error) {
-        const metrics = this.createPerformanceMetrics(timer, memoryBefore, snapshotMemoryUsage());
+        const metrics = this.createPerformanceMetrics(
+          timer,
+          memoryBefore,
+          snapshotMemoryUsage()
+        );
         this.logger.failExecution(executionContext, error, metrics);
       }
 
-      await this.handleFailure(errorResult, timer, memoryBefore, context, executionContext);
+      await this.handleFailure(
+        errorResult,
+        timer,
+        memoryBefore,
+        context,
+        executionContext
+      );
       return this.exit(this.options.failureExitCode);
     }
   }
@@ -433,7 +469,9 @@ export class HookExecutor {
       memoryBefore: memoryBefore.heapUsed,
       memoryAfter: memoryAfter.heapUsed,
       memoryDelta: memoryAfter.heapUsed - memoryBefore.heapUsed,
-      cpuUsage: process.cpuUsage ? process.cpuUsage().user / 1000000 : undefined,
+      cpuUsage: process.cpuUsage
+        ? process.cpuUsage().user / 1_000_000
+        : undefined,
     };
   }
 
@@ -464,8 +502,17 @@ export class HookExecutor {
     // Log successful execution
     if (executionContext) {
       const memoryAfter = snapshotMemoryUsage();
-      const metrics = this.createPerformanceMetrics(timer, memoryBefore, memoryAfter);
-      this.logger.completeExecution(executionContext, result.success, metrics, result);
+      const metrics = this.createPerformanceMetrics(
+        timer,
+        memoryBefore,
+        memoryAfter
+      );
+      this.logger.completeExecution(
+        executionContext,
+        result.success,
+        metrics,
+        result
+      );
     }
   }
 
@@ -503,8 +550,15 @@ export class HookExecutor {
     // Log execution failure
     if (executionContext) {
       const memoryAfter = snapshotMemoryUsage();
-      const metrics = this.createPerformanceMetrics(timer, memoryBefore, memoryAfter);
-      const error = new ExecutionError(result.message || 'Hook execution failed', 'EXECUTION_FAILED');
+      const metrics = this.createPerformanceMetrics(
+        timer,
+        memoryBefore,
+        memoryAfter
+      );
+      const error = new ExecutionError(
+        result.message || 'Hook execution failed',
+        'EXECUTION_FAILED'
+      );
       this.logger.failExecution(executionContext, error, metrics);
     } else {
       // Log generic failure if no execution context

@@ -24,9 +24,9 @@ import { SecurityReporter } from './reporter.js';
  * Main security scanner orchestrator
  */
 export class SecurityScanner {
-  private configManager: SecurityScannerConfigManager;
-  private reporter: SecurityReporter;
-  private rules: SecurityRule[];
+  private readonly configManager: SecurityScannerConfigManager;
+  private readonly reporter: SecurityReporter;
+  private readonly rules: SecurityRule[];
 
   constructor(config: Record<string, unknown> = {}) {
     this.configManager = new SecurityScannerConfigManager(config);

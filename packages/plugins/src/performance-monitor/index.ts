@@ -10,14 +10,14 @@
  */
 
 import { PerformanceObserver, performance } from 'node:perf_hooks';
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 import type { HookContext } from '@outfitter/types';
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * Performance metric interface
  */
-interface PerformanceMetric {
+type PerformanceMetric = {
   operation: string;
   startTime: number;
   endTime: number;
@@ -26,12 +26,12 @@ interface PerformanceMetric {
   success: boolean;
   toolName?: string;
   filePath?: string;
-}
+};
 
 /**
  * Performance statistics
  */
-interface PerformanceStats {
+type PerformanceStats = {
   totalOperations: number;
   totalDuration: number;
   averageDuration: number;
@@ -41,19 +41,19 @@ interface PerformanceStats {
   memoryTrend: 'increasing' | 'decreasing' | 'stable';
   operationCounts: Record<string, number>;
   toolUsage: Record<string, number>;
-}
+};
 
 /**
  * Performance alert interface
  */
-interface PerformanceAlert {
+type PerformanceAlert = {
   type: 'slow_operation' | 'memory_usage' | 'error_rate' | 'frequency';
   severity: 'warning' | 'critical';
   message: string;
   metric: PerformanceMetric;
   threshold: number;
   value: number;
-}
+};
 
 /**
  * Performance monitor plugin configuration schema
@@ -120,7 +120,7 @@ class MetricsStore {
   private alerts: PerformanceAlert[] = [];
   private observer?: PerformanceObserver;
 
-  constructor(private config: PerformanceMonitorConfig) {
+  constructor(private readonly config: PerformanceMonitorConfig) {
     if (config.enableProfiling) {
       this.setupPerformanceObserver();
     }
@@ -130,9 +130,6 @@ class MetricsStore {
     this.observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
         if (entry.name.startsWith('claude-hook-')) {
-          console.log(
-            `[PerformanceMonitor] ${entry.name}: ${entry.duration.toFixed(2)}ms`
-          );
         }
       }
     });
@@ -606,7 +603,9 @@ export const performanceMonitorPlugin: HookPlugin = {
   events: ['PreToolUse', 'PostToolUse'],
   priority: 10, // Low priority to avoid affecting other plugins
 
-  configSchema: PerformanceMonitorConfigSchema as z.ZodType<Record<string, unknown>>,
+  configSchema: PerformanceMonitorConfigSchema as z.ZodType<
+    Record<string, unknown>
+  >,
   defaultConfig: {},
 
   apply(
@@ -661,10 +660,6 @@ export const performanceMonitorPlugin: HookPlugin = {
    * Initialize with stats logging if enabled
    */
   async init(): Promise<void> {
-    console.log(
-      '[PerformanceMonitor] Plugin initialized - monitoring performance'
-    );
-
     // Set up periodic stats logging if enabled
     // This would be better handled by the registry or a separate service
     // For now, just log that it's ready
@@ -675,13 +670,7 @@ export const performanceMonitorPlugin: HookPlugin = {
    */
   async shutdown(): Promise<void> {
     if (globalMetricsStore) {
-      console.log('[PerformanceMonitor] Shutting down - final stats:');
-      const stats = globalMetricsStore.getStats();
-      console.log(`  Operations: ${stats.totalOperations}`);
-      console.log(
-        `  Average duration: ${Math.round(stats.averageDuration * 100) / 100}ms`
-      );
-      console.log(`  Success rate: ${Math.round(stats.successRate * 100)}%`);
+      const _stats = globalMetricsStore.getStats();
 
       globalMetricsStore.cleanup();
       globalMetricsStore = undefined;

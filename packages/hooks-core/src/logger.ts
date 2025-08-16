@@ -1,17 +1,17 @@
 /**
  * Legacy logger interface for backward compatibility
- * 
+ *
  * @deprecated Use the new logging system from './logging' instead
  * This file provides backward compatibility for existing code
  */
 
-import { 
-  createLogger, 
+import {
+  createLogger,
   createCliLogger as createNewCliLogger,
+  builderLogger as newBuilderLogger,
   coreLogger as newCoreLogger,
-  runtimeLogger as newRuntimeLogger,
   registryLogger as newRegistryLogger,
-  builderLogger as newBuilderLogger
+  runtimeLogger as newRuntimeLogger,
 } from './logging';
 import type { HookEvent, ToolName } from './types';
 

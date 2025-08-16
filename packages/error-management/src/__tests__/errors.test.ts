@@ -2,22 +2,20 @@
  * Tests for core error classes and functionality
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
-  GrappleError,
-  ConfigurationError,
-  RuntimeError,
-  ValidationError,
-  FileSystemError,
-  NetworkError,
-  SecurityError,
-  UserInputError,
-  ResourceError,
   AuthError,
-  TimeoutError,
+  ConfigurationError,
   ErrorFactory,
+  FileSystemError,
+  GrappleError,
+  NetworkError,
+  RuntimeError,
+  SecurityError,
+  TimeoutError,
+  ValidationError,
 } from '../errors.js';
-import { ErrorCode, ErrorCategory, ErrorSeverity } from '../types.js';
+import { ErrorCategory, ErrorCode, ErrorSeverity } from '../types.js';
 
 describe('GrappleError', () => {
   test('should create basic error with required properties', () => {
@@ -195,13 +193,17 @@ describe('Specific Error Classes', () => {
     const error = new SecurityError('Security violation');
     expect(error.isRecoverable).toBe(false);
     expect(error.severity).toBe(ErrorSeverity.CRITICAL);
-    expect(error.toUserMessage()).toBe('Security violation detected. Operation denied.');
+    expect(error.toUserMessage()).toBe(
+      'Security violation detected. Operation denied.'
+    );
   });
 
   test('AuthError should have user-friendly message', () => {
     const error = new AuthError('Auth failed');
     expect(error.isRecoverable).toBe(false);
-    expect(error.toUserMessage()).toBe('Authentication required. Please verify your credentials.');
+    expect(error.toUserMessage()).toBe(
+      'Authentication required. Please verify your credentials.'
+    );
   });
 
   test('TimeoutError should be recoverable', () => {
@@ -215,8 +217,11 @@ describe('ErrorFactory', () => {
   test('should create appropriate errors from system errors', () => {
     const enoentError = new Error('File not found') as NodeJS.ErrnoException;
     enoentError.code = 'ENOENT';
-    
-    const grappleError = ErrorFactory.fromSystemError(enoentError, 'file-operation');
+
+    const grappleError = ErrorFactory.fromSystemError(
+      enoentError,
+      'file-operation'
+    );
     expect(grappleError).toBeInstanceOf(FileSystemError);
     expect(grappleError.code).toBe(ErrorCode.FILE_NOT_FOUND);
     expect(grappleError.context.operation).toBe('file-operation');
@@ -225,7 +230,7 @@ describe('ErrorFactory', () => {
   test('should create network errors from connection errors', () => {
     const connError = new Error('Connection refused') as NodeJS.ErrnoException;
     connError.code = 'ECONNREFUSED';
-    
+
     const grappleError = ErrorFactory.fromSystemError(connError);
     expect(grappleError).toBeInstanceOf(NetworkError);
     expect(grappleError.code).toBe(ErrorCode.CONNECTION_REFUSED);
@@ -234,7 +239,7 @@ describe('ErrorFactory', () => {
   test('should create appropriate errors from generic errors', () => {
     const genericError = new Error('Something went wrong');
     const grappleError = ErrorFactory.fromError(genericError, 'test-operation');
-    
+
     expect(grappleError).toBeInstanceOf(RuntimeError);
     expect(grappleError.cause).toBe(genericError);
     expect(grappleError.context.operation).toBe('test-operation');
@@ -246,26 +251,38 @@ describe('ErrorFactory', () => {
       ErrorCode.RUNTIME_EXCEPTION,
       ErrorCategory.RUNTIME
     );
-    
+
     const result = ErrorFactory.fromError(originalError);
     expect(result).toBe(originalError);
   });
 
   test('should create errors based on message patterns', () => {
-    const timeoutMessage = ErrorFactory.fromMessage('Operation timed out', 'test');
+    const timeoutMessage = ErrorFactory.fromMessage(
+      'Operation timed out',
+      'test'
+    );
     expect(timeoutMessage).toBeInstanceOf(TimeoutError);
 
-    const permissionMessage = ErrorFactory.fromMessage('Permission denied', 'test');
+    const permissionMessage = ErrorFactory.fromMessage(
+      'Permission denied',
+      'test'
+    );
     expect(permissionMessage).toBeInstanceOf(FileSystemError);
     expect(permissionMessage.code).toBe(ErrorCode.PERMISSION_DENIED);
 
-    const validationMessage = ErrorFactory.fromMessage('Validation failed', 'test');
+    const validationMessage = ErrorFactory.fromMessage(
+      'Validation failed',
+      'test'
+    );
     expect(validationMessage).toBeInstanceOf(ValidationError);
 
     const configMessage = ErrorFactory.fromMessage('Config error', 'test');
     expect(configMessage).toBeInstanceOf(ConfigurationError);
 
-    const securityMessage = ErrorFactory.fromMessage('Unauthorized access', 'test');
+    const securityMessage = ErrorFactory.fromMessage(
+      'Unauthorized access',
+      'test'
+    );
     expect(securityMessage).toBeInstanceOf(SecurityError);
   });
 });
@@ -273,7 +290,7 @@ describe('ErrorFactory', () => {
 describe('Error Inheritance and Polymorphism', () => {
   test('should maintain proper inheritance chain', () => {
     const configError = new ConfigurationError('Config error');
-    
+
     expect(configError instanceof GrappleError).toBe(true);
     expect(configError instanceof Error).toBe(true);
     expect(configError instanceof ConfigurationError).toBe(true);

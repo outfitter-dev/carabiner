@@ -2,25 +2,20 @@
 
 /**
  * Demo script showing production logging in action
- * 
+ *
  * Usage:
  *   bun run demo.ts                          # Development mode (pretty)
  *   NODE_ENV=production bun run demo.ts      # Production mode (JSON)
  *   LOG_LEVEL=debug bun run demo.ts          # Debug level
  */
 
-import {
-  createLogger,
-  createHookLogger,
-  createCliLogger,
-} from './factory';
+import { createCliLogger, createHookLogger, createLogger } from './factory';
 import type { HookExecutionContext, PerformanceMetrics } from './types';
 
 /**
  * Demonstrate basic logging
  */
 function basicLoggingDemo(): void {
-  console.log('\n=== BASIC LOGGING DEMO ===');
   const logger = createLogger('demo-service');
 
   logger.info('Demo service started', {
@@ -55,7 +50,6 @@ function basicLoggingDemo(): void {
  * Demonstrate hook execution logging
  */
 function hookExecutionDemo(): void {
-  console.log('\n=== HOOK EXECUTION DEMO ===');
   const hookLogger = createHookLogger('PreToolUse', 'Bash');
 
   const executionContext: HookExecutionContext = {
@@ -102,7 +96,6 @@ function hookExecutionDemo(): void {
  * Demonstrate CLI logging
  */
 function cliLoggingDemo(): void {
-  console.log('\n=== CLI LOGGING DEMO ===');
   const cliLogger = createCliLogger('demo');
 
   cliLogger.info('Starting CLI demo command', {
@@ -133,7 +126,6 @@ function cliLoggingDemo(): void {
  * Demonstrate error handling
  */
 function errorHandlingDemo(): void {
-  console.log('\n=== ERROR HANDLING DEMO ===');
   const logger = createLogger('error-demo');
 
   try {
@@ -169,7 +161,6 @@ function errorHandlingDemo(): void {
  * Demonstrate child loggers
  */
 function childLoggerDemo(): void {
-  console.log('\n=== CHILD LOGGER DEMO ===');
   const baseLogger = createLogger('request-handler');
 
   // Create child logger for a specific request
@@ -182,8 +173,13 @@ function childLoggerDemo(): void {
 
   requestLogger.info('Request received');
   requestLogger.debug('Validating request parameters');
-  requestLogger.info('Database query executed', { query: 'SELECT * FROM data' });
-  requestLogger.info('Response sent', { statusCode: 200, responseTime: '45ms' });
+  requestLogger.info('Database query executed', {
+    query: 'SELECT * FROM data',
+  });
+  requestLogger.info('Response sent', {
+    statusCode: 200,
+    responseTime: '45ms',
+  });
 
   // Create nested child logger
   const auditLogger = requestLogger.child({
@@ -198,11 +194,6 @@ function childLoggerDemo(): void {
  * Show environment-specific behavior
  */
 function environmentDemo(): void {
-  console.log('\n=== ENVIRONMENT DEMO ===');
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Log Level: ${process.env.LOG_LEVEL || 'auto-detected'}`);
-  console.log(`Debug Flag: ${process.env.DEBUG || 'false'}`);
-
   const logger = createLogger('env-demo');
 
   logger.info('Environment information', {
@@ -221,28 +212,17 @@ function environmentDemo(): void {
  * Main demo function
  */
 async function main(): Promise<void> {
-  console.log('🚀 Grapple Production Logging System Demo');
-  console.log('==========================================');
-
   basicLoggingDemo();
   hookExecutionDemo();
   cliLoggingDemo();
   errorHandlingDemo();
   childLoggerDemo();
   environmentDemo();
-
-  console.log('\n✅ Demo completed!');
-  console.log('\nTry running with different environment settings:');
-  console.log('  NODE_ENV=production bun run demo.ts   # Production JSON logs');
-  console.log('  LOG_LEVEL=debug bun run demo.ts       # Debug level');
-  console.log('  DEBUG=true bun run demo.ts            # Debug mode');
-  console.log('  NODE_ENV=test bun run demo.ts         # Silent test mode');
 }
 
 // Run the demo
 if (import.meta.main) {
-  main().catch((error) => {
-    console.error('Demo failed:', error);
+  main().catch((_error) => {
     process.exit(1);
   });
 }

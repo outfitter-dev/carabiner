@@ -5,17 +5,17 @@
  * Builds the claude-hooks CLI as a standalone binary
  */
 
-import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { $ } from 'bun';
 
-interface BuildOptions {
+type BuildOptions = {
   target?: 'current' | 'linux' | 'macos' | 'windows';
   minify?: boolean;
   sourcemap?: boolean;
   verbose?: boolean;
   output?: string;
-}
+};
 
 async function buildBinary(options: BuildOptions = {}) {
   const {
@@ -23,10 +23,8 @@ async function buildBinary(options: BuildOptions = {}) {
     minify = true,
     sourcemap = true,
     verbose = false,
-    output
+    output,
   } = options;
-
-  console.log('🔨 Building claude-hooks binary...\n');
 
   // Verify we're in the correct directory
   const rootDir = process.cwd();
@@ -34,7 +32,6 @@ async function buildBinary(options: BuildOptions = {}) {
   const entryPoint = join(cliDir, 'src/cli.ts');
 
   if (!existsSync(entryPoint)) {
-    console.error('❌ CLI entry point not found. Make sure you\'re in the project root.');
     process.exit(1);
   }
 
@@ -48,39 +45,38 @@ async function buildBinary(options: BuildOptions = {}) {
         binaryName = 'claude-hooks-linux';
         break;
       case 'macos':
-        binaryName = process.arch === 'arm64' ? 'claude-hooks-macos-arm64' : 'claude-hooks-macos-x64';
+        binaryName =
+          process.arch === 'arm64'
+            ? 'claude-hooks-macos-arm64'
+            : 'claude-hooks-macos-x64';
         break;
       case 'windows':
         binaryName = 'claude-hooks-windows.exe';
         break;
-      case 'current':
-      default:
-        const platform = process.platform === 'win32' ? 'windows' : 
-                        process.platform === 'darwin' ? 'macos' : 'linux';
+      default: {
+        const platform =
+          process.platform === 'win32'
+            ? 'windows'
+            : process.platform === 'darwin'
+              ? 'macos'
+              : 'linux';
         const arch = process.arch === 'arm64' ? '-arm64' : '-x64';
         const ext = process.platform === 'win32' ? '.exe' : '';
         binaryName = `claude-hooks-${platform}${arch}${ext}`;
+      }
     }
   }
 
   const outputPath = join(rootDir, binaryName);
 
   try {
-    // Build dependencies first
-    console.log('📦 Building packages (dependencies)...');
     await $`bun run build`.quiet(!verbose);
-    console.log('✅ Dependencies built\n');
 
     // Read version from CLI package.json
     const cliPackageJson = JSON.parse(
       await Bun.file(join(cliDir, 'package.json')).text()
     );
     const version = cliPackageJson.version;
-
-    // Build the binary
-    console.log(`🏗️  Building binary: ${binaryName} (v${version})`);
-    console.log(`   Entry: ${entryPoint}`);
-    console.log(`   Output: ${outputPath}\n`);
 
     // Construct build command
     const buildArgs = [
@@ -89,9 +85,12 @@ async function buildBinary(options: BuildOptions = {}) {
       '--compile',
       '--target=bun',
       `--outfile=${outputPath}`,
-      '--define', 'process.env.NODE_ENV="production"',
-      '--define', `process.env.CLI_VERSION="${version}"`,
-      '--external', 'fsevents'
+      '--define',
+      'process.env.NODE_ENV="production"',
+      '--define',
+      `process.env.CLI_VERSION="${version}"`,
+      '--external',
+      'fsevents',
     ];
 
     if (minify) {
@@ -102,9 +101,8 @@ async function buildBinary(options: BuildOptions = {}) {
       buildArgs.push('--sourcemap=external');
     }
 
-    const buildCommand = buildArgs.join(' ');
+    const _buildCommand = buildArgs.join(' ');
     if (verbose) {
-      console.log(`Command: bun ${buildCommand}\n`);
     }
 
     await $`bun ${buildArgs}`.quiet(!verbose);
@@ -114,54 +112,37 @@ async function buildBinary(options: BuildOptions = {}) {
       await $`chmod +x ${outputPath}`;
     }
 
-    console.log(`✅ Binary built successfully: ${binaryName}\n`);
-
     // Get file info
     try {
       const stat = await Bun.file(outputPath).exists();
       if (stat) {
-        const size = (await Bun.file(outputPath).bytes()).length;
-        console.log(`📊 Binary size: ${(size / 1024 / 1024).toFixed(2)} MB`);
+        const _size = (await Bun.file(outputPath).bytes()).length;
       }
     } catch {
       // Ignore file size errors
     }
 
-    // Run smoke tests
-    console.log('\n🧪 Running smoke tests...');
-    
     try {
       await $`${outputPath} --version`.quiet(!verbose);
-      console.log('✅ Version test passed');
-    } catch (error) {
-      console.log('❌ Version test failed');
-      if (verbose) console.error(error);
+    } catch (_error) {
+      if (verbose) {
+      }
     }
 
     try {
       await $`${outputPath} --help`.quiet(!verbose);
-      console.log('✅ Help test passed');
-    } catch (error) {
-      console.log('❌ Help test failed');
-      if (verbose) console.error(error);
+    } catch (_error) {
+      if (verbose) {
+      }
     }
 
     try {
       await $`${outputPath} validate --help`.quiet(!verbose);
-      console.log('✅ Command help test passed');
-    } catch (error) {
-      console.log('❌ Command help test failed');
-      if (verbose) console.error(error);
+    } catch (_error) {
+      if (verbose) {
+      }
     }
-
-    console.log(`\n🎉 Binary ready: ${outputPath}`);
-    console.log('\n📝 Usage examples:');
-    console.log(`   ${outputPath} --version`);
-    console.log(`   ${outputPath} --help`);
-    console.log(`   ${outputPath} validate --help`);
-
-  } catch (error) {
-    console.error('❌ Build failed:', error);
+  } catch (_error) {
     process.exit(1);
   }
 }
@@ -173,7 +154,7 @@ function parseArgs(): BuildOptions {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     switch (arg) {
       case '--target':
         options.target = args[++i] as BuildOptions['target'];
@@ -191,23 +172,6 @@ function parseArgs(): BuildOptions {
         options.output = args[++i];
         break;
       case '--help':
-        console.log(`
-Usage: bun scripts/build-binary.ts [options]
-
-Options:
-  --target <target>    Target platform: current, linux, macos, windows
-  --no-minify          Disable minification
-  --no-sourcemap       Disable sourcemap generation  
-  --verbose            Enable verbose output
-  --output <path>      Custom output filename
-  --help               Show this help
-
-Examples:
-  bun scripts/build-binary.ts
-  bun scripts/build-binary.ts --target linux
-  bun scripts/build-binary.ts --target macos --verbose
-  bun scripts/build-binary.ts --output my-cli
-        `);
         process.exit(0);
         break;
     }

@@ -51,7 +51,7 @@ describe('RetryManager', () => {
     try {
       await retryManager.execute(operation, 'test-operation');
       expect(false).toBe(true); // Should have thrown
-    } catch (error) {
+    } catch (_error) {
       expect(attemptCount).toBe(1); // Should not retry
     }
   });

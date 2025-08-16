@@ -3,9 +3,6 @@
  * Core TypeScript types and runtime utilities for Claude Code hooks
  */
 
-// Export production logging system
-export * from './logging';
-
 // Export builder pattern
 export {
   createHook,
@@ -15,6 +12,8 @@ export {
   hook,
   middleware,
 } from './builder';
+// Export production logging system
+export * from './logging';
 // Export registry
 export {
   createHookRegistry,

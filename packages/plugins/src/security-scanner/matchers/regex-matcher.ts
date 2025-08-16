@@ -8,12 +8,12 @@ import type { SecurityFinding, SecurityRule } from '../types/index.js';
 /**
  * Result of regex matching operation
  */
-export interface RegexMatch {
+export type RegexMatch = {
   match: string;
   line: number;
   column: number;
   ruleId: string;
-}
+};
 
 /**
  * Execute regex pattern against content and return matches
@@ -49,9 +49,7 @@ export function executeRegex(
 
       match = regex.exec(content);
     }
-  } catch (error) {
-    console.warn(`[SecurityScanner] Invalid regex in rule ${rule.id}:`, error);
-  }
+  } catch (_error) {}
 
   return matches;
 }

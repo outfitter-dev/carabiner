@@ -35,7 +35,7 @@ import { ProtocolParseError } from '../interface';
 /**
  * Configuration options for TestProtocol
  */
-export interface TestProtocolOptions {
+export type TestProtocolOptions = {
   /**
    * Custom environment variables to inject into context
    * @default {}
@@ -53,7 +53,7 @@ export interface TestProtocolOptions {
    * @default false
    */
   captureTiming?: boolean;
-}
+};
 
 /**
  * Test protocol for unit testing hooks without I/O

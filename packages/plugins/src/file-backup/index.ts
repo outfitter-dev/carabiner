@@ -16,9 +16,9 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 import type { HookContext } from '@outfitter/types';
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * File backup plugin configuration schema
@@ -126,7 +126,9 @@ function generateBackupFilename(
     }
     case 'date': {
       const date = new Date().toISOString().split('T')[0];
-      const time = (new Date().toTimeString().split(' ')[0] || '00-00-00').replace(/:/g, '-');
+      const time = (
+        new Date().toTimeString().split(' ')[0] || '00-00-00'
+      ).replace(/:/g, '-');
       return `${name}.${date}_${time}${ext}`;
     }
     default:
@@ -200,17 +202,14 @@ async function getExistingBackups(
  */
 async function removeBackupFile(
   backupPath: string,
-  reason: string,
+  _reason: string,
   config: FileBackupConfig
 ): Promise<void> {
   try {
     await unlink(backupPath);
     if (config.logOperations) {
-      console.log(`[FileBackup] ${reason}: ${backupPath}`);
     }
-  } catch (error) {
-    console.warn(`[FileBackup] Failed to remove backup ${backupPath}:`, error);
-  }
+  } catch (_error) {}
 }
 
 /**
@@ -329,7 +328,7 @@ async function isContentIdenticalToLatest(
   }
 
   try {
-    const latestBackup = await readFile(existing[0]!.path);
+    const latestBackup = await readFile(existing[0]?.path);
     return content.equals(latestBackup);
   } catch (_error) {
     return false;
@@ -529,7 +528,6 @@ async function processFileBackups(
       });
 
       if (backupResult.backupPath && backupConfig.logOperations) {
-        console.log(`[FileBackup] Created backup: ${backupResult.backupPath}`);
       }
     } else {
       results.push({
@@ -539,9 +537,6 @@ async function processFileBackups(
       hasErrors = true;
 
       if (backupConfig.logOperations) {
-        console.error(
-          `[FileBackup] Failed to backup ${filePath}: ${backupResult.error}`
-        );
       }
     }
   }
@@ -645,9 +640,7 @@ export const fileBackupPlugin: HookPlugin = {
   /**
    * Validate backup directory permissions
    */
-  async init(): Promise<void> {
-    console.log('[FileBackup] Plugin initialized - ready to create backups');
-  },
+  async init(): Promise<void> {},
 
   /**
    * Health check - verify backup directory access

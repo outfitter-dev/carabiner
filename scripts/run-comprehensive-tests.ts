@@ -1,17 +1,20 @@
 #!/usr/bin/env bun
 /**
  * Comprehensive Test Execution Script
- * 
+ *
  * Orchestrates the execution of all test suites with proper reporting,
  * coverage analysis, and CI/CD integration.
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { TestOrchestrator, detectTestEnvironment, type GrappleTestConfig } from '../tests/test-runner.config';
+import {
+  detectTestEnvironment,
+  TestOrchestrator,
+} from '../tests/test-runner.config';
 
-interface TestExecutionOptions {
+type TestExecutionOptions = {
   /** Filter to specific test categories */
   categories?: string[];
   /** Generate coverage reports */
@@ -26,9 +29,9 @@ interface TestExecutionOptions {
   outputDir?: string;
   /** Verbose logging */
   verbose?: boolean;
-}
+};
 
-interface TestPhaseResult {
+type TestPhaseResult = {
   name: string;
   success: boolean;
   duration: number;
@@ -38,9 +41,9 @@ interface TestPhaseResult {
   coverage?: CoverageResult;
   errors: string[];
   warnings: string[];
-}
+};
 
-interface CoverageResult {
+type CoverageResult = {
   linesCovered: number;
   functionsCovered: number;
   branchesCovered: number;
@@ -48,9 +51,9 @@ interface CoverageResult {
   totalFunctions: number;
   totalBranches: number;
   uncoveredFiles: string[];
-}
+};
 
-interface TestSuiteResult {
+type TestSuiteResult = {
   environment: string;
   startTime: Date;
   endTime: Date;
@@ -66,15 +69,15 @@ interface TestSuiteResult {
     };
     slowestTests: Array<{ name: string; duration: number }>;
   };
-}
+};
 
 /**
  * Main test execution orchestrator
  */
 class ComprehensiveTestRunner {
-  private orchestrator: TestOrchestrator;
-  private options: TestExecutionOptions;
-  private outputDir: string;
+  private readonly orchestrator: TestOrchestrator;
+  private readonly options: TestExecutionOptions;
+  private readonly outputDir: string;
 
   constructor(options: TestExecutionOptions = {}) {
     this.orchestrator = new TestOrchestrator();
@@ -87,7 +90,7 @@ class ComprehensiveTestRunner {
       verbose: false,
       ...options,
     };
-    
+
     this.outputDir = resolve(this.options.outputDir!);
     this.ensureOutputDirectory();
   }
@@ -98,10 +101,6 @@ class ComprehensiveTestRunner {
   async run(): Promise<TestSuiteResult> {
     const startTime = new Date();
     const environment = detectTestEnvironment();
-    
-    console.log(`🚀 Starting comprehensive test execution (${environment} environment)`);
-    console.log(`📊 Output directory: ${this.outputDir}`);
-    console.log('');
 
     const result: TestSuiteResult = {
       environment,
@@ -115,22 +114,22 @@ class ComprehensiveTestRunner {
     try {
       // Generate execution plan
       const plan = this.orchestrator.generateExecutionPlan();
-      console.log('📋 Execution Plan:');
-      plan.phases.forEach((phase, index) => {
-        const status = phase.condition !== false ? '✅' : '⏭️ ';
-        console.log(`  ${index + 1}. ${status} ${phase.name} (${phase.pattern})`);
+      plan.phases.forEach((phase, _index) => {
+        const _status = phase.condition !== false ? '✅' : '⏭️ ';
       });
-      console.log('');
 
       // Execute test phases
       for (const phase of plan.phases) {
         if (phase.condition === false) {
-          console.log(`⏭️  Skipping ${phase.name} (condition not met)`);
           continue;
         }
 
-        if (this.options.categories && !this.options.categories.includes(phase.name.toLowerCase().replace(/\s+/g, '-'))) {
-          console.log(`⏭️  Skipping ${phase.name} (not in selected categories)`);
+        if (
+          this.options.categories &&
+          !this.options.categories.includes(
+            phase.name.toLowerCase().replace(/\s+/g, '-')
+          )
+        ) {
           continue;
         }
 
@@ -139,18 +138,19 @@ class ComprehensiveTestRunner {
 
         if (phase.required && !phaseResult.success) {
           result.overallSuccess = false;
-          console.log(`❌ Required phase ${phase.name} failed, stopping execution`);
           break;
         }
       }
 
       // Generate coverage summary if enabled
-      if (this.options.coverage && result.phases.some(p => p.coverage)) {
+      if (this.options.coverage && result.phases.some((p) => p.coverage)) {
         result.coverageSummary = this.generateCoverageSummary(result.phases);
       }
 
       // Generate performance metrics
-      result.performanceMetrics = this.generatePerformanceMetrics(result.phases);
+      result.performanceMetrics = this.generatePerformanceMetrics(
+        result.phases
+      );
 
       result.endTime = new Date();
       result.totalDuration = result.endTime.getTime() - startTime.getTime();
@@ -162,9 +162,7 @@ class ComprehensiveTestRunner {
       this.printSummary(result);
 
       return result;
-
     } catch (error) {
-      console.error('💥 Test execution failed:', error);
       result.overallSuccess = false;
       result.endTime = new Date();
       result.totalDuration = result.endTime.getTime() - startTime.getTime();
@@ -176,7 +174,6 @@ class ComprehensiveTestRunner {
    * Execute a single test phase
    */
   private async executePhase(phase: any): Promise<TestPhaseResult> {
-    console.log(`🧪 Running ${phase.name}...`);
     const startTime = Date.now();
 
     const result: TestPhaseResult = {
@@ -193,7 +190,7 @@ class ComprehensiveTestRunner {
     try {
       // Build command
       const args = ['test'];
-      
+
       if (phase.pattern !== '**/*.test.ts') {
         args.push(phase.pattern);
       }
@@ -225,21 +222,17 @@ class ComprehensiveTestRunner {
 
       result.duration = Date.now() - startTime;
 
-      const status = result.success ? '✅' : '❌';
-      console.log(`  ${status} ${phase.name} completed in ${result.duration}ms (${result.testsPassed}/${result.testsRun} passed)`);
+      const _status = result.success ? '✅' : '❌';
 
-      if (result.errors.length > 0) {
-        console.log(`    Errors: ${result.errors.length}`);
-        if (this.options.verbose) {
-          result.errors.forEach(error => console.log(`      - ${error}`));
-        }
+      if (result.errors.length > 0 && this.options.verbose) {
+        result.errors.forEach((_error) => {});
       }
-
     } catch (error) {
       result.success = false;
       result.duration = Date.now() - startTime;
-      result.errors.push(error instanceof Error ? error.message : String(error));
-      console.log(`  ❌ ${phase.name} failed: ${error}`);
+      result.errors.push(
+        error instanceof Error ? error.message : String(error)
+      );
     }
 
     return result;
@@ -248,14 +241,17 @@ class ComprehensiveTestRunner {
   /**
    * Run Bun test command
    */
-  private async runBunTest(args: string[], options: { timeout: number; retries: number }): Promise<any> {
+  private async runBunTest(
+    args: string[],
+    options: { timeout: number; retries: number }
+  ): Promise<any> {
     return new Promise((resolve, reject) => {
       let attempt = 0;
       let lastError: Error | null = null;
 
       const tryRun = () => {
         attempt++;
-        
+
         const proc = spawn('bun', args, {
           stdio: ['pipe', 'pipe', 'pipe'],
           cwd: process.cwd(),
@@ -283,10 +279,11 @@ class ComprehensiveTestRunner {
           if (code === 0) {
             resolve(this.parseTestOutput(stdout, stderr));
           } else {
-            lastError = new Error(`Test failed with exit code ${code}: ${stderr}`);
-            
+            lastError = new Error(
+              `Test failed with exit code ${code}: ${stderr}`
+            );
+
             if (attempt <= options.retries) {
-              console.log(`  🔄 Retrying (attempt ${attempt + 1}/${options.retries + 1})`);
               setTimeout(tryRun, 1000 * attempt); // Exponential backoff
             } else {
               reject(lastError);
@@ -297,9 +294,8 @@ class ComprehensiveTestRunner {
         proc.on('error', (error) => {
           clearTimeout(timeoutId);
           lastError = error;
-          
+
           if (attempt <= options.retries) {
-            console.log(`  🔄 Retrying due to error (attempt ${attempt + 1}/${options.retries + 1})`);
             setTimeout(tryRun, 1000 * attempt);
           } else {
             reject(error);
@@ -314,10 +310,10 @@ class ComprehensiveTestRunner {
   /**
    * Parse test output from Bun test
    */
-  private parseTestOutput(stdout: string, stderr: string): any {
+  private parseTestOutput(stdout: string, _stderr: string): any {
     // Parse Bun test output to extract test results
     // This is a simplified parser - in production, you'd want more robust parsing
-    
+
     const lines = stdout.split('\n');
     let testsRun = 0;
     let testsPassed = 0;
@@ -326,18 +322,24 @@ class ComprehensiveTestRunner {
     const warnings: string[] = [];
 
     // Look for test summary line
-    const summaryLine = lines.find(line => line.includes('pass') && line.includes('fail'));
+    const summaryLine = lines.find(
+      (line) => line.includes('pass') && line.includes('fail')
+    );
     if (summaryLine) {
       const passMatch = summaryLine.match(/(\d+) pass/);
       const failMatch = summaryLine.match(/(\d+) fail/);
-      
-      if (passMatch) testsPassed = parseInt(passMatch[1]);
-      if (failMatch) testsFailed = parseInt(failMatch[1]);
+
+      if (passMatch) {
+        testsPassed = Number.parseInt(passMatch[1], 10);
+      }
+      if (failMatch) {
+        testsFailed = Number.parseInt(failMatch[1], 10);
+      }
       testsRun = testsPassed + testsFailed;
     }
 
     // Extract errors
-    lines.forEach(line => {
+    lines.forEach((line) => {
       if (line.includes('(fail)') || line.includes('Error:')) {
         errors.push(line.trim());
       }
@@ -369,17 +371,19 @@ class ComprehensiveTestRunner {
   private parseCoverageOutput(output: string): CoverageResult | null {
     // Simplified coverage parsing - in production, use proper coverage tools
     const lines = output.split('\n');
-    const coverageLine = lines.find(line => line.includes('All files'));
-    
+    const coverageLine = lines.find((line) => line.includes('All files'));
+
     if (coverageLine) {
       // Extract coverage percentages using regex
       const percentages = coverageLine.match(/(\d+\.?\d*)/g);
-      
+
       if (percentages && percentages.length >= 2) {
         return {
-          functionsCovered: parseFloat(percentages[0]),
-          linesCovered: parseFloat(percentages[1]),
-          branchesCovered: percentages[2] ? parseFloat(percentages[2]) : 0,
+          functionsCovered: Number.parseFloat(percentages[0]),
+          linesCovered: Number.parseFloat(percentages[1]),
+          branchesCovered: percentages[2]
+            ? Number.parseFloat(percentages[2])
+            : 0,
           totalLines: 1000, // Placeholder
           totalFunctions: 100, // Placeholder
           totalBranches: 50, // Placeholder
@@ -387,7 +391,7 @@ class ComprehensiveTestRunner {
         };
       }
     }
-    
+
     return null;
   }
 
@@ -395,8 +399,8 @@ class ComprehensiveTestRunner {
    * Generate coverage summary across all phases
    */
   private generateCoverageSummary(phases: TestPhaseResult[]): CoverageResult {
-    const coveragePhases = phases.filter(p => p.coverage);
-    
+    const coveragePhases = phases.filter((p) => p.coverage);
+
     if (coveragePhases.length === 0) {
       return {
         linesCovered: 0,
@@ -410,26 +414,32 @@ class ComprehensiveTestRunner {
     }
 
     // Aggregate coverage data
-    return coveragePhases.reduce((acc, phase) => {
-      const cov = phase.coverage!;
-      return {
-        linesCovered: Math.max(acc.linesCovered, cov.linesCovered),
-        functionsCovered: Math.max(acc.functionsCovered, cov.functionsCovered),
-        branchesCovered: Math.max(acc.branchesCovered, cov.branchesCovered),
-        totalLines: acc.totalLines + cov.totalLines,
-        totalFunctions: acc.totalFunctions + cov.totalFunctions,
-        totalBranches: acc.totalBranches + cov.totalBranches,
-        uncoveredFiles: [...acc.uncoveredFiles, ...cov.uncoveredFiles],
-      };
-    }, {
-      linesCovered: 0,
-      functionsCovered: 0,
-      branchesCovered: 0,
-      totalLines: 0,
-      totalFunctions: 0,
-      totalBranches: 0,
-      uncoveredFiles: [],
-    });
+    return coveragePhases.reduce(
+      (acc, phase) => {
+        const cov = phase.coverage!;
+        return {
+          linesCovered: Math.max(acc.linesCovered, cov.linesCovered),
+          functionsCovered: Math.max(
+            acc.functionsCovered,
+            cov.functionsCovered
+          ),
+          branchesCovered: Math.max(acc.branchesCovered, cov.branchesCovered),
+          totalLines: acc.totalLines + cov.totalLines,
+          totalFunctions: acc.totalFunctions + cov.totalFunctions,
+          totalBranches: acc.totalBranches + cov.totalBranches,
+          uncoveredFiles: [...acc.uncoveredFiles, ...cov.uncoveredFiles],
+        };
+      },
+      {
+        linesCovered: 0,
+        functionsCovered: 0,
+        branchesCovered: 0,
+        totalLines: 0,
+        totalFunctions: 0,
+        totalBranches: 0,
+        uncoveredFiles: [],
+      }
+    );
   }
 
   /**
@@ -437,11 +447,14 @@ class ComprehensiveTestRunner {
    */
   private generatePerformanceMetrics(phases: TestPhaseResult[]): any {
     const totalTests = phases.reduce((acc, phase) => acc + phase.testsRun, 0);
-    const totalDuration = phases.reduce((acc, phase) => acc + phase.duration, 0);
-    
+    const totalDuration = phases.reduce(
+      (acc, phase) => acc + phase.duration,
+      0
+    );
+
     const slowestTests = phases
-      .filter(phase => phase.duration > 1000) // Tests taking more than 1 second
-      .map(phase => ({ name: phase.name, duration: phase.duration }))
+      .filter((phase) => phase.duration > 1000) // Tests taking more than 1 second
+      .map((phase) => ({ name: phase.name, duration: phase.duration }))
       .sort((a, b) => b.duration - a.duration)
       .slice(0, 10);
 
@@ -465,7 +478,7 @@ class ComprehensiveTestRunner {
       timestamp: new Date().toISOString(),
       version: require('../package.json').version,
     };
-    
+
     writeFileSync(
       join(this.outputDir, 'test-results.json'),
       JSON.stringify(jsonReport, null, 2)
@@ -532,29 +545,41 @@ class ComprehensiveTestRunner {
         </div>
     </div>
 
-    ${result.coverageSummary ? `
+    ${
+      result.coverageSummary
+        ? `
     <div class="coverage">
         <h2>📊 Coverage Summary</h2>
         <p>Lines: ${result.coverageSummary.linesCovered.toFixed(2)}%</p>
         <p>Functions: ${result.coverageSummary.functionsCovered.toFixed(2)}%</p>
         <p>Branches: ${result.coverageSummary.branchesCovered.toFixed(2)}%</p>
     </div>
-    ` : ''}
+    `
+        : ''
+    }
 
     <h2>📋 Test Phases</h2>
-    ${result.phases.map(phase => `
+    ${result.phases
+      .map(
+        (phase) => `
     <div class="phase ${phase.success ? 'success' : 'failure'}">
         <h3>${phase.success ? '✅' : '❌'} ${phase.name}</h3>
         <p>Duration: ${phase.duration}ms</p>
         <p>Tests: ${phase.testsPassed}/${phase.testsRun} passed</p>
-        ${phase.errors.length > 0 ? `
+        ${
+          phase.errors.length > 0
+            ? `
         <details>
             <summary>Errors (${phase.errors.length})</summary>
             <pre>${phase.errors.join('\n')}</pre>
         </details>
-        ` : ''}
+        `
+            : ''
+        }
     </div>
-    `).join('')}
+    `
+      )
+      .join('')}
 </body>
 </html>
     `;
@@ -566,14 +591,12 @@ class ComprehensiveTestRunner {
   private generateCIOutput(result: TestSuiteResult): void {
     // Generate GitHub Actions annotations
     if (process.env.GITHUB_ACTIONS) {
-      result.phases.forEach(phase => {
+      result.phases.forEach((phase) => {
         if (!phase.success) {
-          console.log(`::error title=${phase.name}::${phase.errors.join(', ')}`);
         }
       });
-      
+
       if (result.coverageSummary) {
-        console.log(`::notice title=Coverage::Lines: ${result.coverageSummary.linesCovered.toFixed(2)}%`);
       }
     }
 
@@ -587,15 +610,22 @@ class ComprehensiveTestRunner {
    */
   private generateJUnitXML(result: TestSuiteResult): string {
     const totalTests = result.phases.reduce((acc, p) => acc + p.testsRun, 0);
-    const totalFailures = result.phases.reduce((acc, p) => acc + p.testsFailed, 0);
-    
+    const totalFailures = result.phases.reduce(
+      (acc, p) => acc + p.testsFailed,
+      0
+    );
+
     return `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites name="Grapple Tests" tests="${totalTests}" failures="${totalFailures}" time="${result.totalDuration / 1000}">
-  ${result.phases.map(phase => `
+  ${result.phases
+    .map(
+      (phase) => `
   <testsuite name="${phase.name}" tests="${phase.testsRun}" failures="${phase.testsFailed}" time="${phase.duration / 1000}">
     ${phase.success ? '<testcase name="Phase Execution" />' : `<testcase name="Phase Execution"><failure message="${phase.errors.join('; ')}" /></testcase>`}
   </testsuite>
-  `).join('')}
+  `
+    )
+    .join('')}
 </testsuites>`;
   }
 
@@ -603,34 +633,16 @@ class ComprehensiveTestRunner {
    * Print execution summary
    */
   private printSummary(result: TestSuiteResult): void {
-    console.log('\n📊 Test Execution Summary');
-    console.log('========================');
-    console.log(`Environment: ${result.environment}`);
-    console.log(`Total Duration: ${result.totalDuration}ms`);
-    console.log(`Overall Status: ${result.overallSuccess ? '✅ PASSED' : '❌ FAILED'}`);
-    console.log('');
-
-    console.log('Phase Results:');
-    result.phases.forEach(phase => {
-      const status = phase.success ? '✅' : '❌';
-      console.log(`  ${status} ${phase.name}: ${phase.testsPassed}/${phase.testsRun} (${phase.duration}ms)`);
+    result.phases.forEach((phase) => {
+      const _status = phase.success ? '✅' : '❌';
     });
 
     if (result.coverageSummary) {
-      console.log('\nCoverage Summary:');
-      console.log(`  Lines: ${result.coverageSummary.linesCovered.toFixed(2)}%`);
-      console.log(`  Functions: ${result.coverageSummary.functionsCovered.toFixed(2)}%`);
-      console.log(`  Branches: ${result.coverageSummary.branchesCovered.toFixed(2)}%`);
     }
 
     if (result.performanceMetrics?.slowestTests.length) {
-      console.log('\nSlowest Tests:');
-      result.performanceMetrics.slowestTests.slice(0, 5).forEach(test => {
-        console.log(`  ${test.name}: ${test.duration}ms`);
-      });
+      result.performanceMetrics.slowestTests.slice(0, 5).forEach((_test) => {});
     }
-
-    console.log(`\n📁 Reports generated in: ${this.outputDir}`);
   }
 
   /**
@@ -653,7 +665,7 @@ async function main() {
   // Parse command line arguments
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     switch (arg) {
       case '--coverage':
         options.coverage = true;
@@ -677,39 +689,17 @@ async function main() {
         options.categories = args[++i]?.split(',');
         break;
       case '--help':
-        console.log(`
-Usage: bun run scripts/run-comprehensive-tests.ts [options]
-
-Options:
-  --coverage         Generate coverage reports (default)
-  --no-coverage      Skip coverage generation
-  --performance      Include performance tests
-  --production       Include production scenario tests
-  --verbose          Verbose output
-  --output <dir>     Output directory for reports
-  --categories <list> Comma-separated list of test categories
-  --help             Show this help
-
-Categories:
-  unit, integration, edge-cases, performance, error-paths, production
-
-Examples:
-  bun run scripts/run-comprehensive-tests.ts --performance
-  bun run scripts/run-comprehensive-tests.ts --categories unit,integration
-  bun run scripts/run-comprehensive-tests.ts --production --output ./reports
-        `);
         process.exit(0);
         break;
     }
   }
 
   const runner = new ComprehensiveTestRunner(options);
-  
+
   try {
     const result = await runner.run();
     process.exit(result.overallSuccess ? 0 : 1);
-  } catch (error) {
-    console.error('Test execution failed:', error);
+  } catch (_error) {
     process.exit(1);
   }
 }

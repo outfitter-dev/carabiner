@@ -25,7 +25,7 @@ import {
 /**
  * Registry statistics and metrics
  */
-export interface RegistryStats {
+export type RegistryStats = {
   /** Total number of registered plugins */
   totalPlugins: number;
   /** Number of enabled plugins */
@@ -46,12 +46,12 @@ export interface RegistryStats {
   executionCounts: Record<string, number>;
   /** Plugin error counts by name */
   errorCounts: Record<string, number>;
-}
+};
 
 /**
  * Registry configuration options
  */
-export interface RegistryOptions {
+export type RegistryOptions = {
   /** Default plugin execution timeout (ms) */
   defaultTimeout: number;
   /** Whether to collect execution metrics */
@@ -64,12 +64,12 @@ export interface RegistryOptions {
   enableHotReload: boolean;
   /** Log level for registry operations */
   logLevel: 'debug' | 'info' | 'warn' | 'error' | 'silent';
-}
+};
 
 /**
  * Plugin registry event
  */
-export interface RegistryEvent {
+export type RegistryEvent = {
   type:
     | 'plugin-registered'
     | 'plugin-unregistered'
@@ -81,7 +81,7 @@ export interface RegistryEvent {
   result?: PluginResult;
   timestamp: Date;
   context?: HookContext;
-}
+};
 
 /**
  * Registry event listener
@@ -208,9 +208,6 @@ export class PluginRegistry {
     });
 
     if (this.options.logLevel !== 'silent') {
-      console.log(
-        `[Registry] Registered plugin: ${plugin.name}@${plugin.version}`
-      );
     }
   }
 
@@ -234,7 +231,6 @@ export class PluginRegistry {
     });
 
     if (this.options.logLevel !== 'silent') {
-      console.log(`[Registry] Unregistered plugin: ${pluginName}`);
     }
 
     return true;
@@ -244,7 +240,7 @@ export class PluginRegistry {
    * Clear all registered plugins
    */
   clear(): void {
-    const count = this.plugins.size;
+    const _count = this.plugins.size;
     this.plugins.clear();
     this.configs.clear();
 
@@ -252,7 +248,6 @@ export class PluginRegistry {
     this.emitEvent({ type: 'registry-cleared', timestamp: new Date() });
 
     if (this.options.logLevel !== 'silent') {
-      console.log(`[Registry] Cleared ${count} plugins`);
     }
   }
 
@@ -377,13 +372,10 @@ export class PluginRegistry {
    * Log plugin execution if debug mode is enabled
    */
   private logPluginExecution(
-    applicablePlugins: HookPlugin[],
-    context: HookContext
+    _applicablePlugins: HookPlugin[],
+    _context: HookContext
   ): void {
     if (this.options.logLevel === 'debug') {
-      console.log(
-        `[Registry] Executing ${applicablePlugins.length} plugins for ${context.event}`
-      );
     }
   }
 
@@ -442,7 +434,7 @@ export class PluginRegistry {
   private shouldContinueAfterSuccess(
     result: PluginResult,
     execOptions: PluginExecutionOptions,
-    plugin: HookPlugin
+    _plugin: HookPlugin
   ): boolean {
     if (
       !result.success &&
@@ -450,9 +442,6 @@ export class PluginRegistry {
       !(execOptions.continueOnFailure ?? false)
     ) {
       if (this.options.logLevel !== 'silent') {
-        console.warn(
-          `[Registry] Plugin ${plugin.name} blocked execution: ${result.message}`
-        );
       }
       return false;
     }
@@ -552,7 +541,7 @@ export class PluginRegistry {
     }
 
     const toolName = 'toolName' in context ? context.toolName : null;
-    return !!(toolName && config.tools.includes(toolName));
+    return Boolean(toolName && config.tools.includes(toolName));
   }
 
   /**
@@ -725,14 +714,8 @@ export class PluginRegistry {
           try {
             await plugin.init();
             if (this.options.logLevel === 'debug') {
-              console.log(`[Registry] Initialized plugin: ${plugin.name}`);
             }
-          } catch (error) {
-            console.error(
-              `[Registry] Failed to initialize plugin ${plugin.name}:`,
-              error
-            );
-          }
+          } catch (_error) {}
         }
       }
     );
@@ -755,14 +738,8 @@ export class PluginRegistry {
           try {
             await plugin.shutdown();
             if (this.options.logLevel === 'debug') {
-              console.log(`[Registry] Shutdown plugin: ${plugin.name}`);
             }
-          } catch (error) {
-            console.error(
-              `[Registry] Failed to shutdown plugin ${plugin.name}:`,
-              error
-            );
-          }
+          } catch (_error) {}
         }
       }
     );
@@ -850,9 +827,8 @@ export class PluginRegistry {
     const promises = this.eventListeners.map(async (listener) => {
       try {
         await listener(event);
-      } catch (error) {
+      } catch (_error) {
         if (this.options.logLevel !== 'silent') {
-          console.error('[Registry] Event listener error:', error);
         }
       }
     });

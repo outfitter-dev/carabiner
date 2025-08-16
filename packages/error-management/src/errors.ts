@@ -1,23 +1,23 @@
 /**
  * Core Error Classes
- * 
+ *
  * Production-ready error classes with comprehensive error handling features
  */
 
 import { nanoid } from 'nanoid';
 import type { JsonValue } from 'type-fest';
 import type {
-  ErrorCode,
   ErrorCategory,
-  ErrorSeverity,
+  ErrorCode,
   ErrorContext,
   ErrorReport,
+  ErrorSeverity,
   IGrappleError,
 } from './types.js';
 import {
-  ErrorSeverity as Severity,
   ErrorCategory as Category,
   ErrorCode as Code,
+  ErrorSeverity as Severity,
 } from './types.js';
 
 /**
@@ -47,20 +47,23 @@ export class GrappleError extends Error implements IGrappleError {
     } = {}
   ) {
     super(message);
-    
+
     this.name = this.constructor.name;
     this.code = code;
     this.category = category;
     this.severity = severity;
     this.cause = options.cause;
-    this.isRecoverable = options.isRecoverable ?? this.determineRecoverability();
-    
+    this.isRecoverable =
+      options.isRecoverable ?? this.determineRecoverability();
+
     this.context = {
       correlationId: nanoid(),
       timestamp: new Date(),
       operation: options.operation,
       userMessage: options.userMessage,
-      technicalDetails: options.technicalDetails as Record<string, JsonValue> | undefined,
+      technicalDetails: options.technicalDetails as
+        | Record<string, JsonValue>
+        | undefined,
       stackTrace: this.stack,
       metadata: options.metadata as Record<string, JsonValue> | undefined,
       environment: this.getEnvironmentInfo(),
@@ -68,7 +71,7 @@ export class GrappleError extends Error implements IGrappleError {
 
     // Ensure proper prototype chain
     Object.setPrototypeOf(this, new.target.prototype);
-    
+
     // Capture stack trace
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -85,7 +88,7 @@ export class GrappleError extends Error implements IGrappleError {
       Category.AUTH,
       Category.VALIDATION,
     ];
-    
+
     const nonRecoverableCodes = [
       Code.CONFIG_INVALID,
       Code.SCHEMA_VALIDATION_FAILED,
@@ -117,8 +120,10 @@ export class GrappleError extends Error implements IGrappleError {
       Code.RESOURCE_UNAVAILABLE,
     ];
 
-    return recoverableCategories.includes(this.category) || 
-           recoverableCodes.includes(this.code);
+    return (
+      recoverableCategories.includes(this.category) ||
+      recoverableCodes.includes(this.code)
+    );
   }
 
   /**
@@ -161,7 +166,6 @@ export class GrappleError extends Error implements IGrappleError {
         return 'System resources unavailable: Please try again later.';
       case Category.USER_INPUT:
         return 'Invalid command or input: Please check the documentation.';
-      case Category.RUNTIME:
       default:
         return 'An unexpected error occurred: Please try again or contact support.';
     }
@@ -172,24 +176,26 @@ export class GrappleError extends Error implements IGrappleError {
    */
   public toLogMessage(): string {
     const details = [];
-    
+
     details.push(`Error: ${this.name}`);
     details.push(`Message: ${this.message}`);
     details.push(`Code: ${this.code} (${Code[this.code]})`);
     details.push(`Category: ${this.category}`);
     details.push(`Severity: ${this.severity}`);
     details.push(`Correlation ID: ${this.context.correlationId}`);
-    
+
     if (this.context.operation) {
       details.push(`Operation: ${this.context.operation}`);
     }
-    
+
     if (this.cause) {
       details.push(`Caused by: ${this.cause.message}`);
     }
-    
+
     if (this.context.technicalDetails) {
-      details.push(`Technical Details: ${JSON.stringify(this.context.technicalDetails)}`);
+      details.push(
+        `Technical Details: ${JSON.stringify(this.context.technicalDetails)}`
+      );
     }
 
     return details.join(' | ');
@@ -384,17 +390,19 @@ export class ErrorFactory {
   /**
    * Create GrappleError from Node.js system error
    */
-  static fromSystemError(error: NodeJS.ErrnoException, operation?: string): GrappleError {
+  static fromSystemError(
+    error: NodeJS.ErrnoException,
+    operation?: string
+  ): GrappleError {
     const code = error.code;
     let grappleError: GrappleError;
 
     switch (code) {
       case 'ENOENT':
-        grappleError = new FileSystemError(
-          error.message,
-          Code.FILE_NOT_FOUND,
-          { cause: error, operation }
-        );
+        grappleError = new FileSystemError(error.message, Code.FILE_NOT_FOUND, {
+          cause: error,
+          operation,
+        });
         break;
       case 'EACCES':
       case 'EPERM':
@@ -405,11 +413,10 @@ export class ErrorFactory {
         );
         break;
       case 'ENOSPC':
-        grappleError = new FileSystemError(
-          error.message,
-          Code.DISK_FULL,
-          { cause: error, operation }
-        );
+        grappleError = new FileSystemError(error.message, Code.DISK_FULL, {
+          cause: error,
+          operation,
+        });
         break;
       case 'EMFILE':
       case 'ENFILE':
@@ -434,25 +441,22 @@ export class ErrorFactory {
         );
         break;
       case 'ENOTFOUND':
-        grappleError = new NetworkError(
-          error.message,
-          Code.HOST_NOT_FOUND,
-          { cause: error, operation }
-        );
+        grappleError = new NetworkError(error.message, Code.HOST_NOT_FOUND, {
+          cause: error,
+          operation,
+        });
         break;
       case 'ECONNRESET':
-        grappleError = new NetworkError(
-          error.message,
-          Code.CONNECTION_RESET,
-          { cause: error, operation }
-        );
+        grappleError = new NetworkError(error.message, Code.CONNECTION_RESET, {
+          cause: error,
+          operation,
+        });
         break;
       default:
-        grappleError = new RuntimeError(
-          error.message,
-          Code.INTERNAL_ERROR,
-          { cause: error, operation }
-        );
+        grappleError = new RuntimeError(error.message, Code.INTERNAL_ERROR, {
+          cause: error,
+          operation,
+        });
         break;
     }
 
@@ -469,15 +473,17 @@ export class ErrorFactory {
 
     // Check for Node.js system error
     if ('code' in error) {
-      return this.fromSystemError(error as NodeJS.ErrnoException, operation);
+      return ErrorFactory.fromSystemError(
+        error as NodeJS.ErrnoException,
+        operation
+      );
     }
 
     // Default to runtime error
-    return new RuntimeError(
-      error.message,
-      Code.RUNTIME_EXCEPTION,
-      { cause: error, operation }
-    );
+    return new RuntimeError(error.message, Code.RUNTIME_EXCEPTION, {
+      cause: error,
+      operation,
+    });
   }
 
   /**
@@ -486,32 +492,53 @@ export class ErrorFactory {
   static fromMessage(message: string, operation?: string): GrappleError {
     const lowerMessage = message.toLowerCase();
 
-    if (lowerMessage.includes('timeout') || lowerMessage.includes('timed out')) {
+    if (
+      lowerMessage.includes('timeout') ||
+      lowerMessage.includes('timed out')
+    ) {
       return new TimeoutError(message, Code.OPERATION_TIMEOUT, { operation });
     }
 
-    if (lowerMessage.includes('permission') || lowerMessage.includes('access denied')) {
-      return new FileSystemError(message, Code.PERMISSION_DENIED, { operation });
+    if (
+      lowerMessage.includes('permission') ||
+      lowerMessage.includes('access denied')
+    ) {
+      return new FileSystemError(message, Code.PERMISSION_DENIED, {
+        operation,
+      });
     }
 
     if (lowerMessage.includes('not found')) {
       return new FileSystemError(message, Code.FILE_NOT_FOUND, { operation });
     }
 
-    if (lowerMessage.includes('connection') || lowerMessage.includes('network')) {
+    if (
+      lowerMessage.includes('connection') ||
+      lowerMessage.includes('network')
+    ) {
       return new NetworkError(message, Code.CONNECTION_REFUSED, { operation });
     }
 
-    if (lowerMessage.includes('validation') || lowerMessage.includes('invalid')) {
+    if (
+      lowerMessage.includes('validation') ||
+      lowerMessage.includes('invalid')
+    ) {
       return new ValidationError(message, Code.INVALID_INPUT, { operation });
     }
 
     if (lowerMessage.includes('config')) {
-      return new ConfigurationError(message, Code.CONFIG_INVALID, { operation });
+      return new ConfigurationError(message, Code.CONFIG_INVALID, {
+        operation,
+      });
     }
 
-    if (lowerMessage.includes('unauthorized') || lowerMessage.includes('forbidden')) {
-      return new SecurityError(message, Code.UNAUTHORIZED_ACCESS, { operation });
+    if (
+      lowerMessage.includes('unauthorized') ||
+      lowerMessage.includes('forbidden')
+    ) {
+      return new SecurityError(message, Code.UNAUTHORIZED_ACCESS, {
+        operation,
+      });
     }
 
     // Default to runtime error

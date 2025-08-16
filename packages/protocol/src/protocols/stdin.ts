@@ -34,7 +34,7 @@ import {
 /**
  * Configuration options for StdinProtocol
  */
-export interface StdinProtocolOptions {
+export type StdinProtocolOptions = {
   /**
    * Maximum time to wait for stdin input (ms)
    * @default 30000
@@ -52,7 +52,7 @@ export interface StdinProtocolOptions {
    * @default true
    */
   includeErrorStack?: boolean;
-}
+};
 
 /**
  * Protocol implementation for Claude Code's stdin/stdout communication

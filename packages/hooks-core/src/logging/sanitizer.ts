@@ -1,15 +1,15 @@
 /**
  * Data sanitization for secure logging
- * 
+ *
  * Ensures no sensitive data is logged while maintaining observability
  */
 
-import type { SanitizationOptions } from './types';
 import { DEFAULT_SANITIZATION } from './config';
+import type { SanitizationOptions } from './types';
 
 /**
  * Sanitize data for safe logging
- * 
+ *
  * @param data - Raw data to sanitize
  * @param options - Sanitization options
  * @returns Sanitized data safe for logging
@@ -77,12 +77,18 @@ function sanitizeObject(
     const lowerKey = key.toLowerCase();
 
     // Remove sensitive fields entirely
-    if (options.removeFields.some((field) => lowerKey.includes(field.toLowerCase()))) {
+    if (
+      options.removeFields.some((field) =>
+        lowerKey.includes(field.toLowerCase())
+      )
+    ) {
       continue; // Skip this field
     }
 
     // Mask sensitive fields
-    if (options.maskFields.some((field) => lowerKey.includes(field.toLowerCase()))) {
+    if (
+      options.maskFields.some((field) => lowerKey.includes(field.toLowerCase()))
+    ) {
       sanitized[key] = maskValue(value);
       continue;
     }
@@ -101,7 +107,7 @@ function sanitizeString(str: string, options: SanitizationOptions): string {
   if (!str || typeof str !== 'string') {
     return String(str || '');
   }
-  
+
   let sanitized = str;
 
   // Apply sensitive pattern masking
@@ -114,12 +120,12 @@ function sanitizeString(str: string, options: SanitizationOptions): string {
           return `${parts[0][0]}***@${parts[1]}`;
         }
       }
-      
+
       // For other patterns, show first few characters
       if (match.length > 8) {
         return `${match.slice(0, 3)}***${match.slice(-2)}`;
       }
-      
+
       return '[REDACTED]';
     });
   }
@@ -141,7 +147,7 @@ function maskValue(value: unknown): string {
     if (value.length <= 4) {
       return '[REDACTED]';
     }
-    
+
     // For longer strings, show first and last characters
     return `${value[0]}***${value.slice(-1)}`;
   }
@@ -161,7 +167,9 @@ export function sanitizeError(error: Error): {
 } {
   const sanitized: Record<string, unknown> = {
     name: error.name,
-    message: error.message ? sanitizeString(error.message, DEFAULT_SANITIZATION) : 'Unknown error',
+    message: error.message
+      ? sanitizeString(error.message, DEFAULT_SANITIZATION)
+      : 'Unknown error',
   };
 
   // Include stack trace in development/debug mode
@@ -198,7 +206,7 @@ export function generateCorrelationId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  
+
   // Fallback to timestamp + random for environments without crypto
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substring(2, 8);
@@ -214,7 +222,7 @@ export function hashUserId(userId: string): string {
   for (let i = 0; i < userId.length; i++) {
     const char = userId.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
+    hash &= hash; // Convert to 32-bit integer
   }
   return `user_${Math.abs(hash).toString(36)}`;
 }

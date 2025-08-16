@@ -11,7 +11,7 @@ import type { HookContext, HookEvent, HookResult } from '@outfitter/types';
 /**
  * Execution timing information
  */
-export interface ExecutionTiming {
+export type ExecutionTiming = {
   /** When execution started (high-resolution timestamp) */
   readonly startTime: number;
   /** When execution completed (high-resolution timestamp) */
@@ -25,12 +25,12 @@ export interface ExecutionTiming {
     readonly execution: number;
     readonly output: number;
   };
-}
+};
 
 /**
  * Memory usage snapshot
  */
-export interface MemoryUsage {
+export type MemoryUsage = {
   /** Heap used in bytes */
   readonly heapUsed: number;
   /** Heap total in bytes */
@@ -39,12 +39,12 @@ export interface MemoryUsage {
   readonly external: number;
   /** RSS (Resident Set Size) in bytes */
   readonly rss: number;
-}
+};
 
 /**
  * Execution metrics for a single hook run
  */
-export interface ExecutionMetrics {
+export type ExecutionMetrics = {
   /** Unique execution ID */
   readonly id: string;
   /** Hook event that was executed */
@@ -67,12 +67,12 @@ export interface ExecutionMetrics {
   readonly timestamp: number;
   /** Additional context data */
   readonly context?: Record<string, unknown>;
-}
+};
 
 /**
  * Aggregate metrics across multiple executions
  */
-export interface AggregateMetrics {
+export type AggregateMetrics = {
   /** Total number of executions */
   readonly totalExecutions: number;
   /** Number of successful executions */
@@ -104,7 +104,7 @@ export interface AggregateMetrics {
     readonly start: number;
     readonly end: number;
   };
-}
+};
 
 /**
  * High-precision timer for measuring execution phases

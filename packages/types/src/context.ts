@@ -15,21 +15,21 @@ import type { ToolInput, ToolInputMap } from './tools';
 /**
  * Hook environment variables
  */
-export interface HookEnvironment {
+export type HookEnvironment = {
   readonly CLAUDE_PROJECT_DIR?: string;
-}
+};
 
 /**
  * Base context shared by all hooks
  */
-export interface BaseHookContext {
+export type BaseHookContext = {
   readonly event: HookEvent;
   readonly sessionId: SessionId;
   readonly transcriptPath: TranscriptPath;
   readonly cwd: DirectoryPath;
   readonly matcher?: string;
   readonly environment: HookEnvironment;
-}
+};
 
 /**
  * Tool hook context (PreToolUse, PostToolUse)
@@ -194,13 +194,13 @@ export function isPostToolUseContext(
 /**
  * Context creation helpers
  */
-export interface CreateContextOptions {
+export type CreateContextOptions = {
   readonly sessionId: SessionId;
   readonly transcriptPath: TranscriptPath;
   readonly cwd: DirectoryPath;
   readonly matcher?: string;
   readonly environment?: HookEnvironment;
-}
+};
 
 export function createToolHookContext(
   event: ToolHookEvent,

@@ -3,21 +3,21 @@
  */
 
 import type { HookEvent, ToolName } from '../types';
-import type { 
-  Logger, 
-  HookLogger, 
-  LoggingConfig,
-  HookExecutionContext,
-  PerformanceMetrics
-} from './types';
-import { 
-  createLoggingConfig, 
-  createProductionConfig, 
-  createDevelopmentConfig, 
-  createTestConfig 
+import {
+  createDevelopmentConfig,
+  createLoggingConfig,
+  createProductionConfig,
+  createTestConfig,
 } from './config';
-import { ProductionLogger, formatDuration } from './logger';
+import { formatDuration, ProductionLogger } from './logger';
 import { hashUserId } from './sanitizer';
+import type {
+  HookExecutionContext,
+  HookLogger,
+  Logger,
+  LoggingConfig,
+  PerformanceMetrics,
+} from './types';
 
 /**
  * Global logger instances
@@ -29,14 +29,14 @@ const loggerCache = new Map<string, Logger>();
  */
 export function createLogger(service: string, config?: LoggingConfig): Logger {
   const cacheKey = `${service}-${config ? JSON.stringify(config) : 'default'}`;
-  
+
   if (loggerCache.has(cacheKey)) {
     return loggerCache.get(cacheKey)!;
   }
 
   const finalConfig = config || createLoggingConfig(service);
   const logger = new ProductionLogger(finalConfig);
-  
+
   loggerCache.set(cacheKey, logger);
   return logger;
 }
@@ -74,16 +74,27 @@ export class HookLoggerImpl implements HookLogger {
 
   // Delegate basic logging methods
   error(message: string, context?: Record<string, unknown>): void;
-  error(error: Error, message?: string, context?: Record<string, unknown>): void;
+  error(
+    error: Error,
+    message?: string,
+    context?: Record<string, unknown>
+  ): void;
   error(
     messageOrError: string | Error,
     messageOrContext?: string | Record<string, unknown>,
     context?: Record<string, unknown>
   ): void {
     if (typeof messageOrError === 'string') {
-      this.baseLogger.error(messageOrError, messageOrContext as Record<string, unknown>);
+      this.baseLogger.error(
+        messageOrError,
+        messageOrContext as Record<string, unknown>
+      );
     } else {
-      this.baseLogger.error(messageOrError, messageOrContext as string, context);
+      this.baseLogger.error(
+        messageOrError,
+        messageOrContext as string,
+        context
+      );
     }
   }
 
@@ -130,7 +141,7 @@ export class HookLoggerImpl implements HookLogger {
     result?: unknown
   ): void {
     const logMethod = success ? this.info.bind(this) : this.warn.bind(this);
-    
+
     logMethod('Hook execution completed', {
       event: context.event,
       toolName: context.toolName,
@@ -143,10 +154,14 @@ export class HookLoggerImpl implements HookLogger {
         memoryBefore: `${(metrics.memoryBefore / 1024 / 1024).toFixed(2)}MB`,
         memoryAfter: `${(metrics.memoryAfter / 1024 / 1024).toFixed(2)}MB`,
         memoryDelta: `${(metrics.memoryDelta / 1024 / 1024).toFixed(2)}MB`,
-        cpuUsage: metrics.cpuUsage ? `${metrics.cpuUsage.toFixed(2)}%` : undefined,
+        cpuUsage: metrics.cpuUsage
+          ? `${metrics.cpuUsage.toFixed(2)}%`
+          : undefined,
       },
       // Only log result in debug mode and sanitize it
-      result: this.isLevelEnabled('debug') ? this.sanitizeResult(result) : undefined,
+      result: this.isLevelEnabled('debug')
+        ? this.sanitizeResult(result)
+        : undefined,
     });
   }
 
@@ -192,9 +207,10 @@ export class HookLoggerImpl implements HookLogger {
     context: HookExecutionContext,
     details?: Record<string, unknown>
   ): void {
-    const logMethod = severity === 'critical' || severity === 'high' 
-      ? this.error.bind(this) 
-      : this.warn.bind(this);
+    const logMethod =
+      severity === 'critical' || severity === 'high'
+        ? this.error.bind(this)
+        : this.warn.bind(this);
 
     logMethod(`Security event: ${event}`, {
       securityEvent: event,
@@ -212,14 +228,16 @@ export class HookLoggerImpl implements HookLogger {
    * Sanitize project path to avoid exposing sensitive directory structure
    */
   private sanitizeProjectPath(projectDir?: string): string | undefined {
-    if (!projectDir) return undefined;
-    
+    if (!projectDir) {
+      return;
+    }
+
     // Only show the last two directory components
     const parts = projectDir.split('/');
     if (parts.length > 2) {
       return `.../${parts.slice(-2).join('/')}`;
     }
-    
+
     return projectDir;
   }
 
@@ -230,18 +248,22 @@ export class HookLoggerImpl implements HookLogger {
     if (result === null || result === undefined) {
       return result;
     }
-    
+
     if (typeof result === 'object') {
       return {
         type: Array.isArray(result) ? 'array' : 'object',
-        size: Array.isArray(result) ? result.length : Object.keys(result as object).length,
+        size: Array.isArray(result)
+          ? result.length
+          : Object.keys(result as object).length,
       };
     }
-    
+
     if (typeof result === 'string') {
-      return result.length > 100 ? `${result.slice(0, 100)}...[truncated]` : result;
+      return result.length > 100
+        ? `${result.slice(0, 100)}...[truncated]`
+        : result;
     }
-    
+
     return result;
   }
 }
@@ -249,12 +271,15 @@ export class HookLoggerImpl implements HookLogger {
 /**
  * Create hook-specific logger
  */
-export function createHookLogger(event: HookEvent, toolName?: ToolName): HookLogger {
+export function createHookLogger(
+  event: HookEvent,
+  toolName?: ToolName
+): HookLogger {
   const baseLogger = createLogger('hook-runtime').child({
     event,
     toolName,
   });
-  
+
   return new HookLoggerImpl(baseLogger);
 }
 

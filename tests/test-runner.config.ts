@@ -1,13 +1,13 @@
 /**
  * Comprehensive Test Runner Configuration
- * 
+ *
  * Configures test execution for different environments and scenarios,
  * with coverage targets and performance requirements.
  */
 
 import type { TestOptions } from 'bun:test';
 
-export interface GrappleTestConfig {
+export type GrappleTestConfig = {
   /** Coverage requirements */
   coverage: {
     /** Minimum line coverage percentage */
@@ -21,7 +21,7 @@ export interface GrappleTestConfig {
     /** Directories to exclude from coverage */
     exclude: string[];
   };
-  
+
   /** Performance requirements */
   performance: {
     /** Maximum test suite runtime (ms) */
@@ -36,7 +36,7 @@ export interface GrappleTestConfig {
       leakThreshold: number;
     };
   };
-  
+
   /** Test categories and their execution modes */
   categories: {
     unit: TestCategory;
@@ -46,16 +46,16 @@ export interface GrappleTestConfig {
     errorPaths: TestCategory;
     production: TestCategory;
   };
-  
+
   /** Environment-specific configurations */
   environments: {
     development: EnvironmentConfig;
     ci: EnvironmentConfig;
     production: EnvironmentConfig;
   };
-}
+};
 
-interface TestCategory {
+type TestCategory = {
   /** Pattern to match test files */
   pattern: string;
   /** Timeout for tests in this category (ms) */
@@ -66,9 +66,9 @@ interface TestCategory {
   retries: number;
   /** Coverage requirements specific to this category */
   coverageRequired: boolean;
-}
+};
 
-interface EnvironmentConfig {
+type EnvironmentConfig = {
   /** Whether to collect coverage */
   coverage: boolean;
   /** Test execution timeout (ms) */
@@ -79,7 +79,7 @@ interface EnvironmentConfig {
   includePerformanceTests: boolean;
   /** Whether to run production scenario tests */
   includeProductionTests: boolean;
-}
+};
 
 /**
  * Main test configuration for Grapple monorepo
@@ -106,16 +106,16 @@ export const grappleTestConfig: GrappleTestConfig = {
       '**/__mocks__/**',
     ],
   },
-  
+
   performance: {
-    maxSuiteRuntime: 300000, // 5 minutes
-    maxTestRuntime: 30000,   // 30 seconds
+    maxSuiteRuntime: 300_000, // 5 minutes
+    maxTestRuntime: 30_000, // 30 seconds
     memory: {
       maxHeapIncrease: 500 * 1024 * 1024, // 500MB
-      leakThreshold: 50 * 1024 * 1024,    // 50MB
+      leakThreshold: 50 * 1024 * 1024, // 50MB
     },
   },
-  
+
   categories: {
     unit: {
       pattern: '**/*.test.ts',
@@ -126,59 +126,59 @@ export const grappleTestConfig: GrappleTestConfig = {
     },
     integration: {
       pattern: 'tests/integration/**/*.test.ts',
-      timeout: 30000,
+      timeout: 30_000,
       parallel: false,
       retries: 1,
       coverageRequired: true,
     },
     edgeCases: {
       pattern: 'tests/edge-cases/**/*.test.ts',
-      timeout: 60000,
+      timeout: 60_000,
       parallel: true,
       retries: 0,
       coverageRequired: false,
     },
     performance: {
       pattern: 'tests/performance/**/*.test.ts',
-      timeout: 120000,
+      timeout: 120_000,
       parallel: false,
       retries: 0,
       coverageRequired: false,
     },
     errorPaths: {
       pattern: 'tests/error-paths/**/*.test.ts',
-      timeout: 30000,
+      timeout: 30_000,
       parallel: true,
       retries: 3, // Error tests can be flaky
       coverageRequired: true,
     },
     production: {
       pattern: 'tests/production/**/*.test.ts',
-      timeout: 180000,
+      timeout: 180_000,
       parallel: false,
       retries: 1,
       coverageRequired: false,
     },
   },
-  
+
   environments: {
     development: {
       coverage: true,
-      timeout: 60000,
+      timeout: 60_000,
       concurrency: 4,
       includePerformanceTests: false,
       includeProductionTests: false,
     },
     ci: {
       coverage: true,
-      timeout: 300000,
+      timeout: 300_000,
       concurrency: 2,
       includePerformanceTests: true,
       includeProductionTests: true,
     },
     production: {
       coverage: false,
-      timeout: 600000,
+      timeout: 600_000,
       concurrency: 1,
       includePerformanceTests: true,
       includeProductionTests: true,
@@ -193,11 +193,11 @@ export function detectTestEnvironment(): keyof GrappleTestConfig['environments']
   if (process.env.CI === 'true') {
     return 'ci';
   }
-  
+
   if (process.env.NODE_ENV === 'production') {
     return 'production';
   }
-  
+
   return 'development';
 }
 
@@ -214,7 +214,7 @@ export function getCurrentConfig(): EnvironmentConfig {
  */
 export function generateBunTestConfig(): TestOptions {
   const env = getCurrentConfig();
-  
+
   return {
     timeout: env.timeout,
     // Add other Bun-specific configurations as needed
@@ -225,42 +225,42 @@ export function generateBunTestConfig(): TestOptions {
  * Test execution orchestrator
  */
 export class TestOrchestrator {
-  private config: GrappleTestConfig;
-  private environment: EnvironmentConfig;
-  
+  private readonly config: GrappleTestConfig;
+  private readonly environment: EnvironmentConfig;
+
   constructor(config?: Partial<GrappleTestConfig>) {
     this.config = { ...grappleTestConfig, ...config };
     this.environment = getCurrentConfig();
   }
-  
+
   /**
    * Get test patterns to run based on environment
    */
   getTestPatterns(): string[] {
     const patterns = ['**/*.test.ts']; // Always include unit tests
-    
+
     if (this.environment.includePerformanceTests) {
       patterns.push('tests/performance/**/*.test.ts');
     }
-    
+
     if (this.environment.includeProductionTests) {
       patterns.push('tests/production/**/*.test.ts');
     }
-    
+
     // Always include integration and error path tests
     patterns.push('tests/integration/**/*.test.ts');
     patterns.push('tests/error-paths/**/*.test.ts');
     patterns.push('tests/edge-cases/**/*.test.ts');
-    
+
     return patterns;
   }
-  
+
   /**
    * Generate test execution plan
    */
   generateExecutionPlan(): TestExecutionPlan {
-    const patterns = this.getTestPatterns();
-    
+    const _patterns = this.getTestPatterns();
+
     return {
       phases: [
         {
@@ -324,7 +324,7 @@ export class TestOrchestrator {
       },
     };
   }
-  
+
   /**
    * Validate test results against requirements
    */
@@ -334,47 +334,49 @@ export class TestOrchestrator {
       errors: [],
       warnings: [],
     };
-    
+
     // Check coverage requirements
     if (this.environment.coverage && results.coverage) {
       const cov = results.coverage;
-      
+
       if (cov.linesCovered < this.config.coverage.minLinesCoverage) {
         validation.errors.push(
           `Line coverage ${cov.linesCovered}% below minimum ${this.config.coverage.minLinesCoverage}%`
         );
       }
-      
+
       if (cov.functionsCovered < this.config.coverage.minFunctionsCoverage) {
         validation.errors.push(
           `Function coverage ${cov.functionsCovered}% below minimum ${this.config.coverage.minFunctionsCoverage}%`
         );
       }
-      
+
       if (cov.branchesCovered < this.config.coverage.minBranchesCoverage) {
         validation.errors.push(
           `Branch coverage ${cov.branchesCovered}% below minimum ${this.config.coverage.minBranchesCoverage}%`
         );
       }
     }
-    
+
     // Check performance requirements
     if (results.performance) {
       const perf = results.performance;
-      
+
       if (perf.totalRuntime > this.config.performance.maxSuiteRuntime) {
         validation.warnings.push(
           `Test suite runtime ${perf.totalRuntime}ms exceeds target ${this.config.performance.maxSuiteRuntime}ms`
         );
       }
-      
-      if (perf.maxMemoryIncrease > this.config.performance.memory.maxHeapIncrease) {
+
+      if (
+        perf.maxMemoryIncrease > this.config.performance.memory.maxHeapIncrease
+      ) {
         validation.errors.push(
           `Memory increase ${perf.maxMemoryIncrease} bytes exceeds limit ${this.config.performance.memory.maxHeapIncrease} bytes`
         );
       }
     }
-    
+
     validation.passed = validation.errors.length === 0;
     return validation;
   }
@@ -383,7 +385,7 @@ export class TestOrchestrator {
 /**
  * Test execution plan interface
  */
-interface TestExecutionPlan {
+type TestExecutionPlan = {
   phases: TestPhase[];
   coverage: {
     enabled: boolean;
@@ -396,9 +398,9 @@ interface TestExecutionPlan {
       leakThreshold: number;
     };
   };
-}
+};
 
-interface TestPhase {
+type TestPhase = {
   name: string;
   pattern: string;
   timeout: number;
@@ -406,12 +408,12 @@ interface TestPhase {
   retries: number;
   required: boolean;
   condition?: boolean;
-}
+};
 
 /**
  * Test results interface
  */
-interface TestResults {
+type TestResults = {
   phases: PhaseResult[];
   coverage?: {
     linesCovered: number;
@@ -424,9 +426,9 @@ interface TestResults {
     maxMemoryIncrease: number;
     slowestTests: { name: string; duration: number }[];
   };
-}
+};
 
-interface PhaseResult {
+type PhaseResult = {
   name: string;
   passed: boolean;
   testsRun: number;
@@ -434,13 +436,13 @@ interface PhaseResult {
   testsFailed: number;
   runtime: number;
   errors: string[];
-}
+};
 
-interface ValidationResult {
+type ValidationResult = {
   passed: boolean;
   errors: string[];
   warnings: string[];
-}
+};
 
 /**
  * Export default configuration for use in scripts

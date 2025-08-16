@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
+import { createTestContext } from '@outfitter/types';
 import {
   createBashContext,
   createFileContext,
@@ -13,7 +14,6 @@ import {
   safeHookExecution,
 } from '../runtime';
 import type { HookContext, HookHandler } from '../types';
-import { createTestContext } from '@outfitter/types';
 
 describe('Runtime - Context Creation', () => {
   test('should create Bash context correctly', () => {
@@ -234,7 +234,7 @@ describe('Runtime - Output Handling', () => {
   test('should be testable with custom exit handler', () => {
     const result = HookResults.success('Test message');
     let exitCode: number | undefined;
-    
+
     const mockExitHandler = (code: number): never => {
       exitCode = code;
       throw new Error(`Mock exit with code ${code}`);
@@ -243,14 +243,14 @@ describe('Runtime - Output Handling', () => {
     expect(() => {
       outputHookResult(result, 'exit-code', mockExitHandler);
     }).toThrow('Mock exit with code 0');
-    
+
     expect(exitCode).toBe(0);
   });
 
   test('should handle blocking errors with exit code 2', () => {
     const result = HookResults.block('Blocked operation');
     let exitCode: number | undefined;
-    
+
     const mockExitHandler = (code: number): never => {
       exitCode = code;
       throw new Error(`Mock exit with code ${code}`);
@@ -259,14 +259,14 @@ describe('Runtime - Output Handling', () => {
     expect(() => {
       outputHookResult(result, 'exit-code', mockExitHandler);
     }).toThrow('Mock exit with code 2');
-    
+
     expect(exitCode).toBe(2);
   });
 
   test('should handle non-blocking errors with exit code 1', () => {
     const result = HookResults.failure('Non-blocking error');
     let exitCode: number | undefined;
-    
+
     const mockExitHandler = (code: number): never => {
       exitCode = code;
       throw new Error(`Mock exit with code ${code}`);
@@ -275,7 +275,7 @@ describe('Runtime - Output Handling', () => {
     expect(() => {
       outputHookResult(result, 'exit-code', mockExitHandler);
     }).toThrow('Mock exit with code 1');
-    
+
     expect(exitCode).toBe(1);
   });
 
@@ -283,13 +283,13 @@ describe('Runtime - Output Handling', () => {
     const result = HookResults.success('Test message');
     let exitCode: number | undefined;
     let consoleOutput: string | undefined;
-    
+
     // Mock console.log to capture JSON output
     const originalLog = console.log;
     console.log = (message: string) => {
       consoleOutput = message;
     };
-    
+
     const mockExitHandler = (code: number): never => {
       exitCode = code;
       throw new Error(`Mock exit with code ${code}`);
@@ -299,9 +299,11 @@ describe('Runtime - Output Handling', () => {
       expect(() => {
         outputHookResult(result, 'json', mockExitHandler);
       }).toThrow('Mock exit with code 0'); // JSON mode always exits 0
-      
+
       expect(exitCode).toBe(0);
-      expect(consoleOutput).toBe('{"action":"continue","message":"Test message"}');
+      expect(consoleOutput).toBe(
+        '{"action":"continue","message":"Test message"}'
+      );
     } finally {
       // Restore console.log
       console.log = originalLog;
@@ -337,7 +339,7 @@ describe('Runtime - executeHook', () => {
   test('should timeout and clear timer properly', async () => {
     const handler: HookHandler = async () => {
       // Simulate slow hook that exceeds timeout
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       return HookResults.success('Should not reach here');
     };
 
@@ -352,7 +354,10 @@ describe('Runtime - executeHook', () => {
       rawInput: {} as any,
     };
 
-    const result = await executeHook(handler, context, { timeout: 50, throwOnError: false });
+    const result = await executeHook(handler, context, {
+      timeout: 50,
+      throwOnError: false,
+    });
 
     expect(result.success).toBe(false);
     expect(result.message).toContain('timed out');
@@ -362,7 +367,7 @@ describe('Runtime - executeHook', () => {
   test('should complete before timeout and clear timer', async () => {
     let timerCleared = false;
     const originalClearTimeout = globalThis.clearTimeout;
-    
+
     // Mock clearTimeout to verify it's called
     globalThis.clearTimeout = (timer: any) => {
       timerCleared = true;
@@ -372,7 +377,7 @@ describe('Runtime - executeHook', () => {
     try {
       const handler: HookHandler = async () => {
         // Complete quickly, well before timeout
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
         return HookResults.success('Completed quickly');
       };
 
@@ -401,7 +406,7 @@ describe('Runtime - executeHook', () => {
   test('should handle errors and still clear timeout', async () => {
     let timerCleared = false;
     const originalClearTimeout = globalThis.clearTimeout;
-    
+
     globalThis.clearTimeout = (timer: any) => {
       timerCleared = true;
       originalClearTimeout(timer);
@@ -423,7 +428,10 @@ describe('Runtime - executeHook', () => {
         rawInput: {} as any,
       };
 
-      const result = await executeHook(handler, context, { timeout: 1000, throwOnError: false });
+      const result = await executeHook(handler, context, {
+        timeout: 1000,
+        throwOnError: false,
+      });
 
       expect(result.success).toBe(false);
       expect(result.message).toBe('Handler error');

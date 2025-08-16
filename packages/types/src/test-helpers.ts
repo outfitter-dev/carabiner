@@ -4,19 +4,19 @@
  */
 
 import {
+  createDirectoryPath,
   createSessionId,
   createTranscriptPath,
-  createDirectoryPath,
-  UnsafeBrands,
+  type DirectoryPath,
   type SessionId,
   type TranscriptPath,
-  type DirectoryPath,
+  UnsafeBrands,
 } from './brands';
 
 /**
  * Safe test context creation with proper types
  */
-export interface TestContextOptions {
+export type TestContextOptions = {
   sessionId?: string;
   transcriptPath?: string;
   cwd?: string;
@@ -27,20 +27,20 @@ export interface TestContextOptions {
   userPrompt?: string;
   message?: string;
   matcher?: string;
-}
+};
 
 /**
  * Create a basic test context with validated brands
  */
 export function createTestContext(options: TestContextOptions = {}) {
-  const sessionId = options.sessionId 
+  const sessionId = options.sessionId
     ? createSessionId(options.sessionId)
     : createSessionId('test-session-123');
-    
+
   const transcriptPath = options.transcriptPath
     ? createTranscriptPath(options.transcriptPath)
     : createTranscriptPath('/tmp/test-transcript.md');
-    
+
   const cwd = options.cwd
     ? createDirectoryPath(options.cwd)
     : createDirectoryPath('/test/workspace');
@@ -69,7 +69,7 @@ export const TestMocks = {
   /**
    * Create a minimal readable stream mock for stdin tests
    */
-  stdin: (data: string = '{}') => ({
+  stdin: (data = '{}') => ({
     setEncoding: () => {},
     on: (event: string, callback: (chunk: string) => void) => {
       if (event === 'data') {
@@ -130,17 +130,22 @@ export const TestMocks = {
  * Test data factories with proper validation
  */
 export const TestFactories = {
-  sessionId: (suffix = '123'): SessionId => createSessionId(`test-session-${suffix}`),
-  transcriptPath: (name = 'test'): TranscriptPath => createTranscriptPath(`/tmp/${name}-transcript.md`),
-  directoryPath: (path = 'workspace'): DirectoryPath => createDirectoryPath(`/test/${path}`),
-  
+  sessionId: (suffix = '123'): SessionId =>
+    createSessionId(`test-session-${suffix}`),
+  transcriptPath: (name = 'test'): TranscriptPath =>
+    createTranscriptPath(`/tmp/${name}-transcript.md`),
+  directoryPath: (path = 'workspace'): DirectoryPath =>
+    createDirectoryPath(`/test/${path}`),
+
   /**
    * Create unsafe brands for performance-critical tests where validation is handled elsewhere
    */
   unsafe: {
     sessionId: (value: string): SessionId => UnsafeBrands.sessionId(value),
-    transcriptPath: (value: string): TranscriptPath => UnsafeBrands.transcriptPath(value),
-    directoryPath: (value: string): DirectoryPath => UnsafeBrands.directoryPath(value),
+    transcriptPath: (value: string): TranscriptPath =>
+      UnsafeBrands.transcriptPath(value),
+    directoryPath: (value: string): DirectoryPath =>
+      UnsafeBrands.directoryPath(value),
   },
 } as const;
 
@@ -157,7 +162,7 @@ export const TestAssertions = {
     }
 
     const ctx = value as Record<string, unknown>;
-    
+
     return (
       typeof ctx.event === 'string' &&
       typeof ctx.sessionId === 'string' &&
@@ -178,9 +183,9 @@ export const TestAssertions = {
     if (!value || typeof value !== 'object') {
       return false;
     }
-    
+
     const input = value as Record<string, unknown>;
-    return expectedKeys.every(key => key in input);
+    return expectedKeys.every((key) => key in input);
   },
 } as const;
 
@@ -188,14 +193,21 @@ export const TestAssertions = {
  * Test error types for better error handling in tests
  */
 export class TestSetupError extends Error {
-  constructor(message: string, public readonly context?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    public readonly context?: Record<string, unknown>
+  ) {
     super(message);
     this.name = 'TestSetupError';
   }
 }
 
 export class TestValidationError extends Error {
-  constructor(message: string, public readonly actual?: unknown, public readonly expected?: unknown) {
+  constructor(
+    message: string,
+    public readonly actual?: unknown,
+    public readonly expected?: unknown
+  ) {
     super(message);
     this.name = 'TestValidationError';
   }

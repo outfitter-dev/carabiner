@@ -11,4 +11,3 @@ declare module '@outfitter/error-management' {
     operationId?: string
   ): Promise<T>;
 }
-

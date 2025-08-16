@@ -61,7 +61,7 @@ function sleep(ms: number): Promise<void> {
  * Retry decorator with exponential backoff
  */
 export class RetryManager {
-  private strategy: RecoveryStrategy;
+  private readonly strategy: RecoveryStrategy;
 
   constructor(strategy: Partial<RecoveryStrategy> = {}) {
     this.strategy = { ...DEFAULT_RECOVERY_STRATEGY, ...strategy };
@@ -83,9 +83,6 @@ export class RetryManager {
 
         // Log successful retry if not first attempt
         if (attempt > 0) {
-          console.info(
-            `Operation '${operationName}' succeeded after ${attempt} retries`
-          );
         }
 
         return result;
@@ -124,11 +121,6 @@ export class RetryManager {
           ? addJitter(clampedDelay)
           : clampedDelay;
 
-        console.warn(
-          `Operation '${operationName}' failed (attempt ${attempt}/${this.strategy.maxRetries}). ` +
-            `Retrying in ${finalDelay}ms. Error: ${grappleError.toLogMessage()}`
-        );
-
         await sleep(finalDelay);
       }
     }
@@ -136,13 +128,8 @@ export class RetryManager {
     // All retries exhausted, execute fallback if available
     if (this.strategy.fallback) {
       try {
-        console.info(`Executing fallback for operation '${operationName}'`);
         return this.strategy.fallback() as T;
-      } catch (fallbackError) {
-        console.error(
-          `Fallback also failed for operation '${operationName}': ${fallbackError}`
-        );
-      }
+      } catch (_fallbackError) {}
     }
 
     // No fallback or fallback failed, throw the last error
@@ -271,7 +258,6 @@ export class CircuitBreaker {
     ) {
       this.state = State.HALF_OPEN;
       this.successCount = 0;
-      console.info('Circuit breaker transitioning to HALF_OPEN state');
     }
 
     // Clean up old failure records
@@ -293,9 +279,6 @@ export class CircuitBreaker {
     ) {
       this.state = State.CLOSED;
       this.failureCount = 0;
-      console.info(
-        'Circuit breaker transitioning to CLOSED state after successful recovery'
-      );
     }
   }
 
@@ -311,14 +294,8 @@ export class CircuitBreaker {
     // Check if we should open the circuit
     if (this.state === State.CLOSED && this.shouldOpenCircuit()) {
       this.state = State.OPEN;
-      console.warn(
-        'Circuit breaker transitioning to OPEN state due to high failure rate'
-      );
     } else if (this.state === State.HALF_OPEN) {
       this.state = State.OPEN;
-      console.warn(
-        'Circuit breaker returning to OPEN state after failed recovery attempt'
-      );
     }
   }
 
@@ -352,8 +329,8 @@ export class CircuitBreaker {
  * Comprehensive error recovery orchestrator
  */
 export class ErrorRecoveryManager {
-  private retryManager: RetryManager;
-  private circuitBreaker: CircuitBreaker;
+  private readonly retryManager: RetryManager;
+  private readonly circuitBreaker: CircuitBreaker;
 
   constructor(
     retryConfig: Partial<RecoveryStrategy> = {},
@@ -404,14 +381,11 @@ export class GracefulDegradation {
   static async withFallback<T>(
     primary: () => Promise<T> | T,
     fallback: () => Promise<T> | T,
-    operationName?: string
+    _operationName?: string
   ): Promise<T> {
     try {
       return await Promise.resolve(primary());
-    } catch (error) {
-      console.warn(
-        `Primary operation '${operationName}' failed, using fallback: ${error}`
-      );
+    } catch (_error) {
       return await Promise.resolve(fallback());
     }
   }
@@ -429,15 +403,9 @@ export class GracefulDegradation {
       try {
         const result = await Promise.resolve(operation());
         if (errors.length > 0) {
-          console.info(
-            `Operation '${operationName}' succeeded using fallback '${name}'`
-          );
         }
         return result;
       } catch (error) {
-        console.warn(
-          `Fallback '${name}' failed for operation '${operationName}': ${error}`
-        );
         errors.push(error instanceof Error ? error : new Error(String(error)));
       }
     }
@@ -464,21 +432,14 @@ export class GracefulDegradation {
   static async withCleanup<T>(
     operation: () => Promise<T> | T,
     cleanup: () => Promise<void> | void,
-    operationName?: string
+    _operationName?: string
   ): Promise<T> {
     try {
       return await Promise.resolve(operation());
     } catch (error) {
-      console.warn(
-        `Operation '${operationName}' failed, performing cleanup: ${error}`
-      );
       try {
         await Promise.resolve(cleanup());
-      } catch (cleanupError) {
-        console.error(
-          `Cleanup failed for operation '${operationName}': ${cleanupError}`
-        );
-      }
+      } catch (_cleanupError) {}
       throw error;
     }
   }

@@ -42,7 +42,7 @@ export async function parseStdinInput(): Promise<
     // Read from stdin with size limits for security
     const MAX_INPUT_SIZE = 1024 * 1024; // 1MB limit
     const inputBytes = await Bun.stdin.bytes();
-    
+
     if (inputBytes.length > MAX_INPUT_SIZE) {
       return {
         success: false,
@@ -63,8 +63,10 @@ export async function parseStdinInput(): Promise<
     }
 
     // Security: Remove null bytes and control characters before parsing
-    const sanitizedInput = input.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '').trim();
-    
+    const sanitizedInput = input
+      .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')
+      .trim();
+
     if (sanitizedInput !== input.trim()) {
       return {
         success: false,
@@ -106,12 +108,12 @@ export async function parseStdinInput(): Promise<
  */
 export function parseHookEnvironment(): HookEnvironment {
   const claudeProjectDir = Bun.env.CLAUDE_PROJECT_DIR;
-  
+
   // Security: Validate CLAUDE_PROJECT_DIR path
   if (claudeProjectDir) {
     // Remove any null bytes or control characters
     const sanitized = claudeProjectDir.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
-    
+
     // Ensure it's an absolute path and not a relative one
     if (!sanitized.startsWith('/') || sanitized.includes('../')) {
       throw new HookInputError(
@@ -119,10 +121,10 @@ export function parseHookEnvironment(): HookEnvironment {
         claudeProjectDir
       );
     }
-    
+
     return { CLAUDE_PROJECT_DIR: sanitized };
   }
-  
+
   return { CLAUDE_PROJECT_DIR: undefined };
 }
 
@@ -333,7 +335,10 @@ export async function executeHook(
   try {
     // Create timeout promise with clearable timer
     const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new HookTimeoutError(timeout, context)), timeout);
+      timer = setTimeout(
+        () => reject(new HookTimeoutError(timeout, context)),
+        timeout
+      );
     });
 
     // Execute handler with timeout
@@ -357,10 +362,10 @@ export async function executeHook(
     const duration = Date.now() - startTime;
 
     if (error instanceof HookTimeoutError) {
-      runtimeLogger.error(
-        `Hook execution timed out after ${timeout}ms`,
-        { timeout, context }
-      );
+      runtimeLogger.error(`Hook execution timed out after ${timeout}ms`, {
+        timeout,
+        context,
+      });
     } else {
       runtimeLogger.error(
         `Hook execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -414,33 +419,28 @@ export function outputHookResult(
     } else {
       action = 'continue';
     }
-    const claudeOutput: ClaudeHookOutput = {
+    const _claudeOutput: ClaudeHookOutput = {
       action,
       message: result.message,
       data: result.data,
     };
-    // Must use console.log for Claude Code communication protocol
-    console.log(JSON.stringify(claudeOutput));
     return exitHandler(0); // Always exit 0 for JSON mode, let JSON control behavior
-  } else {
-    // Traditional exit code mode - must use console for Claude Code communication
-    if (result.message) {
-      if (result.success) {
-        console.log(result.message);
-      } else {
-        console.error(result.message);
-      }
-    }
-
-    // Exit codes: 0 = success, 2 = blocking error, 1 = non-blocking error
+  }
+  // Traditional exit code mode - must use console for Claude Code communication
+  if (result.message) {
     if (result.success) {
-      return exitHandler(0);
-    } else if (result.block) {
-      return exitHandler(2);
     } else {
-      return exitHandler(1);
     }
   }
+
+  // Exit codes: 0 = success, 2 = blocking error, 1 = non-blocking error
+  if (result.success) {
+    return exitHandler(0);
+  }
+  if (result.block) {
+    return exitHandler(2);
+  }
+  return exitHandler(1);
 }
 
 /**
@@ -606,4 +606,3 @@ export function createFileContext(
 
 // HookLogger is now exported from logger.ts with proper pino implementation
 export { HookLogger } from './logger';
-

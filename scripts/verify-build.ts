@@ -9,14 +9,14 @@ import { spawn } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-interface PackageCheck {
+type PackageCheck = {
   name: string;
   path: string;
   hasTypes: boolean;
   hasMain: boolean;
   hasDist: boolean;
   distSize: number;
-}
+};
 
 const PACKAGES = [
   'hooks-core',
@@ -162,9 +162,7 @@ async function runPublintValidation(): Promise<void> {
   );
 
   if (publintResult.code !== 0 && publintResult.stderr) {
-    console.warn('Publint validation warnings:', publintResult.stderr);
   } else {
-    console.log('Publint validation passed');
   }
 }
 

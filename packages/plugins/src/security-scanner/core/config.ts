@@ -11,7 +11,7 @@ import { SecurityScannerConfigSchema } from '../types/index.js';
  * Configuration manager for security scanner
  */
 export class SecurityScannerConfigManager {
-  private config: SecurityScannerConfig;
+  private readonly config: SecurityScannerConfig;
 
   constructor(config: Record<string, unknown> = {}) {
     this.config = SecurityScannerConfigSchema.parse(config);

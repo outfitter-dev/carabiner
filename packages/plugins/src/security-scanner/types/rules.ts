@@ -8,7 +8,7 @@ import type { Severity } from './findings.js';
 /**
  * Security rule interface
  */
-export interface SecurityRule {
+export type SecurityRule = {
   id: string;
   name: string;
   pattern: string;
@@ -18,7 +18,7 @@ export interface SecurityRule {
   remediation?: string;
   flags?: string;
   fileTypes?: string[];
-}
+};
 
 /**
  * Rule category for grouping rules
@@ -35,9 +35,9 @@ export type RuleCategory =
 /**
  * Rule execution context
  */
-export interface RuleContext {
+export type RuleContext = {
   content: string;
   filePath?: string;
   fileExtension?: string;
   isCommand?: boolean;
-}
+};

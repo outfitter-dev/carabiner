@@ -11,18 +11,18 @@ import type { HookResult } from '@outfitter/types';
 /**
  * Success result containing a value
  */
-export interface SuccessResult<T> {
+export type SuccessResult<T> = {
   readonly success: true;
   readonly value: T;
-}
+};
 
 /**
  * Failure result containing an error
  */
-export interface FailureResult<E = Error> {
+export type FailureResult<E = Error> = {
   readonly success: false;
   readonly error: E;
-}
+};
 
 /**
  * Result type - either success with value or failure with error

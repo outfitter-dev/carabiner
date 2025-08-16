@@ -29,7 +29,7 @@ export interface PluginResult extends HookResult {
 /**
  * Plugin configuration with runtime validation
  */
-export interface PluginConfig {
+export type PluginConfig = {
   /** Plugin name (must match plugin.name) */
   name: string;
   /** Whether the plugin is enabled */
@@ -44,12 +44,12 @@ export interface PluginConfig {
   tools?: string[];
   /** Conditions for plugin execution */
   conditions?: PluginCondition[];
-}
+};
 
 /**
  * Plugin execution condition
  */
-export interface PluginCondition {
+export type PluginCondition = {
   /** Type of condition */
   type: 'env' | 'context' | 'tool' | 'custom';
   /** Field to check (for env/context/tool conditions) */
@@ -66,12 +66,12 @@ export interface PluginCondition {
   value?: unknown;
   /** Custom condition function (for custom type/operator) */
   condition?: (context: HookContext) => boolean | Promise<boolean>;
-}
+};
 
 /**
  * Plugin metadata for discovery and management
  */
-export interface PluginMetadata {
+export type PluginMetadata = {
   /** Unique plugin name */
   name: string;
   /** Plugin version (semver) */
@@ -96,7 +96,7 @@ export interface PluginMetadata {
     bun?: string;
     'claude-code'?: string;
   };
-}
+};
 
 /**
  * Core hook plugin interface
@@ -129,7 +129,7 @@ export interface PluginMetadata {
  * };
  * ```
  */
-export interface HookPlugin {
+export type HookPlugin = {
   // === Plugin Identity ===
 
   /** Unique plugin name (kebab-case recommended) */
@@ -213,7 +213,7 @@ export interface HookPlugin {
 
   /** Additional metadata for discovery and management */
   metadata?: PluginMetadata;
-}
+};
 
 /**
  * Plugin factory function for dynamic plugin creation
@@ -225,19 +225,19 @@ export type PluginFactory = (
 /**
  * Plugin module interface for ES6 module loading
  */
-export interface PluginModule {
+export type PluginModule = {
   /** Default export should be the plugin */
   default?: HookPlugin | PluginFactory;
   /** Named export for the plugin */
   plugin?: HookPlugin | PluginFactory;
   /** Alternative named exports */
   [key: string]: HookPlugin | PluginFactory | unknown;
-}
+};
 
 /**
  * Plugin discovery result
  */
-export interface PluginDiscovery {
+export type PluginDiscovery = {
   /** Plugin file path */
   path: string;
   /** Plugin name from file/package */
@@ -248,12 +248,12 @@ export interface PluginDiscovery {
   error?: Error;
   /** Last modification time */
   lastModified?: Date;
-}
+};
 
 /**
  * Plugin execution context with additional registry information
  */
-export interface PluginExecutionContext {
+export type PluginExecutionContext = {
   /** Original hook context */
   context: HookContext;
   /** Plugin configuration */
@@ -266,12 +266,12 @@ export interface PluginExecutionContext {
   index: number;
   /** Previous plugin results */
   previousResults: PluginResult[];
-}
+};
 
 /**
  * Plugin execution options
  */
-export interface PluginExecutionOptions {
+export type PluginExecutionOptions = {
   /** Maximum execution time per plugin (ms) */
   timeout?: number;
   /** Whether to collect performance metrics */
@@ -280,7 +280,7 @@ export interface PluginExecutionOptions {
   continueOnFailure?: boolean;
   /** Context-specific options */
   context?: Record<string, unknown>;
-}
+};
 
 /**
  * Type guard to check if an object is a valid HookPlugin

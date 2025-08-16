@@ -17,7 +17,7 @@ export type Environment = 'development' | 'test' | 'production';
 /**
  * Base structured log entry
  */
-export interface BaseLogEntry {
+export type BaseLogEntry = {
   /** RFC 3339 timestamp */
   timestamp: string;
   /** Log level */
@@ -38,12 +38,12 @@ export interface BaseLogEntry {
   sessionId?: string;
   /** Additional structured data */
   [key: string]: unknown;
-}
+};
 
 /**
  * Hook execution context for logging
  */
-export interface HookExecutionContext {
+export type HookExecutionContext = {
   /** Hook event type */
   event: HookEvent;
   /** Tool being used (if applicable) */
@@ -56,12 +56,12 @@ export interface HookExecutionContext {
   executionId: string;
   /** User ID (sanitized) */
   userId?: string;
-}
+};
 
 /**
  * Performance metrics for logging
  */
-export interface PerformanceMetrics {
+export type PerformanceMetrics = {
   /** Execution duration in milliseconds */
   duration: number;
   /** Memory usage before execution */
@@ -72,12 +72,12 @@ export interface PerformanceMetrics {
   memoryDelta: number;
   /** CPU usage percentage */
   cpuUsage?: number;
-}
+};
 
 /**
  * Error context for structured error logging
  */
-export interface ErrorContext {
+export type ErrorContext = {
   /** Error name/type */
   name: string;
   /** Error message (sanitized) */
@@ -88,12 +88,12 @@ export interface ErrorContext {
   code?: string;
   /** Additional error metadata */
   metadata?: Record<string, unknown>;
-}
+};
 
 /**
  * Logging configuration options
  */
-export interface LoggingConfig {
+export type LoggingConfig = {
   /** Log level threshold */
   level: LogLevel;
   /** Environment */
@@ -117,12 +117,12 @@ export interface LoggingConfig {
   silent?: boolean;
   /** Additional static context */
   context?: Record<string, unknown>;
-}
+};
 
 /**
  * Sanitization options
  */
-export interface SanitizationOptions {
+export type SanitizationOptions = {
   /** Fields to completely remove */
   removeFields: string[];
   /** Fields to mask (replace with [REDACTED]) */
@@ -133,25 +133,29 @@ export interface SanitizationOptions {
   maxStringLength: number;
   /** Maximum object depth */
   maxDepth: number;
-}
+};
 
 /**
  * Logger interface
  */
-export interface Logger {
+export type Logger = {
   error(message: string, context?: Record<string, unknown>): void;
-  error(error: Error, message?: string, context?: Record<string, unknown>): void;
+  error(
+    error: Error,
+    message?: string,
+    context?: Record<string, unknown>
+  ): void;
   warn(message: string, context?: Record<string, unknown>): void;
   info(message: string, context?: Record<string, unknown>): void;
   debug(message: string, context?: Record<string, unknown>): void;
   trace(message: string, context?: Record<string, unknown>): void;
-  
+
   /** Create child logger with additional context */
   child(context: Record<string, unknown>): Logger;
-  
+
   /** Check if log level is enabled */
   isLevelEnabled(level: LogLevel): boolean;
-}
+};
 
 /**
  * Hook-specific logger interface
@@ -159,10 +163,10 @@ export interface Logger {
 export interface HookLogger extends Logger {
   /** Create child logger with additional context - returns HookLogger */
   child(context: Record<string, unknown>): HookLogger;
-  
+
   /** Log hook execution start */
   startExecution(context: HookExecutionContext): void;
-  
+
   /** Log hook execution completion */
   completeExecution(
     context: HookExecutionContext,
@@ -170,21 +174,21 @@ export interface HookLogger extends Logger {
     metrics: PerformanceMetrics,
     result?: unknown
   ): void;
-  
+
   /** Log hook execution failure */
   failExecution(
     context: HookExecutionContext,
     error: Error,
     metrics: PerformanceMetrics
   ): void;
-  
+
   /** Log user action */
   logUserAction(
     action: string,
     context: HookExecutionContext,
     metadata?: Record<string, unknown>
   ): void;
-  
+
   /** Log security event */
   logSecurityEvent(
     event: string,
