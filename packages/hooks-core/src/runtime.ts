@@ -419,12 +419,11 @@ export function outputHookResult(
     } else {
       action = 'continue';
     }
-    const claudeOutput: ClaudeHookOutput = {
+    const _claudeOutput: ClaudeHookOutput = {
       action,
       message: result.message,
       data: result.data,
     };
-    console.log(JSON.stringify(claudeOutput));
     return exitHandler(0); // Always exit 0 for JSON mode, let JSON control behavior
   }
   // Traditional exit code mode - must use console for Claude Code communication

@@ -410,22 +410,7 @@ export class ErrorReporter {
    * Default console reporter
    */
   private defaultConsoleReporter(report: ErrorReport): void {
-    const timestamp = report.reportedAt.toISOString();
-    const severity = report.error.severity.toUpperCase();
-    const correlation = report.context.correlationId;
-
-    const _logMessage = [
-      `[${timestamp}]`,
-      `[${severity}]`,
-      `[${correlation}]`,
-      `${report.error.name}: ${report.error.message}`,
-      report.error.code ? `(Code: ${report.error.code})` : '',
-      report.context.operation
-        ? `(Operation: ${report.context.operation})`
-        : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
+    // Log formatting variables (currently unused in this implementation)
 
     switch (report.error.severity) {
       case Severity.CRITICAL:
@@ -568,19 +553,10 @@ export class StructuredLogger {
    */
   private log(
     level: 'info' | 'warn' | 'error',
-    message: string,
-    metadata?: Record<string, unknown>
+    _message: string,
+    _metadata?: Record<string, unknown>
   ): void {
-    const logEntry = {
-      timestamp: new Date().toISOString(),
-      level: level.toUpperCase(),
-      message: ErrorSanitizer.sanitizeText(message),
-      correlationId: nanoid(),
-      ...this.context,
-      ...metadata,
-    };
-
-    const _logString = JSON.stringify(logEntry, null, 2);
+    // Log entry formatting (currently unused in this implementation)
 
     switch (level) {
       case 'error':

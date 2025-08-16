@@ -670,7 +670,7 @@ export const performanceMonitorPlugin: HookPlugin = {
    */
   async shutdown(): Promise<void> {
     if (globalMetricsStore) {
-      const _stats = globalMetricsStore.getStats();
+      // const stats = globalMetricsStore.getStats();
 
       globalMetricsStore.cleanup();
       globalMetricsStore = undefined;

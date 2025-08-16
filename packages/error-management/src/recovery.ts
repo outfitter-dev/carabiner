@@ -399,7 +399,7 @@ export class GracefulDegradation {
   ): Promise<T> {
     const errors: Error[] = [];
 
-    for (const { operation, name } of operations) {
+    for (const { operation } of operations) {
       try {
         const result = await Promise.resolve(operation());
         if (errors.length > 0) {

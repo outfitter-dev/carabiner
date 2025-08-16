@@ -290,7 +290,7 @@ export class ConfigManager {
       // Apply environment-specific overrides
       const finalConfig = this.applyEnvironmentOverrides(processedConfig);
 
-      this.config = finalConfig;
+      (this as any).config = finalConfig;
       return finalConfig;
     } catch (error) {
       // Optionally report via error-management if available
@@ -368,7 +368,7 @@ export class ConfigManager {
 
       writeFileSync(configPath, content, 'utf-8');
       this.configPath = configPath;
-      this.config = config;
+      (this as any).config = config;
 
       // Notify watchers
       this.notifyWatchers(config);

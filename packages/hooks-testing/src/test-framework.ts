@@ -347,7 +347,7 @@ export class HookTest {
           throw new Error(`Expected property '${key}' not found in result`);
         }
 
-        const actualValue = result[key];
+        const actualValue = (result as any)[key];
         if (actualValue !== expectedValue) {
           throw new Error(
             `Expected ${key} to be ${expectedValue}, got ${actualValue}`
@@ -478,7 +478,7 @@ export async function runTests(): Promise<void> {
   const stats = testRunner.getStats(results);
 
   for (const suiteResult of results) {
-    const _icon = suiteResult.passed ? '✅' : '❌';
+    // const icon = suiteResult.passed ? '✅' : '❌';
 
     for (const testResult of suiteResult.tests) {
       if (testResult.skipped) {

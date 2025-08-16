@@ -240,7 +240,7 @@ export class PluginRegistry {
    * Clear all registered plugins
    */
   clear(): void {
-    const _count = this.plugins.size;
+    // const count = this.plugins.size;
     this.plugins.clear();
     this.configs.clear();
 
