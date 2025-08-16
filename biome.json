@@ -12,7 +12,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": ["**/*.{md,mdx,mdc,css,scss,less,yaml,yml}"]
+    "includes": ["**/*.{js,ts,jsx,tsx,json,jsonc}"]
   },
   "vcs": {
     "useIgnoreFile": true
