@@ -179,6 +179,7 @@ jobs:
 
       - name: Test binary distributions
         run: |
+          set -euo pipefail
           # Test Linux binary
           ./claude-hooks-linux --version || echo "Linux binary test failed"
 
@@ -245,7 +246,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -270,7 +271,7 @@ jobs:
         run: bun audit || true # Don't fail on audit issues
 
       - name: Check for secrets
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v3.82.13
         with:
           path: ./
           base: main
@@ -291,6 +292,7 @@ jobs:
 
       - name: Aggregate test results
         run: |
+          set -euo pipefail
           echo "# 📊 Test Execution Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Test Suite | Status | Duration |" >> $GITHUB_STEP_SUMMARY
@@ -367,6 +369,7 @@ jobs:
 
       - name: Create release readiness report
         run: |
+          set -euo pipefail
           echo "# 🚀 Release Readiness Report" >> release-readiness.md
           echo "" >> release-readiness.md
           echo "- ✅ All comprehensive tests passed" >> release-readiness.md

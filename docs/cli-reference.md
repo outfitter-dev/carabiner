@@ -726,8 +726,8 @@ npx @outfitter/hooks-cli --version
 # Fix file permissions
 chmod +x hooks/*.ts
 
-# Run with appropriate permissions
-sudo claude-hooks init
+# Avoid using sudo; fix file permissions or install to a user-writable location instead
+claude-hooks init
 ```
 
 #### Configuration Issues

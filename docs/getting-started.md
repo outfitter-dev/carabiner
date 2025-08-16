@@ -95,7 +95,13 @@ runClaudeHook(async (context) => {
 
   // Tool-specific security checks
   if (context.toolName === 'Bash') {
-    const { command } = context.toolInput as { command: string };
+    // Type-safe access to command property
+    const toolInput = context.toolInput as Record<string, unknown>;
+    const command = toolInput?.command;
+    
+    if (typeof command !== 'string') {
+      return HookResults.failure('Invalid command input');
+    }
 
     // Block dangerous commands
     const dangerousPatterns = [

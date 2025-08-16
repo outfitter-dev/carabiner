@@ -78,6 +78,7 @@ jobs:
 
       - name: Verify CLI dependencies
         run: |
+          set -euo pipefail
           cd packages/hooks-cli
           # Check that all required files exist
           test -f "src/cli.ts" || (echo "❌ CLI entry point missing" && exit 1)
@@ -87,6 +88,7 @@ jobs:
       - name: Build binary with enhanced options
         id: build
         run: |
+          set -euo pipefail
           cd packages/hooks-cli
 
           # Read version from package.json
@@ -123,6 +125,7 @@ jobs:
 
       - name: Binary info
         run: |
+          set -euo pipefail
           if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
             ls -la ./"${{ steps.build.outputs.binary_name }}"
             file ./"${{ steps.build.outputs.binary_name }}" || echo "file command not available"
@@ -134,6 +137,7 @@ jobs:
       # Comprehensive smoke tests
       - name: Smoke Test - Version Command
         run: |
+          set -euo pipefail
           echo "Testing --version command..."
           if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
             ./"${{ steps.build.outputs.binary_name }}" --version
@@ -144,6 +148,7 @@ jobs:
 
       - name: Smoke Test - Help Command
         run: |
+          set -euo pipefail
           echo "Testing --help command..."
           if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
             ./"${{ steps.build.outputs.binary_name }}" --help
@@ -154,6 +159,7 @@ jobs:
 
       - name: Smoke Test - Command Help
         run: |
+          set -euo pipefail
           echo "Testing validate --help command..."
           if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
             ./"${{ steps.build.outputs.binary_name }}" validate --help
@@ -164,6 +170,7 @@ jobs:
 
       - name: Smoke Test - Config Command
         run: |
+          set -euo pipefail
           echo "Testing config --help command..."
           if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
             ./"${{ steps.build.outputs.binary_name }}" config --help
@@ -174,6 +181,7 @@ jobs:
 
       - name: Smoke Test - Invalid Command
         run: |
+          set -euo pipefail
           echo "Testing invalid command (should fail gracefully)..."
           if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
             ./"${{ steps.build.outputs.binary_name }}" nonexistent-command || echo "✅ Correctly failed for invalid command"
@@ -184,6 +192,7 @@ jobs:
 
       - name: Smoke Test - Verbose Mode
         run: |
+          set -euo pipefail
           echo "Testing verbose mode..."
           if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
             ./"${{ steps.build.outputs.binary_name }}" --verbose --help
@@ -215,6 +224,7 @@ jobs:
       - name: Verify all binaries
         if: github.event.inputs.upload-artifacts != 'false'
         run: |
+          set -euo pipefail
           echo "Verifying all built binaries..."
 
           expected_binaries=(
@@ -244,6 +254,7 @@ jobs:
 
       - name: Binary build summary
         run: |
+          set -euo pipefail
           echo "## Binary Build Summary 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ **Linux x64**: claude-hooks-linux" >> $GITHUB_STEP_SUMMARY

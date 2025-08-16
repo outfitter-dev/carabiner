@@ -87,8 +87,12 @@ chmod +x claude-hooks
 # Check dependencies (Linux)
 ldd claude-hooks
 
-# macOS signing issues
-sudo spctl --master-disable  # Only if necessary
+# macOS signing issues (avoid using sudo when possible)
+# Consider alternative approaches before disabling security:
+# 1. Sign the binary properly
+# 2. Use Gatekeeper bypass for development
+# 3. Only if absolutely necessary:
+#    sudo spctl --master-disable
 ```
 
 ### Package Installation Issues

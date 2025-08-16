@@ -94,9 +94,11 @@ runClaudeHook(async (context) => {
 
   // Tool-specific validation
   if (context.toolName === 'Bash') {
-    const { command } = context.toolInput as { command: string };
-
-    if (command.includes('rm -rf /')) {
+    // Type-safe access to command property
+    const toolInput = context.toolInput as Record<string, unknown>;
+    const command = toolInput?.command;
+    
+    if (typeof command === 'string' && command.includes('rm -rf /')) {
       return HookResults.block('Dangerous command blocked!');
     }
   }
@@ -112,7 +114,7 @@ runClaudeHook(async (context) => {
 
 #!/usr/bin/env bun
 
-import { HookBuilder, middleware, runClaudeHook } from '@outfitter/hooks-core';
+import { HookBuilder, HookResults, middleware, runClaudeHook } from '@outfitter/hooks-core';
 
 // Tool-specific hook - ONLY runs for Bash commands
 const bashSecurityHook = HookBuilder
@@ -123,7 +125,13 @@ const bashSecurityHook = HookBuilder
   .withMiddleware(middleware.logging('info'))
   .withMiddleware(middleware.timing())
   .withHandler(async (context) => {
-    const { command } = context.toolInput as { command: string };
+    // Type-safe access to command property
+    const toolInput = context.toolInput as Record<string, unknown>;
+    const command = toolInput?.command;
+    
+    if (typeof command !== 'string') {
+      return HookResults.failure('Invalid command input');
+    }
 
     // Bash-specific security checks
     const dangerousPatterns = [
@@ -172,7 +180,7 @@ if (import.meta.main) {
 
 ```typescript
 // hooks-config.ts
-import { defineHook } from '@outfitter/hooks-core';
+import { defineHook, HookResults } from '@outfitter/hooks-core';
 
 export const projectHooks = [
   // Universal security check (all tools)
@@ -204,12 +212,19 @@ export const projectHooks = [
     event: 'PostToolUse',
     tool: 'Write', // Only for Write operations
     handler: async (context) => {
-      const { file_path } = context.toolInput as { file_path: string };
-      console.log(`🎨 Auto-formatting: ${file_path}`);
+      // Type-safe access to file_path property
+      const toolInput = context.toolInput as Record<string, unknown>;
+      const filePath = toolInput?.file_path;
+      
+      if (typeof filePath !== 'string') {
+        return HookResults.failure('Invalid file path input');
+      }
+      
+      console.log(`🎨 Auto-formatting: ${filePath}`);
 
       // Format the file
-      await formatFile(file_path);
-      return HookResults.success(`Formatted ${file_path}`);
+      await formatFile(filePath);
+      return HookResults.success(`Formatted ${filePath}`);
     },
     timeout: 30000
   })
