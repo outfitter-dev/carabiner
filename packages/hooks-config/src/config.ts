@@ -186,6 +186,46 @@ export class ConfigManager {
   constructor(private workspacePath: string) {}
 
   /**
+   * Feature toggle: advanced error management integration
+   * Controlled by ENABLE_ADVANCED_ERROR_MANAGEMENT env ("true" to enable)
+   */
+  private get advancedErrorManagementEnabled(): boolean {
+    const env = typeof Bun !== 'undefined' ? Bun.env : process.env;
+    return (env?.ENABLE_ADVANCED_ERROR_MANAGEMENT || '').toLowerCase() === 'true';
+  }
+
+  /**
+   * Conditionally execute with error boundary if error-management is enabled
+   */
+  private async withBoundary<T>(
+    op: () => Promise<T>,
+    boundaryName: string,
+    operationId: string,
+    fallback?: () => Promise<T>
+  ): Promise<T> {
+    if (!this.advancedErrorManagementEnabled) {
+      return await op();
+    }
+    try {
+      const em = await import('@outfitter/error-management');
+      return await em.executeWithBoundary(
+        op,
+        boundaryName,
+        {
+          errorThreshold: 3,
+          timeWindow: 300000,
+          autoRecover: Boolean(fallback),
+          fallbackProvider: fallback,
+        },
+        operationId
+      );
+    } catch {
+      // If dynamic import fails, execute directly
+      return await op();
+    }
+  }
+
+  /**
    * Get workspace path
    */
   getWorkspacePath(): string {
@@ -196,7 +236,12 @@ export class ConfigManager {
    * Load configuration from workspace
    */
   async load(options: ConfigOptions = {}): Promise<ExtendedHookConfiguration> {
-    return this._loadInternal(options);
+    return this.withBoundary(
+      () => this._loadInternal(options),
+      'config-operations',
+      'load-config',
+      () => this.createDefaultConfig()
+    );
   }
 
   /**
@@ -240,6 +285,18 @@ export class ConfigManager {
       this.config = finalConfig;
       return finalConfig;
     } catch (error) {
+      // Optionally report via error-management if available
+      if (this.advancedErrorManagementEnabled) {
+        try {
+          const em = await import('@outfitter/error-management');
+          await em.reportError(
+            new (em.ConfigurationError)(
+              `Failed to load configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              em.ErrorCode.CONFIG_PARSE_ERROR
+            )
+          );
+        } catch {/* ignore reporting errors */}
+      }
       throw new ConfigError(
         `Failed to load configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'LOAD_ERROR'
@@ -254,7 +311,11 @@ export class ConfigManager {
     config: ExtendedHookConfiguration,
     format: ConfigFormat = 'json'
   ): Promise<void> {
-    return this._saveInternal(config, format);
+    return this.withBoundary(
+      () => this._saveInternal(config, format),
+      'config-operations',
+      'save-config'
+    );
   }
 
   /**
@@ -302,6 +363,17 @@ export class ConfigManager {
       // Notify watchers
       this.notifyWatchers(config);
     } catch (error) {
+      if (this.advancedErrorManagementEnabled) {
+        try {
+          const em = await import('@outfitter/error-management');
+          await em.reportError(
+            new (em.ConfigurationError)(
+              `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              em.ErrorCode.CONFIG_WRITE_FAILED
+            )
+          );
+        } catch {/* ignore */}
+      }
       throw new ConfigError(
         `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'SAVE_ERROR'

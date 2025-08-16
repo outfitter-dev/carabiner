@@ -518,8 +518,12 @@ Status of items required to ensure this document accurately reflects the codebas
   - ✅ Implemented. Switched to static imports for all commands to guarantee inclusion in the compiled binary.
 - Artifact naming vs installer expectations:
   - ✅ Aligned. Workflow now emits versioned artifacts (e.g., `claude-hooks-linux-v<version>`, `claude-hooks-windows-v<version>.exe`) and the installer downloads matching assets by tag.
+ - Advanced error management (optional): `packages/hooks-config/src/config.ts`
+   - ✅ Implemented as an optional integration controlled by `ENABLE_ADVANCED_ERROR_MANAGEMENT=true`. Uses dynamic import for `@outfitter/error-management` (executeWithBoundary + reportError) when enabled; falls back to local handling when disabled or unavailable.
+ - Version test: `packages/hooks-cli/src/__tests__/version.test.ts`
+   - ✅ Added a test to verify CLI version resolution from package.json during development.
 
-Monorepo status: All targeted packages pass `turbo typecheck`. To keep build-order simple, hooks-config uses a local `ConfigError`; advanced error-management integration can be reintroduced later behind a feature flag.
+Monorepo status: All targeted packages pass `turbo typecheck`. Hooks-config uses a local `ConfigError` by default and supports optional error-management integration via env config without introducing build-order coupling.
 
 ---
 
