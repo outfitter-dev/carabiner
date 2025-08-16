@@ -67,7 +67,7 @@ export class RetryManager {
    * Execute function with retry logic
    */
   async execute<T>(
-    operation: () => Promise<T>,
+    operation: () => Promise<T> | T,
     operationName?: string
   ): Promise<T> {
     let lastError: IGrappleError | undefined;
@@ -75,7 +75,7 @@ export class RetryManager {
 
     while (attempt <= this.strategy.maxRetries) {
       try {
-        const result = await operation();
+        const result = await Promise.resolve(operation());
         
         // Log successful retry if not first attempt
         if (attempt > 0) {
@@ -134,7 +134,7 @@ export class RetryManager {
    * Create a retryable function wrapper
    */
   wrap<TArgs extends unknown[], TReturn>(
-    fn: (...args: TArgs) => Promise<TReturn>,
+    fn: (...args: TArgs) => Promise<TReturn> | TReturn,
     operationName?: string
   ): (...args: TArgs) => Promise<TReturn> {
     return (...args: TArgs) => this.execute(() => fn(...args), operationName);
@@ -160,7 +160,7 @@ export class CircuitBreaker {
    * Execute operation through circuit breaker
    */
   async execute<T>(
-    operation: () => Promise<T>,
+    operation: () => Promise<T> | T,
     operationName?: string
   ): Promise<T> {
     // Check circuit state before execution
@@ -184,7 +184,7 @@ export class CircuitBreaker {
     }
 
     try {
-      const result = await operation();
+      const result = await Promise.resolve(operation());
       this.onSuccess();
       return result;
     } catch (error) {
@@ -335,7 +335,7 @@ export class ErrorRecoveryManager {
    * Execute operation with full recovery mechanisms
    */
   async execute<T>(
-    operation: () => Promise<T>,
+    operation: () => Promise<T> | T,
     operationName?: string
   ): Promise<T> {
     return this.circuitBreaker.execute(
@@ -370,15 +370,15 @@ export class GracefulDegradation {
    * Execute operation with fallback
    */
   static async withFallback<T>(
-    primary: () => Promise<T>,
-    fallback: () => Promise<T>,
+    primary: () => Promise<T> | T,
+    fallback: () => Promise<T> | T,
     operationName?: string
   ): Promise<T> {
     try {
-      return await primary();
+      return await Promise.resolve(primary());
     } catch (error) {
       console.warn(`Primary operation '${operationName}' failed, using fallback: ${error}`);
-      return await fallback();
+      return await Promise.resolve(fallback());
     }
   }
 
@@ -386,14 +386,14 @@ export class GracefulDegradation {
    * Execute multiple operations in priority order
    */
   static async withPriorityFallback<T>(
-    operations: Array<{ operation: () => Promise<T>; name: string }>,
+    operations: Array<{ operation: () => Promise<T> | T; name: string }>,
     operationName?: string
   ): Promise<T> {
     const errors: Error[] = [];
 
     for (const { operation, name } of operations) {
       try {
-        const result = await operation();
+        const result = await Promise.resolve(operation());
         if (errors.length > 0) {
           console.info(`Operation '${operationName}' succeeded using fallback '${name}'`);
         }
@@ -424,16 +424,16 @@ export class GracefulDegradation {
    * Execute operation with resource cleanup
    */
   static async withCleanup<T>(
-    operation: () => Promise<T>,
+    operation: () => Promise<T> | T,
     cleanup: () => Promise<void> | void,
     operationName?: string
   ): Promise<T> {
     try {
-      return await operation();
+      return await Promise.resolve(operation());
     } catch (error) {
       console.warn(`Operation '${operationName}' failed, performing cleanup: ${error}`);
       try {
-        await cleanup();
+        await Promise.resolve(cleanup());
       } catch (cleanupError) {
         console.error(`Cleanup failed for operation '${operationName}': ${cleanupError}`);
       }

@@ -2,23 +2,26 @@
  * Tests for error recovery mechanisms
  */
 
-import { describe, test, expect, beforeEach } from 'bun:test';
+import { beforeEach, describe, expect, test } from 'bun:test';
+import { GrappleError, NetworkError, TimeoutError } from '../errors.js';
 import {
-  RetryManager,
   CircuitBreaker,
   ErrorRecoveryManager,
   GracefulDegradation,
+  RetryManager,
 } from '../recovery.js';
-import { GrappleError, NetworkError, TimeoutError } from '../errors.js';
-import { ErrorCode, ErrorCategory, CircuitState } from '../types.js';
+import { CircuitState, ErrorCategory, ErrorCode } from '../types.js';
 
 describe('RetryManager', () => {
   test('should retry failed operations', async () => {
     let attemptCount = 0;
-    const operation = async () => {
+    const operation = () => {
       attemptCount++;
       if (attemptCount < 3) {
-        throw new NetworkError('Connection failed', ErrorCode.CONNECTION_REFUSED);
+        throw new NetworkError(
+          'Connection failed',
+          ErrorCode.CONNECTION_REFUSED
+        );
       }
       return 'success';
     };
@@ -32,7 +35,7 @@ describe('RetryManager', () => {
 
   test('should not retry non-retryable errors', async () => {
     let attemptCount = 0;
-    const operation = async () => {
+    const operation = () => {
       attemptCount++;
       throw new GrappleError(
         'Validation error',
@@ -56,7 +59,7 @@ describe('RetryManager', () => {
   test('should apply exponential backoff', async () => {
     const delays: number[] = [];
     const originalSetTimeout = setTimeout;
-    
+
     // Mock setTimeout to capture delays
     global.setTimeout = ((callback: () => void, delay: number) => {
       delays.push(delay);
@@ -64,7 +67,7 @@ describe('RetryManager', () => {
     }) as typeof setTimeout;
 
     let attemptCount = 0;
-    const operation = async () => {
+    const operation = () => {
       attemptCount++;
       if (attemptCount < 4) {
         throw new NetworkError('Connection failed');
@@ -91,7 +94,7 @@ describe('RetryManager', () => {
   });
 
   test('should execute fallback when all retries fail', async () => {
-    const operation = async () => {
+    const operation = () => {
       throw new NetworkError('Always fails');
     };
 
@@ -107,7 +110,7 @@ describe('RetryManager', () => {
   });
 
   test('should throw last error when no fallback and all retries fail', async () => {
-    const operation = async () => {
+    const operation = () => {
       throw new NetworkError('Always fails');
     };
 
@@ -123,7 +126,7 @@ describe('RetryManager', () => {
 
   test('should create wrapped retryable functions', async () => {
     let attemptCount = 0;
-    const originalFunction = async (value: string) => {
+    const originalFunction = (value: string) => {
       attemptCount++;
       if (attemptCount < 3) {
         throw new TimeoutError('Timeout');
@@ -132,7 +135,10 @@ describe('RetryManager', () => {
     };
 
     const retryManager = new RetryManager({ maxRetries: 3, retryDelay: 1 });
-    const wrappedFunction = retryManager.wrap(originalFunction, 'test-function');
+    const wrappedFunction = retryManager.wrap(
+      originalFunction,
+      'test-function'
+    );
 
     const result = await wrappedFunction('test-input');
     expect(result).toBe('processed: test-input');
@@ -148,18 +154,19 @@ describe('CircuitBreaker', () => {
       failureThreshold: 3,
       timeout: 1000,
       successThreshold: 2,
-      monitoringPeriod: 10000,
+      monitoringPeriod: 10_000,
+      minimumRequestVolume: 3, // Lower threshold for testing
     });
   });
 
   test('should allow operations when circuit is closed', async () => {
-    const operation = async () => 'success';
+    const operation = () => 'success';
     const result = await circuitBreaker.execute(operation, 'test-operation');
     expect(result).toBe('success');
   });
 
   test('should open circuit after failure threshold', async () => {
-    const failingOperation = async () => {
+    const failingOperation = () => {
       throw new NetworkError('Connection failed');
     };
 
@@ -177,16 +184,18 @@ describe('CircuitBreaker', () => {
 
     // Next operation should be blocked
     try {
-      await circuitBreaker.execute(async () => 'success', 'test-operation');
+      await circuitBreaker.execute(() => 'success', 'test-operation');
       expect(false).toBe(true); // Should have thrown
     } catch (error) {
       expect(error).toBeInstanceOf(GrappleError);
-      expect((error as GrappleError).message).toContain('Circuit breaker is OPEN');
+      expect((error as GrappleError).message).toContain(
+        'Circuit breaker is OPEN'
+      );
     }
   });
 
   test('should transition to half-open after timeout', async () => {
-    const failingOperation = async () => {
+    const failingOperation = () => {
       throw new NetworkError('Connection failed');
     };
 
@@ -210,7 +219,7 @@ describe('CircuitBreaker', () => {
     // Force half-open state
     circuitBreaker.forceState(CircuitState.HALF_OPEN);
 
-    const successOperation = async () => 'success';
+    const successOperation = () => 'success';
 
     // Execute successful operations
     await circuitBreaker.execute(successOperation, 'test-operation');
@@ -223,7 +232,7 @@ describe('CircuitBreaker', () => {
     // Force half-open state
     circuitBreaker.forceState(CircuitState.HALF_OPEN);
 
-    const failingOperation = async () => {
+    const failingOperation = () => {
       throw new NetworkError('Connection failed');
     };
 
@@ -238,7 +247,7 @@ describe('CircuitBreaker', () => {
 
   test('should provide accurate status information', () => {
     const status = circuitBreaker.getStatus();
-    
+
     expect(status.state).toBeDefined();
     expect(status.failureCount).toBeDefined();
     expect(status.successCount).toBeDefined();
@@ -249,10 +258,10 @@ describe('CircuitBreaker', () => {
   test('should reset circuit correctly', () => {
     // Force some state
     circuitBreaker.forceState(CircuitState.OPEN);
-    
+
     // Reset
     circuitBreaker.reset();
-    
+
     const status = circuitBreaker.getStatus();
     expect(status.state).toBe(CircuitState.CLOSED);
     expect(status.failureCount).toBe(0);
@@ -284,17 +293,17 @@ describe('ErrorRecoveryManager', () => {
   test('should provide combined status', () => {
     const recoveryManager = new ErrorRecoveryManager();
     const status = recoveryManager.getStatus();
-    
+
     expect(status.circuitBreaker).toBeDefined();
     expect(status.timestamp).toBeInstanceOf(Date);
   });
 
   test('should reset all mechanisms', () => {
     const recoveryManager = new ErrorRecoveryManager();
-    
+
     // This should not throw
     recoveryManager.reset();
-    
+
     const status = recoveryManager.getStatus();
     expect(status.circuitBreaker.state).toBe(CircuitState.CLOSED);
   });
@@ -302,11 +311,11 @@ describe('ErrorRecoveryManager', () => {
 
 describe('GracefulDegradation', () => {
   test('should use fallback when primary operation fails', async () => {
-    const primaryOperation = async () => {
+    const primaryOperation = () => {
       throw new NetworkError('Primary failed');
     };
 
-    const fallbackOperation = async () => 'fallback-result';
+    const fallbackOperation = () => 'fallback-result';
 
     const result = await GracefulDegradation.withFallback(
       primaryOperation,
@@ -318,8 +327,8 @@ describe('GracefulDegradation', () => {
   });
 
   test('should use primary operation when it succeeds', async () => {
-    const primaryOperation = async () => 'primary-result';
-    const fallbackOperation = async () => 'fallback-result';
+    const primaryOperation = () => 'primary-result';
+    const fallbackOperation = () => 'fallback-result';
 
     const result = await GracefulDegradation.withFallback(
       primaryOperation,
@@ -332,10 +341,20 @@ describe('GracefulDegradation', () => {
 
   test('should try operations in priority order', async () => {
     const operations = [
-      { operation: async () => { throw new Error('First fails'); }, name: 'first' },
-      { operation: async () => { throw new Error('Second fails'); }, name: 'second' },
-      { operation: async () => 'third-success', name: 'third' },
-      { operation: async () => 'fourth', name: 'fourth' },
+      {
+        operation: () => {
+          throw new Error('First fails');
+        },
+        name: 'first',
+      },
+      {
+        operation: () => {
+          throw new Error('Second fails');
+        },
+        name: 'second',
+      },
+      { operation: () => 'third-success', name: 'third' },
+      { operation: () => 'fourth', name: 'fourth' },
     ];
 
     const result = await GracefulDegradation.withPriorityFallback(
@@ -348,23 +367,38 @@ describe('GracefulDegradation', () => {
 
   test('should throw error if all fallback operations fail', async () => {
     const operations = [
-      { operation: async () => { throw new Error('First fails'); }, name: 'first' },
-      { operation: async () => { throw new Error('Second fails'); }, name: 'second' },
+      {
+        operation: () => {
+          throw new Error('First fails');
+        },
+        name: 'first',
+      },
+      {
+        operation: () => {
+          throw new Error('Second fails');
+        },
+        name: 'second',
+      },
     ];
 
     try {
-      await GracefulDegradation.withPriorityFallback(operations, 'test-operation');
+      await GracefulDegradation.withPriorityFallback(
+        operations,
+        'test-operation'
+      );
       expect(false).toBe(true); // Should have thrown
     } catch (error) {
       expect(error).toBeInstanceOf(GrappleError);
-      expect((error as GrappleError).message).toContain('All fallback operations failed');
+      expect((error as GrappleError).message).toContain(
+        'All fallback operations failed'
+      );
     }
   });
 
   test('should perform cleanup even when operation fails', async () => {
     let cleanupCalled = false;
-    
-    const failingOperation = async () => {
+
+    const failingOperation = () => {
       throw new NetworkError('Operation failed');
     };
 
@@ -387,8 +421,8 @@ describe('GracefulDegradation', () => {
 
   test('should not perform cleanup when operation succeeds', async () => {
     let cleanupCalled = false;
-    
-    const successOperation = async () => 'success';
+
+    const successOperation = () => 'success';
     const cleanup = async () => {
       cleanupCalled = true;
     };
@@ -404,7 +438,7 @@ describe('GracefulDegradation', () => {
   });
 
   test('should handle cleanup failures gracefully', async () => {
-    const failingOperation = async () => {
+    const failingOperation = () => {
       throw new NetworkError('Operation failed');
     };
 
