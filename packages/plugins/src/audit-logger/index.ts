@@ -516,7 +516,7 @@ export const auditLoggerPlugin: HookPlugin = {
       // Add tool-specific metadata for known context types
       if (isBashHookContext(context) && toolName === 'Bash') {
         metadata.command = context.toolInput.command;
-        if (auditConfig.logCommands) {
+        if (auditConfig.logCommands && auditConfig.includeSensitive) {
           metadata.fullCommand = context.toolInput;
         }
       } else if (

@@ -225,9 +225,14 @@ export function formatMemoryUsage(memory: MemoryUsage): Record<string, string> {
 export class MetricsCollector {
   private metrics: ExecutionMetrics[] = [];
   private readonly maxMetrics: number;
+  private enabled = true;
 
   constructor(maxMetrics = 1000) {
     this.maxMetrics = maxMetrics;
+  }
+
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
   }
 
   /**
@@ -248,6 +253,9 @@ export class MetricsCollector {
     memoryAfter: MemoryUsage,
     additionalContext?: Record<string, unknown>
   ): void {
+    if (!this.enabled) {
+      return;
+    }
     const metrics: ExecutionMetrics = {
       id: this.generateId(),
       event: context.event,
@@ -463,6 +471,7 @@ export const globalMetrics = new MetricsCollector();
  * @param enabled - Whether to enable metrics collection
  */
 export function setMetricsEnabled(enabled: boolean): void {
+  globalMetrics.setEnabled(enabled);
   if (!enabled) {
     globalMetrics.clear();
   }

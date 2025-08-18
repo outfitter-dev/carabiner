@@ -76,7 +76,7 @@ export class MockEnvironment {
     const envVars = [
       'CLAUDE_SESSION_ID',
       'CLAUDE_TOOL_NAME',
-      'CLAUDE_WORKSPACE_PATH',
+      'CLAUDE_PROJECT_DIR',
       'TOOL_INPUT',
       'TOOL_OUTPUT',
       'USER_PROMPT',
@@ -91,7 +91,7 @@ export class MockEnvironment {
     // Set mock values
     Bun.env.CLAUDE_SESSION_ID = sessionId;
     Bun.env.CLAUDE_TOOL_NAME = toolName;
-    Bun.env.CLAUDE_WORKSPACE_PATH = workspacePath;
+    Bun.env.CLAUDE_PROJECT_DIR = workspacePath;
     Bun.env.TOOL_INPUT =
       typeof toolInput === 'string' ? toolInput : JSON.stringify(toolInput);
 

@@ -12,7 +12,7 @@ import type {
   HealthStatus,
   IGrappleError,
 } from './types.js';
-import { ErrorSeverity } from './types.js';
+import { Code, ErrorSeverity } from './types.js';
 
 /**
  * Create a standardized error with consistent formatting
@@ -138,7 +138,7 @@ export async function withTimeout<T>(
       reject(
         new TimeoutError(
           `Operation '${operationName}' timed out after ${timeoutMs}ms`,
-          1900, // OPERATION_TIMEOUT
+          Code.OPERATION_TIMEOUT
           { operation: operationName }
         )
       );

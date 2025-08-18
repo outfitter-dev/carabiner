@@ -210,7 +210,7 @@ export class TestSuite {
       if (!testsToRun.includes(testCase)) {
         results.push({
           name: testCase.config.name,
-          passed: true,
+          passed: false,
           duration: 0,
           skipped: true,
         });

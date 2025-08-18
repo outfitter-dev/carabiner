@@ -23,15 +23,18 @@ class ErrorSimulator {
   static createTimeoutHandler(delayMs: number, timeoutMs: number): HookHandler {
     return async (_context: HookContext): Promise<HookResult> => {
       return new Promise((resolve, reject) => {
+        let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
         const workTimer = setTimeout(() => {
-          clearTimeout(timeoutTimer);
+          if (timeoutTimer) {
+            clearTimeout(timeoutTimer);
+          }
           resolve({
             success: true,
             message: `Work completed after ${delayMs}ms`,
           });
         }, delayMs);
 
-        const timeoutTimer = setTimeout(() => {
+        timeoutTimer = setTimeout(() => {
           clearTimeout(workTimer);
           reject(new Error(`Operation timed out after ${timeoutMs}ms`));
         }, timeoutMs);

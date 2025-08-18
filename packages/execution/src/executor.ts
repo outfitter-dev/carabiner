@@ -445,13 +445,14 @@ export class HookExecutor {
    * Create execution context for logging
    */
   private createExecutionContext(context: HookContext): HookExecutionContext {
+    const env = (globalThis as any).Bun?.env ?? process.env;
     return {
       event: context.event,
       toolName: 'toolName' in context ? context.toolName : undefined,
       executionId: `exec_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
-      sessionId: Bun.env.CLAUDE_SESSION_ID,
-      projectDir: Bun.env.CLAUDE_PROJECT_DIR,
-      userId: Bun.env.CLAUDE_USER_ID,
+      sessionId: env.CLAUDE_SESSION_ID,
+      projectDir: env.CLAUDE_PROJECT_DIR,
+      userId: env.CLAUDE_USER_ID,
     };
   }
 

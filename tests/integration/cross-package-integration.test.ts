@@ -7,6 +7,7 @@
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -31,7 +32,11 @@ class TestWorkspace {
    * Create a hooks configuration file
    */
   createHooksConfig(config: HookConfiguration): string {
-    const configPath = join(this.path, 'claude-hooks.json');
+    const claudeDir = join(this.path, '.claude');
+    if (!existsSync(claudeDir)) {
+      mkdirSync(claudeDir, { recursive: true });
+    }
+    const configPath = join(claudeDir, 'hooks.json');
     writeFileSync(configPath, JSON.stringify(config, null, 2));
     return configPath;
   }
@@ -91,28 +96,34 @@ describe('Cross-Package Integration Tests', () => {
       // For now, create a config manually that simulates CLI output
       const config: HookConfiguration = {
         version: '1.0.0',
-        hooks: {
-          'pre-tool-use': {
-            handler: './hooks/security-check.ts',
+        PreToolUse: {
+          Bash: {
+            command: 'bun run ./hooks/security-check.ts',
             timeout: 5000,
-          },
-          'post-tool-use': {
-            handler: './hooks/logging.ts',
-            timeout: 3000,
+            enabled: true,
           },
         },
-        environment: {
-          NODE_ENV: 'test',
+        PostToolUse: {
+          Bash: {
+            command: 'bun run ./hooks/logging.ts',
+            timeout: 3000,
+            enabled: true,
+          },
+        },
+        environments: {
+          test: {
+            NODE_ENV: 'test',
+          },
         },
       };
 
       const _configPath = workspace.createHooksConfig(config);
-      const configContent = workspace.readFile('claude-hooks.json');
+      const configContent = workspace.readFile('.claude/hooks.json');
       const parsedConfig = JSON.parse(configContent);
 
       expect(parsedConfig).toEqual(config);
-      expect(parsedConfig.hooks['pre-tool-use'].handler).toBe(
-        './hooks/security-check.ts'
+      expect(parsedConfig.PreToolUse.Bash.command).toBe(
+        'bun run ./hooks/security-check.ts'
       );
     });
 
@@ -207,19 +218,25 @@ export default async function(context) {
 
       const validConfig: HookConfiguration = {
         version: '1.0.0',
-        hooks: {
-          'pre-tool-use': {
-            handler: './hooks/security-check.ts',
+        PreToolUse: {
+          Bash: {
+            command: 'bun run ./hooks/security-check.ts',
             timeout: 5000,
-          },
-          'post-tool-use': {
-            handler: './hooks/audit-log.ts',
-            timeout: 3000,
+            enabled: true,
           },
         },
-        environment: {
-          LOG_LEVEL: 'info',
-          WORKSPACE_PATH: workspace.path,
+        PostToolUse: {
+          Bash: {
+            command: 'bun run ./hooks/audit-log.ts',
+            timeout: 3000,
+            enabled: true,
+          },
+        },
+        environments: {
+          production: {
+            LOG_LEVEL: 'info',
+            WORKSPACE_PATH: workspace.path,
+          },
         },
       };
 
@@ -258,9 +275,8 @@ export default async function(context) {
     test('should execute complete hook workflow with metrics', async () => {
       // Test the complete flow from configuration loading to hook execution
       const { ConfigManager } = await import('@outfitter/hooks-config');
-      const { globalMetrics, clearExecutionMetrics } = await import(
-        '@outfitter/execution'
-      );
+      const { globalMetrics, clearExecutionMetrics, getExecutionStats } =
+        await import('@outfitter/execution');
 
       // Clear any existing metrics
       clearExecutionMetrics();
@@ -334,7 +350,7 @@ export default async function(context) {
       expect(loadedConfig.PreToolUse.Bash).toBeDefined();
 
       // Verify metrics collection is available
-      const initialMetrics = globalMetrics.getExecutionStats();
+      const initialMetrics = getExecutionStats();
       expect(initialMetrics).toBeDefined();
     });
 
@@ -402,13 +418,14 @@ export default async function(context) {
       // Test configuration with potentially unsafe settings
       const unsafeConfig = {
         version: '1.0.0',
-        hooks: {
-          'pre-tool-use': {
-            handler: '../../../etc/passwd', // Path traversal attempt
+        PreToolUse: {
+          Bash: {
+            command: 'bun run ../../../etc/passwd', // Path traversal attempt
             timeout: 5000,
+            enabled: true,
           },
         },
-        environment: {},
+        environments: {},
       };
 
       workspace.createHooksConfig(unsafeConfig as HookConfiguration);
@@ -416,7 +433,7 @@ export default async function(context) {
 
       // Should reject unsafe paths
       await expect(configManager.load()).rejects.toThrow(
-        /outside workspace boundary/
+        /Dangerous command pattern/
       );
     });
 
@@ -425,16 +442,19 @@ export default async function(context) {
 
       const configWithUnsafeEnv: HookConfiguration = {
         version: '1.0.0',
-        hooks: {
-          'pre-tool-use': {
-            handler: './hooks/test.ts',
+        PreToolUse: {
+          Bash: {
+            command: 'bun run ./hooks/test.ts',
             timeout: 5000,
+            enabled: true,
           },
         },
-        environment: {
-          // These should be validated by security policies
-          WORKSPACE_PATH: workspace.path,
-          LOG_LEVEL: 'debug',
+        environments: {
+          production: {
+            // These should be validated by security policies
+            WORKSPACE_PATH: workspace.path,
+            LOG_LEVEL: 'debug',
+          },
         },
       };
 
@@ -443,7 +463,9 @@ export default async function(context) {
 
       // Should load safely with proper environment variables
       const config = await configManager.load();
-      expect(config.environment.WORKSPACE_PATH).toBe(workspace.path);
+      expect(config.environments?.production?.WORKSPACE_PATH).toBe(
+        workspace.path
+      );
     });
   });
 

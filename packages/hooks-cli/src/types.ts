@@ -66,10 +66,22 @@ export abstract class BaseCommand implements Command {
    * Show command help
    */
   protected showHelp(): void {
-    if (Object.keys(this.options).length > 0) {
-      for (const [_option, _desc] of Object.entries(this.options)) {
+    const lines: string[] = [];
+    lines.push(`Usage: ${this.usage}`);
+    if (this.description) {
+      lines.push('');
+      lines.push(this.description);
+    }
+    const entries = Object.entries(this.options);
+    if (entries.length > 0) {
+      lines.push('');
+      lines.push('Options:');
+      for (const [option, desc] of entries) {
+        lines.push(`  --${option}\t${desc}`);
       }
     }
+    // Emit on stderr to avoid interfering with tools parsing stdout
+    process.stderr.write(`${lines.join('\n')}\n`);
   }
 
   /**

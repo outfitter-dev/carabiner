@@ -215,6 +215,7 @@ function createMockReadableStream(
 ) {
   const chunks = [Buffer.from(data)];
   let index = 0;
+  const listeners: Map<string, Array<(...args: any[]) => void>> = new Map();
 
   return {
     async *[Symbol.asyncIterator]() {
@@ -224,6 +225,52 @@ function createMockReadableStream(
 
       while (index < chunks.length) {
         yield chunks[index++];
+      }
+    },
+    on(event: string, listener: (...args: any[]) => void) {
+      if (!listeners.has(event)) {
+        listeners.set(event, []);
+      }
+      listeners.get(event)?.push(listener);
+
+      // Simulate data events
+      if (event === 'data' && data) {
+        if (options.delay) {
+          setTimeout(() => listener(Buffer.from(data)), options.delay);
+        } else {
+          process.nextTick(() => listener(Buffer.from(data)));
+        }
+      }
+      if (event === 'end') {
+        if (options.delay) {
+          setTimeout(() => listener(), options.delay + 10);
+        } else {
+          process.nextTick(() => listener());
+        }
+      }
+    },
+    off(event: string, listener: (...args: any[]) => void) {
+      const eventListeners = listeners.get(event);
+      if (eventListeners) {
+        const index = eventListeners.indexOf(listener);
+        if (index > -1) {
+          eventListeners.splice(index, 1);
+        }
+      }
+    },
+    once(event: string, listener: (...args: any[]) => void) {
+      const onceWrapper = (...args: any[]) => {
+        this.off(event, onceWrapper);
+        listener(...args);
+      };
+      this.on(event, onceWrapper);
+    },
+    destroy(error?: Error) {
+      if (error) {
+        const errorListeners = listeners.get('error');
+        if (errorListeners) {
+          errorListeners.forEach((listener) => listener(error));
+        }
       }
     },
   };

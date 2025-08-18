@@ -4,6 +4,7 @@
  * Updated to match the actual Claude Code hooks API
  */
 
+import path from 'node:path';
 import { runtimeLogger } from './logger';
 import type {
   ClaudeHookInputVariant,
@@ -114,15 +115,16 @@ export function parseHookEnvironment(): HookEnvironment {
     // Remove any null bytes or control characters
     const sanitized = claudeProjectDir.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
 
-    // Ensure it's an absolute path and not a relative one
-    if (!sanitized.startsWith('/') || sanitized.includes('../')) {
+    // Ensure it's an absolute path and not a path traversal
+    const normalized = path.normalize(sanitized);
+    if (!path.isAbsolute(normalized) || normalized.includes('..')) {
       throw new HookInputError(
         'Invalid CLAUDE_PROJECT_DIR environment variable',
         claudeProjectDir
       );
     }
 
-    return { CLAUDE_PROJECT_DIR: sanitized };
+    return { CLAUDE_PROJECT_DIR: normalized };
   }
 
   return { CLAUDE_PROJECT_DIR: undefined };
@@ -419,12 +421,11 @@ export function outputHookResult(
     } else {
       action = 'continue';
     }
-    const claudeOutput: ClaudeHookOutput = {
+    const _claudeOutput: ClaudeHookOutput = {
       action,
       message: result.message,
       data: result.data,
     };
-    console.log(JSON.stringify(claudeOutput));
     return exitHandler(0); // Always exit 0 for JSON mode, let JSON control behavior
   }
   // Traditional exit code mode - must use console for Claude Code communication

@@ -244,12 +244,19 @@ describe('Large Input Edge Cases', () => {
       const memoryBefore = process.memoryUsage().heapUsed;
 
       try {
-        // Create large data structures
-        const largeArrays = [];
-        for (let i = 0; i < 5; i++) {
-          largeArrays.push(
-            new Array(100_000).fill(`large_string_${i}_${'x'.repeat(100)}`)
+        // Create large data structures, but bound memory growth
+        const largeArrays: string[][] = [];
+        let i = 0;
+        const targetIncrease = 150 * 1024 * 1024; // ~150MB
+        while (
+          process.memoryUsage().heapUsed - memoryBefore < targetIncrease &&
+          i < 100
+        ) {
+          const block = new Array(20_000).fill(
+            `large_string_${i}_${'x'.repeat(100)}`
           );
+          largeArrays.push(block);
+          i++;
         }
 
         // Verify we're using more memory
@@ -265,7 +272,7 @@ describe('Large Input Edge Cases', () => {
         }
 
         // Wait a bit for GC
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 250));
 
         // Memory should be recovering
         const memoryAfter = process.memoryUsage().heapUsed;

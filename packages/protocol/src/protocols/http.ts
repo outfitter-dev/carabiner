@@ -111,7 +111,7 @@ export class HttpProtocol implements HookProtocol {
         );
       }
 
-      const body = await this.request.text();
+      const body = await this.readBodyWithLimit(this.request, maxSize);
 
       if (!body.trim()) {
         throw new ProtocolInputError('Request body is empty');
@@ -134,6 +134,64 @@ export class HttpProtocol implements HookProtocol {
         error
       );
     }
+  }
+
+  /**
+   * Read request body with size limit enforcement
+   */
+  private async readBodyWithLimit(
+    req: Request,
+    maxSize: number
+  ): Promise<string> {
+    // If the runtime doesn't expose a readable stream, fall back to text()
+    const stream = req.body;
+    if (!stream) {
+      const text = await req.text();
+      if (text.length > maxSize) {
+        throw new ProtocolInputError(
+          `Request body too large. Maximum size: ${maxSize} bytes`
+        );
+      }
+      return text;
+    }
+
+    const reader = stream.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    try {
+      // Read incrementally and enforce the cap
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          break;
+        }
+        if (value) {
+          total += value.byteLength;
+          if (total > maxSize) {
+            throw new ProtocolInputError(
+              `Request body too large. Maximum size: ${maxSize} bytes`
+            );
+          }
+          chunks.push(value);
+        }
+      }
+    } finally {
+      reader.releaseLock?.();
+    }
+
+    // Concatenate and decode
+    const merged = (() => {
+      const out = new Uint8Array(total);
+      let offset = 0;
+      for (const chunk of chunks) {
+        out.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+      return out;
+    })();
+
+    return new TextDecoder('utf-8').decode(merged);
   }
 
   /**

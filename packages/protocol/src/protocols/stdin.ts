@@ -79,34 +79,46 @@ export class StdinProtocol implements HookProtocol {
     const timeout = this.options.inputTimeout ?? 30_000;
 
     try {
-      const chunks: Buffer[] = [];
-      const controller = new AbortController();
+      const input: string = await new Promise((resolve, reject) => {
+        const chunks: Buffer[] = [];
 
-      // Set up timeout
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, timeout);
-
-      try {
-        // Read all stdin chunks
-        for await (const chunk of process.stdin) {
-          if (controller.signal.aborted) {
-            throw new Error('Stdin read timed out');
-          }
+        const onData = (chunk: Buffer) => {
           chunks.push(chunk);
-        }
-      } finally {
-        clearTimeout(timeoutId);
-      }
+        };
+        const onEnd = () => {
+          cleanup();
+          resolve(Buffer.concat(chunks).toString('utf-8'));
+        };
+        const onError = (err: unknown) => {
+          cleanup();
+          reject(err instanceof Error ? err : new Error(String(err)));
+        };
+        const cleanup = () => {
+          clearTimeout(timeoutId);
+          process.stdin.off('data', onData);
+          process.stdin.off('end', onEnd);
+          process.stdin.off('error', onError);
+        };
+        const timeoutId = setTimeout(() => {
+          cleanup();
+          // Destroy to unblock the stream if no further chunks arrive
+          process.stdin.destroy(new Error('Stdin read timed out'));
+          reject(new Error('Stdin read timed out'));
+        }, timeout);
 
-      const input = Buffer.concat(chunks).toString('utf-8').trim();
+        process.stdin.on('data', onData);
+        process.stdin.once('end', onEnd);
+        process.stdin.once('error', onError);
+      });
 
-      if (!input) {
+      const trimmedInput = input.trim();
+
+      if (!trimmedInput) {
         throw new ProtocolInputError('No input received from stdin');
       }
 
       try {
-        return JSON.parse(input);
+        return JSON.parse(trimmedInput);
       } catch (parseError) {
         throw new ProtocolInputError(
           'Failed to parse JSON from stdin',

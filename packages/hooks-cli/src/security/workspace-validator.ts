@@ -4,7 +4,7 @@
  */
 
 import { existsSync, lstatSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import { SecurityValidationError } from '@outfitter/hooks-validators';
 
 /**
@@ -286,10 +286,8 @@ export class WorkspaceValidator {
     const resolved = resolve(this.normalizedRoot, sanitized);
 
     // Critical security check: ensure path is within workspace
-    if (
-      !resolved.startsWith(`${this.normalizedRoot}/`) &&
-      resolved !== this.normalizedRoot
-    ) {
+    const rel = relative(this.normalizedRoot, resolved);
+    if (rel.startsWith('..') || isAbsolute(rel)) {
       throw new SecurityValidationError(
         `Path traversal attempt detected: ${filePath} resolves to ${resolved}`,
         'pathValidation',
@@ -302,7 +300,8 @@ export class WorkspaceValidator {
     for (const pattern of this.config.blockedPatterns) {
       if (pattern.test(resolved) || pattern.test(relativePath)) {
         // Allow .claude directory and its contents
-        if (relativePath.startsWith('.claude/') || relativePath === '.claude') {
+        const relNorm = relativePath.replace(/\\/g, '/');
+        if (relNorm === '.claude' || relNorm.startsWith('.claude/')) {
           continue;
         }
         throw new SecurityValidationError(
@@ -314,7 +313,7 @@ export class WorkspaceValidator {
     }
 
     // Validate directory depth
-    const depth = relativePath.split('/').length - 1;
+    const depth = relativePath.split(/[\\/]+/).filter(Boolean).length - 1;
     if (depth > this.config.maxDepth) {
       throw new SecurityValidationError(
         `Path exceeds maximum depth (${this.config.maxDepth}): ${filePath}`,

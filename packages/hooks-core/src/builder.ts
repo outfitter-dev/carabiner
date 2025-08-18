@@ -34,13 +34,14 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
    */
   forEvent<E extends HookEvent>(event: E): HookBuilder<E> {
     const builder = new HookBuilder<E>();
-    (builder as any)._event = event;
+    builder._event = event;
     builder._toolName = this._toolName;
     builder._timeout = this._timeout;
     builder._priority = this._priority;
     builder._enabled = this._enabled;
-    (builder as any)._middleware = this
-      ._middleware as unknown as HookMiddleware<HookContext<E>>[];
+    builder._middleware = [
+      ...(this._middleware as unknown as HookMiddleware<HookContext<E>>[]),
+    ];
     return builder;
   }
 
@@ -57,7 +58,7 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
    */
   withHandler<E extends TEvent>(handler: HookHandler<E>): HookBuilder<E> {
     const builder = this as unknown as HookBuilder<E>;
-    (builder as any)._handler = handler;
+    builder._handler = handler;
     return builder;
   }
 
