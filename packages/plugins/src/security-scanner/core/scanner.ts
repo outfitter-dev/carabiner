@@ -8,7 +8,7 @@ import {
   analyzeFileContent,
   exceedsSizeLimit,
 } from '../analyzers/file-analyzer.js';
-import type { ToolInput } from '../analyzers/tool-analyzer.js';
+import type { AnalyzerToolInput } from '../analyzers/tool-analyzer.js';
 import {
   extractBashCommand,
   extractEditContent,
@@ -91,7 +91,7 @@ export class SecurityScanner {
   /**
    * Scan tool usage for security issues
    */
-  async scanTool(toolName: string, toolInput: ToolInput): Promise<ScanResult> {
+  async scanTool(toolName: string, toolInput: AnalyzerToolInput): Promise<ScanResult> {
     if (toolName === 'Bash') {
       return await this.scanBashTool(toolInput);
     }
@@ -106,7 +106,7 @@ export class SecurityScanner {
   /**
    * Scan Bash tool for security issues
    */
-  private async scanBashTool(toolInput: ToolInput): Promise<ScanResult> {
+  private async scanBashTool(toolInput: AnalyzerToolInput): Promise<ScanResult> {
     const command = extractBashCommand(toolInput);
     if (!command) {
       return { findings: [], scanned: true };
@@ -144,7 +144,7 @@ export class SecurityScanner {
    */
   private async extractToolContent(
     toolName: string,
-    toolInput: ToolInput,
+    toolInput: AnalyzerToolInput,
     filePath: string
   ): Promise<string> {
     switch (toolName) {
