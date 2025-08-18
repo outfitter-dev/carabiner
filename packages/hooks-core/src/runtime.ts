@@ -432,7 +432,11 @@ export function outputHookResult(
   // Traditional exit code mode - must use console for Claude Code communication
   if (result.message) {
     if (result.success) {
+      // eslint-disable-next-line no-console
+      console.log(result.message);
     } else {
+      // eslint-disable-next-line no-console
+      console.error(result.message);
     }
   }
 

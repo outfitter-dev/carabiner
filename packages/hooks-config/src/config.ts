@@ -190,6 +190,18 @@ export class ConfigManager {
   constructor(private readonly workspacePath: string) {}
 
   /**
+   * Private setter method to assign readonly config property
+   */
+  private setConfig(config: ExtendedHookConfiguration | null): void {
+    // Use Object.defineProperty to set readonly property
+    Object.defineProperty(this, 'config', {
+      value: config,
+      writable: false,
+      configurable: true,
+    });
+  }
+
+  /**
    * Feature toggle: advanced error management integration
    * Controlled by ENABLE_ADVANCED_ERROR_MANAGEMENT env ("true" to enable)
    */
@@ -290,7 +302,7 @@ export class ConfigManager {
       // Apply environment-specific overrides
       const finalConfig = this.applyEnvironmentOverrides(processedConfig);
 
-      (this as any).config = finalConfig;
+      this.setConfig(finalConfig);
       return finalConfig;
     } catch (error) {
       // Optionally report via error-management if available
@@ -368,7 +380,7 @@ export class ConfigManager {
 
       writeFileSync(configPath, content, 'utf-8');
       this.configPath = configPath;
-      (this as any).config = config;
+      this.setConfig(config);
 
       // Notify watchers
       this.notifyWatchers(config);

@@ -272,7 +272,11 @@ async function main(): Promise<void> {
 
 // Run CLI if this file is executed directly
 if (import.meta.main) {
-  main().catch((_error) => {
+  main().catch((error) => {
+    console.error(
+      'Fatal error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     process.exit(1);
   });
 }

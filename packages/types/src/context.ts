@@ -155,7 +155,7 @@ export function isFileHookContext(
 ): context is FileHookContext {
   return (
     isToolHookContext(context) &&
-    ['Write', 'Edit', 'Read'].includes(context.toolName)
+    ['Write', 'Edit', 'Read', 'MultiEdit'].includes(context.toolName)
   );
 }
 
