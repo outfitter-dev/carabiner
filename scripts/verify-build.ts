@@ -6,7 +6,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 type PackageCheck = {
@@ -55,7 +55,7 @@ async function runCommand(
   });
 }
 
-async function checkPackage(packageName: string): Promise<PackageCheck> {
+function checkPackage(packageName: string): PackageCheck {
   const packagePath = join(process.cwd(), 'packages', packageName);
   const distPath = join(packagePath, 'dist');
   const mainPath = join(distPath, 'index.js');
@@ -72,7 +72,6 @@ async function checkPackage(packageName: string): Promise<PackageCheck> {
         }
 
         if (stat.isDirectory()) {
-          const { readdirSync } = require('node:fs');
           return readdirSync(dirPath)
             .map((name: string) => calculateSize(join(dirPath, name)))
             .reduce((total: number, size: number) => total + size, 0);
@@ -161,8 +160,10 @@ async function runPublintValidation(): Promise<void> {
     join(process.cwd(), 'packages')
   );
 
-  if (publintResult.code !== 0 && publintResult.stderr) {
-  } else {
+  if (publintResult.code !== 0) {
+    const msg =
+      publintResult.stderr || publintResult.stdout || 'Publint failed';
+    throw new Error(`Publint failed with code ${publintResult.code}\n${msg}`);
   }
 }
 
@@ -173,7 +174,7 @@ async function verifyBuild(): Promise<void> {
 
   const checks: PackageCheck[] = [];
   for (const packageName of PACKAGES) {
-    const check = await checkPackage(packageName);
+    const check = checkPackage(packageName);
     checks.push(check);
   }
 

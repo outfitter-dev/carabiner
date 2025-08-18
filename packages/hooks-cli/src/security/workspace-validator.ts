@@ -92,7 +92,7 @@ export const DEFAULT_WORKSPACE_CONFIG: WorkspaceSecurityConfig = {
     'spec',
     '__spec__',
   ]),
-  maxFileSize: 10 * 1024 * 1024, // 10MB
+  maxFileSize: 10_485_760, // 10MB
   strictMode: true,
 };
 
@@ -128,6 +128,7 @@ export class WorkspaceValidator {
     }
 
     // Remove null bytes and control characters
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires control char detection
     const sanitized = path.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
 
     if (sanitized !== path) {
@@ -210,6 +211,7 @@ export class WorkspaceValidator {
   /**
    * Validate file path within workspace boundaries
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Security validation requires comprehensive checks
   validateFilePath(filePath: string): string {
     if (!filePath || typeof filePath !== 'string') {
       throw new SecurityValidationError(
@@ -220,6 +222,7 @@ export class WorkspaceValidator {
     }
 
     // Remove null bytes and control characters
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires control char detection
     const sanitized = filePath.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
 
     if (sanitized !== filePath) {
@@ -333,6 +336,29 @@ export class WorkspaceValidator {
           'pathValidation',
           'medium'
         );
+      }
+
+      // Check allowed extensions for files
+      if (stats.isFile()) {
+        const extension = (() => {
+          // Handle special cases like .env.example
+          for (const allowedExt of this.config.allowedExtensions) {
+            if (resolved.endsWith(allowedExt)) {
+              return allowedExt;
+            }
+          }
+          // Standard extension extraction
+          const lastDot = resolved.lastIndexOf('.');
+          return lastDot >= 0 ? resolved.slice(lastDot) : '';
+        })();
+
+        if (extension && !this.config.allowedExtensions.has(extension)) {
+          throw new SecurityValidationError(
+            `File extension not allowed: ${extension} (file: ${filePath})`,
+            'pathValidation',
+            'medium'
+          );
+        }
       }
 
       // Check for symbolic links in strict mode

@@ -91,7 +91,10 @@ export class SecurityScanner {
   /**
    * Scan tool usage for security issues
    */
-  async scanTool(toolName: string, toolInput: AnalyzerToolInput): Promise<ScanResult> {
+  async scanTool(
+    toolName: string,
+    toolInput: AnalyzerToolInput
+  ): Promise<ScanResult> {
     if (toolName === 'Bash') {
       return await this.scanBashTool(toolInput);
     }
@@ -106,7 +109,9 @@ export class SecurityScanner {
   /**
    * Scan Bash tool for security issues
    */
-  private async scanBashTool(toolInput: AnalyzerToolInput): Promise<ScanResult> {
+  private async scanBashTool(
+    toolInput: AnalyzerToolInput
+  ): Promise<ScanResult> {
     const command = extractBashCommand(toolInput);
     if (!command) {
       return { findings: [], scanned: true };

@@ -52,8 +52,8 @@ export async function writeFileWithChecks(
     await mkdir(dir, { recursive: true });
   }
 
-  // Write the file
-  await writeFile(validatedPath, content);
+  // Write the file with atomic creation when not forcing overwrites to avoid TOCTOU issues.
+  await writeFile(validatedPath, content, { flag: force ? 'w' : 'wx' });
 }
 
 /**
