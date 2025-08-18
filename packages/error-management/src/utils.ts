@@ -6,13 +6,13 @@
 
 import { ErrorFactory, GrappleError, TimeoutError } from './errors.js';
 import { reportError } from './reporting.js';
-import type {
-  ErrorCategory,
+import {
+  type ErrorCategory,
   ErrorCode,
-  HealthStatus,
-  IGrappleError,
+  ErrorSeverity,
+  type HealthStatus,
+  type IGrappleError,
 } from './types.js';
-import { Code, ErrorSeverity } from './types.js';
 
 /**
  * Create a standardized error with consistent formatting
@@ -74,14 +74,18 @@ export function wrapWithErrorHandling<TArgs extends unknown[], TReturn>(
 
       // Report error if enabled
       if (options.reportErrors !== false) {
-        await reportError(grappleError).catch((_reportError) => {});
+        await reportError(grappleError).catch((_reportError) => {
+          // Silently ignore reporting errors
+        });
       }
 
       // Call custom error handler
       if (options.onError) {
         try {
           options.onError(grappleError);
-        } catch (_handlerError) {}
+        } catch (_handlerError) {
+          // Silently ignore handler errors
+        }
       }
 
       throw grappleError;
@@ -128,7 +132,7 @@ export async function safeAsync<T>(
 /**
  * Add timeout to any async operation
  */
-export async function withTimeout<T>(
+export function withTimeout<T>(
   operation: () => Promise<T>,
   timeoutMs: number,
   operationName?: string
@@ -138,7 +142,7 @@ export async function withTimeout<T>(
       reject(
         new TimeoutError(
           `Operation '${operationName}' timed out after ${timeoutMs}ms`,
-          Code.OPERATION_TIMEOUT
+          ErrorCode.OPERATION_TIMEOUT,
           { operation: operationName }
         )
       );

@@ -64,10 +64,10 @@ describe('FeatureName', () => {
     test('should handle valid input correctly', async () => {
       // Arrange
       const input = createValidInput();
-      
+
       // Act
       const result = await functionUnderTest(input);
-      
+
       // Assert
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
@@ -78,10 +78,9 @@ describe('FeatureName', () => {
     test('should handle invalid input gracefully', async () => {
       // Arrange
       const invalidInput = null;
-      
+
       // Act & Assert
-      await expect(functionUnderTest(invalidInput))
-        .rejects.toThrow('Invalid input');
+      await expect(functionUnderTest(invalidInput)).rejects.toThrow('Invalid input');
     });
   });
 });
@@ -98,6 +97,7 @@ describe('FeatureName', () => {
 ## Testing Categories
 
 ### 1. Unit Tests (`**/*.test.ts`)
+
 - **Coverage**: Individual functions and classes
 - **Timeout**: 5 seconds
 - **Execution**: Parallel
@@ -105,6 +105,7 @@ describe('FeatureName', () => {
 - **Target**: >90% line coverage
 
 ### 2. Integration Tests (`tests/integration/`)
+
 - **Coverage**: Cross-package workflows
 - **Timeout**: 30 seconds
 - **Execution**: Sequential (to avoid conflicts)
@@ -112,6 +113,7 @@ describe('FeatureName', () => {
 - **Examples**: hooks-cli → hooks-config → hooks-core
 
 ### 3. Edge Case Tests (`tests/edge-cases/`)
+
 - **Coverage**: Boundary conditions and unusual inputs
 - **Timeout**: 60 seconds
 - **Scenarios**:
@@ -121,6 +123,7 @@ describe('FeatureName', () => {
   - Deep nesting and complex data structures
 
 ### 4. Performance Tests (`tests/performance/`)
+
 - **Coverage**: Performance benchmarks and memory usage
 - **Timeout**: 2 minutes
 - **Targets**:
@@ -130,6 +133,7 @@ describe('FeatureName', () => {
   - Startup time measurements
 
 ### 5. Error Path Tests (`tests/error-paths/`)
+
 - **Coverage**: Error handling and failure scenarios
 - **Timeout**: 30 seconds
 - **Scenarios**:
@@ -140,6 +144,7 @@ describe('FeatureName', () => {
   - Network failures
 
 ### 6. Production Tests (`tests/production/`)
+
 - **Coverage**: Real-world production scenarios
 - **Timeout**: 3 minutes
 - **Validation**:
@@ -152,6 +157,7 @@ describe('FeatureName', () => {
 ## Coverage Requirements
 
 ### Critical Paths (100% Coverage Required)
+
 - `packages/hooks-core/src/runtime.ts`
 - `packages/execution/src/executor.ts`
 - `packages/hooks-core/src/logging/logger.ts`
@@ -159,14 +165,14 @@ describe('FeatureName', () => {
 
 ### Package-Specific Targets
 
-| Package | Line Coverage | Function Coverage | Branch Coverage |
-|---------|---------------|-------------------|-----------------|
-| hooks-core | >95% | >98% | >90% |
-| execution | >90% | >95% | >85% |
-| hooks-config | >90% | >95% | >85% |
-| hooks-cli | >85% | >90% | >80% |
-| types | >95% | >98% | >90% |
-| protocol | >90% | >95% | >85% |
+| Package      | Line Coverage | Function Coverage | Branch Coverage |
+| ------------ | ------------- | ----------------- | --------------- |
+| hooks-core   | >95%          | >98%              | >90%            |
+| execution    | >90%          | >95%              | >85%            |
+| hooks-config | >90%          | >95%              | >85%            |
+| hooks-cli    | >85%          | >90%              | >80%            |
+| types        | >95%          | >98%              | >90%            |
+| protocol     | >90%          | >95%              | >85%            |
 
 ### Running Coverage
 
@@ -217,11 +223,10 @@ test('user can perform action', () => {
 test('should handle errors gracefully', async () => {
   // Test the error path explicitly
   const badInput = { invalid: true };
-  
+
   // Verify error is thrown
-  await expect(riskyOperation(badInput))
-    .rejects.toThrow(ValidationError);
-  
+  await expect(riskyOperation(badInput)).rejects.toThrow(ValidationError);
+
   // Verify error details
   try {
     await riskyOperation(badInput);
@@ -262,7 +267,7 @@ expect(spy).toHaveBeenCalledTimes(1);
 ```typescript
 // Good: Mock external dependency
 const mockApiClient = {
-  fetch: mock((url: string) => Promise.resolve({ data: 'test' }))
+  fetch: mock((url: string) => Promise.resolve({ data: 'test' })),
 } satisfies ApiClient;
 
 // Bad: Mocking internal implementation
@@ -276,23 +281,23 @@ const mockApiClient = {
 ```typescript
 class TestWorkspace {
   private tempDir: string;
-  
+
   async setup(): Promise<void> {
     this.tempDir = await createTempDirectory();
   }
-  
+
   createHooksConfig(config: HookConfiguration): string {
     const path = join(this.tempDir, '.hooks/config.ts');
     writeFileSync(path, generateConfig(config));
     return path;
   }
-  
+
   createHookFile(filename: string, content: string): string {
     const path = join(this.tempDir, '.hooks', filename);
     writeFileSync(path, content);
     return path;
   }
-  
+
   async cleanup(): Promise<void> {
     await rm(this.tempDir, { recursive: true });
   }
@@ -308,11 +313,11 @@ group('hook execution performance', () => {
   bench('single hook', async () => {
     await executeHook(simpleHook);
   });
-  
+
   bench('parallel hooks', async () => {
     await Promise.all(hooks.map(executeHook));
   });
-  
+
   bench('sequential hooks', async () => {
     for (const hook of hooks) {
       await executeHook(hook);
@@ -327,11 +332,11 @@ group('hook execution performance', () => {
 class ErrorSimulator {
   static createTimeoutHandler(delayMs: number): HookHandler {
     return async () => {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
       throw new Error('Operation timed out');
     };
   }
-  
+
   static createUnreliableHandler(failureRate: number): HookHandler {
     return async () => {
       if (Math.random() < failureRate) {
@@ -340,7 +345,7 @@ class ErrorSimulator {
       return { success: true };
     };
   }
-  
+
   static createMemoryLeakHandler(): HookHandler {
     const leakedData: any[] = [];
     return async () => {
@@ -363,11 +368,11 @@ group('critical operations', () => {
   bench('hook parsing', () => {
     parseHookConfiguration(complexConfig);
   });
-  
+
   bench('hook execution', async () => {
     await executeHook(standardHook);
   });
-  
+
   // Set baseline expectations
   bench('must be under 5ms', async () => {
     const start = performance.now();
@@ -383,18 +388,18 @@ group('critical operations', () => {
 ```typescript
 test('should not leak memory', async () => {
   const initialMemory = process.memoryUsage().heapUsed;
-  
+
   // Run operation multiple times
   for (let i = 0; i < 1000; i++) {
     await operation();
   }
-  
+
   // Force garbage collection (if available)
   if (global.gc) global.gc();
-  
+
   const finalMemory = process.memoryUsage().heapUsed;
   const memoryGrowth = finalMemory - initialMemory;
-  
+
   // Allow some growth but not excessive
   expect(memoryGrowth).toBeLessThan(10 * 1024 * 1024); // 10MB
 });
@@ -408,28 +413,26 @@ test('should not leak memory', async () => {
 describe('Security', () => {
   test('prevents path traversal', async () => {
     const maliciousPath = '../../../etc/passwd';
-    await expect(loadFile(maliciousPath))
-      .rejects.toThrow('Invalid path');
+    await expect(loadFile(maliciousPath)).rejects.toThrow('Invalid path');
   });
-  
+
   test('prevents command injection', async () => {
     const maliciousInput = '; rm -rf /';
     const result = await executeCommand(maliciousInput);
     expect(result.sanitized).toBe(true);
   });
-  
+
   test('sanitizes user input', () => {
     const xssAttempt = '<script>alert("xss")</script>';
     const sanitized = sanitizeInput(xssAttempt);
     expect(sanitized).not.toContain('<script>');
   });
-  
+
   test('validates permissions', async () => {
     const unprivilegedUser = createUser({ role: 'guest' });
-    await expect(performAdminAction(unprivilegedUser))
-      .rejects.toThrow('Insufficient permissions');
+    await expect(performAdminAction(unprivilegedUser)).rejects.toThrow('Insufficient permissions');
   });
-  
+
   test('prevents secret exposure', () => {
     const config = { apiKey: 'secret123', data: 'public' };
     const logged = prepareForLogging(config);
@@ -460,7 +463,7 @@ describe('Path handling', () => {
     const path = joinPath('folder', 'file.txt');
     expect(path).toContain(separator);
   });
-  
+
   test('normalizes line endings', () => {
     const text = 'line1\r\nline2\nline3';
     const normalized = normalizeLineEndings(text);
@@ -644,13 +647,13 @@ bun test --bail
 
 ### Test Timeout Guide
 
-| Test Type | Timeout | Parallel | When to Use |
-|-----------|---------|----------|-------------|
-| Unit | 5s | Yes | Pure functions, utilities |
-| Integration | 30s | No | Cross-package flows |
-| Edge Case | 60s | Yes | Boundary conditions |
-| Performance | 2m | No | Benchmarks, profiling |
-| E2E | 5m | No | Full user journeys |
+| Test Type   | Timeout | Parallel | When to Use               |
+| ----------- | ------- | -------- | ------------------------- |
+| Unit        | 5s      | Yes      | Pure functions, utilities |
+| Integration | 30s     | No       | Cross-package flows       |
+| Edge Case   | 60s     | Yes      | Boundary conditions       |
+| Performance | 2m      | No       | Benchmarks, profiling     |
+| E2E         | 5m      | No       | Full user journeys        |
 
 ### Coverage Quick Check
 
@@ -669,12 +672,12 @@ bun test --coverage | grep "All files" | awk '{
 const testUser = () => ({
   id: crypto.randomUUID(),
   email: `test-${Date.now()}@example.com`,
-  name: 'Test User'
+  name: 'Test User',
 });
 
 const testConfig = (overrides = {}) => ({
   timeout: 5000,
   retries: 3,
-  ...overrides
+  ...overrides,
 });
 ```

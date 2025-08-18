@@ -27,6 +27,7 @@ bun test packages/hooks-core
 Grapple uses a comprehensive testing strategy with six distinct test categories:
 
 ### Unit Tests
+
 Located alongside source files (`*.test.ts`), these test individual functions and classes in isolation.
 
 ```bash
@@ -35,6 +36,7 @@ bun test --test-name-pattern="unit"
 ```
 
 ### Integration Tests
+
 Located in `tests/integration/`, these verify that different packages work together correctly.
 
 ```bash
@@ -43,6 +45,7 @@ bun run test:integration
 ```
 
 ### Edge Case Tests
+
 Located in `tests/edge-cases/`, these test boundary conditions like large payloads, unusual encodings, and memory pressure.
 
 ```bash
@@ -51,6 +54,7 @@ bun run test:edge-cases
 ```
 
 ### Performance Tests
+
 Located in `tests/performance/`, these ensure the system meets performance requirements.
 
 ```bash
@@ -59,6 +63,7 @@ bun run test:performance
 ```
 
 ### Error Path Tests
+
 Located in `tests/error-paths/`, these verify proper error handling and graceful failure.
 
 ```bash
@@ -67,6 +72,7 @@ bun run test:error-paths
 ```
 
 ### Production Tests
+
 Located in `tests/production/`, these validate real-world scenarios including binary distribution and cross-platform compatibility.
 
 ```bash
@@ -100,8 +106,7 @@ test('should handle async operations', async () => {
 });
 
 test('should reject with error', async () => {
-  await expect(failingAsyncFunction())
-    .rejects.toThrow('Expected error message');
+  await expect(failingAsyncFunction()).rejects.toThrow('Expected error message');
 });
 ```
 
@@ -114,7 +119,7 @@ Create consistent test data using factory functions:
 export const createTestUser = () => ({
   id: crypto.randomUUID(),
   email: `test-${Date.now()}@example.com`,
-  name: 'Test User'
+  name: 'Test User',
 });
 
 // my-feature.test.ts
@@ -134,10 +139,10 @@ import { mock } from 'bun:test';
 
 test('should call external service', () => {
   const mockFetch = mock(() => Promise.resolve({ data: 'test' }));
-  
+
   const service = new MyService({ fetch: mockFetch });
   await service.getData();
-  
+
   expect(mockFetch).toHaveBeenCalledTimes(1);
   expect(mockFetch).toHaveBeenCalledWith('https://api.example.com');
 });
@@ -191,6 +196,7 @@ Different packages have different coverage requirements:
 - **Type definition packages**: >95% line coverage
 
 Critical paths require 100% coverage:
+
 - Runtime execution
 - Configuration loading
 - Error handling
@@ -256,7 +262,7 @@ group('performance', () => {
   bench('fast operation', () => {
     performFastOperation();
   });
-  
+
   bench('slow operation', () => {
     performSlowOperation();
   });
@@ -280,9 +286,8 @@ bun run test:performance --json > results.json
 ```typescript
 test('should validate input', async () => {
   // Test invalid input
-  await expect(myFunction(null))
-    .rejects.toThrow('Input cannot be null');
-  
+  await expect(myFunction(null)).rejects.toThrow('Input cannot be null');
+
   // Test specific error type
   try {
     await myFunction(invalidData);
@@ -299,10 +304,10 @@ test('should validate input', async () => {
 test('should emit events', async () => {
   const emitter = new MyEmitter();
   const handler = mock();
-  
+
   emitter.on('data', handler);
   emitter.process('test');
-  
+
   expect(handler).toHaveBeenCalledWith({ data: 'test' });
 });
 ```
@@ -310,14 +315,18 @@ test('should emit events', async () => {
 ### Testing with Timeouts
 
 ```typescript
-test('should timeout appropriately', async () => {
-  const promise = operationWithTimeout(1000);
-  
-  // Fast-forward time
-  await Bun.sleep(1100);
-  
-  await expect(promise).rejects.toThrow('Operation timed out');
-}, { timeout: 2000 }); // Test timeout
+test(
+  'should timeout appropriately',
+  async () => {
+    const promise = operationWithTimeout(1000);
+
+    // Fast-forward time
+    await Bun.sleep(1100);
+
+    await expect(promise).rejects.toThrow('Operation timed out');
+  },
+  { timeout: 2000 },
+); // Test timeout
 ```
 
 ## Best Practices
@@ -344,16 +353,19 @@ test('should timeout appropriately', async () => {
 ### Common Issues
 
 **Tests timing out**
+
 - Increase the timeout: `test('slow test', async () => {...}, { timeout: 10000 })`
 - Check for missing `await` statements
 - Verify async operations complete
 
 **Flaky tests**
+
 - Ensure proper test isolation
 - Use fixed timestamps/random seeds
 - Check for race conditions
 
 **Coverage gaps**
+
 - Run `bun test --coverage` to identify untested code
 - Focus on error paths and edge cases
 - Consider if the code needs testing or removal
