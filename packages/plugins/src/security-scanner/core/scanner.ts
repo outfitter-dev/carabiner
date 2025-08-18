@@ -120,7 +120,7 @@ export class SecurityScanner {
    */
   private async scanFileTool(
     toolName: string,
-    toolInput: ToolInput
+    toolInput: AnalyzerToolInput
   ): Promise<ScanResult> {
     const filePath = toolInput.file_path;
     if (!filePath) {
