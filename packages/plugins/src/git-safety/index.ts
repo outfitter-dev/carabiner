@@ -444,7 +444,10 @@ export const gitSafetyPlugin: HookPlugin = {
       const reason = `Command matches dangerous pattern: ${matchedPattern}`;
 
       if (safetyConfig.logBlocked) {
-        // Command blocking would be logged here
+        // biome-ignore lint/suspicious/noConsole: Security logging requires console output
+        console.warn(
+          `🚫 Git Safety: Blocked dangerous command - ${command} (pattern: ${matchedPattern})`
+        );
       }
 
       if (safetyConfig.warnOnly) {

@@ -26,7 +26,7 @@ const PACKAGES = [
   'hooks-cli',
 ];
 
-async function runCommand(
+function runCommand(
   command: string,
   args: string[],
   cwd: string
@@ -161,9 +161,19 @@ async function runPublintValidation(): Promise<void> {
   );
 
   if (publintResult.code !== 0) {
-    const msg =
-      publintResult.stderr || publintResult.stdout || 'Publint failed';
-    throw new Error(`Publint failed with code ${publintResult.code}\n${msg}`);
+    const stderr = publintResult.stderr?.trim() || '';
+    const stdout = publintResult.stdout?.trim() || '';
+    const errorMessage = stderr || stdout || 'Unknown publint failure';
+
+    throw new Error(
+      `Publint validation failed with exit code ${publintResult.code}:\n${errorMessage}`
+    );
+  }
+
+  // Log successful validation
+  if (publintResult.stdout?.trim()) {
+    // biome-ignore lint/suspicious/noConsole: Build verification logging requires console output
+    console.log('✅ Publint validation passed');
   }
 }
 
