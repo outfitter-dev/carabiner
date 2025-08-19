@@ -549,22 +549,13 @@ export class StructuredLogger {
    * Internal log method
    */
   private log(
-    level: 'info' | 'warn' | 'error',
+    _level: 'info' | 'warn' | 'error',
     _message: string,
     _metadata?: Record<string, unknown>
   ): void {
     // Log entry formatting (currently unused in this implementation)
-
-    switch (level) {
-      case 'error':
-        // Error logging implementation
-        break;
-      case 'warn':
-        // Warning logging implementation
-        break;
-      case 'info':
-        // Info logging implementation
-        break;
-    }
+    // Log entry formatting implementation placeholder
+    // The _level parameter determines the logging severity
+    // Implementation would use appropriate logging method based on level
   }
 }

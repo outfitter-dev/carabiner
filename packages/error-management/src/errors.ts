@@ -238,9 +238,18 @@ export class ConfigurationError extends GrappleError {
   constructor(
     message: string,
     code: ErrorCode = Code.CONFIG_INVALID,
-    options: ConstructorParameters<typeof GrappleError>[4] = {}
+    options: Omit<
+      ConstructorParameters<typeof GrappleError>[0],
+      'message' | 'code' | 'category' | 'severity'
+    > = {}
   ) {
-    super(message, code, Category.CONFIGURATION, Severity.ERROR, options);
+    super({
+      message,
+      code,
+      category: Category.CONFIGURATION,
+      severity: Severity.ERROR,
+      ...options,
+    });
   }
 }
 
@@ -251,9 +260,18 @@ export class RuntimeError extends GrappleError {
   constructor(
     message: string,
     code: ErrorCode = Code.RUNTIME_EXCEPTION,
-    options: ConstructorParameters<typeof GrappleError>[4] = {}
+    options: Omit<
+      ConstructorParameters<typeof GrappleError>[0],
+      'message' | 'code' | 'category' | 'severity'
+    > = {}
   ) {
-    super(message, code, Category.RUNTIME, Severity.ERROR, options);
+    super({
+      message,
+      code,
+      category: Category.RUNTIME,
+      severity: Severity.ERROR,
+      ...options,
+    });
   }
 }
 
@@ -264,9 +282,16 @@ export class ValidationError extends GrappleError {
   constructor(
     message: string,
     code: ErrorCode = Code.INVALID_INPUT,
-    options: ConstructorParameters<typeof GrappleError>[4] = {}
+    options: Omit<
+      ConstructorParameters<typeof GrappleError>[0],
+      'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
+    > = {}
   ) {
-    super(message, code, Category.VALIDATION, Severity.WARNING, {
+    super({
+      message,
+      code,
+      category: Category.VALIDATION,
+      severity: Severity.WARNING,
       ...options,
       isRecoverable: false, // Validation errors are never recoverable
     });
@@ -280,9 +305,18 @@ export class FileSystemError extends GrappleError {
   constructor(
     message: string,
     code: ErrorCode = Code.FILE_NOT_FOUND,
-    options: ConstructorParameters<typeof GrappleError>[4] = {}
+    options: Omit<
+      ConstructorParameters<typeof GrappleError>[0],
+      'message' | 'code' | 'category' | 'severity'
+    > = {}
   ) {
-    super(message, code, Category.FILESYSTEM, Severity.ERROR, options);
+    super({
+      message,
+      code,
+      category: Category.FILESYSTEM,
+      severity: Severity.ERROR,
+      ...options,
+    });
   }
 }
 
@@ -293,9 +327,16 @@ export class NetworkError extends GrappleError {
   constructor(
     message: string,
     code: ErrorCode = Code.CONNECTION_REFUSED,
-    options: ConstructorParameters<typeof GrappleError>[4] = {}
+    options: Omit<
+      ConstructorParameters<typeof GrappleError>[0],
+      'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
+    > = {}
   ) {
-    super(message, code, Category.NETWORK, Severity.ERROR, {
+    super({
+      message,
+      code,
+      category: Category.NETWORK,
+      severity: Severity.ERROR,
       ...options,
       isRecoverable: true, // Network errors are typically recoverable
     });
@@ -309,9 +350,21 @@ export class SecurityError extends GrappleError {
   constructor(
     message: string,
     code: ErrorCode = Code.SECURITY_VIOLATION,
-    options: ConstructorParameters<typeof GrappleError>[4] = {}
+    options: Omit<
+      ConstructorParameters<typeof GrappleError>[0],
+      | 'message'
+      | 'code'
+      | 'category'
+      | 'severity'
+      | 'isRecoverable'
+      | 'userMessage'
+    > = {}
   ) {
-    super(message, code, Category.SECURITY, Severity.CRITICAL, {
+    super({
+      message,
+      code,
+      category: Category.SECURITY,
+      severity: Severity.CRITICAL,
       ...options,
       isRecoverable: false, // Security errors are never recoverable
       userMessage: 'Security violation detected. Operation denied.',
@@ -326,9 +379,18 @@ export class UserInputError extends GrappleError {
   constructor(
     message: string,
     code: ErrorCode = Code.INVALID_COMMAND,
-    options: ConstructorParameters<typeof GrappleError>[4] = {}
+    options: Omit<
+      ConstructorParameters<typeof GrappleError>[0],
+      'message' | 'code' | 'category' | 'severity'
+    > = {}
   ) {
-    super(message, code, Category.USER_INPUT, Severity.WARNING, options);
+    super({
+      message,
+      code,
+      category: Category.USER_INPUT,
+      severity: Severity.WARNING,
+      ...options,
+    });
   }
 }
 
@@ -339,9 +401,16 @@ export class ResourceError extends GrappleError {
   constructor(
     message: string,
     code: ErrorCode = Code.RESOURCE_UNAVAILABLE,
-    options: ConstructorParameters<typeof GrappleError>[4] = {}
+    options: Omit<
+      ConstructorParameters<typeof GrappleError>[0],
+      'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
+    > = {}
   ) {
-    super(message, code, Category.RESOURCE, Severity.ERROR, {
+    super({
+      message,
+      code,
+      category: Category.RESOURCE,
+      severity: Severity.ERROR,
       ...options,
       isRecoverable: true, // Resource errors are often temporary
     });
@@ -355,9 +424,21 @@ export class AuthError extends GrappleError {
   constructor(
     message: string,
     code: ErrorCode = Code.AUTHENTICATION_FAILED,
-    options: ConstructorParameters<typeof GrappleError>[4] = {}
+    options: Omit<
+      ConstructorParameters<typeof GrappleError>[0],
+      | 'message'
+      | 'code'
+      | 'category'
+      | 'severity'
+      | 'isRecoverable'
+      | 'userMessage'
+    > = {}
   ) {
-    super(message, code, Category.AUTH, Severity.ERROR, {
+    super({
+      message,
+      code,
+      category: Category.AUTH,
+      severity: Severity.ERROR,
       ...options,
       isRecoverable: false, // Auth errors require user intervention
       userMessage: 'Authentication required. Please verify your credentials.',
@@ -372,9 +453,16 @@ export class TimeoutError extends GrappleError {
   constructor(
     message: string,
     code: ErrorCode = Code.OPERATION_TIMEOUT,
-    options: ConstructorParameters<typeof GrappleError>[4] = {}
+    options: Omit<
+      ConstructorParameters<typeof GrappleError>[0],
+      'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
+    > = {}
   ) {
-    super(message, code, Category.TIMEOUT, Severity.WARNING, {
+    super({
+      message,
+      code,
+      category: Category.TIMEOUT,
+      severity: Severity.WARNING,
       ...options,
       isRecoverable: true, // Timeouts are typically recoverable
     });

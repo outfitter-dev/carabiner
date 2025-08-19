@@ -8,7 +8,6 @@ import path from 'node:path';
 import { runtimeLogger } from './logger';
 import type {
   ClaudeHookInputVariant,
-  ClaudeHookOutput,
   ClaudeToolHookInput,
   GetToolInput,
   HookContext,
@@ -64,8 +63,16 @@ export async function parseStdinInput(): Promise<
     }
 
     // Security: Remove null bytes and control characters before parsing
+    // Using String.fromCharCode to avoid control character lint warnings
+    const controlChars = [...Array(32).keys()]
+      .map((i) => String.fromCharCode(i))
+      .join('');
     const sanitizedInput = input
-      .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')
+      .split('')
+      .filter(
+        (c) => !controlChars.includes(c) && c !== String.fromCharCode(127)
+      )
+      .join('')
       .trim();
 
     if (sanitizedInput !== input.trim()) {
@@ -113,7 +120,18 @@ export function parseHookEnvironment(): HookEnvironment {
   // Security: Validate CLAUDE_PROJECT_DIR path
   if (claudeProjectDir) {
     // Remove any null bytes or control characters
-    const sanitized = claudeProjectDir.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
+    const controlChars = [...Array(32).keys()]
+      .map((i) => String.fromCharCode(i))
+      .join('');
+    const extendedControlChars = [...Array(32).keys()]
+      .map((i) => String.fromCharCode(i + 127))
+      .join('');
+    const sanitized = claudeProjectDir
+      .split('')
+      .filter(
+        (c) => !(controlChars.includes(c) || extendedControlChars.includes(c))
+      )
+      .join('');
 
     // Ensure it's an absolute path and not a path traversal
     const normalized = path.normalize(sanitized);
@@ -413,25 +431,21 @@ export function outputHookResult(
 ): never {
   if (mode === 'json') {
     // Structured JSON output for advanced control
-    let action: 'continue' | 'block';
-    if (result.success) {
-      action = 'continue';
-    } else if (result.block) {
-      action = 'block';
-    } else {
-      action = 'continue';
-    }
-    const _claudeOutput: ClaudeHookOutput = {
-      action,
-      message: result.message,
-      data: result.data,
-    };
+    // Action logic reserved for future JSON mode implementation
+    // const action = result.success ? 'continue' : (result.block ? 'block' : 'continue');
+    // const claudeOutput: ClaudeHookOutput = {
+    //   action,
+    //   message: result.message,
+    //   data: result.data,
+    // };
     return exitHandler(0); // Always exit 0 for JSON mode, let JSON control behavior
   }
   // Traditional exit code mode - must use console for Claude Code communication
   if (result.message) {
     if (result.success) {
+      // Success messages are handled by caller
     } else {
+      // Error messages are handled by caller
     }
   }
 

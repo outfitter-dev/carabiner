@@ -5,7 +5,7 @@
  * and fault isolation in production environments
  */
 
-import { ErrorFactory, GrappleError } from './errors.js';
+import { fromError, GrappleError } from './errors.js';
 import type { HealthStatus, IGrappleError } from './types.js';
 import {
   ErrorCategory as Category,
@@ -116,7 +116,7 @@ export class ErrorBoundary {
       this.onSuccess();
       return result;
     } catch (error) {
-      const grappleError = ErrorFactory.fromError(
+      const grappleError = fromError(
         error instanceof Error ? error : new Error(String(error)),
         operationName
       );

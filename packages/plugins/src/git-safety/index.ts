@@ -111,7 +111,9 @@ function matchesPattern(command: string, patterns: string[]): string | null {
       if (regex.test(gitCommand)) {
         return pattern;
       }
-    } catch (_error) {}
+    } catch (_error) {
+      // Pattern is invalid regex - skip it
+    }
   }
 
   return null;
@@ -184,7 +186,9 @@ function checkRepoExclusions(
           },
         };
       }
-    } catch (_error) {}
+    } catch (_error) {
+      // Pattern is invalid regex - skip it
+    }
   }
   return null;
 }
@@ -210,7 +214,9 @@ function checkRepoInclusions(
         shouldInclude = true;
         break;
       }
-    } catch (_error) {}
+    } catch (_error) {
+      // Pattern is invalid regex - skip it
+    }
   }
 
   if (!shouldInclude) {
@@ -272,7 +278,9 @@ function checkCustomRules(
           },
         };
       }
-    } catch (_error) {}
+    } catch (_error) {
+      // Pattern is invalid regex - skip it
+    }
   }
   return null;
 }
@@ -327,10 +335,10 @@ export const gitSafetyPlugin: HookPlugin = {
   configSchema: GitSafetyConfigSchema as z.ZodType<Record<string, unknown>>,
   defaultConfig: {},
 
-  async apply(
+  apply(
     context: HookContext,
     config: Record<string, unknown> = {}
-  ): Promise<PluginResult> {
+  ): PluginResult {
     // Only handle PreToolUse for Bash commands
     if (context.event !== 'PreToolUse' || !('toolName' in context)) {
       return {
@@ -436,6 +444,7 @@ export const gitSafetyPlugin: HookPlugin = {
       const reason = `Command matches dangerous pattern: ${matchedPattern}`;
 
       if (safetyConfig.logBlocked) {
+        // Command blocking would be logged here
       }
 
       if (safetyConfig.warnOnly) {

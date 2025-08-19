@@ -4,7 +4,7 @@
  * Helper functions for common error handling patterns
  */
 
-import { ErrorFactory, GrappleError, TimeoutError } from './errors.js';
+import { fromError, GrappleError, TimeoutError } from './errors.js';
 import { reportError } from './reporting.js';
 import {
   type ErrorCategory,
@@ -29,18 +29,16 @@ export function createStandardError(
     metadata?: Record<string, unknown>;
   } = {}
 ): GrappleError {
-  return new GrappleError(
+  return new GrappleError({
     message,
     code,
     category,
-    options.severity || ErrorSeverity.ERROR,
-    {
-      cause: options.cause,
-      operation: options.operation,
-      userMessage: options.userMessage,
-      metadata: options.metadata,
-    }
-  );
+    severity: options.severity || ErrorSeverity.ERROR,
+    cause: options.cause,
+    operation: options.operation,
+    userMessage: options.userMessage,
+    metadata: options.metadata,
+  });
 }
 
 /**
@@ -66,7 +64,7 @@ export function wrapWithErrorHandling<TArgs extends unknown[], TReturn>(
           error instanceof Error ? error : new Error(String(error))
         );
       } else {
-        grappleError = ErrorFactory.fromError(
+        grappleError = fromError(
           error instanceof Error ? error : new Error(String(error)),
           options.operation
         );
@@ -108,7 +106,7 @@ export async function safeAsync<T>(
   try {
     return await operation();
   } catch (error) {
-    const grappleError = ErrorFactory.fromError(
+    const grappleError = fromError(
       error instanceof Error ? error : new Error(String(error)),
       options.operation
     );
