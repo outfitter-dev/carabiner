@@ -34,16 +34,16 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "type-fest": "catalog:",
+    "type-fest": "^4.41.0",
     "nanoid": "^5.0.9"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "catalog:",
-    "typescript": "catalog:"
+    "@types/node": "^24.2.1",
+    "typescript": "^5.9.2"
   },
   "peerDependencies": {
-    "typescript": ">=5.0.0"
+    "typescript": "^5.9.2"
   },
   "files": [
     "dist",
