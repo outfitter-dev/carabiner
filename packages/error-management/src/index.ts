@@ -120,13 +120,13 @@ export {
  */
 export function setupErrorHandling(
   config: {
-    reporting?: any;
+    reporting?: unknown;
     recovery?: {
-      retry?: any;
-      circuitBreaker?: any;
+      retry?: unknown;
+      circuitBreaker?: unknown;
     };
     boundaries?: {
-      [key: string]: any;
+      [key: string]: unknown;
     };
   } = {}
 ) {
@@ -165,7 +165,7 @@ export function setupProductionErrorHandling() {
   return setupErrorHandling({
     reporting: {
       enabled: true,
-      minSeverity: 'warning' as any,
+      minSeverity: 'warning' as const,
       includeStackTrace: true,
       includeEnvironment: true,
     },

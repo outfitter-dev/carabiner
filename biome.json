@@ -16,5 +16,21 @@
   },
   "vcs": {
     "useIgnoreFile": true
+  },
+  "linter": {
+    "rules": {
+      "style": {
+        "noMagicNumbers": "off",
+        "noEnum": "off"
+      },
+      "complexity": {
+        "noVoid": "off",
+        "noExcessiveCognitiveComplexity": "off",
+        "noExcessiveLinesPerFunction": "off"
+      },
+      "performance": {
+        "useTopLevelRegex": "off"
+      }
+    }
   }
 }

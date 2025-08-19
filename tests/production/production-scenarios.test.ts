@@ -15,6 +15,15 @@ import {
   test,
 } from 'bun:test';
 import { type ChildProcess, spawn } from 'node:child_process';
+
+// Constants to avoid magic numbers
+const BYTES_PER_KB = 1024;
+const MB = BYTES_PER_KB * BYTES_PER_KB;
+const PAYLOAD_SIZE_MB = 10;
+const LOG_FILE_SIZE_MB = 100;
+const MAX_PAYLOAD_SIZE = PAYLOAD_SIZE_MB * MB; // 10MB
+const MAX_LOG_FILE_SIZE = LOG_FILE_SIZE_MB * MB; // 100MB
+
 import {
   chmodSync,
   existsSync,
@@ -32,7 +41,7 @@ import type { HookConfiguration } from '@outfitter/types';
  * Production environment simulator
  */
 class ProductionEnvironment {
-  public readonly tempDir: string;
+  readonly tempDir: string;
   private processes: ChildProcess[] = [];
 
   constructor() {
@@ -45,13 +54,13 @@ class ProductionEnvironment {
   setupProductionStructure(): void {
     const dirs = ['hooks', 'logs', 'config', 'bin', 'lib', 'tmp'];
 
-    dirs.forEach((dir) => {
+    for (const dir of dirs) {
       const fullPath = join(this.tempDir, dir);
       if (!existsSync(fullPath)) {
         mkdirSync(fullPath, { recursive: true });
         writeFileSync(join(fullPath, '.gitkeep'), '');
       }
-    });
+    }
   }
 
   /**
@@ -92,7 +101,7 @@ class ProductionEnvironment {
       security: {
         allowedExecutables: ['bun', 'node'],
         restrictedPaths: ['/etc', '/root', '/sys'],
-        maxPayloadSize: 10 * 1024 * 1024, // 10MB
+        maxPayloadSize: MAX_PAYLOAD_SIZE,
         enableSandbox: true,
       },
       logging: {
@@ -101,7 +110,7 @@ class ProductionEnvironment {
         destinations: ['console', 'file'],
         file: {
           path: './logs/hooks.log',
-          maxSize: 100 * 1024 * 1024, // 100MB
+          maxSize: MAX_LOG_FILE_SIZE,
           maxBackups: 5,
         },
       },

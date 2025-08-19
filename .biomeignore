@@ -1,0 +1,9 @@
+.agent/
+**/node_modules/
+**/dist/
+coverage/
+build/
+.turbo/
+**/*.d.ts
+packages/*/node_modules/
+packages/*/dist/

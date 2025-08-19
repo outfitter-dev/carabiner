@@ -7,6 +7,14 @@
 
 import type { TestOptions } from 'bun:test';
 
+// Memory constants to avoid magic numbers
+const BYTES_PER_KB = 1024;
+const MB = BYTES_PER_KB * BYTES_PER_KB;
+const HEAP_INCREASE_MB = 500;
+const LEAK_THRESHOLD_MB = 50;
+const MAX_HEAP_INCREASE = HEAP_INCREASE_MB * MB; // 500MB
+const LEAK_THRESHOLD = LEAK_THRESHOLD_MB * MB; // 50MB
+
 export type GrappleTestConfig = {
   /** Coverage requirements */
   coverage: {
@@ -111,8 +119,8 @@ export const grappleTestConfig: GrappleTestConfig = {
     maxSuiteRuntime: 300_000, // 5 minutes
     maxTestRuntime: 30_000, // 30 seconds
     memory: {
-      maxHeapIncrease: 500 * 1024 * 1024, // 500MB
-      leakThreshold: 50 * 1024 * 1024, // 50MB
+      maxHeapIncrease: MAX_HEAP_INCREASE,
+      leakThreshold: LEAK_THRESHOLD,
     },
   },
 

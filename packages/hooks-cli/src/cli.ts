@@ -18,7 +18,11 @@ import { TestCommand } from './commands/test';
 import { ValidateCommand } from './commands/validate';
 import { createWorkspaceValidator } from './security/workspace-validator';
 import type { CliConfig, Command } from './types';
+
 // Import commands dynamically to avoid circular dependencies
+
+// Command name validation regex
+const VALID_COMMAND_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9\-_]*$/;
 
 /**
  * CLI class
@@ -48,7 +52,9 @@ export class ClaudeHooksCli {
         const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
         version = packageJson.version;
       }
-    } catch (_error) {}
+    } catch (_error) {
+      // Ignore version parsing errors
+    }
 
     this.config = {
       version,
@@ -66,7 +72,7 @@ export class ClaudeHooksCli {
   /**
    * Register all commands
    */
-  private async registerCommands(): Promise<void> {
+  private registerCommands(): void {
     const commands = [
       new InitCommand(),
       new GenerateCommand(),
@@ -84,7 +90,36 @@ export class ClaudeHooksCli {
    * Run the CLI
    */
   async run(args: string[]): Promise<void> {
-    const { values, positionals } = parseArgs({
+    const { values, positionals } = this.parseCliArgs(args);
+
+    // Handle global help and version
+    if (await this.handleGlobalOptions(values, positionals)) {
+      return;
+    }
+
+    // Update configuration based on parsed options
+    this.updateConfig(values);
+
+    const command = positionals[0];
+    const commandArgs = positionals.slice(1);
+
+    // Validate command input
+    this.validateCommandInput(command, commandArgs);
+
+    if (!command) {
+      await this.showHelp();
+      return;
+    }
+
+    // Execute command
+    await this.executeCommand(command, commandArgs);
+  }
+
+  /**
+   * Parse CLI arguments
+   */
+  private parseCliArgs(args: string[]) {
+    return parseArgs({
       args,
       allowPositionals: true,
       options: {
@@ -95,17 +130,31 @@ export class ClaudeHooksCli {
         workspace: { type: 'string', short: 'w' },
       },
     });
+  }
 
-    // Handle global help option
+  /**
+   * Handle global options (help, version)
+   */
+  private async handleGlobalOptions(
+    values: any,
+    positionals: string[]
+  ): Promise<boolean> {
     if (values.help && positionals.length === 0) {
       await this.showHelp();
-      return;
+      return true;
     }
 
     if (values.version) {
       process.exit(0);
     }
 
+    return false;
+  }
+
+  /**
+   * Update configuration based on parsed values
+   */
+  private updateConfig(values: any): void {
     // Update config based on parsed options
     if (values.verbose) {
       this.config.verbose = true;
@@ -121,53 +170,67 @@ export class ClaudeHooksCli {
         debug: this.config.debug,
       });
     }
+
     if (values.workspace) {
-      // Security: Validate workspace path using secure validator
-      try {
-        const validator = createWorkspaceValidator(values.workspace);
-        this.config.workspacePath = validator.getWorkspaceRoot();
-        this.logger.debug(
-          `Validated workspace path: ${this.config.workspacePath}`
-        );
-      } catch (error) {
-        this.error(
-          `Invalid workspace path: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
+      this.validateWorkspacePath(values.workspace);
+    }
+  }
+
+  /**
+   * Validate workspace path
+   */
+  private validateWorkspacePath(workspace: string): void {
+    try {
+      const validator = createWorkspaceValidator(workspace);
+      this.config.workspacePath = validator.getWorkspaceRoot();
+      this.logger.debug(
+        `Validated workspace path: ${this.config.workspacePath}`
+      );
+    } catch (error) {
+      this.error(
+        `Invalid workspace path: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      process.exit(1);
+    }
+  }
+
+  /**
+   * Validate command input for security
+   */
+  private validateCommandInput(
+    command: string | undefined,
+    commandArgs: string[]
+  ): void {
+    if (!command) return;
+
+    // Sanitize command name (basic validation)
+    if (!VALID_COMMAND_NAME_REGEX.test(command)) {
+      this.error(`Invalid command name: ${command}`);
+      process.exit(1);
+    }
+
+    // Validate command arguments for security
+    for (const arg of commandArgs) {
+      if (
+        typeof arg === 'string' &&
+        (arg.includes('../') || arg.includes('\x00'))
+      ) {
+        this.error('Invalid characters in command arguments');
         process.exit(1);
       }
     }
+  }
 
-    const command = positionals[0];
-    const commandArgs = positionals.slice(1);
-
-    // Security: Validate command input
-    if (command) {
-      // Sanitize command name (basic validation)
-      if (!/^[a-zA-Z][a-zA-Z0-9\-_]*$/.test(command)) {
-        this.error(`Invalid command name: ${command}`);
-        process.exit(1);
-      }
-
-      // Validate command arguments for security
-      for (const arg of commandArgs) {
-        if (
-          typeof arg === 'string' &&
-          (arg.includes('../') || arg.includes('\x00'))
-        ) {
-          this.error('Invalid characters in command arguments');
-          process.exit(1);
-        }
-      }
-    }
-
-    if (!command) {
-      await this.showHelp();
-      return;
-    }
-
+  /**
+   * Execute the specified command
+   */
+  private async executeCommand(
+    command: string,
+    commandArgs: string[]
+  ): Promise<void> {
     // Register commands if not already done
     if (this.commands.size === 0) {
-      await this.registerCommands();
+      this.registerCommands();
     }
 
     const cmd = this.commands.get(command);
@@ -184,6 +247,7 @@ export class ClaudeHooksCli {
         `Command failed: ${error instanceof Error ? error.message : error}`
       );
       if (this.config.debug && error instanceof Error && error.stack) {
+        // Stack trace would be logged here in debug mode
       }
       process.exit(1);
     }
@@ -272,11 +336,7 @@ async function main(): Promise<void> {
 
 // Run CLI if this file is executed directly
 if (import.meta.main) {
-  main().catch((error) => {
-    console.error(
-      'Fatal error:',
-      error instanceof Error ? error.message : 'Unknown error'
-    );
+  main().catch((_error) => {
     process.exit(1);
   });
 }
