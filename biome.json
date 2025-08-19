@@ -13,7 +13,7 @@
   "files": {
     "ignoreUnknown": true,
     "includes": ["**/*.{js,ts,jsx,tsx,json,jsonc}"],
-    "ignore": [
+    "ignores": [
       ".agent/**",
       "**/node_modules/**",
       "**/dist/**",
