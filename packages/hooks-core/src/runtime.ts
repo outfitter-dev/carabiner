@@ -64,7 +64,7 @@ export async function parseStdinInput(): Promise<
 
     // Security: Remove null bytes and control characters before parsing
     // Using String.fromCharCode to avoid control character lint warnings
-    const controlChars = [...Array(32).keys()]
+    const controlChars = [...new Array(32).keys()]
       .map((i) => String.fromCharCode(i))
       .join('');
     const sanitizedInput = input
@@ -120,10 +120,10 @@ export function parseHookEnvironment(): HookEnvironment {
   // Security: Validate CLAUDE_PROJECT_DIR path
   if (claudeProjectDir) {
     // Remove any null bytes or control characters
-    const controlChars = [...Array(32).keys()]
+    const controlChars = [...new Array(32).keys()]
       .map((i) => String.fromCharCode(i))
       .join('');
-    const extendedControlChars = [...Array(32).keys()]
+    const extendedControlChars = [...new Array(32).keys()]
       .map((i) => String.fromCharCode(i + 127))
       .join('');
     const sanitized = claudeProjectDir
@@ -431,13 +431,21 @@ export function outputHookResult(
 ): never {
   if (mode === 'json') {
     // Structured JSON output for advanced control
-    // Action logic reserved for future JSON mode implementation
-    // const action = result.success ? 'continue' : (result.block ? 'block' : 'continue');
-    // const claudeOutput: ClaudeHookOutput = {
-    //   action,
-    //   message: result.message,
-    //   data: result.data,
-    // };
+    let action: string;
+    if (result.success) {
+      action = 'continue';
+    } else if (result.block) {
+      action = 'block';
+    } else {
+      action = 'continue';
+    }
+    const claudeOutput = {
+      action,
+      message: result.message,
+      data: result.data,
+    };
+    // biome-ignore lint/suspicious/noConsole: JSON output mode requires console output
+    console.log(JSON.stringify(claudeOutput));
     return exitHandler(0); // Always exit 0 for JSON mode, let JSON control behavior
   }
   // Traditional exit code mode - must use console for Claude Code communication
