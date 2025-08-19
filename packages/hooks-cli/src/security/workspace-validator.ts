@@ -211,7 +211,6 @@ export class WorkspaceValidator {
   /**
    * Validate file path within workspace boundaries
    */
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Security validation requires comprehensive checks
   validateFilePath(filePath: string): string {
     if (!filePath || typeof filePath !== 'string') {
       throw new SecurityValidationError(
@@ -428,6 +427,7 @@ export class WorkspaceValidator {
       }
 
       // Remove null bytes and control characters
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires checking for control characters
       const sanitized = segment.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
       if (sanitized !== segment) {
         throw new SecurityValidationError(
@@ -529,10 +529,13 @@ export function sanitizeUserPath(userPath: string): string {
   }
 
   // Remove null bytes, control characters, and normalize path separators
-  return userPath
-    .replace(/[\x00-\x1f\x7f-\x9f]/g, '') // Remove control characters
-    .replace(/[\\]+/g, '/') // Normalize path separators
-    .replace(/\/+/g, '/') // Remove duplicate slashes
-    .replace(/\/\./g, '/') // Remove single dots
-    .trim();
+  return (
+    userPath
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires checking for control characters
+      .replace(/[\x00-\x1f\x7f-\x9f]/g, '') // Remove control characters
+      .replace(/[\\]+/g, '/') // Normalize path separators
+      .replace(/\/+/g, '/') // Remove duplicate slashes
+      .replace(/\/\./g, '/') // Remove single dots
+      .trim()
+  );
 }

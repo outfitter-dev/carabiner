@@ -156,7 +156,9 @@ describe('WorkspaceValidator Security Tests', () => {
     const securePath = validator.createSecurePath(['hooks', 'test.ts']);
     const expectedPath = join(testWorkspace, 'hooks', 'test.ts');
     // Normalize both paths for cross-platform comparison
-    expect(securePath.replace(/\\/g, '/')).toBe(expectedPath.replace(/\\/g, '/'));
+    expect(securePath.replace(/\\/g, '/')).toBe(
+      expectedPath.replace(/\\/g, '/')
+    );
 
     expect(() =>
       validator.createSecurePath(['hooks', '../etc/passwd'])

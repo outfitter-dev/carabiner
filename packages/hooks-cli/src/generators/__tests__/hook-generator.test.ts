@@ -16,7 +16,7 @@ describe('HookGenerator', () => {
     template: 'basic',
   };
 
-  beforeEach(async () => {
+  beforeEach(() => {
     // Ensure test workspace exists
     mkdirSync(join(testWorkspace, 'hooks'), { recursive: true });
   });

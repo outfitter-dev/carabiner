@@ -75,7 +75,7 @@ describe('template registry', () => {
 
   test('hasTemplate returns false for invalid templates', () => {
     expect(hasTemplate('hook', 'typescript')).toBe(false);
-    expect(hasTemplate('unknown' as any, 'typescript')).toBe(false);
+    expect(hasTemplate('unknown' as never, 'typescript')).toBe(false);
   });
 
   test('all template variants exist in registry', () => {

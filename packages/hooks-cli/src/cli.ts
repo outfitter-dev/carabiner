@@ -19,6 +19,15 @@ import { ValidateCommand } from './commands/validate';
 import { createWorkspaceValidator } from './security/workspace-validator';
 import type { CliConfig, Command } from './types';
 
+type CLIValues = {
+  help?: boolean;
+  version?: boolean;
+  verbose?: boolean;
+  debug?: boolean;
+  workspace?: string;
+  [key: string]: unknown;
+};
+
 // Import commands dynamically to avoid circular dependencies
 
 // Command name validation regex
@@ -136,7 +145,7 @@ export class ClaudeHooksCli {
    * Handle global options (help, version)
    */
   private async handleGlobalOptions(
-    values: any,
+    values: CLIValues,
     positionals: string[]
   ): Promise<boolean> {
     if (values.help && positionals.length === 0) {
@@ -154,7 +163,7 @@ export class ClaudeHooksCli {
   /**
    * Update configuration based on parsed values
    */
-  private updateConfig(values: any): void {
+  private updateConfig(values: CLIValues): void {
     // Update config based on parsed options
     if (values.verbose) {
       this.config.verbose = true;
@@ -201,7 +210,9 @@ export class ClaudeHooksCli {
     command: string | undefined,
     commandArgs: string[]
   ): void {
-    if (!command) return;
+    if (!command) {
+      return;
+    }
 
     // Sanitize command name (basic validation)
     if (!VALID_COMMAND_NAME_REGEX.test(command)) {
@@ -262,22 +273,55 @@ export class ClaudeHooksCli {
       await this.registerCommands();
     }
 
-    for (const _command of this.commands.values()) {
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('Claude Code Hooks CLI');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('Usage: claude-hooks <command> [options]');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('Available commands:');
+
+    for (const command of this.commands.values()) {
+      // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+      console.log(`  ${command.name.padEnd(12)} ${command.description}`);
     }
+
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('Global options:');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('  --help       Show this help message');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('  --version    Show version information');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('  --verbose    Enable verbose logging');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('  --debug      Enable debug logging');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('  --workspace  Set workspace directory');
   }
 
   /**
    * Show available commands
    */
   private showAvailableCommands(): void {
-    for (const _command of this.commands.values()) {
+    // biome-ignore lint/suspicious/noConsole: CLI output requires console.log
+    console.log('Available commands:');
+    for (const command of this.commands.values()) {
+      // biome-ignore lint/suspicious/noConsole: CLI output requires console.log
+      console.log(`  ${command.name} - ${command.description}`);
     }
   }
 
   /**
    * Log message (user-facing output)
    */
-  log(_message: string): void {}
+  log(message: string): void {
+    // biome-ignore lint/suspicious/noConsole: CLI logging requires console.log
+    console.log(message);
+  }
 
   /**
    * Log verbose message (internal logging)

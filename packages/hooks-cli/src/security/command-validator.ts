@@ -252,9 +252,12 @@ export class CommandValidator {
    */
   private sanitizeCommand(command: string): string {
     // Remove null bytes and dangerous control characters
-    return command
-      .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '') // Remove control chars except \t, \n, \r
-      .trim();
+    return (
+      command
+        // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires checking for control characters
+        .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '') // Remove control chars except \t, \n, \r
+        .trim()
+    );
   }
 
   /**
@@ -441,6 +444,9 @@ export class CommandValidator {
         break;
       case 'test':
         this.validateTestCommand(command);
+        break;
+      default:
+        // No specific restrictions for unknown environment modes
         break;
     }
   }
@@ -658,7 +664,7 @@ export function createSecureCommand(
   args: string[],
   validator?: CommandValidator
 ): string {
-  const instance = validator || new CommandValidator();
+  const instance = validator ?? new CommandValidator();
 
   // Validate executable
   if (!instance.getConfig().allowedExecutables.has(executable)) {
