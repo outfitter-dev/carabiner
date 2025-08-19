@@ -38,6 +38,7 @@
     "lint:fix": "bunx ultracite format .",
     "lint:md": "markdownlint-cli2 .",
     "format": "bunx ultracite format .",
+    "format:check": "bunx @biomejs/biome check packages/hooks-cli --diagnostic-level error",
     "format:fix": "bunx ultracite format .",
     "format:md": "markdownlint-cli2 . --fix",
     "type-check": "tsc --noEmit",
