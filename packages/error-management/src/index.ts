@@ -59,8 +59,10 @@ export {
 export {
   AuthError,
   ConfigurationError,
-  ErrorFactory,
   FileSystemError,
+  fromError,
+  fromMessage,
+  fromSystemError,
   GrappleError,
   NetworkError,
   ResourceError,
@@ -75,18 +77,21 @@ export {
 export {
   CircuitBreaker,
   ErrorRecoveryManager,
-  GracefulDegradation,
   RetryManager,
+  withCleanup,
+  withFallback,
+  withPriorityFallback,
 } from './recovery.js';
 // Reporting and Logging
 export {
   configureGlobalReporter,
   ErrorAggregator,
   ErrorReporter,
-  ErrorSanitizer,
   getGlobalReporter,
   reportError,
   StructuredLogger,
+  sanitizeError,
+  sanitizeText,
 } from './reporting.js';
 // Core Types
 export type {

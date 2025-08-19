@@ -83,6 +83,7 @@ export class RetryManager {
 
         // Log successful retry if not first attempt
         if (attempt > 0) {
+          // Retry was successful - could log this for monitoring
         }
 
         return result;
@@ -90,16 +91,14 @@ export class RetryManager {
         const grappleError =
           error instanceof GrappleError
             ? error
-            : new GrappleError(
-                error instanceof Error ? error.message : String(error),
-                9001, // INTERNAL_ERROR
-                ErrorCategory.RUNTIME,
-                ErrorSeverity.ERROR,
-                {
-                  cause: error instanceof Error ? error : undefined,
-                  operation: operationName,
-                }
-              );
+            : new GrappleError({
+                message: error instanceof Error ? error.message : String(error),
+                code: 9001, // INTERNAL_ERROR
+                category: ErrorCategory.RUNTIME,
+                severity: ErrorSeverity.ERROR,
+                cause: error instanceof Error ? error : undefined,
+                operation: operationName,
+              });
 
         lastError = grappleError;
         attempt++;
@@ -129,7 +128,9 @@ export class RetryManager {
     if (this.strategy.fallback) {
       try {
         return this.strategy.fallback() as T;
-      } catch (_fallbackError) {}
+      } catch (_fallbackError) {
+        // Fallback operation failed - will continue to throw original error
+      }
     }
 
     // No fallback or fallback failed, throw the last error
@@ -173,20 +174,18 @@ export class CircuitBreaker {
     this.updateStateBeforeExecution();
 
     if (this.state === State.OPEN) {
-      throw new GrappleError(
-        `Circuit breaker is OPEN for operation '${operationName}'. Too many failures detected.`,
-        1900, // OPERATION_TIMEOUT - closest semantic match
-        ErrorCategory.RUNTIME,
-        ErrorSeverity.WARNING,
-        {
-          operation: operationName,
-          technicalDetails: {
-            circuitState: this.state,
-            failureCount: this.failureCount,
-            lastFailureTime: this.lastFailureTime,
-          },
-        }
-      );
+      throw new GrappleError({
+        message: `Circuit breaker is OPEN for operation '${operationName}'. Too many failures detected.`,
+        code: 1900, // OPERATION_TIMEOUT - closest semantic match
+        category: ErrorCategory.RUNTIME,
+        severity: ErrorSeverity.WARNING,
+        operation: operationName,
+        technicalDetails: {
+          circuitState: this.state,
+          failureCount: this.failureCount,
+          lastFailureTime: this.lastFailureTime,
+        },
+      });
     }
 
     try {
@@ -347,7 +346,7 @@ export class ErrorRecoveryManager {
     operation: () => Promise<T> | T,
     operationName?: string
   ): Promise<T> {
-    return this.circuitBreaker.execute(
+    return await this.circuitBreaker.execute(
       () => this.retryManager.execute(operation, operationName),
       operationName
     );
@@ -374,73 +373,73 @@ export class ErrorRecoveryManager {
 /**
  * Graceful degradation utilities
  */
-export class GracefulDegradation {
-  /**
-   * Execute operation with fallback
-   */
-  static async withFallback<T>(
-    primary: () => Promise<T> | T,
-    fallback: () => Promise<T> | T,
-    _operationName?: string
-  ): Promise<T> {
-    try {
-      return await Promise.resolve(primary());
-    } catch (_error) {
-      return await Promise.resolve(fallback());
-    }
+
+/**
+ * Execute operation with fallback
+ */
+export async function withFallback<T>(
+  primary: () => Promise<T> | T,
+  fallback: () => Promise<T> | T,
+  _operationName?: string
+): Promise<T> {
+  try {
+    return await Promise.resolve(primary());
+  } catch (_error) {
+    return await Promise.resolve(fallback());
   }
+}
 
-  /**
-   * Execute multiple operations in priority order
-   */
-  static async withPriorityFallback<T>(
-    operations: Array<{ operation: () => Promise<T> | T; name: string }>,
-    operationName?: string
-  ): Promise<T> {
-    const errors: Error[] = [];
+/**
+ * Execute multiple operations in priority order
+ */
+export async function withPriorityFallback<T>(
+  operations: Array<{ operation: () => Promise<T> | T; name: string }>,
+  operationName?: string
+): Promise<T> {
+  const errors: Error[] = [];
 
-    for (const { operation } of operations) {
-      try {
-        const result = await Promise.resolve(operation());
-        if (errors.length > 0) {
-        }
-        return result;
-      } catch (error) {
-        errors.push(error instanceof Error ? error : new Error(String(error)));
-      }
-    }
-
-    // All operations failed
-    throw new GrappleError(
-      `All fallback operations failed for '${operationName}'`,
-      9001, // INTERNAL_ERROR
-      ErrorCategory.RUNTIME,
-      ErrorSeverity.ERROR,
-      {
-        operation: operationName,
-        technicalDetails: {
-          failedOperations: operations.map((op) => op.name),
-          errors: errors.map((e) => e.message),
-        },
-      }
-    );
-  }
-
-  /**
-   * Execute operation with resource cleanup
-   */
-  static async withCleanup<T>(
-    operation: () => Promise<T> | T,
-    cleanup: () => Promise<void> | void,
-    _operationName?: string
-  ): Promise<T> {
+  for (const { operation } of operations) {
     try {
-      return await Promise.resolve(operation());
+      const result = await Promise.resolve(operation());
+      if (errors.length > 0) {
+        // Previous operations failed but this one succeeded - could log recovery
+      }
+      return result;
     } catch (error) {
-      try {
-        await Promise.resolve(cleanup());
-      } catch (_cleanupError) {}
-      throw error;
+      errors.push(error instanceof Error ? error : new Error(String(error)));
     }
+  }
+
+  // All operations failed
+  throw new GrappleError({
+    message: `All fallback operations failed for '${operationName}'`,
+    code: 9001, // INTERNAL_ERROR
+    category: ErrorCategory.RUNTIME,
+    severity: ErrorSeverity.ERROR,
+    operation: operationName,
+    technicalDetails: {
+      failedOperations: operations.map((op) => op.name),
+      errors: errors.map((e) => e.message),
+    },
+  });
+}
+
+/**
+ * Execute operation with resource cleanup
+ */
+export async function withCleanup<T>(
+  operation: () => Promise<T> | T,
+  cleanup: () => Promise<void> | void,
+  _operationName?: string
+): Promise<T> {
+  try {
+    return await Promise.resolve(operation());
+  } catch (error) {
+    try {
+      await Promise.resolve(cleanup());
+    } catch (_cleanupError) {
+      // Cleanup failed - log or handle appropriately
+    }
+    throw error;
   }
 }

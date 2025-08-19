@@ -54,7 +54,7 @@ import {
 } from '../src/metrics';
 
 // Define our security hook handler
-const securityHook: HookHandler = async (context) => {
+const securityHook: HookHandler = (context) => {
   // Only check PreToolUse events for Bash
   if (context.event !== 'PreToolUse' || context.toolName !== 'Bash') {
     return { success: true, message: 'Not applicable to this tool/event' };
@@ -177,18 +177,28 @@ export async function runSecurityExample() {
         { testCase: testCase.name }
       );
       if (result.block) {
+        // Command was blocked for security reasons
+        collector.recordEvent('blocked_command', testCase.name);
       }
-    } catch (_error) {}
+    } catch (_error) {
+      // Error in test execution - expected for some test cases
+      collector.recordEvent('test_error', testCase.name);
+    }
   }
   const stats = collector.getAggregateMetrics();
 
   if (stats.topErrors.length > 0) {
     for (const _error of stats.topErrors) {
+      // Log error statistics for debugging
+      collector.recordEvent('error_stat', 'Found error in statistics');
     }
   }
 }
 
 // Run the example if this file is executed directly
 if (import.meta.main) {
-  runSecurityExample().catch(console.error);
+  runSecurityExample().catch((error) => {
+    process.stderr.write(`Error running security example: ${error}\n`);
+    process.exit(1);
+  });
 }

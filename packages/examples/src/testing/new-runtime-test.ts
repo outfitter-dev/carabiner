@@ -56,7 +56,7 @@ function exampleHook(context: HookContext): HookResult {
 /**
  * Test function that simulates Claude Code input
  */
-export async function testNewRuntime(): Promise<void> {
+export function testNewRuntime(): void {
   // Example 1: PreToolUse hook input
   const preToolUseInput: ClaudeToolHookInput = {
     session_id: 'test-session-123',

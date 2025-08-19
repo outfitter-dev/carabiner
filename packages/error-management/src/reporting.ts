@@ -50,101 +50,92 @@ const SENSITIVE_PATTERNS = [
 ];
 
 /**
- * Error sanitization utility
+ * Sanitize sensitive data from text
  */
-export class ErrorSanitizer {
-  /**
-   * Sanitize sensitive data from text
-   */
-  static sanitizeText(text: string): string {
-    let sanitized = text;
+export function sanitizeText(text: string): string {
+  let sanitized = text;
 
-    for (const pattern of SENSITIVE_PATTERNS) {
-      sanitized = sanitized.replace(pattern, (match, capture) => {
-        if (capture) {
-          const replacement =
-            capture.length > 4
-              ? capture.substring(0, 2) +
-                '*'.repeat(capture.length - 4) +
-                capture.substring(capture.length - 2)
-              : '*'.repeat(capture.length);
-          return match.replace(capture, replacement);
-        }
-        return '[REDACTED]';
-      });
-    }
-
-    return sanitized;
-  }
-
-  /**
-   * Sanitize error object for safe reporting
-   */
-  static sanitizeError(error: IGrappleError): Partial<ErrorReport> {
-    return {
-      error: {
-        name: error.name,
-        message: ErrorSanitizer.sanitizeText(error.message),
-        code: error.code,
-        category: error.category,
-        severity: error.severity,
-        stack: error.stack
-          ? ErrorSanitizer.sanitizeText(error.stack)
-          : undefined,
-      },
-      context: {
-        ...error.context,
-        stackTrace: error.context.stackTrace
-          ? ErrorSanitizer.sanitizeText(error.context.stackTrace)
-          : undefined,
-        technicalDetails: error.context.technicalDetails
-          ? (ErrorSanitizer.sanitizeObject(
-              error.context.technicalDetails as Record<string, unknown>
-            ) as Record<string, JsonValue>)
-          : undefined,
-        metadata: error.context.metadata
-          ? (ErrorSanitizer.sanitizeObject(
-              error.context.metadata as Record<string, unknown>
-            ) as Record<string, JsonValue>)
-          : undefined,
-      },
-    };
-  }
-
-  /**
-   * Sanitize object recursively
-   */
-  private static sanitizeObject(
-    obj: Record<string, unknown>
-  ): Record<string, unknown> {
-    const sanitized: Record<string, unknown> = {};
-
-    for (const [key, value] of Object.entries(obj)) {
-      if (typeof value === 'string') {
-        sanitized[key] = ErrorSanitizer.sanitizeText(value);
-      } else if (
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
-        sanitized[key] = ErrorSanitizer.sanitizeObject(
-          value as Record<string, unknown>
-        );
-      } else if (Array.isArray(value)) {
-        sanitized[key] = value.map((item) =>
-          typeof item === 'string'
-            ? ErrorSanitizer.sanitizeText(item)
-            : typeof item === 'object' && item !== null
-              ? ErrorSanitizer.sanitizeObject(item as Record<string, unknown>)
-              : item
-        );
-      } else {
-        sanitized[key] = value;
+  for (const pattern of SENSITIVE_PATTERNS) {
+    sanitized = sanitized.replace(pattern, (match, capture) => {
+      if (capture) {
+        const replacement =
+          capture.length > 4
+            ? capture.substring(0, 2) +
+              '*'.repeat(capture.length - 4) +
+              capture.substring(capture.length - 2)
+            : '*'.repeat(capture.length);
+        return match.replace(capture, replacement);
       }
-    }
-
-    return sanitized;
+      return '[REDACTED]';
+    });
   }
+
+  return sanitized;
+}
+
+/**
+ * Sanitize error object for safe reporting
+ */
+export function sanitizeError(error: IGrappleError): Partial<ErrorReport> {
+  return {
+    error: {
+      name: error.name,
+      message: sanitizeText(error.message),
+      code: error.code,
+      category: error.category,
+      severity: error.severity,
+      stack: error.stack ? sanitizeText(error.stack) : undefined,
+    },
+    context: {
+      ...error.context,
+      stackTrace: error.context.stackTrace
+        ? sanitizeText(error.context.stackTrace)
+        : undefined,
+      technicalDetails: error.context.technicalDetails
+        ? (sanitizeObject(
+            error.context.technicalDetails as Record<string, unknown>
+          ) as Record<string, JsonValue>)
+        : undefined,
+      metadata: error.context.metadata
+        ? (sanitizeObject(
+            error.context.metadata as Record<string, unknown>
+          ) as Record<string, JsonValue>)
+        : undefined,
+    },
+  };
+}
+
+/**
+ * Sanitize object recursively
+ */
+function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string') {
+      sanitized[key] = sanitizeText(value);
+    } else if (
+      typeof value === 'object' &&
+      value !== null &&
+      !Array.isArray(value)
+    ) {
+      sanitized[key] = sanitizeObject(value as Record<string, unknown>);
+    } else if (Array.isArray(value)) {
+      sanitized[key] = value.map((item) => {
+        if (typeof item === 'string') {
+          return sanitizeText(item);
+        }
+        if (typeof item === 'object' && item !== null) {
+          return sanitizeObject(item as Record<string, unknown>);
+        }
+        return item;
+      });
+    } else {
+      sanitized[key] = value;
+    }
+  }
+
+  return sanitized;
 }
 
 /**
@@ -352,11 +343,13 @@ export class ErrorReporter {
       try {
         const transformed = this.config.transform(error);
         report.metadata = { ...report.metadata, ...transformed };
-      } catch (_transformError) {}
+      } catch (_transformError) {
+        // Transformation error - continue without custom transforms
+      }
     }
 
     // Sanitize the report
-    const sanitizedParts = ErrorSanitizer.sanitizeError(error);
+    const sanitizedParts = sanitizeError(error);
     report = {
       ...report,
       ...sanitizedParts,
@@ -377,7 +370,10 @@ export class ErrorReporter {
 
     try {
       while (this.reportQueue.length > 0) {
-        const report = this.reportQueue.shift()!;
+        const report = this.reportQueue.shift();
+        if (!report) {
+          break;
+        }
 
         try {
           await this.sendReport(report);
@@ -415,6 +411,7 @@ export class ErrorReporter {
     switch (report.error.severity) {
       case Severity.CRITICAL:
         if (report.error.stack) {
+          // Stack trace logged for critical errors
         }
         break;
       case Severity.ERROR:
@@ -503,7 +500,7 @@ export class StructuredLogger {
 
   constructor(context: Record<string, unknown> = {}, reporter?: ErrorReporter) {
     this.context = context;
-    this.reporter = reporter || getGlobalReporter();
+    this.reporter = reporter ?? getGlobalReporter();
   }
 
   /**
@@ -560,10 +557,13 @@ export class StructuredLogger {
 
     switch (level) {
       case 'error':
+        // Error logging implementation
         break;
       case 'warn':
+        // Warning logging implementation
         break;
-      default:
+      case 'info':
+        // Info logging implementation
         break;
     }
   }

@@ -135,24 +135,24 @@ export class ErrorBoundary {
       try {
         const fallback = this.config.fallbackProvider(this.context);
         return fallback as T;
-      } catch (_fallbackError) {}
+      } catch (_fallbackError) {
+        // Fallback operation failed - continue with error
+      }
     }
 
     // No fallback available, throw error
-    throw new GrappleError(
-      `Error boundary '${this.context.name}' is in failed state`,
-      Code.RUNTIME_EXCEPTION,
-      Category.RUNTIME,
-      Severity.ERROR,
-      {
-        operation: operationName,
-        technicalDetails: {
-          boundaryState: this.context.state,
-          errorCount: this.context.errorCount,
-          boundaryId: this.context.boundaryId,
-        },
-      }
-    );
+    throw new GrappleError({
+      message: `Error boundary '${this.context.name}' is in failed state`,
+      code: Code.RUNTIME_EXCEPTION,
+      category: Category.RUNTIME,
+      severity: Severity.ERROR,
+      operation: operationName,
+      technicalDetails: {
+        boundaryState: this.context.state,
+        errorCount: this.context.errorCount,
+        boundaryId: this.context.boundaryId,
+      },
+    });
   }
 
   /**
@@ -183,7 +183,9 @@ export class ErrorBoundary {
     if (this.config.onError) {
       try {
         this.config.onError(error, this.context);
-      } catch (_handlerError) {}
+      } catch (_handlerError) {
+        // Error handler failed - continue gracefully
+      }
     }
 
     // Update boundary state based on error count
@@ -339,8 +341,9 @@ export class ErrorBoundaryRegistry {
     config: Partial<ErrorBoundaryConfig> = {},
     metadata: Record<string, unknown> = {}
   ): ErrorBoundary {
-    if (this.boundaries.has(name)) {
-      return this.boundaries.get(name)!;
+    const existingBoundary = this.boundaries.get(name);
+    if (existingBoundary) {
+      return existingBoundary;
     }
 
     const boundary = new ErrorBoundary(name, config, metadata);
@@ -407,9 +410,10 @@ export class ErrorBoundaryRegistry {
     return {
       healthy: overallHealthy,
       components,
-      message: overallHealthy
-        ? 'All error boundaries healthy'
-        : 'Some error boundaries are degraded or failed',
+      message:
+        overallHealthy === true
+          ? 'All error boundaries healthy'
+          : 'Some error boundaries are degraded or failed',
       timestamp: new Date(),
     };
   }
@@ -447,7 +451,7 @@ export function withErrorBoundary<TArgs extends unknown[], TReturn>(
   );
 
   return function decorator(
-    _target: any,
+    _target: unknown,
     propertyKey: string,
     descriptor: TypedPropertyDescriptor<(...args: TArgs) => Promise<TReturn>>
   ) {
@@ -457,8 +461,8 @@ export function withErrorBoundary<TArgs extends unknown[], TReturn>(
       throw new Error(`Method ${propertyKey} is not defined`);
     }
 
-    descriptor.value = async function (
-      this: any,
+    descriptor.value = function (
+      this: unknown,
       ...args: TArgs
     ): Promise<TReturn> {
       return boundary.execute(
@@ -474,7 +478,7 @@ export function withErrorBoundary<TArgs extends unknown[], TReturn>(
 /**
  * Utility function to execute code within an error boundary
  */
-export async function executeWithBoundary<T>(
+export function executeWithBoundary<T>(
   operation: () => Promise<T>,
   boundaryName: string,
   config: Partial<ErrorBoundaryConfig> = {},

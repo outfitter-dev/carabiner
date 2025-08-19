@@ -25,7 +25,7 @@ import {
  */
 async function handlePostToolUse(
   context: HookContext<'PostToolUse'>
-): Promise<HookResult> {
+): HookResult {
   // Access tool response from new context structure
   // Example: process tool response if available
   // if (context.toolResponse) { /* ... */ }
@@ -52,7 +52,7 @@ async function handlePostToolUse(
  */
 async function routeToToolHandler(
   context: HookContext<'PostToolUse'>
-): Promise<HookResult> {
+): HookResult {
   switch (context.toolName) {
     case 'Bash':
       return await handleBashPostProcessing(
@@ -78,7 +78,7 @@ async function routeToToolHandler(
  */
 async function handleBashPostProcessing(
   context: HookContext<'PostToolUse', 'Bash'>
-): Promise<HookResult> {
+): HookResult {
   if (!isBashToolInput(context.toolInput)) {
     return HookResults.success(
       'Bash post-processing completed (no input to process)'
@@ -117,7 +117,7 @@ async function handleBashPostProcessing(
  */
 async function handleWritePostProcessing(
   context: HookContext<'PostToolUse', 'Write'>
-): Promise<HookResult> {
+): HookResult {
   if (!isWriteToolInput(context.toolInput)) {
     return HookResults.success(
       'Write post-processing completed (no input to process)'
@@ -166,7 +166,7 @@ async function handleWritePostProcessing(
  */
 async function handleEditPostProcessing(
   context: HookContext<'PostToolUse', 'Edit'>
-): Promise<HookResult> {
+): HookResult {
   if (!isEditToolInput(context.toolInput)) {
     return HookResults.success(
       'Edit post-processing completed (no input to process)'
@@ -204,9 +204,7 @@ async function handleEditPostProcessing(
 /**
  * Handle Read tool post-processing
  */
-async function handleReadPostProcessing(
-  context: HookContext
-): Promise<HookResult> {
+function handleReadPostProcessing(context: HookContext): HookResult {
   // For read operations, we might want to log access or update cache
   const output = context.toolResponse;
   const outputSize = (() => {
@@ -221,6 +219,7 @@ async function handleReadPostProcessing(
   })();
 
   if (outputSize > 100_000) {
+    // Large output detected - could implement compression or warning
   }
 
   return HookResults.success('Read post-processing completed', {
@@ -232,9 +231,7 @@ async function handleReadPostProcessing(
 /**
  * Handle generic tool post-processing
  */
-async function handleGenericPostProcessing(
-  context: HookContext
-): Promise<HookResult> {
+function handleGenericPostProcessing(context: HookContext): HookResult {
   // Basic logging and cleanup
   const output = context.toolResponse;
 
@@ -261,7 +258,7 @@ async function handleGenericPostProcessing(
  * Utility functions
  */
 
-async function analyzeBashOutput(
+function analyzeBashOutput(
   command: string,
   output: string,
   _cwd: string,
@@ -300,7 +297,7 @@ async function analyzeBashOutput(
   }
 }
 
-async function handleSpecificCommands(
+function handleSpecificCommands(
   command: string,
   cwd: string,
   actions: string[]
@@ -366,7 +363,9 @@ async function formatFile(
       actions.push('formatted');
       return true;
     }
-  } catch (_error) {}
+  } catch (_error) {
+    // Error in operation - handle gracefully
+  }
 
   return false;
 }
@@ -405,10 +404,13 @@ async function validateEditedFile(
   try {
     const content = await readFile(filePath, 'utf-8');
     if (content.trim().length === 0) {
+      // Empty file - no actions needed
     } else {
       actions.push('validated');
     }
-  } catch (_error) {}
+  } catch (_error) {
+    // Error in operation - handle gracefully
+  }
 }
 
 async function validateJsonSyntax(
@@ -424,7 +426,7 @@ async function validateJsonSyntax(
   }
 }
 
-async function logToolExecution(
+function logToolExecution(
   context: HookContext,
   result: HookResult,
   processingTime: number
@@ -483,7 +485,7 @@ function isCodeFile(filePath: string): boolean {
   return codeExtensions.includes(extname(filePath));
 }
 
-async function runCommand(
+function runCommand(
   command: string,
   args: string[],
   cwd: string

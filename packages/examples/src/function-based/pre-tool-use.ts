@@ -22,7 +22,7 @@ import { ValidationError, validateHookSecurity } from '@/hooks-validators';
  */
 async function handlePreToolUse(
   context: HookContext<'PreToolUse'>
-): Promise<HookResult> {
+): HookResult {
   try {
     // Route to specific tool handlers
     switch (context.toolName) {
@@ -55,7 +55,7 @@ async function handlePreToolUse(
  */
 async function handleBashValidation(
   context: HookContext<'PreToolUse', 'Bash'>
-): Promise<HookResult> {
+): HookResult {
   if (!isBashToolInput(context.toolInput)) {
     return HookResults.block('Invalid Bash tool input');
   }
@@ -99,7 +99,7 @@ async function handleBashValidation(
  */
 async function handleWriteValidation(
   context: HookContext<'PreToolUse', 'Write'>
-): Promise<HookResult> {
+): HookResult {
   if (!isWriteToolInput(context.toolInput)) {
     return HookResults.block('Invalid Write tool input');
   }
@@ -139,7 +139,7 @@ async function handleWriteValidation(
  */
 async function handleEditValidation(
   context: HookContext<'PreToolUse', 'Edit'>
-): Promise<HookResult> {
+): HookResult {
   if (!isEditToolInput(context.toolInput)) {
     return HookResults.block('Invalid Edit tool input');
   }
@@ -178,15 +178,15 @@ async function handleEditValidation(
 /**
  * Handle generic tool validation
  */
-async function handleGenericValidation(
-  context: HookContext
-): Promise<HookResult> {
+function handleGenericValidation(context: HookContext): HookResult {
   // Apply basic security validation
   try {
     validateHookSecurity(context, {
       env: 'development', // More permissive for unknown tools
     });
-  } catch (_error) {}
+  } catch (_error) {
+    // Error in generic validation - continue gracefully
+  }
 
   return HookResults.success(
     `Generic validation passed for ${context.toolName}`
@@ -197,10 +197,10 @@ async function handleGenericValidation(
  * Custom validation functions
  */
 
-async function validateBashCommand(
+function validateBashCommand(
   command: string,
   _cwd: string
-): Promise<{ allowed: boolean; reason?: string }> {
+): { allowed: boolean; reason?: string } {
   // Example: Block commands that could modify git history
   const dangerousGitPatterns = [
     /git\s+rebase.*-i/,
@@ -238,11 +238,11 @@ async function validateBashCommand(
   return { allowed: true };
 }
 
-async function validateFileWrite(
+function validateFileWrite(
   filePath: string,
   _content: string,
   _cwd: string
-): Promise<{ allowed: boolean; reason?: string }> {
+): { allowed: boolean; reason?: string } {
   // Example: Block writes to node_modules
   if (filePath.includes('node_modules/')) {
     return {
@@ -267,12 +267,12 @@ async function validateFileWrite(
   return { allowed: true };
 }
 
-async function validateFileEdit(
+function validateFileEdit(
   filePath: string,
   _oldString: string,
   newString: string,
   _cwd: string
-): Promise<{ allowed: boolean; reason?: string }> {
+): { allowed: boolean; reason?: string } {
   // Example: Block edits to lock files
   if (filePath.endsWith('.lock') || filePath.endsWith('-lock.json')) {
     return {

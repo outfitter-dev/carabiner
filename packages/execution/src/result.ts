@@ -209,8 +209,8 @@ export function toHookResult<T>(result: Result<T, Error>): HookResult {
  */
 export class ExecutionError extends Error {
   override name = 'ExecutionError';
-  public readonly code: string;
-  public readonly context?: Record<string, unknown>;
+  readonly code: string;
+  readonly context?: Record<string, unknown>;
 
   constructor(
     message: string,

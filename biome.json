@@ -12,18 +12,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**/*.{js,ts,jsx,tsx,json,jsonc}"],
-    "ignores": [
-      ".agent/**",
-      "**/node_modules/**",
-      "**/dist/**",
-      "coverage/**",
-      "build/**",
-      ".turbo/**",
-      "**/*.d.ts",
-      "tests/**",
-      "scripts/**"
-    ]
+    "includes": ["**/*.{js,ts,jsx,tsx,json,jsonc}"]
   },
   "vcs": {
     "useIgnoreFile": true

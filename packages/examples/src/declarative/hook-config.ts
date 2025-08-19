@@ -31,7 +31,7 @@ const developmentHooks: DeclarativeHookConfig[] = [
   // Basic PreToolUse validation
   {
     event: 'PreToolUse',
-    handler: async (context) => {
+    handler: (context) => {
       // Apply lenient validation for development
       try {
         SecurityValidators.development(context);
@@ -93,13 +93,13 @@ const productionHooks: DeclarativeHookConfig[] = [
   // Strict security validation
   {
     event: 'PreToolUse',
-    handler: async (context) => {
+    handler: (context) => {
       try {
         // Apply strict security validation
         SecurityValidators.production(context);
 
         // Additional production checks
-        await performProductionChecks(context);
+        performProductionChecks(context);
 
         return HookResults.success('Production security validation passed', {
           securityLevel: 'strict',
@@ -146,7 +146,7 @@ const productionHooks: DeclarativeHookConfig[] = [
     event: 'SessionStart',
     handler: async (context) => {
       // Validate session in production
-      const sessionValidation = await validateProductionSession(context);
+      const sessionValidation = validateProductionSession(context);
       if (!sessionValidation.valid) {
         return HookResults.failure(
           sessionValidation.reason ?? 'Session validation failed'
@@ -175,7 +175,7 @@ const testingHooks: DeclarativeHookConfig[] = [
   // Test-friendly validation
   {
     event: 'PreToolUse',
-    handler: async (context) => {
+    handler: (context) => {
       // Use test-specific validation
       SecurityValidators.test(context);
 
@@ -192,7 +192,7 @@ const testingHooks: DeclarativeHookConfig[] = [
   // Test result capture
   {
     event: 'PostToolUse',
-    handler: async (context) => {
+    handler: (context) => {
       // Capture test execution data
       const _testData = {
         toolName: context.toolName,
@@ -259,7 +259,7 @@ const universalHooks: DeclarativeHookConfig[] = [
   {
     event: 'PreToolUse',
     tool: 'Bash', // This hook ONLY runs for Bash commands
-    handler: async (context) => {
+    handler: (context) => {
       const command = (context.toolInput as Record<string, unknown>)?.command;
       if (command) {
         // Monitor command patterns
@@ -288,7 +288,7 @@ const universalHooks: DeclarativeHookConfig[] = [
   // Performance monitoring for all tools (universal hook)
   {
     event: 'PostToolUse',
-    handler: async (context) => {
+    handler: (context) => {
       // Note: In the real implementation, metadata would be on the result, not context
       // This is just for demonstration purposes
       const outputSize = (() => {
@@ -306,6 +306,7 @@ const universalHooks: DeclarativeHookConfig[] = [
 
       // Warn about large outputs
       if (outputSize > 100_000) {
+        // Large output warning would be logged here
       }
 
       return HookResults.success('Performance monitoring completed', {
@@ -343,7 +344,7 @@ function getHooksForEnvironment(): DeclarativeHookConfig[] {
 /**
  * Initialize and register all hooks
  */
-async function initializeHooks(): Promise<void> {
+function initializeHooks(): void {
   const hookConfigs = getHooksForEnvironment();
   const hooks = hookConfigs.map((config) => defineHook(config));
 
@@ -358,6 +359,7 @@ async function initializeHooks(): Promise<void> {
     {} as Record<string, number>
   );
   for (const [_event, _count] of Object.entries(eventCounts)) {
+    // Hook event counts logged during initialization
   }
 
   // Log tool scoping info
@@ -467,7 +469,9 @@ async function displayDevInfo(cwd: string): Promise<void> {
       if (packageJson.scripts) {
         const _scripts = Object.keys(packageJson.scripts);
       }
-    } catch (_error) {}
+    } catch (_error) {
+      // Error reading package.json - continue without project info
+    }
   }
 
   // Show git branch if available
@@ -485,6 +489,7 @@ async function displayDevInfo(cwd: string): Promise<void> {
 
     git.on('close', (code) => {
       if (code === 0 && branch) {
+        // Git branch information available for display
       }
     });
   } catch {
@@ -492,7 +497,7 @@ async function displayDevInfo(cwd: string): Promise<void> {
   }
 }
 
-async function performProductionChecks(context: HookContext): Promise<void> {
+function performProductionChecks(context: HookContext): void {
   // Check for production-specific restrictions
   if (context.toolName === 'Bash') {
     const command = (context.toolInput as Record<string, unknown>)?.command;
@@ -528,9 +533,10 @@ async function performProductionChecks(context: HookContext): Promise<void> {
   }
 }
 
-async function validateProductionSession(
-  context: HookContext
-): Promise<{ valid: boolean; reason?: string }> {
+function validateProductionSession(context: HookContext): {
+  valid: boolean;
+  reason?: string;
+} {
   // In production, might check:
   // - User authentication
   // - Session limits
@@ -547,13 +553,15 @@ async function validateProductionSession(
   return { valid: true };
 }
 
-async function auditLog(_entry: Record<string, unknown>): Promise<void> {}
+async function auditLog(_entry: Record<string, unknown>): Promise<void> {
+  // Audit logging implementation placeholder
+}
 
 /**
  * Main execution using proper stdin-based runtime
  */
 if (import.meta.main) {
-  await initializeHooks();
+  initializeHooks();
 
   // Use the new stdin-based runtime
   runClaudeHook(runDeclarativeHooks, {

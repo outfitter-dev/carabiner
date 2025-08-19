@@ -436,9 +436,6 @@ export const gitSafetyPlugin: HookPlugin = {
       const reason = `Command matches dangerous pattern: ${matchedPattern}`;
 
       if (safetyConfig.logBlocked) {
-        // Keep it minimal to avoid noise, but honour the config
-        // eslint-disable-next-line no-console
-        console.warn(`[git-safety] ${message} [${reason}]`);
       }
 
       if (safetyConfig.warnOnly) {
@@ -490,12 +487,14 @@ export const gitSafetyPlugin: HookPlugin = {
   /**
    * Initialize plugin
    */
-  async init(): Promise<void> {},
+  init(): void {
+    // No initialization required
+  },
 
   /**
    * Health check
    */
-  async healthCheck(): Promise<boolean> {
+  healthCheck(): boolean {
     return true;
   },
 

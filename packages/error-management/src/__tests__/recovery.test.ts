@@ -7,8 +7,10 @@ import { GrappleError, NetworkError, TimeoutError } from '../errors.js';
 import {
   CircuitBreaker,
   ErrorRecoveryManager,
-  GracefulDegradation,
   RetryManager,
+  withCleanup,
+  withFallback,
+  withPriorityFallback,
 } from '../recovery.js';
 import { CircuitState, ErrorCategory, ErrorCode } from '../types.js';
 
@@ -37,13 +39,12 @@ describe('RetryManager', () => {
     let attemptCount = 0;
     const operation = () => {
       attemptCount++;
-      throw new GrappleError(
-        'Validation error',
-        ErrorCode.INVALID_INPUT,
-        ErrorCategory.VALIDATION,
-        undefined,
-        { isRecoverable: false }
-      );
+      throw new GrappleError({
+        message: 'Validation error',
+        code: ErrorCode.INVALID_INPUT,
+        category: ErrorCategory.VALIDATION,
+        isRecoverable: false,
+      });
     };
 
     const retryManager = new RetryManager({ maxRetries: 3 });
@@ -272,7 +273,7 @@ describe('CircuitBreaker', () => {
 describe('ErrorRecoveryManager', () => {
   test('should combine retry and circuit breaker functionality', async () => {
     let attemptCount = 0;
-    const operation = async () => {
+    const operation = () => {
       attemptCount++;
       if (attemptCount < 3) {
         throw new NetworkError('Connection failed');
@@ -309,7 +310,7 @@ describe('ErrorRecoveryManager', () => {
   });
 });
 
-describe('GracefulDegradation', () => {
+describe('Graceful Degradation Functions', () => {
   test('should use fallback when primary operation fails', async () => {
     const primaryOperation = () => {
       throw new NetworkError('Primary failed');
@@ -317,7 +318,7 @@ describe('GracefulDegradation', () => {
 
     const fallbackOperation = () => 'fallback-result';
 
-    const result = await GracefulDegradation.withFallback(
+    const result = await withFallback(
       primaryOperation,
       fallbackOperation,
       'test-operation'
@@ -330,7 +331,7 @@ describe('GracefulDegradation', () => {
     const primaryOperation = () => 'primary-result';
     const fallbackOperation = () => 'fallback-result';
 
-    const result = await GracefulDegradation.withFallback(
+    const result = await withFallback(
       primaryOperation,
       fallbackOperation,
       'test-operation'
@@ -357,10 +358,7 @@ describe('GracefulDegradation', () => {
       { operation: () => 'fourth', name: 'fourth' },
     ];
 
-    const result = await GracefulDegradation.withPriorityFallback(
-      operations,
-      'test-operation'
-    );
+    const result = await withPriorityFallback(operations, 'test-operation');
 
     expect(result).toBe('third-success');
   });
@@ -382,10 +380,7 @@ describe('GracefulDegradation', () => {
     ];
 
     try {
-      await GracefulDegradation.withPriorityFallback(
-        operations,
-        'test-operation'
-      );
+      await withPriorityFallback(operations, 'test-operation');
       expect(false).toBe(true); // Should have thrown
     } catch (error) {
       expect(error).toBeInstanceOf(GrappleError);
@@ -402,16 +397,12 @@ describe('GracefulDegradation', () => {
       throw new NetworkError('Operation failed');
     };
 
-    const cleanup = async () => {
+    const cleanup = () => {
       cleanupCalled = true;
     };
 
     try {
-      await GracefulDegradation.withCleanup(
-        failingOperation,
-        cleanup,
-        'test-operation'
-      );
+      await withCleanup(failingOperation, cleanup, 'test-operation');
     } catch {
       // Expected failure
     }
@@ -423,11 +414,11 @@ describe('GracefulDegradation', () => {
     let cleanupCalled = false;
 
     const successOperation = () => 'success';
-    const cleanup = async () => {
+    const cleanup = () => {
       cleanupCalled = true;
     };
 
-    const result = await GracefulDegradation.withCleanup(
+    const result = await withCleanup(
       successOperation,
       cleanup,
       'test-operation'
@@ -442,17 +433,13 @@ describe('GracefulDegradation', () => {
       throw new NetworkError('Operation failed');
     };
 
-    const failingCleanup = async () => {
+    const failingCleanup = () => {
       throw new Error('Cleanup failed');
     };
 
     // This should not throw additional errors beyond the original operation error
     try {
-      await GracefulDegradation.withCleanup(
-        failingOperation,
-        failingCleanup,
-        'test-operation'
-      );
+      await withCleanup(failingOperation, failingCleanup, 'test-operation');
     } catch (error) {
       expect(error).toBeInstanceOf(NetworkError);
       expect((error as NetworkError).message).toBe('Operation failed');

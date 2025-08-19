@@ -20,14 +20,14 @@ import type {
 export class HookBuilder<TEvent extends HookEvent = HookEvent>
   implements IHookBuilder<TEvent>
 {
-  private _event?: TEvent;
+  private readonly _event?: TEvent;
   private _toolName?: ToolName;
-  private _handler?: HookHandler<TEvent>;
+  private readonly _handler?: HookHandler<TEvent>;
   private _timeout?: number;
   private _condition?: (context: HookContext<TEvent>) => boolean;
   private _priority = 0;
   private _enabled = true;
-  private _middleware: HookMiddleware<HookContext<TEvent>>[] = [];
+  private readonly _middleware: HookMiddleware<HookContext<TEvent>>[] = [];
 
   /**
    * Specify the hook event type

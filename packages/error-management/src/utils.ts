@@ -115,14 +115,18 @@ export async function safeAsync<T>(
 
     // Report error if enabled
     if (options.reportErrors !== false) {
-      await reportError(grappleError).catch((_reportError) => {});
+      await reportError(grappleError).catch((_reportError) => {
+        // Error reporting failed - continue gracefully
+      });
     }
 
     // Call custom error handler
     if (options.onError) {
       try {
         options.onError(grappleError);
-      } catch (_handlerError) {}
+      } catch (_handlerError) {
+        // Custom error handler failed - continue gracefully
+      }
     }
 
     return defaultValue;

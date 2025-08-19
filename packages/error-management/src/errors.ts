@@ -24,34 +24,32 @@ import {
  * Base error class for all Grapple errors
  */
 export class GrappleError extends Error implements IGrappleError {
-  public override readonly name: string;
-  public readonly code: ErrorCode;
-  public readonly category: ErrorCategory;
-  public readonly severity: ErrorSeverity;
-  public readonly context: ErrorContext;
-  public override readonly cause?: Error;
-  public readonly isRecoverable: boolean;
+  override readonly name: string;
+  readonly code: ErrorCode;
+  readonly category: ErrorCategory;
+  readonly severity: ErrorSeverity;
+  readonly context: ErrorContext;
+  override readonly cause?: Error;
+  readonly isRecoverable: boolean;
 
-  constructor(
-    message: string,
-    code: ErrorCode,
-    category: ErrorCategory,
-    severity: ErrorSeverity = Severity.ERROR,
-    options: {
-      cause?: Error;
-      isRecoverable?: boolean;
-      operation?: string;
-      userMessage?: string;
-      technicalDetails?: Record<string, unknown>;
-      metadata?: Record<string, unknown>;
-    } = {}
-  ) {
-    super(message);
+  constructor(options: {
+    message: string;
+    code: ErrorCode;
+    category: ErrorCategory;
+    severity?: ErrorSeverity;
+    cause?: Error;
+    isRecoverable?: boolean;
+    operation?: string;
+    userMessage?: string;
+    technicalDetails?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+  }) {
+    super(options.message);
 
     this.name = this.constructor.name;
-    this.code = code;
-    this.category = category;
-    this.severity = severity;
+    this.code = options.code;
+    this.category = options.category;
+    this.severity = options.severity ?? Severity.ERROR;
     this.cause = options.cause;
     this.isRecoverable =
       options.isRecoverable ?? this.determineRecoverability();
@@ -141,7 +139,7 @@ export class GrappleError extends Error implements IGrappleError {
   /**
    * Get user-friendly error message
    */
-  public toUserMessage(): string {
+  toUserMessage(): string {
     if (this.context.userMessage) {
       return this.context.userMessage;
     }
@@ -174,8 +172,8 @@ export class GrappleError extends Error implements IGrappleError {
   /**
    * Get detailed error message for logging
    */
-  public toLogMessage(): string {
-    const details = [];
+  toLogMessage(): string {
+    const details: string[] = [];
 
     details.push(`Error: ${this.name}`);
     details.push(`Message: ${this.message}`);
@@ -204,7 +202,7 @@ export class GrappleError extends Error implements IGrappleError {
   /**
    * Generate error report for monitoring
    */
-  public toReport(): ErrorReport {
+  toReport(): ErrorReport {
     return {
       error: {
         name: this.name,
@@ -227,7 +225,7 @@ export class GrappleError extends Error implements IGrappleError {
   /**
    * Check if error is retryable
    */
-  public isRetryable(): boolean {
+  isRetryable(): boolean {
     // Only recoverable errors are retryable
     return this.isRecoverable && this.severity !== Severity.CRITICAL;
   }
@@ -384,164 +382,145 @@ export class TimeoutError extends GrappleError {
 }
 
 /**
- * Error factory for creating errors from Node.js system errors
+ * Create GrappleError from Node.js system error
  */
-export class ErrorFactory {
-  /**
-   * Create GrappleError from Node.js system error
-   */
-  static fromSystemError(
-    error: NodeJS.ErrnoException,
-    operation?: string
-  ): GrappleError {
-    const code = error.code;
-    let grappleError: GrappleError;
+export function fromSystemError(
+  error: NodeJS.ErrnoException,
+  operation?: string
+): GrappleError {
+  const code = error.code;
+  let grappleError: GrappleError;
 
-    switch (code) {
-      case 'ENOENT':
-        grappleError = new FileSystemError(error.message, Code.FILE_NOT_FOUND, {
-          cause: error,
-          operation,
-        });
-        break;
-      case 'EACCES':
-      case 'EPERM':
-        grappleError = new FileSystemError(
-          error.message,
-          Code.PERMISSION_DENIED,
-          { cause: error, operation }
-        );
-        break;
-      case 'ENOSPC':
-        grappleError = new FileSystemError(error.message, Code.DISK_FULL, {
-          cause: error,
-          operation,
-        });
-        break;
-      case 'EMFILE':
-      case 'ENFILE':
-        grappleError = new ResourceError(
-          error.message,
-          Code.TOO_MANY_OPEN_FILES,
-          { cause: error, operation }
-        );
-        break;
-      case 'ECONNREFUSED':
-        grappleError = new NetworkError(
-          error.message,
-          Code.CONNECTION_REFUSED,
-          { cause: error, operation }
-        );
-        break;
-      case 'ETIMEDOUT':
-        grappleError = new TimeoutError(
-          error.message,
-          Code.CONNECTION_TIMEOUT,
-          { cause: error, operation }
-        );
-        break;
-      case 'ENOTFOUND':
-        grappleError = new NetworkError(error.message, Code.HOST_NOT_FOUND, {
-          cause: error,
-          operation,
-        });
-        break;
-      case 'ECONNRESET':
-        grappleError = new NetworkError(error.message, Code.CONNECTION_RESET, {
-          cause: error,
-          operation,
-        });
-        break;
-      default:
-        grappleError = new RuntimeError(error.message, Code.INTERNAL_ERROR, {
-          cause: error,
-          operation,
-        });
-        break;
-    }
-
-    return grappleError;
+  switch (code) {
+    case 'ENOENT':
+      grappleError = new FileSystemError(error.message, Code.FILE_NOT_FOUND, {
+        cause: error,
+        operation,
+      });
+      break;
+    case 'EACCES':
+    case 'EPERM':
+      grappleError = new FileSystemError(
+        error.message,
+        Code.PERMISSION_DENIED,
+        { cause: error, operation }
+      );
+      break;
+    case 'ENOSPC':
+      grappleError = new FileSystemError(error.message, Code.DISK_FULL, {
+        cause: error,
+        operation,
+      });
+      break;
+    case 'EMFILE':
+    case 'ENFILE':
+      grappleError = new ResourceError(
+        error.message,
+        Code.TOO_MANY_OPEN_FILES,
+        { cause: error, operation }
+      );
+      break;
+    case 'ECONNREFUSED':
+      grappleError = new NetworkError(error.message, Code.CONNECTION_REFUSED, {
+        cause: error,
+        operation,
+      });
+      break;
+    case 'ETIMEDOUT':
+      grappleError = new TimeoutError(error.message, Code.CONNECTION_TIMEOUT, {
+        cause: error,
+        operation,
+      });
+      break;
+    case 'ENOTFOUND':
+      grappleError = new NetworkError(error.message, Code.HOST_NOT_FOUND, {
+        cause: error,
+        operation,
+      });
+      break;
+    case 'ECONNRESET':
+      grappleError = new NetworkError(error.message, Code.CONNECTION_RESET, {
+        cause: error,
+        operation,
+      });
+      break;
+    default:
+      grappleError = new RuntimeError(error.message, Code.INTERNAL_ERROR, {
+        cause: error,
+        operation,
+      });
+      break;
   }
 
-  /**
-   * Create GrappleError from generic Error
-   */
-  static fromError(error: Error, operation?: string): GrappleError {
-    if (error instanceof GrappleError) {
-      return error;
-    }
+  return grappleError;
+}
 
-    // Check for Node.js system error
-    if ('code' in error) {
-      return ErrorFactory.fromSystemError(
-        error as NodeJS.ErrnoException,
-        operation
-      );
-    }
+/**
+ * Create GrappleError from generic Error
+ */
+export function fromError(error: Error, operation?: string): GrappleError {
+  if (error instanceof GrappleError) {
+    return error;
+  }
 
-    // Default to runtime error
-    return new RuntimeError(error.message, Code.RUNTIME_EXCEPTION, {
-      cause: error,
+  // Check for Node.js system error
+  if ('code' in error) {
+    return fromSystemError(error as NodeJS.ErrnoException, operation);
+  }
+
+  // Default to runtime error
+  return new RuntimeError(error.message, Code.RUNTIME_EXCEPTION, {
+    cause: error,
+    operation,
+  });
+}
+
+/**
+ * Create appropriate error based on error message patterns
+ */
+export function fromMessage(message: string, operation?: string): GrappleError {
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes('timeout') || lowerMessage.includes('timed out')) {
+    return new TimeoutError(message, Code.OPERATION_TIMEOUT, { operation });
+  }
+
+  if (
+    lowerMessage.includes('permission') ||
+    lowerMessage.includes('access denied')
+  ) {
+    return new FileSystemError(message, Code.PERMISSION_DENIED, {
       operation,
     });
   }
 
-  /**
-   * Create appropriate error based on error message patterns
-   */
-  static fromMessage(message: string, operation?: string): GrappleError {
-    const lowerMessage = message.toLowerCase();
-
-    if (
-      lowerMessage.includes('timeout') ||
-      lowerMessage.includes('timed out')
-    ) {
-      return new TimeoutError(message, Code.OPERATION_TIMEOUT, { operation });
-    }
-
-    if (
-      lowerMessage.includes('permission') ||
-      lowerMessage.includes('access denied')
-    ) {
-      return new FileSystemError(message, Code.PERMISSION_DENIED, {
-        operation,
-      });
-    }
-
-    if (lowerMessage.includes('not found')) {
-      return new FileSystemError(message, Code.FILE_NOT_FOUND, { operation });
-    }
-
-    if (
-      lowerMessage.includes('connection') ||
-      lowerMessage.includes('network')
-    ) {
-      return new NetworkError(message, Code.CONNECTION_REFUSED, { operation });
-    }
-
-    if (
-      lowerMessage.includes('validation') ||
-      lowerMessage.includes('invalid')
-    ) {
-      return new ValidationError(message, Code.INVALID_INPUT, { operation });
-    }
-
-    if (lowerMessage.includes('config')) {
-      return new ConfigurationError(message, Code.CONFIG_INVALID, {
-        operation,
-      });
-    }
-
-    if (
-      lowerMessage.includes('unauthorized') ||
-      lowerMessage.includes('forbidden')
-    ) {
-      return new SecurityError(message, Code.UNAUTHORIZED_ACCESS, {
-        operation,
-      });
-    }
-
-    // Default to runtime error
-    return new RuntimeError(message, Code.RUNTIME_EXCEPTION, { operation });
+  if (lowerMessage.includes('not found')) {
+    return new FileSystemError(message, Code.FILE_NOT_FOUND, { operation });
   }
+
+  if (lowerMessage.includes('connection') || lowerMessage.includes('network')) {
+    return new NetworkError(message, Code.CONNECTION_REFUSED, { operation });
+  }
+
+  if (lowerMessage.includes('validation') || lowerMessage.includes('invalid')) {
+    return new ValidationError(message, Code.INVALID_INPUT, { operation });
+  }
+
+  if (lowerMessage.includes('config')) {
+    return new ConfigurationError(message, Code.CONFIG_INVALID, {
+      operation,
+    });
+  }
+
+  if (
+    lowerMessage.includes('unauthorized') ||
+    lowerMessage.includes('forbidden')
+  ) {
+    return new SecurityError(message, Code.UNAUTHORIZED_ACCESS, {
+      operation,
+    });
+  }
+
+  // Default to runtime error
+  return new RuntimeError(message, Code.RUNTIME_EXCEPTION, { operation });
 }
