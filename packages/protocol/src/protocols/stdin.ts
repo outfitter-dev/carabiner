@@ -97,14 +97,14 @@ export class StdinProtocol implements HookProtocol {
         };
 
         const onEnd = () => {
-          if (!(isCleanedUp || this.isDestroyed)) {
+          if (!isCleanedUp) {
             cleanup(false);
             resolve(Buffer.concat(chunks).toString('utf-8'));
           }
         };
 
         const onError = (err: unknown) => {
-          if (!(isCleanedUp || this.isDestroyed)) {
+          if (!isCleanedUp) {
             cleanup(false);
             reject(err instanceof Error ? err : new Error(String(err)));
           }
@@ -295,26 +295,16 @@ export class StdinProtocol implements HookProtocol {
   destroy(): void {
     if (this.activeStream && !this.isDestroyed) {
       this.isDestroyed = true;
-
       // Pause to stop data flow
       if (this.activeStream.readable) {
         this.activeStream.pause();
       }
-
-      // Remove all possible listeners
-      this.activeStream.removeAllListeners();
-
-      // Destroy the stream
+      // Emit an error; onError will perform cleanup and reject the pending read.
       this.activeStream.destroy(
         new Error('Protocol destroyed - cleaning up active streams')
       );
-
-      // Clear buffered data
-      if (this.activeStream.readableLength > 0) {
-        this.activeStream.read(this.activeStream.readableLength);
-      }
-
-      this.activeStream = null;
+      // Intentionally DO NOT remove listeners or null activeStream here;
+      // cleanup() handles that to avoid racing the Promise resolution.
     }
   }
 
