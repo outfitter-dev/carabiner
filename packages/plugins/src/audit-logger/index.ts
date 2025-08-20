@@ -14,17 +14,15 @@
 import { appendFile, mkdir } from 'node:fs/promises';
 import { hostname, userInfo } from 'node:os';
 import { dirname, join } from 'node:path';
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 import type { HookContext } from '@outfitter/types';
 import { isBashHookContext, isFileHookContext } from '@outfitter/types';
-
-
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * Audit log entry interface
  */
-interface AuditLogEntry {
+type AuditLogEntry = {
   timestamp: string;
   sessionId: string;
   event: string;
@@ -38,7 +36,7 @@ interface AuditLogEntry {
   metadata: Record<string, unknown>;
   sensitive?: boolean;
   risk?: 'low' | 'medium' | 'high';
-}
+};
 
 /**
  * Audit logger plugin configuration schema
@@ -122,10 +120,10 @@ type AuditLoggerConfig = z.infer<typeof AuditLoggerConfigSchema>;
  * Global audit logger instance
  */
 class AuditLogger {
-  private buffer: string[] = [];
+  private readonly buffer: string[] = [];
   private flushTimer?: NodeJS.Timeout;
 
-  constructor(private config: AuditLoggerConfig) {
+  constructor(private readonly config: AuditLoggerConfig) {
     if (config.bufferWrites) {
       this.setupBufferedWrites();
     }
@@ -133,9 +131,7 @@ class AuditLogger {
 
   private setupBufferedWrites(): void {
     this.flushTimer = setInterval(() => {
-      this.flushBuffer().catch((error) => {
-        console.error('[AuditLogger] Buffer flush error:', error);
-      });
+      this.flushBuffer().catch((_error) => {});
     }, this.config.bufferFlushInterval);
   }
 
@@ -281,14 +277,12 @@ class AuditLogger {
     return fields.map((f) => `"${f}"`).join(',');
   }
 
-  private logToConsole(entry: AuditLogEntry, formatted: string): void {
+  private logToConsole(entry: AuditLogEntry, _formatted: string): void {
     const level = entry.success ? 'info' : 'error';
 
     if (this.shouldLogToConsole(level)) {
       if (this.config.format === 'json') {
-        console.log(`[AuditLogger] ${JSON.stringify(entry, null, 2)}`);
       } else {
-        console.log(`[AuditLogger] ${formatted}`);
       }
     }
   }
@@ -330,9 +324,7 @@ class AuditLogger {
 
       // Append to file
       await appendFile(logPath, content);
-    } catch (error) {
-      console.error('[AuditLogger] Failed to write to log file:', error);
-    }
+    } catch (_error) {}
   }
 
   private async checkRotation(_logPath: string): Promise<void> {
@@ -392,14 +384,17 @@ function containsSensitiveInfo(context: HookContext): boolean {
 
   // Check bash commands for sensitive info
   if (isBashHookContext(context)) {
-    return sensitivePatterns.some((pattern) => pattern.test(context.toolInput.command));
+    return sensitivePatterns.some((pattern) =>
+      pattern.test(context.toolInput.command)
+    );
   }
 
   // Check file content for sensitive info
   if (isFileHookContext(context)) {
-    const content = ('content' in context.toolInput && context.toolInput.content) ||
-                   ('new_string' in context.toolInput && context.toolInput.new_string) ||
-                   '';
+    const content =
+      ('content' in context.toolInput && context.toolInput.content) ||
+      ('new_string' in context.toolInput && context.toolInput.new_string) ||
+      '';
     if (typeof content === 'string') {
       return sensitivePatterns.some((pattern) => pattern.test(content));
     }
@@ -457,12 +452,17 @@ export const auditLoggerPlugin: HookPlugin = {
   description: 'Comprehensive audit logging of Claude Code operations',
   author: 'Outfitter Team',
 
-  events: ['PreToolUse', 'PostToolUse', 'SessionStart', 'Stop', 'UserPromptSubmit'],
+  events: [
+    'PreToolUse',
+    'PostToolUse',
+    'SessionStart',
+    'Stop',
+    'UserPromptSubmit',
+  ],
   priority: 5, // Very low priority to run after other plugins
 
   configSchema: AuditLoggerConfigSchema as z.ZodType<Record<string, unknown>>,
   defaultConfig: {},
-
 
   async apply(
     context: HookContext,
@@ -512,14 +512,17 @@ export const auditLoggerPlugin: HookPlugin = {
     const toolName = 'toolName' in context ? context.toolName : undefined;
     if (toolName) {
       metadata.toolName = toolName;
-      
+
       // Add tool-specific metadata for known context types
       if (isBashHookContext(context) && toolName === 'Bash') {
         metadata.command = context.toolInput.command;
-        if (auditConfig.logCommands) {
+        if (auditConfig.logCommands && auditConfig.includeSensitive) {
           metadata.fullCommand = context.toolInput;
         }
-      } else if (isFileHookContext(context) && ['Write', 'Edit', 'MultiEdit'].includes(toolName)) {
+      } else if (
+        isFileHookContext(context) &&
+        ['Write', 'Edit', 'MultiEdit'].includes(toolName)
+      ) {
         metadata.filePath = context.toolInput.file_path;
         if (auditConfig.logFileChanges && auditConfig.includeSensitive) {
           if (toolName === 'Write' && 'content' in context.toolInput) {
@@ -552,9 +555,7 @@ export const auditLoggerPlugin: HookPlugin = {
     // Log entry and return result
     try {
       await globalAuditLogger.log(entry);
-    } catch (error) {
-      console.error('[AuditLogger] Failed to log entry:', error);
-    }
+    } catch (_error) {}
 
     return {
       success: true,
@@ -572,16 +573,13 @@ export const auditLoggerPlugin: HookPlugin = {
   /**
    * Initialize audit logger
    */
-  async init(): Promise<void> {
-    console.log('[AuditLogger] Plugin initialized - audit logging enabled');
-  },
+  async init(): Promise<void> {},
 
   /**
    * Shutdown and flush logs
    */
   async shutdown(): Promise<void> {
     if (globalAuditLogger) {
-      console.log('[AuditLogger] Shutting down - flushing logs');
       await globalAuditLogger.shutdown();
       globalAuditLogger = undefined;
     }

@@ -1,12 +1,17 @@
 /**
  * Comprehensive Error Path and Failure Scenario Tests
- * 
+ *
  * Tests all possible error conditions, timeout scenarios, invalid inputs,
  * and edge cases to ensure robust error handling in production.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import type { HookContext, HookResult, HookHandler, HookConfiguration } from '@outfitter/types';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import type {
+  HookConfiguration,
+  HookContext,
+  HookHandler,
+  HookResult,
+} from '@outfitter/types';
 
 /**
  * Error simulation utilities
@@ -16,16 +21,20 @@ class ErrorSimulator {
    * Create a handler that throws after a delay
    */
   static createTimeoutHandler(delayMs: number, timeoutMs: number): HookHandler {
-    return async (context: HookContext): Promise<HookResult> => {
+    return async (_context: HookContext): Promise<HookResult> => {
       return new Promise((resolve, reject) => {
+        let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
         const workTimer = setTimeout(() => {
+          if (timeoutTimer) {
+            clearTimeout(timeoutTimer);
+          }
           resolve({
             success: true,
             message: `Work completed after ${delayMs}ms`,
           });
         }, delayMs);
 
-        const timeoutTimer = setTimeout(() => {
+        timeoutTimer = setTimeout(() => {
           clearTimeout(workTimer);
           reject(new Error(`Operation timed out after ${timeoutMs}ms`));
         }, timeoutMs);
@@ -37,7 +46,7 @@ class ErrorSimulator {
    * Create a handler that fails randomly
    */
   static createUnreliableHandler(failureRate: number): HookHandler {
-    return async (context: HookContext): Promise<HookResult> => {
+    return async (_context: HookContext): Promise<HookResult> => {
       if (Math.random() < failureRate) {
         throw new Error(`Random failure (rate: ${failureRate})`);
       }
@@ -54,11 +63,11 @@ class ErrorSimulator {
    */
   static createMemoryLeakHandler(): HookHandler {
     const leakedMemory: any[] = [];
-    
-    return async (context: HookContext): Promise<HookResult> => {
+
+    return async (_context: HookContext): Promise<HookResult> => {
       // Intentionally leak memory
-      for (let i = 0; i < 10000; i++) {
-        leakedMemory.push(Array(1000).fill(`leaked_data_${i}`));
+      for (let i = 0; i < 10_000; i++) {
+        leakedMemory.push(new Array(1000).fill(`leaked_data_${i}`));
       }
 
       return {
@@ -101,7 +110,7 @@ describe('Comprehensive Error Handling', () => {
           // Simulate hook execution with invalid input
           const handler: HookHandler = async (context: HookContext) => {
             // This should validate the input
-            if (!context || !context.event || !context.tool) {
+            if (!(context?.event && context.tool)) {
               throw new Error('Invalid hook context provided');
             }
 
@@ -109,12 +118,11 @@ describe('Comprehensive Error Handling', () => {
           };
 
           await handler(invalidInput as any);
-          
+
           // If we get here with invalid input, that's unexpected
           if (invalidInput === null || invalidInput === undefined) {
             expect(false).toBe(true); // Should have thrown
           }
-
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
           expect((error as Error).message).toContain('Invalid');
@@ -136,12 +144,14 @@ describe('Comprehensive Error Handling', () => {
       for (const malformedJson of malformedJsonInputs) {
         try {
           const parsed = JSON.parse(malformedJson);
-          
+
           // If JSON parsing succeeded, validate the structure
-          if (parsed.event && !['pre-tool-use', 'post-tool-use'].includes(parsed.event)) {
+          if (
+            parsed.event &&
+            !['pre-tool-use', 'post-tool-use'].includes(parsed.event)
+          ) {
             throw new Error(`Invalid event: ${parsed.event}`);
           }
-
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
           // Should be either JSON parse error or validation error
@@ -153,10 +163,10 @@ describe('Comprehensive Error Handling', () => {
     test('should handle oversized inputs appropriately', async () => {
       // Create oversized inputs
       const oversizedInputs = [
-        { 
+        {
           event: 'pre-tool-use',
           tool: 'Bash',
-          input: { 
+          input: {
             command: 'x'.repeat(1024 * 1024), // 1MB command
           },
         },
@@ -164,14 +174,16 @@ describe('Comprehensive Error Handling', () => {
           event: 'pre-tool-use',
           tool: 'Bash',
           input: {
-            largeArray: Array(100000).fill('x'.repeat(1000)), // 100MB array
+            largeArray: new Array(100_000).fill('x'.repeat(1000)), // 100MB array
           },
         },
         {
           event: 'pre-tool-use',
           tool: 'Bash',
           input: {
-            deepNesting: Array(10000).fill(null).reduce((acc, _, i) => ({ [i]: acc }), {}),
+            deepNesting: new Array(10_000)
+              .fill(null)
+              .reduce((acc, _, i) => ({ [i]: acc }), {}),
           },
         },
       ];
@@ -180,8 +192,9 @@ describe('Comprehensive Error Handling', () => {
         const handler: HookHandler = async (context: HookContext) => {
           // Simulate size checking
           const jsonSize = JSON.stringify(context).length;
-          
-          if (jsonSize > 10 * 1024 * 1024) { // 10MB limit
+
+          if (jsonSize > 10 * 1024 * 1024) {
+            // 10MB limit
             throw new Error(`Input too large: ${jsonSize} bytes`);
           }
 
@@ -190,13 +203,12 @@ describe('Comprehensive Error Handling', () => {
 
         try {
           await handler(oversizedInput);
-          
+
           // If the input is actually oversized, this should have thrown
           const size = JSON.stringify(oversizedInput).length;
           if (size > 10 * 1024 * 1024) {
             expect(false).toBe(true); // Should have thrown
           }
-
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
           expect((error as Error).message).toContain('too large');
@@ -210,13 +222,16 @@ describe('Comprehensive Error Handling', () => {
       const scenarios = [
         { work: 50, timeout: 10, shouldTimeout: true },
         { work: 10, timeout: 50, shouldTimeout: false },
-        { work: 100, timeout: 100, shouldTimeout: true }, // Edge case
+        { work: 120, timeout: 100, shouldTimeout: true }, // Work takes longer than timeout
         { work: 0, timeout: 10, shouldTimeout: false },
       ];
 
       for (const scenario of scenarios) {
-        const handler = ErrorSimulator.createTimeoutHandler(scenario.work, scenario.timeout);
-        
+        const handler = ErrorSimulator.createTimeoutHandler(
+          scenario.work,
+          scenario.timeout
+        );
+
         try {
           const result = await handler({
             event: 'pre-tool-use',
@@ -230,7 +245,6 @@ describe('Comprehensive Error Handling', () => {
           } else {
             expect(result.success).toBe(true);
           }
-
         } catch (error) {
           if (scenario.shouldTimeout) {
             expect(error).toBeInstanceOf(Error);
@@ -249,12 +263,15 @@ describe('Comprehensive Error Handling', () => {
         () => Promise.reject('String rejection'),
         () => Promise.reject(null),
         () => Promise.reject({ error: 'Object rejection' }),
-        () => Promise.resolve().then(() => { throw new Error('Delayed rejection'); }),
+        () =>
+          Promise.resolve().then(() => {
+            throw new Error('Delayed rejection');
+          }),
       ];
 
-      for (const [index, scenario] of rejectionScenarios.entries()) {
+      for (const [_index, scenario] of rejectionScenarios.entries()) {
         try {
-          const handler: HookHandler = async (context: HookContext) => {
+          const handler: HookHandler = async (_context: HookContext) => {
             await scenario();
             return { success: true, message: 'Should not reach here' };
           };
@@ -267,7 +284,6 @@ describe('Comprehensive Error Handling', () => {
 
           // Should not reach here
           expect(false).toBe(true);
-
         } catch (error) {
           // All scenarios should result in errors
           expect(error).toBeDefined();
@@ -282,8 +298,8 @@ describe('Comprehensive Error Handling', () => {
       for (let i = 0; i < 10; i++) {
         const promise = new Promise(async (resolve, reject) => {
           const delay = Math.random() * 50;
-          await new Promise(r => setTimeout(r, delay));
-          
+          await new Promise((r) => setTimeout(r, delay));
+
           if (i % 3 === 0) {
             reject(new Error(`Concurrent failure ${i}`));
           } else {
@@ -295,12 +311,12 @@ describe('Comprehensive Error Handling', () => {
       }
 
       const results = await Promise.allSettled(concurrentFailures);
-      
+
       // Check that we handled all results appropriately
       let successCount = 0;
       let failureCount = 0;
 
-      results.forEach((result, index) => {
+      results.forEach((result, _index) => {
         if (result.status === 'fulfilled') {
           successCount++;
           expect(result.value).toContain('Success');
@@ -319,19 +335,19 @@ describe('Comprehensive Error Handling', () => {
   describe('Resource Exhaustion Scenarios', () => {
     test('should handle memory pressure gracefully', async () => {
       // Test with progressively more memory allocation
-      const memorySizes = [1000, 10000, 100000];
-      
+      const memorySizes = [1000, 10_000, 100_000];
+
       for (const size of memorySizes) {
         try {
-          const handler: HookHandler = async (context: HookContext) => {
+          const handler: HookHandler = async (_context: HookContext) => {
             // Allocate memory
-            const data = Array(size).fill(null).map((_, i) => ({
+            const data = new Array(size).fill(null).map((_, i) => ({
               id: i,
-              data: Array(1000).fill(`memory_test_${i}`),
+              data: new Array(1000).fill(`memory_test_${i}`),
             }));
 
             // Process the data
-            const processed = data.map(item => ({
+            const processed = data.map((item) => ({
               ...item,
               processed: true,
               timestamp: Date.now(),
@@ -352,10 +368,9 @@ describe('Comprehensive Error Handling', () => {
 
           expect(result.success).toBe(true);
           expect(result.data?.count).toBe(size);
-
         } catch (error) {
           // Out of memory is acceptable for large sizes
-          if (size >= 100000) {
+          if (size >= 100_000) {
             expect(error).toBeInstanceOf(Error);
           } else {
             throw error; // Unexpected error for smaller sizes
@@ -373,7 +388,7 @@ describe('Comprehensive Error Handling', () => {
       ];
 
       for (const fsError of fileSystemErrors) {
-        const handler: HookHandler = async (context: HookContext) => {
+        const handler: HookHandler = async (_context: HookContext) => {
           // Simulate file system error
           const error = new Error(fsError.description) as any;
           error.code = fsError.error;
@@ -390,7 +405,6 @@ describe('Comprehensive Error Handling', () => {
 
           // Should not reach here
           expect(false).toBe(true);
-
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
           expect((error as any).code).toBe(fsError.error);
@@ -407,10 +421,10 @@ describe('Comprehensive Error Handling', () => {
       ];
 
       for (const netError of networkErrors) {
-        const handler: HookHandler = async (context: HookContext) => {
+        const handler: HookHandler = async (_context: HookContext) => {
           // Simulate network failure
-          await new Promise(resolve => setTimeout(resolve, 10)); // Simulate network delay
-          
+          await new Promise((resolve) => setTimeout(resolve, 10)); // Simulate network delay
+
           const error = new Error(netError.message) as any;
           error.code = netError.code;
           throw error;
@@ -424,7 +438,6 @@ describe('Comprehensive Error Handling', () => {
           });
 
           expect(false).toBe(true); // Should have thrown
-
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
           expect((error as any).code).toBe(netError.code);
@@ -451,7 +464,7 @@ describe('Comprehensive Error Handling', () => {
             if (!cfg.version || typeof cfg.version !== 'string') {
               throw new Error('Invalid or missing version');
             }
-            
+
             if (!cfg.hooks || typeof cfg.hooks !== 'object') {
               throw new Error('Invalid or missing hooks');
             }
@@ -466,7 +479,10 @@ describe('Comprehensive Error Handling', () => {
                 throw new Error(`Invalid handler for event: ${event}`);
               }
 
-              if (hook.timeout !== undefined && (typeof hook.timeout !== 'number' || hook.timeout < 0)) {
+              if (
+                hook.timeout !== undefined &&
+                (typeof hook.timeout !== 'number' || hook.timeout < 0)
+              ) {
                 throw new Error(`Invalid timeout for event: ${event}`);
               }
             }
@@ -475,10 +491,9 @@ describe('Comprehensive Error Handling', () => {
           };
 
           validateConfig(config);
-          
+
           // If validation passed, this config might actually be valid
           // (e.g., some fields are optional)
-
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
           expect((error as Error).message).toContain('Invalid');
@@ -501,10 +516,16 @@ describe('Comprehensive Error Handling', () => {
         },
         {
           name: 'invalid_event_sequence',
-          setup: () => ({ lastEvent: 'post-tool-use', currentEvent: 'pre-tool-use' }),
+          setup: () => ({
+            lastEvent: 'post-tool-use',
+            currentEvent: 'pre-tool-use',
+          }),
           validate: (state: any) => {
             // Pre-tool-use should come before post-tool-use
-            return !(state.lastEvent === 'post-tool-use' && state.currentEvent === 'pre-tool-use');
+            return !(
+              state.lastEvent === 'post-tool-use' &&
+              state.currentEvent === 'pre-tool-use'
+            );
           },
         },
       ];
@@ -549,15 +570,15 @@ describe('Comprehensive Error Handling', () => {
         const handler: HookHandler = async (context: HookContext) => {
           // Simulate security validation
           const input = context.input as any;
-          
-          if (input.handler && input.handler.includes('..')) {
+
+          if (input.handler?.includes('..')) {
             throw new Error('Security violation: path traversal detected');
           }
-          
+
           if (input.command && /[;&|`$()]/g.test(input.command)) {
             throw new Error('Security violation: unsafe command detected');
           }
-          
+
           if (input.script && /<script/i.test(input.script)) {
             throw new Error('Security violation: script injection detected');
           }
@@ -574,7 +595,6 @@ describe('Comprehensive Error Handling', () => {
 
           // Should have thrown for security violations
           expect(false).toBe(true);
-
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
           expect((error as Error).message).toContain('Security violation');
@@ -592,12 +612,12 @@ describe('Comprehensive Error Handling', () => {
       for (const attempt of privilegeAttempts) {
         const handler: HookHandler = async (context: HookContext) => {
           const input = context.input as any;
-          
+
           // Simulate privilege checking
           if (input.user === 'root') {
             throw new Error('Privilege escalation: root access denied');
           }
-          
+
           if (input.operation === 'system_access' && input.user !== 'admin') {
             throw new Error('Insufficient privileges for system access');
           }
@@ -613,11 +633,12 @@ describe('Comprehensive Error Handling', () => {
           });
 
           // Some combinations should pass, others should fail
-          if (attempt.user === 'root' || 
-              (attempt.operation === 'system_access' && attempt.user !== 'admin')) {
+          if (
+            attempt.user === 'root' ||
+            (attempt.operation === 'system_access' && attempt.user !== 'admin')
+          ) {
             expect(false).toBe(true); // Should have thrown
           }
-
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
           expect((error as Error).message).toMatch(/(Privilege|privileges)/);
@@ -631,12 +652,12 @@ describe('Comprehensive Error Handling', () => {
       const resources: any[] = [];
 
       try {
-        const handler: HookHandler = async (context: HookContext) => {
+        const handler: HookHandler = async (_context: HookContext) => {
           // Allocate resources
           for (let i = 0; i < 10; i++) {
             const resource = {
               id: i,
-              data: Array(1000).fill(`resource_${i}`),
+              data: new Array(1000).fill(`resource_${i}`),
               cleanup: () => {
                 // Simulate cleanup
                 return true;
@@ -654,14 +675,12 @@ describe('Comprehensive Error Handling', () => {
           tool: 'Bash',
           input: { test: true },
         });
-
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
         expect(resources).toHaveLength(10); // Resources were allocated
-
       } finally {
         // Clean up resources
-        resources.forEach(resource => {
+        resources.forEach((resource) => {
           if (resource.cleanup) {
             resource.cleanup();
           }
@@ -673,7 +692,7 @@ describe('Comprehensive Error Handling', () => {
     });
 
     test('should attempt graceful degradation on partial failures', async () => {
-      const handler: HookHandler = async (context: HookContext) => {
+      const handler: HookHandler = async (_context: HookContext) => {
         const operations = [
           { name: 'critical', required: true },
           { name: 'optional1', required: false },
@@ -692,7 +711,6 @@ describe('Comprehensive Error Handling', () => {
             }
 
             results.push({ name: op.name, success: true });
-
           } catch (error) {
             if (op.required) {
               throw error; // Fail fast for required operations

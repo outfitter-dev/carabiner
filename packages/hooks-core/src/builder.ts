@@ -20,13 +20,16 @@ import type {
 export class HookBuilder<TEvent extends HookEvent = HookEvent>
   implements IHookBuilder<TEvent>
 {
+  // biome-ignore lint/style/useReadonlyClassProperties: Mutated in forEvent method
   private _event?: TEvent;
   private _toolName?: ToolName;
+  // biome-ignore lint/style/useReadonlyClassProperties: Mutated in withHandler method
   private _handler?: HookHandler<TEvent>;
   private _timeout?: number;
   private _condition?: (context: HookContext<TEvent>) => boolean;
   private _priority = 0;
   private _enabled = true;
+  // biome-ignore lint/style/useReadonlyClassProperties: Mutated in forEvent and withMiddleware methods
   private _middleware: HookMiddleware<HookContext<TEvent>>[] = [];
 
   /**
@@ -39,9 +42,9 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
     builder._timeout = this._timeout;
     builder._priority = this._priority;
     builder._enabled = this._enabled;
-    builder._middleware = this._middleware as unknown as HookMiddleware<
-      HookContext<E>
-    >[];
+    builder._middleware = [
+      ...(this._middleware as unknown as HookMiddleware<HookContext<E>>[]),
+    ];
     return builder;
   }
 
@@ -276,7 +279,7 @@ export const createHook = {
 /**
  * Declarative hook configuration API
  */
-export interface DeclarativeHookConfig<TEvent extends HookEvent = HookEvent> {
+export type DeclarativeHookConfig<TEvent extends HookEvent = HookEvent> = {
   event: TEvent;
   tool?: ToolName;
   handler: HookHandler<TEvent>;
@@ -285,7 +288,7 @@ export interface DeclarativeHookConfig<TEvent extends HookEvent = HookEvent> {
   priority?: number;
   enabled?: boolean;
   middleware?: HookMiddleware<HookContext<TEvent>>[];
-}
+};
 
 /**
  * Create hook from declarative configuration

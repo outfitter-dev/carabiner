@@ -7,10 +7,10 @@
  * patterns and allow lists for fine-tuned control.
  */
 
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 import type { HookContext } from '@outfitter/types';
 import { isBashHookContext } from '@outfitter/types';
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * Git safety plugin configuration schema
@@ -94,7 +94,6 @@ const GitSafetyConfigSchema = z
   })
   .default({});
 
-
 /**
  * Check if command matches any pattern
  */
@@ -112,8 +111,8 @@ function matchesPattern(command: string, patterns: string[]): string | null {
       if (regex.test(gitCommand)) {
         return pattern;
       }
-    } catch (error) {
-      console.warn(`[GitSafety] Invalid regex pattern: ${pattern}`, error);
+    } catch (_error) {
+      // Pattern is invalid regex - skip it
     }
   }
 
@@ -131,8 +130,7 @@ function isAllowed(command: string, allowList: string[]): boolean {
       // Match allowed patterns exactly - the allowlist should contain full patterns
       const regex = new RegExp(`^${allowed.toLowerCase()}`, 'i');
       return regex.test(gitCommand);
-    } catch (error) {
-      console.warn(`[GitSafety] Invalid allow pattern: ${allowed}`, error);
+    } catch (_error) {
       return false;
     }
   });
@@ -155,11 +153,7 @@ function isTrustedDirectory(
         normalizedCwd.includes(normalizedTrusted) ||
         normalizedCwd.startsWith(normalizedTrusted)
       );
-    } catch (error) {
-      console.warn(
-        `[GitSafety] Error checking trusted directory: ${trusted}`,
-        error
-      );
+    } catch (_error) {
       return false;
     }
   });
@@ -192,11 +186,8 @@ function checkRepoExclusions(
           },
         };
       }
-    } catch (error) {
-      console.warn(
-        `[GitSafety] Invalid exclude pattern: ${excludePattern}`,
-        error
-      );
+    } catch (_error) {
+      // Pattern is invalid regex - skip it
     }
   }
   return null;
@@ -223,11 +214,8 @@ function checkRepoInclusions(
         shouldInclude = true;
         break;
       }
-    } catch (error) {
-      console.warn(
-        `[GitSafety] Invalid include pattern: ${includePattern}`,
-        error
-      );
+    } catch (_error) {
+      // Pattern is invalid regex - skip it
     }
   }
 
@@ -290,11 +278,8 @@ function checkCustomRules(
           },
         };
       }
-    } catch (error) {
-      console.warn(
-        `[GitSafety] Invalid custom rule pattern: ${rule.pattern}`,
-        error
-      );
+    } catch (_error) {
+      // Pattern is invalid regex - skip it
     }
   }
   return null;
@@ -350,10 +335,10 @@ export const gitSafetyPlugin: HookPlugin = {
   configSchema: GitSafetyConfigSchema as z.ZodType<Record<string, unknown>>,
   defaultConfig: {},
 
-  async apply(
+  apply(
     context: HookContext,
     config: Record<string, unknown> = {}
-  ): Promise<PluginResult> {
+  ): PluginResult {
     // Only handle PreToolUse for Bash commands
     if (context.event !== 'PreToolUse' || !('toolName' in context)) {
       return {
@@ -459,7 +444,10 @@ export const gitSafetyPlugin: HookPlugin = {
       const reason = `Command matches dangerous pattern: ${matchedPattern}`;
 
       if (safetyConfig.logBlocked) {
-        console.warn(`[GitSafety] Blocked: ${command} - ${reason}`);
+        // biome-ignore lint/suspicious/noConsole: Security logging requires console output
+        console.warn(
+          `🚫 Git Safety: Blocked dangerous command - ${command} (pattern: ${matchedPattern})`
+        );
       }
 
       if (safetyConfig.warnOnly) {
@@ -511,14 +499,14 @@ export const gitSafetyPlugin: HookPlugin = {
   /**
    * Initialize plugin
    */
-  async init(): Promise<void> {
-    console.log('[GitSafety] Git safety plugin initialized');
+  init(): void {
+    // No initialization required
   },
 
   /**
    * Health check
    */
-  async healthCheck(): Promise<boolean> {
+  healthCheck(): boolean {
     return true;
   },
 

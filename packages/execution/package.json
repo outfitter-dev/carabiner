@@ -48,7 +48,7 @@
   "devDependencies": {
     "@types/bun": "*",
     "typescript": "^5.9.2",
-    "ultracite": "5.1.2"
+    "ultracite": "^5.1.5"
   },
   "publishConfig": {
     "access": "public"

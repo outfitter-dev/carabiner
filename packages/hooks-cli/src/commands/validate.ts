@@ -5,7 +5,10 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { loadConfig, type ExtendedHookConfiguration } from '@outfitter/hooks-config';
+import {
+  type ExtendedHookConfiguration,
+  loadConfig,
+} from '@outfitter/hooks-config';
 import type { ToolHookConfig } from '@outfitter/hooks-core';
 import { BaseCommand, type CliConfig } from '../types';
 
@@ -69,6 +72,7 @@ export class ValidateCommand extends BaseCommand {
         }
       }
 
+      // biome-ignore lint/nursery/noUnnecessaryConditions: hasErrors can be set to true in the validation blocks above
       if (hasErrors) {
         if (!autoFix) {
           process.stderr.write(
@@ -88,7 +92,6 @@ export class ValidateCommand extends BaseCommand {
   /**
    * Validate configuration files
    */
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: configuration validation requires complex logic
   private async validateConfiguration(
     workspacePath: string,
     verbose: boolean,
@@ -166,7 +169,6 @@ export class ValidateCommand extends BaseCommand {
   /**
    * Validate hook commands exist
    */
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: hook validation requires complex nested logic
   private validateHookCommands(
     config: ExtendedHookConfiguration,
     workspacePath: string,
@@ -187,14 +189,13 @@ export class ValidateCommand extends BaseCommand {
       if (eventConfig && typeof eventConfig === 'object') {
         if ('command' in eventConfig) {
           // Single hook config
-          errors += this.validateCommand(
-            eventConfig as ToolHookConfig,
+          errors += this.validateCommand(eventConfig as ToolHookConfig, {
             event,
-            '',
+            tool: '',
             workspacePath,
             verbose,
-            _autoFix
-          );
+            autoFix: _autoFix,
+          });
         } else {
           // Tool-specific configs
           for (const [tool, toolConfig] of Object.entries(eventConfig)) {
@@ -203,14 +204,13 @@ export class ValidateCommand extends BaseCommand {
               typeof toolConfig === 'object' &&
               'command' in toolConfig
             ) {
-              errors += this.validateCommand(
-                toolConfig as ToolHookConfig,
+              errors += this.validateCommand(toolConfig as ToolHookConfig, {
                 event,
                 tool,
                 workspacePath,
                 verbose,
-                _autoFix
-              );
+                autoFix: _autoFix,
+              });
             }
           }
         }
@@ -225,16 +225,18 @@ export class ValidateCommand extends BaseCommand {
    */
   private validateCommand(
     hookConfig: ToolHookConfig,
-    _event: string,
-    _tool: string,
-    workspacePath: string,
-    verbose: boolean,
-    autoFix: boolean
+    context: {
+      event: string;
+      tool: string;
+      workspacePath: string;
+      verbose: boolean;
+      autoFix: boolean;
+    }
   ): number {
     // Hook name for context: tool ? `${event}:${tool}` : event
 
     if (hookConfig.enabled === false) {
-      if (verbose) {
+      if (context.verbose) {
         // TODO: Log hook is disabled, skipping validation
       }
       return 0;
@@ -245,20 +247,20 @@ export class ValidateCommand extends BaseCommand {
     const match = command.match(BUN_RUN_REGEX);
     const scriptPath = match?.[1] ?? match?.[2] ?? match?.[3];
     if (scriptPath) {
-      const fullPath = join(workspacePath, scriptPath);
+      const fullPath = join(context.workspacePath, scriptPath);
 
       if (!existsSync(fullPath)) {
-        if (autoFix) {
+        if (context.autoFix) {
           // TODO: Implement auto-generation of missing hook files
         } else {
           // TODO: Log hook file not found
         }
         return 1;
       }
-      if (verbose) {
+      if (context.verbose) {
         // TODO: Log hook file exists
       }
-    } else if (verbose) {
+    } else if (context.verbose) {
       // TODO: Log non-standard command format
     }
 
@@ -341,7 +343,6 @@ export class ValidateCommand extends BaseCommand {
   /**
    * Validate a single hook file
    */
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: file validation requires extensive checks
   private async validateHookFile(
     filePath: string,
     _workspacePath: string,
@@ -363,12 +364,12 @@ export class ValidateCommand extends BaseCommand {
 
       // On Unix systems, check if file is executable
       if (process.platform !== 'win32') {
-        // biome-ignore lint/nursery/noBitwiseOperators: file permission checking requires bitwise operations
+        // biome-ignore lint/suspicious/noBitwiseOperators: file permission checking requires bitwise operations
         const isExecutable = Boolean(stats.mode & 0o111);
         if (!isExecutable) {
           if (autoFix) {
             const { chmod } = await import('node:fs/promises');
-            // biome-ignore lint/nursery/noBitwiseOperators: file permission setting requires bitwise operations
+            // biome-ignore lint/suspicious/noBitwiseOperators: file permission setting requires bitwise operations
             await chmod(filePath, stats.mode | 0o755);
           } else {
             errors++;

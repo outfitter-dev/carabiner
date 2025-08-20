@@ -8,11 +8,11 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { createWorkspaceValidator } from '../security/workspace-validator';
 
-export interface FileWriteOptions {
+export type FileWriteOptions = {
   force?: boolean;
   createDirs?: boolean;
   workspacePath?: string;
-}
+};
 
 /**
  * Write file with safety checks and directory creation
@@ -42,18 +42,18 @@ export async function writeFileWithChecks(
   // Create directories if needed
   if (createDirs) {
     const dir = dirname(validatedPath);
-    
+
     // Security: Validate directory path
     if (workspacePath) {
       const validator = createWorkspaceValidator(workspacePath);
       validator.validateDirectoryPath(dir);
     }
-    
+
     await mkdir(dir, { recursive: true });
   }
 
-  // Write the file
-  await writeFile(validatedPath, content);
+  // Write the file with atomic creation when not forcing overwrites to avoid TOCTOU issues.
+  await writeFile(validatedPath, content, { flag: force ? 'w' : 'wx' });
 }
 
 /**
@@ -62,7 +62,7 @@ export async function writeFileWithChecks(
  */
 export function fileExists(filePath: string, workspacePath?: string): boolean {
   let validatedPath = filePath;
-  
+
   // Security: Validate file path if workspace is provided
   if (workspacePath) {
     try {
@@ -73,14 +73,17 @@ export function fileExists(filePath: string, workspacePath?: string): boolean {
       return false;
     }
   }
-  
+
   return existsSync(validatedPath);
 }
 
 /**
  * Secure file path resolver
  */
-export function resolveSecurePath(filePath: string, workspacePath: string): string {
+export function resolveSecurePath(
+  filePath: string,
+  workspacePath: string
+): string {
   const validator = createWorkspaceValidator(workspacePath);
   return validator.validateFilePath(filePath);
 }

@@ -1,14 +1,18 @@
 /**
  * Error Management Utilities
- * 
+ *
  * Helper functions for common error handling patterns
  */
 
-import type { IGrappleError, ErrorCode, ErrorCategory, HealthStatus } from './types.js';
-import { ErrorSeverity } from './types.js';
-import { GrappleError, ErrorFactory } from './errors.js';
-import { TimeoutError } from './errors.js';
+import { fromError, GrappleError, TimeoutError } from './errors.js';
 import { reportError } from './reporting.js';
+import {
+  type ErrorCategory,
+  ErrorCode,
+  ErrorSeverity,
+  type HealthStatus,
+  type IGrappleError,
+} from './types.js';
 
 /**
  * Create a standardized error with consistent formatting
@@ -25,18 +29,16 @@ export function createStandardError(
     metadata?: Record<string, unknown>;
   } = {}
 ): GrappleError {
-  return new GrappleError(
+  return new GrappleError({
     message,
     code,
     category,
-    options.severity || ErrorSeverity.ERROR,
-    {
-      cause: options.cause,
-      operation: options.operation,
-      userMessage: options.userMessage,
-      metadata: options.metadata,
-    }
-  );
+    severity: options.severity || ErrorSeverity.ERROR,
+    cause: options.cause,
+    operation: options.operation,
+    userMessage: options.userMessage,
+    metadata: options.metadata,
+  });
 }
 
 /**
@@ -58,9 +60,11 @@ export function wrapWithErrorHandling<TArgs extends unknown[], TReturn>(
       let grappleError: IGrappleError;
 
       if (options.transformError) {
-        grappleError = options.transformError(error instanceof Error ? error : new Error(String(error)));
+        grappleError = options.transformError(
+          error instanceof Error ? error : new Error(String(error))
+        );
       } else {
-        grappleError = ErrorFactory.fromError(
+        grappleError = fromError(
           error instanceof Error ? error : new Error(String(error)),
           options.operation
         );
@@ -68,8 +72,8 @@ export function wrapWithErrorHandling<TArgs extends unknown[], TReturn>(
 
       // Report error if enabled
       if (options.reportErrors !== false) {
-        await reportError(grappleError).catch(reportError => {
-          console.error('Failed to report error:', reportError);
+        await reportError(grappleError).catch((_reportError) => {
+          // Silently ignore reporting errors
         });
       }
 
@@ -77,8 +81,8 @@ export function wrapWithErrorHandling<TArgs extends unknown[], TReturn>(
       if (options.onError) {
         try {
           options.onError(grappleError);
-        } catch (handlerError) {
-          console.error('Error handler failed:', handlerError);
+        } catch (_handlerError) {
+          // Silently ignore handler errors
         }
       }
 
@@ -102,15 +106,15 @@ export async function safeAsync<T>(
   try {
     return await operation();
   } catch (error) {
-    const grappleError = ErrorFactory.fromError(
+    const grappleError = fromError(
       error instanceof Error ? error : new Error(String(error)),
       options.operation
     );
 
     // Report error if enabled
     if (options.reportErrors !== false) {
-      await reportError(grappleError).catch(reportError => {
-        console.error('Failed to report error:', reportError);
+      await reportError(grappleError).catch((_reportError) => {
+        // Error reporting failed - continue gracefully
       });
     }
 
@@ -118,8 +122,8 @@ export async function safeAsync<T>(
     if (options.onError) {
       try {
         options.onError(grappleError);
-      } catch (handlerError) {
-        console.error('Error handler failed:', handlerError);
+      } catch (_handlerError) {
+        // Custom error handler failed - continue gracefully
       }
     }
 
@@ -130,26 +134,28 @@ export async function safeAsync<T>(
 /**
  * Add timeout to any async operation
  */
-export async function withTimeout<T>(
+export function withTimeout<T>(
   operation: () => Promise<T>,
   timeoutMs: number,
   operationName?: string
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
-      reject(new TimeoutError(
-        `Operation '${operationName}' timed out after ${timeoutMs}ms`,
-        1900, // OPERATION_TIMEOUT
-        { operation: operationName }
-      ));
+      reject(
+        new TimeoutError(
+          `Operation '${operationName}' timed out after ${timeoutMs}ms`,
+          ErrorCode.OPERATION_TIMEOUT,
+          { operation: operationName }
+        )
+      );
     }, timeoutMs);
 
     operation()
-      .then(result => {
+      .then((result) => {
         clearTimeout(timeoutId);
         resolve(result);
       })
-      .catch(error => {
+      .catch((error) => {
         clearTimeout(timeoutId);
         reject(error);
       });
@@ -176,9 +182,9 @@ export function createHealthChecker(
     const components: HealthStatus['components'] = {};
     const checkPromises: Promise<void>[] = [];
 
-    const executeCheck = async (checkConfig: typeof checks[0]) => {
+    const executeCheck = async (checkConfig: (typeof checks)[0]) => {
       const checkTimeout = checkConfig.timeout || defaultTimeout;
-      
+
       try {
         const result = await withTimeout(
           async () => await checkConfig.check(),
@@ -213,13 +219,13 @@ export function createHealthChecker(
       }
     }
 
-    const overallHealthy = Object.values(components).every(c => c.healthy);
+    const overallHealthy = Object.values(components).every((c) => c.healthy);
 
     return {
       healthy: overallHealthy,
       components,
-      message: overallHealthy 
-        ? 'All health checks passed' 
+      message: overallHealthy
+        ? 'All health checks passed'
         : 'Some health checks failed',
       timestamp: new Date(),
     };
@@ -257,7 +263,7 @@ export function throttle<TArgs extends unknown[]>(
 
   return (...args: TArgs): void => {
     const now = Date.now();
-    
+
     if (now - lastExecution >= limitMs) {
       lastExecution = now;
       func(...args);
@@ -270,8 +276,8 @@ export function throttle<TArgs extends unknown[]>(
  */
 export function memoizeWithTTL<TArgs extends unknown[], TReturn>(
   func: (...args: TArgs) => Promise<TReturn>,
-  ttlMs: number = 300000, // 5 minutes default
-  maxCacheSize: number = 100
+  ttlMs = 300_000, // 5 minutes default
+  maxCacheSize = 100
 ): (...args: TArgs) => Promise<TReturn> {
   const cache = new Map<string, { value: TReturn; timestamp: number }>();
 
@@ -287,7 +293,7 @@ export function memoizeWithTTL<TArgs extends unknown[], TReturn>(
 
     // Execute function and cache result
     const result = await func(...args);
-    
+
     // Maintain cache size limit
     if (cache.size >= maxCacheSize) {
       const oldestKey = cache.keys().next().value;
@@ -313,13 +319,15 @@ export function createRateLimiter(
   return (identifier: string): boolean => {
     const now = Date.now();
     const windowStart = now - windowMs;
-    
+
     // Get existing requests for this identifier
     const userRequests = requests.get(identifier) || [];
-    
+
     // Filter out old requests
-    const recentRequests = userRequests.filter(timestamp => timestamp > windowStart);
-    
+    const recentRequests = userRequests.filter(
+      (timestamp) => timestamp > windowStart
+    );
+
     // Check if limit exceeded
     if (recentRequests.length >= maxRequests) {
       return false;
@@ -330,9 +338,10 @@ export function createRateLimiter(
     requests.set(identifier, recentRequests);
 
     // Cleanup old entries periodically
-    if (Math.random() < 0.1) { // 10% chance to cleanup
+    if (Math.random() < 0.1) {
+      // 10% chance to cleanup
       for (const [id, timestamps] of requests.entries()) {
-        const recent = timestamps.filter(ts => ts > windowStart);
+        const recent = timestamps.filter((ts) => ts > windowStart);
         if (recent.length === 0) {
           requests.delete(id);
         } else {
@@ -380,14 +389,14 @@ export function deepClone<T>(object: T): T {
     return new Date(object.getTime()) as unknown as T;
   }
 
-  if (object instanceof Array) {
-    return object.map(item => deepClone(item)) as unknown as T;
+  if (Array.isArray(object)) {
+    return object.map((item) => deepClone(item)) as unknown as T;
   }
 
   if (typeof object === 'object') {
     const cloned = {} as T;
     for (const key in object) {
-      if (Object.prototype.hasOwnProperty.call(object, key)) {
+      if (Object.hasOwn(object, key)) {
         cloned[key] = deepClone(object[key]);
       }
     }
@@ -429,7 +438,7 @@ export function extractErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
-  
+
   if (typeof error === 'string') {
     return error;
   }
@@ -438,7 +447,7 @@ export function extractErrorMessage(error: unknown): string {
     if ('message' in error && typeof error.message === 'string') {
       return error.message;
     }
-    
+
     if ('error' in error && typeof error.error === 'string') {
       return error.error;
     }

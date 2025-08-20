@@ -3,11 +3,11 @@
  * Focuses on immutability and proper config updates
  */
 
-import { describe, expect, test, beforeEach, afterEach } from 'bun:test';
-import { ConfigManager, type ExtendedHookConfiguration } from '../config';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { ConfigManager } from '../config';
 
 describe('ConfigManager - Immutability Tests', () => {
   let tempDir: string;
@@ -43,7 +43,7 @@ describe('ConfigManager - Immutability Tests', () => {
 
     // Verify the original config wasn't mutated
     expect(initialConfig).toEqual(originalConfig);
-    
+
     // Verify the update was applied correctly
     expect(updatedConfig.PreToolUse?.Write).toEqual({
       command: 'bun run hooks/custom-pre.ts',
@@ -63,7 +63,7 @@ describe('ConfigManager - Immutability Tests', () => {
     // Set event-level config
     await configManager.setHookConfig('SessionStart', {
       command: 'bun run hooks/custom-session.ts',
-      timeout: 15000,
+      timeout: 15_000,
       enabled: true,
     });
 
@@ -71,11 +71,11 @@ describe('ConfigManager - Immutability Tests', () => {
 
     // Verify original wasn't mutated
     expect(initialConfig).toEqual(originalConfig);
-    
+
     // Verify the update
     expect(updatedConfig.SessionStart).toEqual({
       command: 'bun run hooks/custom-session.ts',
-      timeout: 15000,
+      timeout: 15_000,
       enabled: true,
     });
 
@@ -84,8 +84,8 @@ describe('ConfigManager - Immutability Tests', () => {
   });
 
   test('should create immutable updates in toggleHook for tool-specific hooks', async () => {
-    const initialConfig = await configManager.load();
-    
+    const _initialConfig = await configManager.load();
+
     // Ensure we have a tool config to toggle
     await configManager.setHookConfig('PreToolUse', 'Bash', {
       command: 'bun run hooks/pre-bash.ts',
@@ -103,10 +103,12 @@ describe('ConfigManager - Immutability Tests', () => {
 
     // Verify original wasn't mutated
     expect(beforeToggle).toEqual(originalBeforeToggle);
-    
+
     // Verify the toggle
     expect(afterToggle.PreToolUse?.Bash?.enabled).toBe(false);
-    expect(afterToggle.PreToolUse?.Bash?.command).toBe('bun run hooks/pre-bash.ts');
+    expect(afterToggle.PreToolUse?.Bash?.command).toBe(
+      'bun run hooks/pre-bash.ts'
+    );
     expect(afterToggle.PreToolUse?.Bash?.timeout).toBe(3000);
 
     // Different references
@@ -123,9 +125,9 @@ describe('ConfigManager - Immutability Tests', () => {
 
     const updatedConfig = configManager.getConfig();
 
-    // Verify original wasn't mutated  
+    // Verify original wasn't mutated
     expect(initialConfig).toEqual(originalConfig);
-    
+
     // Verify the toggle
     expect(updatedConfig.SessionStart?.enabled).toBe(false);
 
@@ -147,7 +149,7 @@ describe('ConfigManager - Immutability Tests', () => {
     const originalAfterFirst = JSON.parse(JSON.stringify(afterFirstUpdate));
 
     await configManager.setHookConfig('PreToolUse', 'Edit', {
-      command: 'bun run hooks/pre-edit.ts', 
+      command: 'bun run hooks/pre-edit.ts',
       timeout: 3000,
       enabled: true,
     });
@@ -156,7 +158,7 @@ describe('ConfigManager - Immutability Tests', () => {
 
     // Verify first update state wasn't mutated
     expect(afterFirstUpdate).toEqual(originalAfterFirst);
-    
+
     // Verify both configs exist
     expect(afterSecondUpdate.PreToolUse?.Write).toEqual({
       command: 'bun run hooks/pre-write.ts',

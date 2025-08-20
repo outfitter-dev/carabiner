@@ -57,31 +57,31 @@ export type ToolName = LiteralUnion<
 /**
  * Hook execution result
  */
-export interface HookResult {
+export type HookResult = {
   readonly success: boolean;
   readonly message?: string;
   readonly block?: boolean; // For PreToolUse hooks - true blocks tool execution
   readonly data?: Record<string, unknown>;
   readonly metadata?: HookMetadata;
-}
+};
 
 /**
  * Hook execution metadata
  */
-export interface HookMetadata {
+export type HookMetadata = {
   readonly duration?: number;
   readonly timestamp?: string;
   readonly hookVersion?: string;
-}
+};
 
 /**
  * Simple hook output for Claude Code communication
  */
-export interface ClaudeHookOutput {
+export type ClaudeHookOutput = {
   readonly action: 'continue' | 'block';
   readonly message?: string;
   readonly data?: Record<string, unknown>;
-}
+};
 
 /**
  * Hook output modes
@@ -91,13 +91,13 @@ export type HookOutputMode = 'exit-code' | 'json';
 /**
  * Hook execution options
  */
-export interface HookExecutionOptions {
+export type HookExecutionOptions = {
   readonly timeout?: number;
   readonly throwOnError?: boolean;
   readonly captureOutput?: boolean;
   readonly logLevel?: 'debug' | 'info' | 'warn' | 'error';
   readonly outputMode?: HookOutputMode;
-}
+};
 
 /**
  * Type guards for hook events

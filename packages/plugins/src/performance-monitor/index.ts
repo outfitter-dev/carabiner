@@ -10,14 +10,14 @@
  */
 
 import { PerformanceObserver, performance } from 'node:perf_hooks';
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 import type { HookContext } from '@outfitter/types';
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * Performance metric interface
  */
-interface PerformanceMetric {
+type PerformanceMetric = {
   operation: string;
   startTime: number;
   endTime: number;
@@ -26,12 +26,12 @@ interface PerformanceMetric {
   success: boolean;
   toolName?: string;
   filePath?: string;
-}
+};
 
 /**
  * Performance statistics
  */
-interface PerformanceStats {
+type PerformanceStats = {
   totalOperations: number;
   totalDuration: number;
   averageDuration: number;
@@ -41,19 +41,19 @@ interface PerformanceStats {
   memoryTrend: 'increasing' | 'decreasing' | 'stable';
   operationCounts: Record<string, number>;
   toolUsage: Record<string, number>;
-}
+};
 
 /**
  * Performance alert interface
  */
-interface PerformanceAlert {
+type PerformanceAlert = {
   type: 'slow_operation' | 'memory_usage' | 'error_rate' | 'frequency';
   severity: 'warning' | 'critical';
   message: string;
   metric: PerformanceMetric;
   threshold: number;
   value: number;
-}
+};
 
 /**
  * Performance monitor plugin configuration schema
@@ -112,6 +112,18 @@ const PerformanceMonitorConfigSchema = z
 
 type PerformanceMonitorConfig = z.infer<typeof PerformanceMonitorConfigSchema>;
 
+// Correlate Pre/Post by tool; use a stack per tool to handle concurrent invocations
+const preOpStartByTool = new Map<
+  string,
+  { startTime: number; startMemory: NodeJS.MemoryUsage }[]
+>();
+
+function getCorrelationKey(operation: string): string {
+  // operation is e.g. "PreToolUse_Bash" or "PostToolUse_Bash"
+  const idx = operation.indexOf('_');
+  return idx > -1 ? operation.slice(idx + 1) : operation;
+}
+
 /**
  * Global performance metrics store
  */
@@ -120,7 +132,7 @@ class MetricsStore {
   private alerts: PerformanceAlert[] = [];
   private observer?: PerformanceObserver;
 
-  constructor(private config: PerformanceMonitorConfig) {
+  constructor(private readonly config: PerformanceMonitorConfig) {
     if (config.enableProfiling) {
       this.setupPerformanceObserver();
     }
@@ -130,9 +142,6 @@ class MetricsStore {
     this.observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
         if (entry.name.startsWith('claude-hook-')) {
-          console.log(
-            `[PerformanceMonitor] ${entry.name}: ${entry.duration.toFixed(2)}ms`
-          );
         }
       }
     });
@@ -433,12 +442,18 @@ function handlePreToolUseMonitoring(
   pluginName: string,
   pluginVersion: string
 ): PluginResult {
-  const startTime = performance.now();
+  const startTime = Date.now();
   const startMemory = process.memoryUsage();
 
   if (config.enableProfiling) {
     performance.mark(`claude-hook-${operation}-start`);
   }
+
+  // Track start for correlation with PostToolUse
+  const key = getCorrelationKey(operation);
+  const existing = preOpStartByTool.get(key) || [];
+  existing.push({ startTime, startMemory });
+  preOpStartByTool.set(key, existing);
 
   return {
     success: true,
@@ -499,12 +514,17 @@ function handlePostToolUseMonitoring(
   pluginName: string,
   pluginVersion: string
 ): PluginResult {
-  const endTime = performance.now();
+  const endTime = Date.now();
   const endMemory = process.memoryUsage();
 
-  // Try to find corresponding PreToolUse timing (simplified - would need better correlation)
-  // For now, assume a reasonable duration
-  const startTime = endTime - 1000; // Placeholder
+  // Correlate with PreToolUse start (stack per tool to handle concurrency)
+  const key = getCorrelationKey(operation);
+  const starts = preOpStartByTool.get(key);
+  const startEntry = starts?.pop();
+  if (starts && starts.length === 0) {
+    preOpStartByTool.delete(key);
+  }
+  const startTime = startEntry?.startTime ?? endTime - 1000; // Fallback if unmatched
   const duration = endTime - startTime;
 
   if (config.enableProfiling) {
@@ -514,10 +534,21 @@ function handlePostToolUseMonitoring(
       `claude-hook-${operation}-start`,
       `claude-hook-${operation}-end`
     );
+    performance.clearMarks(`claude-hook-${operation}-start`);
+    performance.clearMarks(`claude-hook-${operation}-end`);
+    performance.clearMeasures(`claude-hook-${operation}`);
   }
 
   const filePath = extractFilePathFromContext(context);
-  const success = !('error' in context); // This would need proper context analysis
+  // Check success based on toolResponse for PostToolUse contexts
+  const isPostToolUseContext = (
+    ctx: HookContext
+  ): ctx is HookContext & { toolResponse: Record<string, unknown> } => {
+    return 'toolResponse' in ctx && ctx.toolResponse != null;
+  };
+  const success = isPostToolUseContext(context)
+    ? Boolean((context.toolResponse as any)?.success)
+    : true;
 
   const metric = createPerformanceMetric(
     operation,
@@ -606,7 +637,9 @@ export const performanceMonitorPlugin: HookPlugin = {
   events: ['PreToolUse', 'PostToolUse'],
   priority: 10, // Low priority to avoid affecting other plugins
 
-  configSchema: PerformanceMonitorConfigSchema as z.ZodType<Record<string, unknown>>,
+  configSchema: PerformanceMonitorConfigSchema as z.ZodType<
+    Record<string, unknown>
+  >,
   defaultConfig: {},
 
   apply(
@@ -661,10 +694,6 @@ export const performanceMonitorPlugin: HookPlugin = {
    * Initialize with stats logging if enabled
    */
   async init(): Promise<void> {
-    console.log(
-      '[PerformanceMonitor] Plugin initialized - monitoring performance'
-    );
-
     // Set up periodic stats logging if enabled
     // This would be better handled by the registry or a separate service
     // For now, just log that it's ready
@@ -675,13 +704,7 @@ export const performanceMonitorPlugin: HookPlugin = {
    */
   async shutdown(): Promise<void> {
     if (globalMetricsStore) {
-      console.log('[PerformanceMonitor] Shutting down - final stats:');
-      const stats = globalMetricsStore.getStats();
-      console.log(`  Operations: ${stats.totalOperations}`);
-      console.log(
-        `  Average duration: ${Math.round(stats.averageDuration * 100) / 100}ms`
-      );
-      console.log(`  Success rate: ${Math.round(stats.successRate * 100)}%`);
+      // const stats = globalMetricsStore.getStats();
 
       globalMetricsStore.cleanup();
       globalMetricsStore = undefined;

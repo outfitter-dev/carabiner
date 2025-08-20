@@ -149,7 +149,7 @@ const fileAccessControlHook = HookBuilder.forPreToolUse()
 /**
  * Command monitoring hook using functional API - tool-specific for Bash
  */
-const commandMonitoringHook = createHook.preToolUse('Bash', async (context) => {
+const commandMonitoringHook = createHook.preToolUse('Bash', (context) => {
   if (
     context.toolInput &&
     typeof context.toolInput === 'object' &&
@@ -179,7 +179,7 @@ const commandMonitoringHook = createHook.preToolUse('Bash', async (context) => {
 /**
  * Universal security hook - runs for ALL tools
  */
-const universalSecurityHook = createHook.preToolUse(async (context) => {
+const universalSecurityHook = createHook.preToolUse((context) => {
   // Basic universal checks
   if (context.sessionId.length < 10) {
     return HookResults.block('Invalid session ID format');
@@ -190,6 +190,7 @@ const universalSecurityHook = createHook.preToolUse(async (context) => {
     Bun.env.NODE_ENV === 'production' &&
     !context.cwd.startsWith('/safe/workspace/')
   ) {
+    return HookResults.block('Workspace access restricted in production');
   }
 
   return HookResults.success('Universal security check passed');
@@ -220,7 +221,7 @@ async function performAdvancedSecurityChecks(
   await validateSessionBehavior(context.sessionId);
 }
 
-async function validateCodeContent(content: string): Promise<void> {
+function validateCodeContent(content: string): void {
   // Check for potential code injection patterns
   const injectionPatterns = [
     /eval\s*\(\s*[^)]*\$/, // Dynamic eval with variables
@@ -261,26 +262,25 @@ async function validateWorkspaceIntegrity(cwd: string): Promise<void> {
   }
 }
 
-async function validateSessionBehavior(_sessionId: string): Promise<void> {}
+function validateSessionBehavior(_sessionId: string): void {
+  // Session behavior validation implementation placeholder
+}
 
 /**
  * Rate limiting implementation
  */
 
-interface RateLimitResult {
+type RateLimitResult = {
   allowed: boolean;
   remaining: number;
   resetTime: number;
   message?: string;
-}
+};
 
 // Simple in-memory rate limiting (use Redis in production)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
-async function checkRateLimit(
-  sessionId: string,
-  toolName: string
-): Promise<RateLimitResult> {
+function checkRateLimit(sessionId: string, toolName: string): RateLimitResult {
   const key = `${sessionId}:${toolName}`;
   const now = Date.now();
   const windowMs = 60_000; // 1 minute window
@@ -322,11 +322,11 @@ async function checkRateLimit(
  * File access control
  */
 
-interface FileAccessResult {
+type FileAccessResult = {
   allowed: boolean;
   level: 'read' | 'write' | 'admin';
   reason?: string;
-}
+};
 
 async function checkFileAccess(
   filePath: string,
@@ -373,11 +373,11 @@ async function checkFileAccess(
   };
 }
 
-async function logFileAccess(
+function logFileAccess(
   sessionId: string,
   operation: string,
   filePath: string
-): Promise<void> {
+): void {
   const _logEntry = {
     timestamp: new Date().toISOString(),
     sessionId,

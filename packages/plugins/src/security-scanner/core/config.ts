@@ -7,20 +7,32 @@ import { matchesPatterns } from '../matchers/pattern-matcher.js';
 import type { SecurityScannerConfig } from '../types/index.js';
 import { SecurityScannerConfigSchema } from '../types/index.js';
 
+function deepFreeze<T>(obj: T): Readonly<T> {
+  if (obj && typeof obj === 'object') {
+    Object.freeze(obj);
+    for (const value of Object.values(obj as Record<string, unknown>)) {
+      if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+        deepFreeze(value as Record<string, unknown>);
+      }
+    }
+  }
+  return obj as Readonly<T>;
+}
+
 /**
  * Configuration manager for security scanner
  */
 export class SecurityScannerConfigManager {
-  private config: SecurityScannerConfig;
+  private readonly config: SecurityScannerConfig;
 
   constructor(config: Record<string, unknown> = {}) {
-    this.config = SecurityScannerConfigSchema.parse(config);
+    this.config = deepFreeze(SecurityScannerConfigSchema.parse(config));
   }
 
   /**
    * Get the parsed configuration
    */
-  getConfig(): SecurityScannerConfig {
+  getConfig(): Readonly<SecurityScannerConfig> {
     return this.config;
   }
 

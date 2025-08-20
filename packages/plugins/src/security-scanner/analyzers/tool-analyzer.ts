@@ -8,7 +8,7 @@ import { readFile } from 'node:fs/promises';
 /**
  * Tool input interface for analysis
  */
-export interface ToolInput {
+export type AnalyzerToolInput = {
   command?: string;
   file_path?: string;
   content?: string;
@@ -20,12 +20,12 @@ export interface ToolInput {
     new_string: string;
     replace_all?: boolean;
   }>;
-}
+};
 
 /**
  * Extract content from Write tool input
  */
-export function extractWriteContent(toolInput: ToolInput): string {
+export function extractWriteContent(toolInput: AnalyzerToolInput): string {
   return toolInput.content || '';
 }
 
@@ -33,7 +33,7 @@ export function extractWriteContent(toolInput: ToolInput): string {
  * Extract content from Edit tool input
  */
 export async function extractEditContent(
-  toolInput: ToolInput,
+  toolInput: AnalyzerToolInput,
   filePath: string
 ): Promise<string> {
   try {
@@ -61,7 +61,7 @@ export async function extractEditContent(
  * Extract content from MultiEdit tool input
  */
 export async function extractMultiEditContent(
-  toolInput: ToolInput,
+  toolInput: AnalyzerToolInput,
   filePath: string
 ): Promise<string> {
   try {
@@ -75,6 +75,6 @@ export async function extractMultiEditContent(
 /**
  * Extract command from Bash tool input
  */
-export function extractBashCommand(toolInput: ToolInput): string {
+export function extractBashCommand(toolInput: AnalyzerToolInput): string {
   return toolInput.command || '';
 }

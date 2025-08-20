@@ -14,7 +14,7 @@ import type { HookContext, HookResult } from '@outfitter/types';
  * over different protocols (stdin/stdout, HTTP, testing, etc.) without
  * changing the core hook logic.
  */
-export interface HookProtocol {
+export type HookProtocol = {
   /**
    * Read raw input from the protocol source
    *
@@ -48,7 +48,7 @@ export interface HookProtocol {
    * @throws {Error} If writing error fails
    */
   writeError(error: Error): Promise<void>;
-}
+};
 
 /**
  * Protocol factory interface for creating protocol instances
@@ -56,7 +56,7 @@ export interface HookProtocol {
  * Enables dependency injection and testing by providing a consistent
  * way to create protocol instances with different configurations.
  */
-export interface HookProtocolFactory<T = unknown> {
+export type HookProtocolFactory<T = unknown> = {
   /**
    * Create a new protocol instance
    *
@@ -69,7 +69,7 @@ export interface HookProtocolFactory<T = unknown> {
    * Protocol type identifier
    */
   readonly type: string;
-}
+};
 
 /**
  * Protocol error types for better error handling

@@ -1,21 +1,22 @@
 /**
  * Error Boundaries
- * 
+ *
  * Comprehensive error boundary system for graceful degradation
  * and fault isolation in production environments
  */
 
-import type {
-  IGrappleError,
-  HealthStatus,
+import { fromError, GrappleError } from './errors.js';
+import type { HealthStatus, IGrappleError } from './types.js';
+import {
+  ErrorCategory as Category,
+  ErrorCode as Code,
+  ErrorSeverity as Severity,
 } from './types.js';
-import { GrappleError, ErrorFactory } from './errors.js';
-import { ErrorSeverity as Severity, ErrorCategory as Category, ErrorCode as Code } from './types.js';
 
 /**
  * Error boundary configuration
  */
-export interface ErrorBoundaryConfig {
+export type ErrorBoundaryConfig = {
   /** Maximum number of errors before boundary trips */
   errorThreshold: number;
   /** Time window for error counting (ms) */
@@ -30,12 +31,12 @@ export interface ErrorBoundaryConfig {
   fallbackProvider?: (context: ErrorBoundaryContext) => unknown;
   /** Health check function */
   healthCheck?: () => Promise<boolean>;
-}
+};
 
 /**
  * Error boundary context
  */
-export interface ErrorBoundaryContext {
+export type ErrorBoundaryContext = {
   /** Boundary identifier */
   boundaryId: string;
   /** Component or operation name */
@@ -50,7 +51,7 @@ export interface ErrorBoundaryContext {
   createdAt: Date;
   /** Additional metadata */
   metadata: Record<string, unknown>;
-}
+};
 
 /**
  * Error boundary state
@@ -67,9 +68,9 @@ export enum ErrorBoundaryState {
  */
 const DEFAULT_BOUNDARY_CONFIG: ErrorBoundaryConfig = {
   errorThreshold: 5,
-  timeWindow: 300000, // 5 minutes
+  timeWindow: 300_000, // 5 minutes
   autoRecover: true,
-  recoveryTimeout: 60000, // 1 minute
+  recoveryTimeout: 60_000, // 1 minute
 };
 
 /**
@@ -78,7 +79,8 @@ const DEFAULT_BOUNDARY_CONFIG: ErrorBoundaryConfig = {
 export class ErrorBoundary {
   private readonly config: ErrorBoundaryConfig;
   private readonly context: ErrorBoundaryContext;
-  private readonly errors: Array<{ error: IGrappleError; timestamp: Date }> = [];
+  private readonly errors: Array<{ error: IGrappleError; timestamp: Date }> =
+    [];
   private recoveryTimer?: NodeJS.Timeout;
 
   constructor(
@@ -114,11 +116,11 @@ export class ErrorBoundary {
       this.onSuccess();
       return result;
     } catch (error) {
-      const grappleError = ErrorFactory.fromError(
+      const grappleError = fromError(
         error instanceof Error ? error : new Error(String(error)),
         operationName
       );
-      
+
       this.onError(grappleError);
       throw grappleError;
     }
@@ -132,32 +134,25 @@ export class ErrorBoundary {
     if (this.config.fallbackProvider) {
       try {
         const fallback = this.config.fallbackProvider(this.context);
-        console.info(
-          `Error boundary '${this.context.name}' using fallback for operation '${operationName}'`
-        );
         return fallback as T;
-      } catch (fallbackError) {
-        console.error(
-          `Fallback failed for error boundary '${this.context.name}': ${fallbackError}`
-        );
+      } catch (_fallbackError) {
+        // Fallback operation failed - continue with error
       }
     }
 
     // No fallback available, throw error
-    throw new GrappleError(
-      `Error boundary '${this.context.name}' is in failed state`,
-      Code.RUNTIME_EXCEPTION,
-      Category.RUNTIME,
-      Severity.ERROR,
-      {
-        operation: operationName,
-        technicalDetails: {
-          boundaryState: this.context.state,
-          errorCount: this.context.errorCount,
-          boundaryId: this.context.boundaryId,
-        },
-      }
-    );
+    throw new GrappleError({
+      message: `Error boundary '${this.context.name}' is in failed state`,
+      code: Code.RUNTIME_EXCEPTION,
+      category: Category.RUNTIME,
+      severity: Severity.ERROR,
+      operation: operationName,
+      technicalDetails: {
+        boundaryState: this.context.state,
+        errorCount: this.context.errorCount,
+        boundaryId: this.context.boundaryId,
+      },
+    });
   }
 
   /**
@@ -167,7 +162,6 @@ export class ErrorBoundary {
     if (this.context.state === ErrorBoundaryState.RECOVERING) {
       this.context.state = ErrorBoundaryState.HEALTHY;
       this.clearRecoveryTimer();
-      console.info(`Error boundary '${this.context.name}' recovered successfully`);
     }
   }
 
@@ -176,7 +170,7 @@ export class ErrorBoundary {
    */
   private onError(error: IGrappleError): void {
     const now = new Date();
-    
+
     // Add error to history
     this.errors.push({ error, timestamp: now });
     this.context.errorCount++;
@@ -189,17 +183,13 @@ export class ErrorBoundary {
     if (this.config.onError) {
       try {
         this.config.onError(error, this.context);
-      } catch (handlerError) {
-        console.error(`Error boundary handler failed: ${handlerError}`);
+      } catch (_handlerError) {
+        // Error handler failed - continue gracefully
       }
     }
 
     // Update boundary state based on error count
     this.updateBoundaryState();
-
-    console.warn(
-      `Error boundary '${this.context.name}' recorded error (${this.context.errorCount}/${this.config.errorThreshold}): ${error.toLogMessage()}`
-    );
   }
 
   /**
@@ -207,8 +197,10 @@ export class ErrorBoundary {
    */
   private cleanupOldErrors(): void {
     const cutoff = new Date(Date.now() - this.config.timeWindow);
-    const recentErrors = this.errors.filter(({ timestamp }) => timestamp > cutoff);
-    
+    const recentErrors = this.errors.filter(
+      ({ timestamp }) => timestamp > cutoff
+    );
+
     this.errors.length = 0;
     this.errors.push(...recentErrors);
     this.context.errorCount = recentErrors.length;
@@ -223,20 +215,16 @@ export class ErrorBoundary {
     if (recentErrorCount >= this.config.errorThreshold) {
       if (this.context.state !== ErrorBoundaryState.FAILED) {
         this.context.state = ErrorBoundaryState.FAILED;
-        console.error(
-          `Error boundary '${this.context.name}' transitioned to FAILED state ` +
-          `(${recentErrorCount} errors in ${this.config.timeWindow}ms)`
-        );
-        
+
         if (this.config.autoRecover) {
           this.scheduleRecovery();
         }
       }
-    } else if (recentErrorCount > this.config.errorThreshold / 2) {
-      if (this.context.state === ErrorBoundaryState.HEALTHY) {
-        this.context.state = ErrorBoundaryState.DEGRADED;
-        console.warn(`Error boundary '${this.context.name}' transitioned to DEGRADED state`);
-      }
+    } else if (
+      recentErrorCount > this.config.errorThreshold / 2 &&
+      this.context.state === ErrorBoundaryState.HEALTHY
+    ) {
+      this.context.state = ErrorBoundaryState.DEGRADED;
     }
   }
 
@@ -251,10 +239,6 @@ export class ErrorBoundary {
     this.recoveryTimer = setTimeout(() => {
       this.attemptRecovery();
     }, this.config.recoveryTimeout);
-
-    console.info(
-      `Error boundary '${this.context.name}' scheduled recovery in ${this.config.recoveryTimeout}ms`
-    );
   }
 
   /**
@@ -262,21 +246,17 @@ export class ErrorBoundary {
    */
   private async attemptRecovery(): Promise<void> {
     this.context.state = ErrorBoundaryState.RECOVERING;
-    console.info(`Error boundary '${this.context.name}' attempting recovery`);
 
     try {
       // Run health check if available
       if (this.config.healthCheck) {
         const isHealthy = await this.config.healthCheck();
-        
+
         if (isHealthy) {
           this.context.state = ErrorBoundaryState.HEALTHY;
           this.errors.length = 0;
           this.context.errorCount = 0;
-          console.info(`Error boundary '${this.context.name}' recovery successful`);
         } else {
-          // Recovery failed, schedule another attempt
-          console.warn(`Error boundary '${this.context.name}' recovery failed health check`);
           this.scheduleRecovery();
         }
       } else {
@@ -284,10 +264,8 @@ export class ErrorBoundary {
         this.context.state = ErrorBoundaryState.HEALTHY;
         this.errors.length = 0;
         this.context.errorCount = 0;
-        console.info(`Error boundary '${this.context.name}' recovery completed (timeout based)`);
       }
-    } catch (error) {
-      console.error(`Error boundary '${this.context.name}' recovery failed: ${error}`);
+    } catch (_error) {
       this.scheduleRecovery();
     }
   }
@@ -330,7 +308,6 @@ export class ErrorBoundary {
     this.errors.length = 0;
     this.context.errorCount = 0;
     this.clearRecoveryTimer();
-    console.info(`Error boundary '${this.context.name}' reset to healthy state`);
   }
 
   /**
@@ -339,7 +316,6 @@ export class ErrorBoundary {
   destroy(): void {
     this.clearRecoveryTimer();
     this.errors.length = 0;
-    console.info(`Error boundary '${this.context.name}' destroyed`);
   }
 }
 
@@ -348,13 +324,13 @@ export class ErrorBoundary {
  */
 export class ErrorBoundaryRegistry {
   private static instance?: ErrorBoundaryRegistry;
-  private boundaries = new Map<string, ErrorBoundary>();
+  private readonly boundaries = new Map<string, ErrorBoundary>();
 
   static getInstance(): ErrorBoundaryRegistry {
-    if (!this.instance) {
-      this.instance = new ErrorBoundaryRegistry();
+    if (!ErrorBoundaryRegistry.instance) {
+      ErrorBoundaryRegistry.instance = new ErrorBoundaryRegistry();
     }
-    return this.instance;
+    return ErrorBoundaryRegistry.instance;
   }
 
   /**
@@ -365,8 +341,9 @@ export class ErrorBoundaryRegistry {
     config: Partial<ErrorBoundaryConfig> = {},
     metadata: Record<string, unknown> = {}
   ): ErrorBoundary {
-    if (this.boundaries.has(name)) {
-      return this.boundaries.get(name)!;
+    const existingBoundary = this.boundaries.get(name);
+    if (existingBoundary) {
+      return existingBoundary;
     }
 
     const boundary = new ErrorBoundary(name, config, metadata);
@@ -398,11 +375,11 @@ export class ErrorBoundaryRegistry {
    */
   getAllStatuses(): Record<string, ErrorBoundaryContext> {
     const statuses: Record<string, ErrorBoundaryContext> = {};
-    
+
     for (const [name, boundary] of this.boundaries) {
       statuses[name] = boundary.getStatus();
     }
-    
+
     return statuses;
   }
 
@@ -412,17 +389,19 @@ export class ErrorBoundaryRegistry {
   getHealthStatus(): HealthStatus {
     const components: HealthStatus['components'] = {};
     let overallHealthy = true;
-    
+
     for (const [name, boundary] of this.boundaries) {
       const status = boundary.getStatus();
       const healthy = status.state === ErrorBoundaryState.HEALTHY;
-      
+
       components[name] = {
         healthy,
         lastCheck: new Date(),
-        error: !healthy ? `Boundary in ${status.state} state with ${status.errorCount} errors` : undefined,
+        error: healthy
+          ? undefined
+          : `Boundary in ${status.state} state with ${status.errorCount} errors`,
       };
-      
+
       if (!healthy) {
         overallHealthy = false;
       }
@@ -431,7 +410,10 @@ export class ErrorBoundaryRegistry {
     return {
       healthy: overallHealthy,
       components,
-      message: overallHealthy ? 'All error boundaries healthy' : 'Some error boundaries are degraded or failed',
+      message:
+        overallHealthy === true
+          ? 'All error boundaries healthy'
+          : 'Some error boundaries are degraded or failed',
       timestamp: new Date(),
     };
   }
@@ -463,23 +445,32 @@ export function withErrorBoundary<TArgs extends unknown[], TReturn>(
   boundaryName: string,
   config: Partial<ErrorBoundaryConfig> = {}
 ) {
-  const boundary = ErrorBoundaryRegistry.getInstance().createBoundary(boundaryName, config);
-  
+  const boundary = ErrorBoundaryRegistry.getInstance().createBoundary(
+    boundaryName,
+    config
+  );
+
   return function decorator(
-    _target: any,
+    _target: unknown,
     propertyKey: string,
     descriptor: TypedPropertyDescriptor<(...args: TArgs) => Promise<TReturn>>
   ) {
     const originalMethod = descriptor.value;
-    
+
     if (!originalMethod) {
       throw new Error(`Method ${propertyKey} is not defined`);
     }
 
-    descriptor.value = async function (this: any, ...args: TArgs): Promise<TReturn> {
-      return boundary.execute(() => originalMethod.apply(this, args), propertyKey);
+    descriptor.value = function (
+      this: unknown,
+      ...args: TArgs
+    ): Promise<TReturn> {
+      return boundary.execute(
+        () => originalMethod.apply(this, args),
+        propertyKey
+      );
     };
-    
+
     return descriptor;
   };
 }
@@ -487,12 +478,15 @@ export function withErrorBoundary<TArgs extends unknown[], TReturn>(
 /**
  * Utility function to execute code within an error boundary
  */
-export async function executeWithBoundary<T>(
+export function executeWithBoundary<T>(
   operation: () => Promise<T>,
   boundaryName: string,
   config: Partial<ErrorBoundaryConfig> = {},
   operationName?: string
 ): Promise<T> {
-  const boundary = ErrorBoundaryRegistry.getInstance().createBoundary(boundaryName, config);
+  const boundary = ErrorBoundaryRegistry.getInstance().createBoundary(
+    boundaryName,
+    config
+  );
   return boundary.execute(operation, operationName);
 }

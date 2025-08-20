@@ -26,7 +26,7 @@ describe('HookExecutor', () => {
   });
 
   test('should execute hook handler', async () => {
-    const handler: HookHandler = async (context) => {
+    const handler: HookHandler = (context) => {
       expect(context.event).toBe('PreToolUse');
       if (isToolHookContext(context)) {
         expect(context.toolName).toBe('Bash');

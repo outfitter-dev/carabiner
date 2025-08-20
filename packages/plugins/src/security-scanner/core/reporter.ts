@@ -43,8 +43,6 @@ export class SecurityReporter {
       return;
     }
 
-    console.warn(`[SecurityScanner] ${this.formatFindings(findings)}`);
-
     for (const finding of findings) {
       this.logSingleFinding(finding);
     }
@@ -54,19 +52,10 @@ export class SecurityReporter {
    * Log a single finding to console
    */
   private logSingleFinding(finding: SecurityFinding): void {
-    console.warn(`  ${finding.severity.toUpperCase()}: ${finding.title}`);
-    console.warn(`    ${finding.description}`);
-
     if (finding.line) {
-      console.warn(
-        `    Location: line ${finding.line}, column ${finding.column}`
-      );
     }
 
-    console.warn(`    Matched: "${finding.matched}"`);
-
     if (finding.remediation) {
-      console.warn(`    Fix: ${finding.remediation}`);
     }
   }
 

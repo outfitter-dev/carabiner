@@ -17,29 +17,29 @@
 
 import type { HookHandler } from '@outfitter/types';
 
-interface BashToolInput {
+type BashToolInput = {
   readonly command: string;
   readonly description?: string;
   readonly timeout?: number;
-}
+};
 
-interface BashContext {
+type BashContext = {
   readonly event: string;
   readonly toolName: string;
   readonly toolInput: BashToolInput;
   readonly sessionId: string;
   readonly cwd: string;
   readonly environment: Record<string, string>;
-}
+};
 
-interface NonBashContext {
+type NonBashContext = {
   readonly event: string;
   readonly toolName: string;
   readonly toolInput: Record<string, unknown>;
   readonly sessionId: string;
   readonly cwd: string;
   readonly environment: Record<string, string>;
-}
+};
 
 type TestContext = BashContext | NonBashContext;
 
@@ -54,11 +54,7 @@ import {
 } from '../src/metrics';
 
 // Define our security hook handler
-const securityHook: HookHandler = async (context) => {
-  console.log(
-    `🔒 Security Hook: Checking ${context.event} for ${context.toolName}`
-  );
-
+const securityHook: HookHandler = (context) => {
   // Only check PreToolUse events for Bash
   if (context.event !== 'PreToolUse' || context.toolName !== 'Bash') {
     return { success: true, message: 'Not applicable to this tool/event' };
@@ -89,7 +85,6 @@ const securityHook: HookHandler = async (context) => {
   // Check for dangerous patterns
   for (const pattern of dangerousPatterns) {
     if (pattern.test(command)) {
-      console.log(`🚫 BLOCKED: Command matches dangerous pattern: ${pattern}`);
       return {
         success: false,
         block: true,
@@ -100,15 +95,12 @@ const securityHook: HookHandler = async (context) => {
 
   // Additional checks for suspicious combinations
   if (command.includes('sudo') && command.includes('rm')) {
-    console.log('🚫 BLOCKED: Sudo + rm combination detected');
     return {
       success: false,
       block: true,
       message: 'Security violation: sudo rm commands are not allowed',
     };
   }
-
-  console.log('✅ ALLOWED: Command passed security checks');
   return {
     success: true,
     message: `Command "${command.slice(0, 50)}${command.length > 50 ? '...' : ''}" approved by security hook`,
@@ -117,8 +109,6 @@ const securityHook: HookHandler = async (context) => {
 
 // Example usage function for testing
 export async function runSecurityExample() {
-  console.log('🚀 Security Hook Example\n');
-
   const testCases: Array<{ name: string; context: TestContext }> = [
     {
       name: 'Safe command',
@@ -169,9 +159,6 @@ export async function runSecurityExample() {
   const collector = new MetricsCollector();
 
   for (const testCase of testCases) {
-    console.log(`\n📋 Testing: ${testCase.name}`);
-    console.log(`   Command: ${JSON.stringify(testCase.context.toolInput)}`);
-
     const timer = new ExecutionTimer();
     const memoryBefore = MemoryTracker.snapshot();
 
@@ -189,36 +176,29 @@ export async function runSecurityExample() {
         memoryAfter,
         { testCase: testCase.name }
       );
-
-      console.log(`   Result: ${result.success ? '✅ SUCCESS' : '🚫 BLOCKED'}`);
-      console.log(`   Message: ${result.message}`);
       if (result.block) {
-        console.log('   🛑 Execution would be blocked');
+        // Command was blocked for security reasons
+        collector.recordEvent('blocked_command', testCase.name);
       }
-    } catch (error) {
-      console.log(
-        `   💥 ERROR: ${error instanceof Error ? error.message : String(error)}`
-      );
+    } catch (_error) {
+      // Error in test execution - expected for some test cases
+      collector.recordEvent('test_error', testCase.name);
     }
   }
-
-  // Show aggregate metrics
-  console.log('\n📊 Execution Metrics:');
   const stats = collector.getAggregateMetrics();
-  console.log(`   Total executions: ${stats.totalExecutions}`);
-  console.log(`   Success rate: ${stats.successRate.toFixed(1)}%`);
-  console.log(`   Average duration: ${stats.averageDuration.toFixed(2)}ms`);
-  console.log(`   Blocked commands: ${stats.failedExecutions}`);
 
   if (stats.topErrors.length > 0) {
-    console.log('   Top errors:');
-    for (const error of stats.topErrors) {
-      console.log(`     - ${error.code}: ${error.count} times`);
+    for (const _error of stats.topErrors) {
+      // Log error statistics for debugging
+      collector.recordEvent('error_stat', 'Found error in statistics');
     }
   }
 }
 
 // Run the example if this file is executed directly
 if (import.meta.main) {
-  runSecurityExample().catch(console.error);
+  runSecurityExample().catch((error) => {
+    process.stderr.write(`Error running security example: ${error}\n`);
+    process.exit(1);
+  });
 }

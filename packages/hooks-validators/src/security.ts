@@ -3,7 +3,7 @@
  * Provides comprehensive security checks for various tool operations
  */
 
-import { extname, resolve } from 'node:path';
+import { extname, relative, resolve } from 'node:path';
 import type { HookContext } from '@outfitter/hooks-core';
 import {
   isBashToolInput,
@@ -31,23 +31,23 @@ export class SecurityValidationError extends Error {
 /**
  * Security rule configuration
  */
-export interface SecurityRuleConfig {
+export type SecurityRuleConfig = {
   enabled: boolean;
   severity: 'low' | 'medium' | 'high' | 'critical';
   blockOnViolation: boolean;
   customPatterns?: RegExp[];
   exemptions?: string[];
-}
+};
 
 /**
  * Security validation options
  */
-export interface SecurityOptions {
+export type SecurityOptions = {
   env?: 'development' | 'production' | 'test';
   strictMode?: boolean;
   allowOverrides?: boolean;
   customRules?: Record<string, SecurityRuleConfig>;
-}
+};
 
 /**
  * Default security rules
@@ -260,10 +260,14 @@ export function validateFilePath(
     return;
   }
 
-  const resolved = resolve(workspacePath, filePath);
+  const ws = resolve(workspacePath);
+  const resolved = resolve(ws, filePath);
 
   // Ensure file is within workspace (prevent directory traversal)
-  if (!resolved.startsWith(workspacePath)) {
+  const rel = relative(ws, resolved);
+  if (rel === '' || rel === '.' || rel === './') {
+    // ok - same directory
+  } else if (rel.startsWith('..') || resolve(rel) === rel) {
     throw new SecurityValidationError(
       `File path outside workspace: ${filePath}`,
       'fileSystemAccess',

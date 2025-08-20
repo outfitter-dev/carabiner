@@ -8,89 +8,89 @@ import type { CommandString, FilePath } from './brands.js';
 /**
  * Tool input types with strict definitions
  */
-export interface BashToolInput {
+export type BashToolInput = {
   readonly command: string;
   readonly description?: string;
   readonly timeout?: number;
-}
+};
 
-export interface WriteToolInput {
+export type WriteToolInput = {
   readonly file_path: string;
   readonly content: string;
-}
+};
 
-export interface EditToolInput {
+export type EditToolInput = {
   readonly file_path: string;
   readonly old_string: string;
   readonly new_string: string;
   readonly replace_all?: boolean;
-}
+};
 
-export interface MultiEditInput {
+export type MultiEditInput = {
   readonly file_path: string;
   readonly edits: readonly {
     readonly old_string: string;
     readonly new_string: string;
     readonly replace_all?: boolean;
   }[];
-}
+};
 
-export interface ReadToolInput {
+export type ReadToolInput = {
   readonly file_path: string;
   readonly limit?: number;
   readonly offset?: number;
-}
+};
 
-export interface GlobToolInput {
+export type GlobToolInput = {
   readonly pattern: string;
   readonly path?: string;
-}
+};
 
-export interface GrepToolInput {
+export type GrepToolInput = {
   readonly pattern: string;
   readonly path?: string;
   readonly glob?: string;
   readonly output_mode?: 'content' | 'files_with_matches' | 'count';
   readonly head_limit?: number;
   readonly multiline?: boolean;
-}
+};
 
-export interface LSToolInput {
+export type LSToolInput = {
   readonly path: string;
   readonly ignore?: readonly string[];
-}
+};
 
-export interface TodoWriteToolInput {
+export type TodoWriteToolInput = {
   readonly todos: readonly {
     readonly content: string;
     readonly status: 'pending' | 'in_progress' | 'completed';
     readonly id: string;
   }[];
-}
+};
 
-export interface WebFetchToolInput {
+export type WebFetchToolInput = {
   readonly url: string;
   readonly prompt: string;
-}
+};
 
-export interface WebSearchToolInput {
+export type WebSearchToolInput = {
   readonly query: string;
   readonly allowed_domains?: readonly string[];
   readonly blocked_domains?: readonly string[];
-}
+};
 
-export interface NotebookEditToolInput {
+export type NotebookEditToolInput = {
   readonly notebook_path: string;
   readonly new_source: string;
   readonly cell_id?: string;
   readonly cell_type?: 'code' | 'markdown';
   readonly edit_mode?: 'replace' | 'insert' | 'delete';
-}
+};
 
 /**
  * Strict mapping of tool names to their input types
  */
-export interface ToolInputMap {
+export type ToolInputMap = {
   Bash: BashToolInput;
   Edit: EditToolInput;
   MultiEdit: MultiEditInput;
@@ -103,7 +103,7 @@ export interface ToolInputMap {
   WebFetch: WebFetchToolInput;
   WebSearch: WebSearchToolInput;
   NotebookEdit: NotebookEditToolInput;
-}
+};
 
 /**
  * Union of all possible tool inputs
@@ -124,19 +124,19 @@ export type GetToolInput<T extends keyof ToolInputMap> = ToolInputMap[T];
 /**
  * Branded versions of common tool inputs for better type safety
  */
-export interface BrandedBashToolInput {
+export type BrandedBashToolInput = {
   readonly command: CommandString;
   readonly description?: string;
   readonly timeout?: number;
-}
+};
 
-export interface BrandedFileToolInput {
+export type BrandedFileToolInput = {
   readonly file_path: FilePath;
   readonly content?: string;
   readonly old_string?: string;
   readonly new_string?: string;
   readonly replace_all?: boolean;
-}
+};
 
 /**
  * Type guards for tool inputs

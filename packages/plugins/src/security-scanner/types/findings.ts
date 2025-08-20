@@ -11,7 +11,7 @@ export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 /**
  * Security finding interface
  */
-export interface SecurityFinding {
+export type SecurityFinding = {
   id: string;
   severity: Severity;
   title: string;
@@ -21,18 +21,18 @@ export interface SecurityFinding {
   line?: number;
   column?: number;
   remediation?: string;
-}
+};
 
 /**
  * Security scan result
  */
-export interface ScanResult {
+export type ScanResult = {
   findings: SecurityFinding[];
   scanned: boolean;
   skipped?: boolean;
   skipReason?: string;
   error?: string;
-}
+};
 
 /**
  * Get severity level numeric value for comparison

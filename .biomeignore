@@ -1,0 +1,2 @@
+# Test files that require special patterns
+tests/production/production-scenarios.test.ts

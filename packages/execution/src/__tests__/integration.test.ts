@@ -36,9 +36,11 @@ describe('Execution Engine Integration', () => {
     } as HookContext;
 
     // Create a handler that validates bash commands
-    const securityHandler: HookHandler = async (context) => {
+    const securityHandler: HookHandler = (context) => {
       if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
-        const command = (context as any).toolInput.command;
+        const command = (
+          context as HookContext & { toolInput: { command: string } }
+        ).toolInput.command;
 
         // Block dangerous commands
         const dangerousPatterns = ['rm -rf', 'sudo', '> /dev/null'];
@@ -114,9 +116,11 @@ describe('Execution Engine Integration', () => {
       transcriptPath: createTranscriptPath('/tmp/transcript.md'),
     } as HookContext;
 
-    const securityHandler: HookHandler = async (context) => {
+    const securityHandler: HookHandler = (context) => {
       if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
-        const command = (context as any).toolInput.command;
+        const command = (
+          context as HookContext & { toolInput: { command: string } }
+        ).toolInput.command;
 
         if (command.includes('rm -rf /')) {
           return {
@@ -163,7 +167,7 @@ describe('Execution Engine Integration', () => {
     }
   });
 
-  test('should handle Result type operations', async () => {
+  test('should handle Result type operations', () => {
     // Simulate operations that may succeed or fail
     const parseConfig = (input: string) => {
       try {
@@ -174,11 +178,12 @@ describe('Execution Engine Integration', () => {
       }
     };
 
-    const validateConfig = (config: any) => {
-      if (!config.timeout || config.timeout < 0) {
+    const validateConfig = (config: unknown) => {
+      const configObj = config as { timeout?: number };
+      if (!configObj.timeout || configObj.timeout < 0) {
         return failure(new Error('Invalid timeout configuration'));
       }
-      return success(config);
+      return success(configObj);
     };
 
     // Test successful chain

@@ -18,7 +18,10 @@ import type {
  * @deprecated Use ConfigurationError from @outfitter/error-management instead
  */
 export class ConfigError extends Error {
-  constructor(message: string, public readonly code?: string) {
+  constructor(
+    message: string,
+    public readonly code?: string
+  ) {
     super(message);
     this.name = 'ConfigError';
   }
@@ -32,34 +35,34 @@ export type ConfigFormat = 'json' | 'js' | 'ts';
 /**
  * Configuration loading options
  */
-export interface ConfigOptions {
+export type ConfigOptions = {
   format?: ConfigFormat;
   validate?: boolean;
   createDefault?: boolean;
   mergeDefaults?: boolean;
-}
+};
 
 /**
  * Partial tool hook config for environment overrides
  */
-export interface PartialToolHookConfig {
+export type PartialToolHookConfig = {
   command?: string;
   timeout?: number;
   enabled?: boolean;
   detached?: boolean;
-}
+};
 
 /**
  * Environment-specific hook configuration structure
  */
-export interface EnvironmentHookConfiguration {
+export type EnvironmentHookConfiguration = {
   PreToolUse?: Partial<Record<ToolName, PartialToolHookConfig>>;
   PostToolUse?: Partial<Record<ToolName, PartialToolHookConfig>>;
   UserPromptSubmit?: PartialToolHookConfig;
   SessionStart?: PartialToolHookConfig;
   Stop?: PartialToolHookConfig;
   SubagentStop?: PartialToolHookConfig;
-}
+};
 
 /**
  * Extended hook configuration with metadata
@@ -178,12 +181,25 @@ export const DEFAULT_CONFIG: ExtendedHookConfiguration = {
  * Configuration manager class
  */
 export class ConfigManager {
-  private config: ExtendedHookConfiguration | null = null;
+  private readonly config: ExtendedHookConfiguration | null = null;
   private configPath: string | null = null;
-  private watchCallbacks: Array<(config: ExtendedHookConfiguration) => void> =
-    [];
+  private readonly watchCallbacks: Array<
+    (config: ExtendedHookConfiguration) => void
+  > = [];
 
-  constructor(private workspacePath: string) {}
+  constructor(private readonly workspacePath: string) {}
+
+  /**
+   * Private setter method to assign readonly config property
+   */
+  private setConfig(config: ExtendedHookConfiguration | null): void {
+    // Use Object.defineProperty to set readonly property
+    Object.defineProperty(this, 'config', {
+      value: config,
+      writable: false,
+      configurable: true,
+    });
+  }
 
   /**
    * Feature toggle: advanced error management integration
@@ -191,7 +207,9 @@ export class ConfigManager {
    */
   private get advancedErrorManagementEnabled(): boolean {
     const env = typeof Bun !== 'undefined' ? Bun.env : process.env;
-    return (env?.ENABLE_ADVANCED_ERROR_MANAGEMENT || '').toLowerCase() === 'true';
+    return (
+      (env?.ENABLE_ADVANCED_ERROR_MANAGEMENT || '').toLowerCase() === 'true'
+    );
   }
 
   /**
@@ -213,7 +231,7 @@ export class ConfigManager {
         boundaryName,
         {
           errorThreshold: 3,
-          timeWindow: 300000,
+          timeWindow: 300_000,
           autoRecover: Boolean(fallback),
           fallbackProvider: fallback,
         },
@@ -247,7 +265,9 @@ export class ConfigManager {
   /**
    * Internal load implementation
    */
-  private async _loadInternal(options: ConfigOptions = {}): Promise<ExtendedHookConfiguration> {
+  private async _loadInternal(
+    options: ConfigOptions = {}
+  ): Promise<ExtendedHookConfiguration> {
     const {
       format,
       validate = true,
@@ -282,7 +302,7 @@ export class ConfigManager {
       // Apply environment-specific overrides
       const finalConfig = this.applyEnvironmentOverrides(processedConfig);
 
-      this.config = finalConfig;
+      this.setConfig(finalConfig);
       return finalConfig;
     } catch (error) {
       // Optionally report via error-management if available
@@ -290,12 +310,14 @@ export class ConfigManager {
         try {
           const em = await import('@outfitter/error-management');
           await em.reportError(
-            new (em.ConfigurationError)(
+            new em.ConfigurationError(
               `Failed to load configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
               em.ErrorCode.CONFIG_PARSE_ERROR
             )
           );
-        } catch {/* ignore reporting errors */}
+        } catch {
+          /* ignore reporting errors */
+        }
       }
       throw new ConfigError(
         `Failed to load configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -358,7 +380,7 @@ export class ConfigManager {
 
       writeFileSync(configPath, content, 'utf-8');
       this.configPath = configPath;
-      this.config = config;
+      this.setConfig(config);
 
       // Notify watchers
       this.notifyWatchers(config);
@@ -367,12 +389,14 @@ export class ConfigManager {
         try {
           const em = await import('@outfitter/error-management');
           await em.reportError(
-            new (em.ConfigurationError)(
+            new em.ConfigurationError(
               `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
               em.ErrorCode.CONFIG_WRITE_FAILED
             )
           );
-        } catch {/* ignore */}
+        } catch {
+          /* ignore */
+        }
       }
       throw new ConfigError(
         `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -451,9 +475,10 @@ export class ConfigManager {
     if (typeof toolOrConfig === 'string' && config) {
       // Setting tool-specific config - create immutable copy
       const existing = nextConfig[event];
-      const eventMap = (existing && typeof existing === 'object' && !('command' in existing)) 
-        ? { ...existing } 
-        : {};
+      const eventMap =
+        existing && typeof existing === 'object' && !('command' in existing)
+          ? { ...existing }
+          : {};
       eventMap[toolOrConfig] = { ...config };
       (nextConfig as Record<string, unknown>)[event] = eventMap;
     } else if (typeof toolOrConfig === 'object' && 'command' in toolOrConfig) {
@@ -480,20 +505,22 @@ export class ConfigManager {
 
     // Create immutable copy of config with enabled toggle
     const nextHookConfig = { ...hookConfig, enabled };
-    
+
     if (tool) {
       // Tool-specific config update
-      const eventMap = { ...currentConfig[event] as Record<string, ToolHookConfig> };
+      const eventMap = {
+        ...(currentConfig[event] as Record<string, ToolHookConfig>),
+      };
       eventMap[tool] = nextHookConfig;
-      await this.updateConfig({ 
-        ...currentConfig, 
-        [event]: eventMap 
+      await this.updateConfig({
+        ...currentConfig,
+        [event]: eventMap,
       } as ExtendedHookConfiguration);
     } else {
       // Event-level config update
-      await this.updateConfig({ 
-        ...currentConfig, 
-        [event]: nextHookConfig 
+      await this.updateConfig({
+        ...currentConfig,
+        [event]: nextHookConfig,
       } as ExtendedHookConfiguration);
     }
   }
@@ -611,11 +638,12 @@ export class ConfigManager {
     const format = this.getFormatFromPath(path);
 
     switch (format) {
-      case 'json':
+      case 'json': {
         const jsonConfig = JSON.parse(readFileSync(path, 'utf-8'));
         // Security: Validate JSON configuration
         this.validateConfigSecurity(jsonConfig);
         return jsonConfig;
+      }
 
       case 'js':
       case 'ts':
@@ -640,7 +668,7 @@ export class ConfigManager {
       // Security: Validate the configuration file path
       const resolvedPath = resolve(path);
       const workspaceRoot = resolve(this.workspacePath);
-      
+
       // Ensure the config file is within the workspace
       if (!resolvedPath.startsWith(workspaceRoot)) {
         throw new ConfigError(
@@ -650,7 +678,7 @@ export class ConfigManager {
       }
 
       // Validate file extension
-      if (!resolvedPath.endsWith('.js') && !resolvedPath.endsWith('.ts')) {
+      if (!(resolvedPath.endsWith('.js') || resolvedPath.endsWith('.ts'))) {
         throw new ConfigError(
           `Invalid configuration file extension: ${path}`,
           'INVALID_EXTENSION'
@@ -812,19 +840,25 @@ export default config;
   private validateConfigSecurity(config: ExtendedHookConfiguration): void {
     // Check for dangerous command patterns in hook commands
     const checkCommand = (cmd: string, context: string) => {
+      // First, replace legitimate template variables to avoid false positives
+      const cmdWithoutTemplates = cmd.replace(
+        /\{[a-zA-Z_][a-zA-Z0-9_]*\}/g,
+        'TEMPLATE_VAR'
+      );
+
       // Block commands with shell injection attempts
       const dangerousPatterns = [
-        /[;&|`$(){}[\]]/,  // Shell metacharacters
-        /\.\.[\/\\]/,       // Directory traversal
-        /\/proc\//,         // Process filesystem access
-        /\/dev\//,          // Device access
-        /\beval\b/i,        // Code evaluation
-        /\bexec\b/i,        // Code execution
-        /system\s*\(/,      // System calls
+        /[;&|`$(){}[\]]/, // Shell metacharacters (after template removal)
+        /\.\.[/\\]/, // Directory traversal
+        /\/proc\//, // Process filesystem access
+        /\/dev\//, // Device access
+        /\beval\b/i, // Code evaluation
+        /\bexec\b/i, // Code execution
+        /system\s*\(/, // System calls
       ];
 
       for (const pattern of dangerousPatterns) {
-        if (pattern.test(cmd)) {
+        if (pattern.test(cmdWithoutTemplates)) {
           throw new ConfigError(
             `Dangerous command pattern detected in ${context}: ${cmd}`,
             'SECURITY_VIOLATION'
@@ -833,9 +867,9 @@ export default config;
       }
 
       // Ensure commands start with allowed executables
-      const allowedExecutables = ['bun', 'node', 'npm', 'yarn', 'pnpm'];
+      const allowedExecutables = ['bun', 'node', 'npm', 'yarn', 'pnpm', 'bash'];
       const executable = cmd.trim().split(/\s+/)[0];
-      if (!executable || !allowedExecutables.includes(executable)) {
+      if (!(executable && allowedExecutables.includes(executable))) {
         throw new ConfigError(
           `Unsafe executable in ${context}: ${executable}. Only ${allowedExecutables.join(', ')} are allowed.`,
           'SECURITY_VIOLATION'
@@ -844,12 +878,14 @@ export default config;
     };
 
     // Recursively check all commands in configuration
-    const checkConfigCommands = (obj: unknown, path: string = ''): void => {
-      if (!obj || typeof obj !== 'object') return;
+    const checkConfigCommands = (obj: unknown, path = ''): void => {
+      if (!obj || typeof obj !== 'object') {
+        return;
+      }
 
       for (const [key, value] of Object.entries(obj)) {
         const currentPath = path ? `${path}.${key}` : key;
-        
+
         if (key === 'command' && typeof value === 'string') {
           checkCommand(value, currentPath);
         } else if (typeof value === 'object' && value !== null) {
@@ -876,7 +912,7 @@ export default config;
     for (const [event, eventConfig] of Object.entries(config)) {
       if (
         event.startsWith('$') ||
-        ['templates', 'variables', 'environments'].includes(event)
+        ['version', 'templates', 'variables', 'environments'].includes(event)
       ) {
         continue;
       }

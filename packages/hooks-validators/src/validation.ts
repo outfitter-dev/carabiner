@@ -30,26 +30,26 @@ export class ValidationError extends Error {
 /**
  * Validation rule interface
  */
-export interface ValidationRule<T = unknown> {
+export type ValidationRule<T = unknown> = {
   name: string;
   description: string;
   validate: (value: T, context?: HookContext) => boolean | Promise<boolean>;
   message: string | ((value: T, context?: HookContext) => string);
   required?: boolean;
   severity?: 'error' | 'warning' | 'info';
-}
+};
 
 /**
  * Schema validation interface
  */
-export interface ValidationSchema {
+export type ValidationSchema = {
   [key: string]: ValidationRule<unknown> | ValidationRule<unknown>[];
-}
+};
 
 /**
  * Validation result
  */
-export interface ValidationResult {
+export type ValidationResult = {
   valid: boolean;
   errors: Array<{
     field?: string;
@@ -62,7 +62,7 @@ export interface ValidationResult {
     message: string;
     code?: string;
   }>;
-}
+};
 
 /**
  * Common validation rules

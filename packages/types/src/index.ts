@@ -34,20 +34,6 @@ export {
   isTranscriptPath,
   UnsafeBrands,
 } from './brands';
-
-// Test helpers for type-safe testing
-export type {
-  TestContextOptions,
-} from './test-helpers';
-
-export {
-  createTestContext,
-  TestAssertions,
-  TestFactories,
-  TestMocks,
-  TestSetupError,
-  TestValidationError,
-} from './test-helpers';
 // Context types
 export type {
   BaseHookContext,
@@ -111,6 +97,16 @@ export {
   isToolHookEvent,
   isUserEvent,
 } from './events';
+// Test helpers for type-safe testing
+export type { TestContextOptions } from './test-helpers';
+export {
+  createTestContext,
+  TestAssertions,
+  TestFactories,
+  TestMocks,
+  TestSetupError,
+  TestValidationError,
+} from './test-helpers';
 // Tool types
 export type {
   BashToolInput,

@@ -3,13 +3,12 @@
  */
 
 import pino from 'pino';
-import type { 
-  Logger, 
-  LoggingConfig, 
-  LogLevel, 
-  BaseLogEntry
-} from './types';
-import { sanitizeForLogging, sanitizeError, generateCorrelationId } from './sanitizer';
+import {
+  generateCorrelationId,
+  sanitizeError,
+  sanitizeForLogging,
+} from './sanitizer';
+import type { BaseLogEntry, Logger, LoggingConfig, LogLevel } from './types';
 
 /**
  * Production-ready logger implementation
@@ -31,7 +30,7 @@ export class ProductionLogger implements Logger {
   private createPinoInstance(): pino.Logger {
     const pinoConfig: pino.LoggerOptions = {
       level: this.config.level,
-      
+
       // Base configuration
       base: {
         service: this.config.service,
@@ -76,7 +75,7 @@ export class ProductionLogger implements Logger {
   private createTransportConfig(): pino.TransportSingleOptions | undefined {
     // Production: structured JSON logging only
     if (this.config.environment === 'production') {
-      return undefined; // No transport = raw JSON output
+      return; // No transport = raw JSON output
     }
 
     // Development: pretty printing if enabled and not disabled
@@ -94,14 +93,18 @@ export class ProductionLogger implements Logger {
     }
 
     // Test/other: no transport (structured JSON)
-    return undefined;
+    return;
   }
 
   /**
    * Log error with proper error handling
    */
   error(message: string, context?: Record<string, unknown>): void;
-  error(error: Error, message?: string, context?: Record<string, unknown>): void;
+  error(
+    error: Error,
+    message?: string,
+    context?: Record<string, unknown>
+  ): void;
   error(
     messageOrError: string | Error,
     messageOrContext?: string | Record<string, unknown>,
@@ -109,13 +112,18 @@ export class ProductionLogger implements Logger {
   ): void {
     if (typeof messageOrError === 'string') {
       // error(message, context)
-      this.pino.error(messageOrContext as Record<string, unknown>, messageOrError);
+      this.pino.error(
+        messageOrContext as Record<string, unknown>,
+        messageOrError
+      );
     } else {
       // error(error, message?, context?)
       const error = messageOrError;
-      const message = typeof messageOrContext === 'string' ? messageOrContext : error.message;
-      const ctx = typeof messageOrContext === 'string' ? context : messageOrContext;
-      
+      const message =
+        typeof messageOrContext === 'string' ? messageOrContext : error.message;
+      const ctx =
+        typeof messageOrContext === 'string' ? context : messageOrContext;
+
       this.pino.error({ error, ...ctx }, message);
     }
   }
@@ -153,8 +161,10 @@ export class ProductionLogger implements Logger {
    */
   child(context: Record<string, unknown>): Logger {
     const childConfig = { ...this.config };
-    const childPino = this.pino.child(sanitizeForLogging(context) as Record<string, unknown>);
-    
+    const childPino = this.pino.child(
+      sanitizeForLogging(context) as Record<string, unknown>
+    );
+
     return new ChildLogger(childPino, childConfig);
   }
 
@@ -176,19 +186,28 @@ class ChildLogger implements Logger {
   ) {}
 
   error(message: string, context?: Record<string, unknown>): void;
-  error(error: Error, message?: string, context?: Record<string, unknown>): void;
+  error(
+    error: Error,
+    message?: string,
+    context?: Record<string, unknown>
+  ): void;
   error(
     messageOrError: string | Error,
     messageOrContext?: string | Record<string, unknown>,
     context?: Record<string, unknown>
   ): void {
     if (typeof messageOrError === 'string') {
-      this.pino.error(messageOrContext as Record<string, unknown>, messageOrError);
+      this.pino.error(
+        messageOrContext as Record<string, unknown>,
+        messageOrError
+      );
     } else {
       const error = messageOrError;
-      const message = typeof messageOrContext === 'string' ? messageOrContext : error.message;
-      const ctx = typeof messageOrContext === 'string' ? context : messageOrContext;
-      
+      const message =
+        typeof messageOrContext === 'string' ? messageOrContext : error.message;
+      const ctx =
+        typeof messageOrContext === 'string' ? context : messageOrContext;
+
       this.pino.error({ error, ...ctx }, message);
     }
   }
@@ -210,7 +229,9 @@ class ChildLogger implements Logger {
   }
 
   child(context: Record<string, unknown>): Logger {
-    const childPino = this.pino.child(sanitizeForLogging(context) as Record<string, unknown>);
+    const childPino = this.pino.child(
+      sanitizeForLogging(context) as Record<string, unknown>
+    );
     return new ChildLogger(childPino, this.config);
   }
 
@@ -233,7 +254,7 @@ export function formatDuration(milliseconds: number): string {
   if (milliseconds < 1000) {
     return `${milliseconds}ms`;
   }
-  
+
   const seconds = (milliseconds / 1000).toFixed(2);
   return `${seconds}s`;
 }

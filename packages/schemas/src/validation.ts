@@ -46,23 +46,23 @@ export class ValidationError extends Error {
 /**
  * Complete input validation result
  */
-export interface ValidationResult<T> {
+export type ValidationResult<T> = {
   readonly success: boolean;
   readonly data?: T;
   readonly error?: ValidationError | BrandValidationError;
-}
+};
 
 /**
  * Validated and branded Claude hook input
  */
-export interface ValidatedClaudeInput {
+export type ValidatedClaudeInput = {
   readonly original: ClaudeHookInput;
   readonly sessionId: import('@outfitter/types').SessionId;
   readonly transcriptPath: import('@outfitter/types').TranscriptPath;
   readonly cwd: import('@outfitter/types').DirectoryPath;
   readonly event: import('@outfitter/types').HookEvent;
   readonly matcher?: string;
-}
+};
 
 /**
  * Main validation function - validates and brands input
@@ -182,12 +182,12 @@ export function validateGenericToolInput(
 /**
  * Combined validation for complete hook input
  */
-export interface CompleteValidationResult {
+export type CompleteValidationResult = {
   readonly success: boolean;
   readonly claudeInput?: ValidatedClaudeInput;
   readonly toolInput?: unknown;
   readonly errors: (ValidationError | BrandValidationError)[];
-}
+};
 
 export function validateCompleteHookInput(
   input: unknown

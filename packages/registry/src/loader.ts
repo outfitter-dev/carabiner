@@ -18,7 +18,7 @@ import { isHookPlugin, PluginValidationError } from './plugin';
 /**
  * Plugin loader configuration
  */
-export interface LoaderOptions {
+export type LoaderOptions = {
   /** Directories to search for plugins */
   searchPaths: string[];
   /** File patterns to include (e.g., ['*.plugin.js', '*.plugin.ts']) */
@@ -41,12 +41,12 @@ export interface LoaderOptions {
   allowESModules: boolean;
   /** Allow CommonJS module loading */
   allowCommonJS: boolean;
-}
+};
 
 /**
  * Plugin load result
  */
-export interface PluginLoadResult {
+export type PluginLoadResult = {
   /** Successfully loaded plugins */
   plugins: HookPlugin[];
   /** Failed plugin discoveries */
@@ -58,17 +58,17 @@ export interface PluginLoadResult {
   scanned: number;
   /** Load duration (ms) */
   duration: number;
-}
+};
 
 /**
  * Hot reload event
  */
-export interface HotReloadEvent {
+export type HotReloadEvent = {
   type: 'added' | 'changed' | 'removed';
   path: string;
   plugin?: HookPlugin;
   error?: Error;
-}
+};
 
 /**
  * Hot reload listener
@@ -153,12 +153,7 @@ export class PluginLoader {
       try {
         const pathDiscoveries = await this.discoverInPath(resolve(searchPath));
         discoveries.push(...pathDiscoveries);
-      } catch (error) {
-        console.warn(
-          `[PluginLoader] Failed to discover plugins in ${searchPath}:`,
-          error
-        );
-      }
+      } catch (_error) {}
     }
 
     return discoveries;
@@ -205,9 +200,7 @@ export class PluginLoader {
           });
         }
       }
-    } catch (error) {
-      console.warn(`[PluginLoader] Error reading directory ${path}:`, error);
-    }
+    } catch (_error) {}
 
     return discoveries;
   }
@@ -382,7 +375,7 @@ export class PluginLoader {
    */
   private resolvePlugin(
     exportValue: unknown,
-    filePath: string
+    _filePath: string
   ): HookPlugin | null {
     if (isHookPlugin(exportValue)) {
       return exportValue;
@@ -403,12 +396,7 @@ export class PluginLoader {
         if (isHookPlugin(result)) {
           return result;
         }
-      } catch (error) {
-        console.warn(
-          `[PluginLoader] Failed to resolve plugin factory in ${filePath}:`,
-          error
-        );
-      }
+      } catch (_error) {}
     }
 
     return null;
@@ -427,9 +415,7 @@ export class PluginLoader {
     for (const searchPath of this.options.searchPaths) {
       try {
         await this.watchPath(resolve(searchPath));
-      } catch (error) {
-        console.warn(`[PluginLoader] Failed to watch ${searchPath}:`, error);
-      }
+      } catch (_error) {}
     }
   }
 
@@ -477,9 +463,7 @@ export class PluginLoader {
 
       const debouncedHandler = this.debounce(
         (eventType: string, filePath: string) => {
-          this.handleFileChange(eventType, filePath).catch((error) => {
-            console.error('[PluginLoader] Error handling file change:', error);
-          });
+          this.handleFileChange(eventType, filePath).catch((_error) => {});
         },
         this.options.hotReloadDebounce
       );
@@ -489,9 +473,8 @@ export class PluginLoader {
           debouncedHandler(event.eventType, join(path, event.filename));
         }
       }
-    } catch (error) {
+    } catch (_error) {
       if (!controller.signal.aborted) {
-        console.error(`[PluginLoader] Error watching ${path}:`, error);
       }
     }
   }
@@ -544,9 +527,7 @@ export class PluginLoader {
     const promises = this.hotReloadListeners.map(async (listener) => {
       try {
         await listener(event);
-      } catch (error) {
-        console.error('[PluginLoader] Hot reload listener error:', error);
-      }
+      } catch (_error) {}
     });
 
     await Promise.all(promises);

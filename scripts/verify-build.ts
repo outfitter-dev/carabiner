@@ -6,17 +6,17 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-interface PackageCheck {
+type PackageCheck = {
   name: string;
   path: string;
   hasTypes: boolean;
   hasMain: boolean;
   hasDist: boolean;
   distSize: number;
-}
+};
 
 const PACKAGES = [
   'hooks-core',
@@ -26,7 +26,7 @@ const PACKAGES = [
   'hooks-cli',
 ];
 
-async function runCommand(
+function runCommand(
   command: string,
   args: string[],
   cwd: string
@@ -55,7 +55,7 @@ async function runCommand(
   });
 }
 
-async function checkPackage(packageName: string): Promise<PackageCheck> {
+function checkPackage(packageName: string): PackageCheck {
   const packagePath = join(process.cwd(), 'packages', packageName);
   const distPath = join(packagePath, 'dist');
   const mainPath = join(distPath, 'index.js');
@@ -72,7 +72,6 @@ async function checkPackage(packageName: string): Promise<PackageCheck> {
         }
 
         if (stat.isDirectory()) {
-          const { readdirSync } = require('node:fs');
           return readdirSync(dirPath)
             .map((name: string) => calculateSize(join(dirPath, name)))
             .reduce((total: number, size: number) => total + size, 0);
@@ -161,10 +160,20 @@ async function runPublintValidation(): Promise<void> {
     join(process.cwd(), 'packages')
   );
 
-  if (publintResult.code !== 0 && publintResult.stderr) {
-    console.warn('Publint validation warnings:', publintResult.stderr);
-  } else {
-    console.log('Publint validation passed');
+  if (publintResult.code !== 0) {
+    const stderr = publintResult.stderr?.trim() || '';
+    const stdout = publintResult.stdout?.trim() || '';
+    const errorMessage = stderr || stdout || 'Unknown publint failure';
+
+    throw new Error(
+      `Publint validation failed with exit code ${publintResult.code}:\n${errorMessage}`
+    );
+  }
+
+  // Log successful validation
+  if (publintResult.stdout?.trim()) {
+    // biome-ignore lint/suspicious/noConsole: Build verification logging requires console output
+    console.log('✅ Publint validation passed');
   }
 }
 
@@ -175,7 +184,7 @@ async function verifyBuild(): Promise<void> {
 
   const checks: PackageCheck[] = [];
   for (const packageName of PACKAGES) {
-    const check = await checkPackage(packageName);
+    const check = checkPackage(packageName);
     checks.push(check);
   }
 

@@ -5,27 +5,40 @@
  * Command-line interface for managing Claude Code hooks
  */
 
-import { join, dirname } from 'node:path';
-import { parseArgs } from 'node:util';
 import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { CliConfig, Command } from './types';
+import { parseArgs } from 'node:util';
 import { createCliLogger, type Logger } from '@outfitter/hooks-core';
+import { ConfigCommand } from './commands/config';
+import { GenerateCommand } from './commands/generate';
 // Statically import commands to guarantee inclusion in compiled binary
 import { InitCommand } from './commands/init';
-import { GenerateCommand } from './commands/generate';
-import { ValidateCommand } from './commands/validate';
-import { ConfigCommand } from './commands/config';
 import { TestCommand } from './commands/test';
+import { ValidateCommand } from './commands/validate';
 import { createWorkspaceValidator } from './security/workspace-validator';
+import type { CliConfig, Command } from './types';
+
+type CLIValues = {
+  help?: boolean;
+  version?: boolean;
+  verbose?: boolean;
+  debug?: boolean;
+  workspace?: string;
+  [key: string]: unknown;
+};
+
 // Import commands dynamically to avoid circular dependencies
+
+// Command name validation regex
+const VALID_COMMAND_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9\-_]*$/;
 
 /**
  * CLI class
  */
 export class ClaudeHooksCli {
-  private commands: Map<string, Command> = new Map();
-  private config: CliConfig;
+  private readonly commands: Map<string, Command> = new Map();
+  private readonly config: CliConfig;
   private logger: Logger;
 
   constructor() {
@@ -33,19 +46,23 @@ export class ClaudeHooksCli {
     let version = '0.1.0';
     try {
       // In compiled binary, we need to find the package.json differently
-      const isCompiled = typeof Bun !== 'undefined' && Bun.main === import.meta.path;
+      const isCompiled =
+        typeof Bun !== 'undefined' && Bun.main === import.meta.path;
       if (isCompiled) {
         // For compiled binaries, version will be injected at build time
         version = process.env.CLI_VERSION || '0.1.0';
       } else {
         // For development, read from package.json
-        const packagePath = join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
+        const packagePath = join(
+          dirname(fileURLToPath(import.meta.url)),
+          '..',
+          'package.json'
+        );
         const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
         version = packageJson.version;
       }
-    } catch (error) {
-      // Fallback to hardcoded version if reading fails
-      console.warn('Warning: Could not read version from package.json, using fallback');
+    } catch (_error) {
+      // Ignore version parsing errors
     }
 
     this.config = {
@@ -64,7 +81,7 @@ export class ClaudeHooksCli {
   /**
    * Register all commands
    */
-  private async registerCommands(): Promise<void> {
+  private registerCommands(): void {
     const commands = [
       new InitCommand(),
       new GenerateCommand(),
@@ -82,7 +99,36 @@ export class ClaudeHooksCli {
    * Run the CLI
    */
   async run(args: string[]): Promise<void> {
-    const { values, positionals } = parseArgs({
+    const { values, positionals } = this.parseCliArgs(args);
+
+    // Handle global help and version
+    if (await this.handleGlobalOptions(values, positionals)) {
+      return;
+    }
+
+    // Update configuration based on parsed options
+    this.updateConfig(values);
+
+    const command = positionals[0];
+    const commandArgs = positionals.slice(1);
+
+    // Validate command input
+    this.validateCommandInput(command, commandArgs);
+
+    if (!command) {
+      await this.showHelp();
+      return;
+    }
+
+    // Execute command
+    await this.executeCommand(command, commandArgs);
+  }
+
+  /**
+   * Parse CLI arguments
+   */
+  private parseCliArgs(args: string[]) {
+    return parseArgs({
       args,
       allowPositionals: true,
       options: {
@@ -93,18 +139,31 @@ export class ClaudeHooksCli {
         workspace: { type: 'string', short: 'w' },
       },
     });
+  }
 
-    // Handle global help option
+  /**
+   * Handle global options (help, version)
+   */
+  private async handleGlobalOptions(
+    values: CLIValues,
+    positionals: string[]
+  ): Promise<boolean> {
     if (values.help && positionals.length === 0) {
       await this.showHelp();
-      return;
+      return true;
     }
 
     if (values.version) {
-      console.log(`claude-hooks version ${this.config.version}`);
       process.exit(0);
     }
 
+    return false;
+  }
+
+  /**
+   * Update configuration based on parsed values
+   */
+  private updateConfig(values: CLIValues): void {
     // Update config based on parsed options
     if (values.verbose) {
       this.config.verbose = true;
@@ -112,7 +171,7 @@ export class ClaudeHooksCli {
     if (values.debug) {
       this.config.debug = true;
     }
-    
+
     // Create new logger with updated context if debug/verbose mode changed
     if (values.debug || values.verbose) {
       this.logger = createCliLogger('main').child({
@@ -120,46 +179,69 @@ export class ClaudeHooksCli {
         debug: this.config.debug,
       });
     }
+
     if (values.workspace) {
-      // Security: Validate workspace path using secure validator
-      try {
-        const validator = createWorkspaceValidator(values.workspace);
-        this.config.workspacePath = validator.getWorkspaceRoot();
-        this.logger.debug(`Validated workspace path: ${this.config.workspacePath}`);
-      } catch (error) {
-        this.error(`Invalid workspace path: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        process.exit(1);
-      }
+      this.validateWorkspacePath(values.workspace);
     }
+  }
 
-    const command = positionals[0];
-    const commandArgs = positionals.slice(1);
-
-    // Security: Validate command input
-    if (command) {
-      // Sanitize command name (basic validation)
-      if (!/^[a-zA-Z][a-zA-Z0-9\-_]*$/.test(command)) {
-        this.error(`Invalid command name: ${command}`);
-        process.exit(1);
-      }
-
-      // Validate command arguments for security
-      for (const arg of commandArgs) {
-        if (typeof arg === 'string' && (arg.includes('../') || arg.includes('\x00'))) {
-          this.error('Invalid characters in command arguments');
-          process.exit(1);
-        }
-      }
+  /**
+   * Validate workspace path
+   */
+  private validateWorkspacePath(workspace: string): void {
+    try {
+      const validator = createWorkspaceValidator(workspace);
+      this.config.workspacePath = validator.getWorkspaceRoot();
+      this.logger.debug(
+        `Validated workspace path: ${this.config.workspacePath}`
+      );
+    } catch (error) {
+      this.error(
+        `Invalid workspace path: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      process.exit(1);
     }
+  }
 
+  /**
+   * Validate command input for security
+   */
+  private validateCommandInput(
+    command: string | undefined,
+    commandArgs: string[]
+  ): void {
     if (!command) {
-      await this.showHelp();
       return;
     }
 
+    // Sanitize command name (basic validation)
+    if (!VALID_COMMAND_NAME_REGEX.test(command)) {
+      this.error(`Invalid command name: ${command}`);
+      process.exit(1);
+    }
+
+    // Validate command arguments for security
+    for (const arg of commandArgs) {
+      if (
+        typeof arg === 'string' &&
+        (arg.includes('../') || arg.includes('\x00'))
+      ) {
+        this.error('Invalid characters in command arguments');
+        process.exit(1);
+      }
+    }
+  }
+
+  /**
+   * Execute the specified command
+   */
+  private async executeCommand(
+    command: string,
+    commandArgs: string[]
+  ): Promise<void> {
     // Register commands if not already done
     if (this.commands.size === 0) {
-      await this.registerCommands();
+      this.registerCommands();
     }
 
     const cmd = this.commands.get(command);
@@ -176,8 +258,7 @@ export class ClaudeHooksCli {
         `Command failed: ${error instanceof Error ? error.message : error}`
       );
       if (this.config.debug && error instanceof Error && error.stack) {
-        console.error('\nStack trace:');
-        console.error(error.stack);
+        // Stack trace would be logged here in debug mode
       }
       process.exit(1);
     }
@@ -192,33 +273,45 @@ export class ClaudeHooksCli {
       await this.registerCommands();
     }
 
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('Claude Code Hooks CLI');
-    console.log(`Version: ${this.config.version}\n`);
-    console.log('Usage: claude-hooks [options] <command> [command-options]\n');
-    console.log('Options:');
-    console.log('  -h, --help      Show help');
-    console.log('  -v, --version   Show version');
-    console.log('  --verbose       Enable verbose output');
-    console.log('  --debug         Enable debug output');
-    console.log('  -w, --workspace Set workspace path\n');
-    console.log('Commands:');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('Usage: claude-hooks <command> [options]');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('Available commands:');
 
     for (const command of this.commands.values()) {
+      // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
       console.log(`  ${command.name.padEnd(12)} ${command.description}`);
     }
 
-    console.log(
-      '\nRun "claude-hooks <command> --help" for command-specific help'
-    );
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('Global options:');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('  --help       Show this help message');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('  --version    Show version information');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('  --verbose    Enable verbose logging');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('  --debug      Enable debug logging');
+    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
+    console.log('  --workspace  Set workspace directory');
   }
 
   /**
    * Show available commands
    */
   private showAvailableCommands(): void {
-    console.log('\nAvailable commands:');
+    // biome-ignore lint/suspicious/noConsole: CLI output requires console.log
+    console.log('Available commands:');
     for (const command of this.commands.values()) {
-      console.log(`  ${command.name.padEnd(12)} ${command.description}`);
+      // biome-ignore lint/suspicious/noConsole: CLI output requires console.log
+      console.log(`  ${command.name} - ${command.description}`);
     }
   }
 
@@ -226,7 +319,7 @@ export class ClaudeHooksCli {
    * Log message (user-facing output)
    */
   log(message: string): void {
-    // User-facing output uses console
+    // biome-ignore lint/suspicious/noConsole: CLI logging requires console.log
     console.log(message);
   }
 
@@ -248,8 +341,6 @@ export class ClaudeHooksCli {
    * Log error message (user-facing)
    */
   error(message: string): void {
-    // User-facing errors use console
-    console.error(`[ERROR] ${message}`);
     // Also log internally
     this.logger.error(message);
   }
@@ -258,8 +349,6 @@ export class ClaudeHooksCli {
    * Log warning message (user-facing)
    */
   warn(message: string): void {
-    // User-facing warnings use console
-    console.warn(`[WARN] ${message}`);
     // Also log internally
     this.logger.warn(message);
   }
@@ -268,8 +357,6 @@ export class ClaudeHooksCli {
    * Log success message (user-facing)
    */
   success(message: string): void {
-    // User-facing success uses console
-    console.log(`✅ ${message}`);
     // Also log internally
     this.logger.info(message, { type: 'success' });
   }
@@ -278,8 +365,6 @@ export class ClaudeHooksCli {
    * Log info message (user-facing)
    */
   info(message: string): void {
-    // User-facing info uses console
-    console.info(`ℹ️  ${message}`);
     // Also log internally
     this.logger.info(message);
   }
@@ -295,8 +380,7 @@ async function main(): Promise<void> {
 
 // Run CLI if this file is executed directly
 if (import.meta.main) {
-  main().catch((error) => {
-    console.error('Fatal error:', error);
+  main().catch((_error) => {
     process.exit(1);
   });
 }

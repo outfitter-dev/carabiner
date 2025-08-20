@@ -3,32 +3,31 @@
  * Provides comprehensive security validation and protection mechanisms
  */
 
+import { CommandValidator } from './command-validator';
 // Local imports for use in this module's implementations
 import { createWorkspaceValidator } from './workspace-validator';
-import { CommandValidator } from './command-validator';
-
-// Workspace validation
-export {
-  WorkspaceValidator,
-  createWorkspaceValidator,
-  validateWorkspacePath,
-  sanitizeUserPath,
-  DEFAULT_WORKSPACE_CONFIG,
-  type WorkspaceSecurityConfig
-} from './workspace-validator';
-
-// Command validation
-export {
-  CommandValidator,
-  validateCommand,
-  validateHookCommand,
-  createSecureCommand,
-  DEFAULT_COMMAND_CONFIG,
-  type CommandSecurityConfig
-} from './command-validator';
 
 // Re-export security validation error for convenience
 export { SecurityValidationError } from '@outfitter/hooks-validators';
+
+// Command validation
+export {
+  type CommandSecurityConfig,
+  CommandValidator,
+  createSecureCommand,
+  DEFAULT_COMMAND_CONFIG,
+  validateCommand,
+  validateHookCommand,
+} from './command-validator';
+// Workspace validation
+export {
+  createWorkspaceValidator,
+  DEFAULT_WORKSPACE_CONFIG,
+  sanitizeUserPath,
+  validateWorkspacePath,
+  type WorkspaceSecurityConfig,
+  WorkspaceValidator,
+} from './workspace-validator';
 
 /**
  * Security utilities for common operations
@@ -86,18 +85,19 @@ export const Security = {
     passed: boolean;
     issues: Array<{ severity: string; rule: string; message: string }>;
   } {
-    const issues: Array<{ severity: string; rule: string; message: string }> = [];
+    const issues: Array<{ severity: string; rule: string; message: string }> =
+      [];
 
     if (typeof config === 'object' && config !== null) {
       // Check for dangerous patterns in configuration
       const configStr = JSON.stringify(config);
-      
+
       // Check for eval patterns
       if (/\beval\s*\(/i.test(configStr)) {
         issues.push({
           severity: 'critical',
           rule: 'no-eval',
-          message: 'Configuration contains eval() calls'
+          message: 'Configuration contains eval() calls',
         });
       }
 
@@ -106,25 +106,25 @@ export const Security = {
         issues.push({
           severity: 'high',
           rule: 'no-shell-metacharacters',
-          message: 'Configuration contains shell metacharacters'
+          message: 'Configuration contains shell metacharacters',
         });
       }
 
       // Check for potential path traversal
-      if (/\.\.[\/\\]/.test(configStr)) {
+      if (/\.\.[/\\]/.test(configStr)) {
         issues.push({
           severity: 'high',
           rule: 'no-path-traversal',
-          message: 'Configuration contains potential path traversal sequences'
+          message: 'Configuration contains potential path traversal sequences',
         });
       }
     }
 
     return {
       passed: issues.length === 0,
-      issues
+      issues,
     };
-  }
+  },
 };
 
 /**
@@ -143,8 +143,8 @@ export const PRODUCTION_SECURITY_CONFIG = {
       'docs',
       'test',
       'tests',
-      '__tests__'
-    ])
+      '__tests__',
+    ]),
   },
   command: {
     strictMode: true,
@@ -158,9 +158,9 @@ export const PRODUCTION_SECURITY_CONFIG = {
       'echo',
       'cat',
       'ls',
-      'grep'
-    ])
-  }
+      'grep',
+    ]),
+  },
 };
 
 /**
@@ -173,7 +173,7 @@ export const SECURITY_BEST_PRACTICES = {
     'Implement workspace boundary enforcement',
     'Limit file access to approved directories only',
     'Set reasonable file size limits',
-    'Block access to sensitive file patterns'
+    'Block access to sensitive file patterns',
   ],
   commands: [
     'Whitelist allowed executables',
@@ -181,7 +181,7 @@ export const SECURITY_BEST_PRACTICES = {
     'Implement command length limits',
     'Prevent shell metacharacter injection',
     'Use environment-specific restrictions',
-    'Log security violations for monitoring'
+    'Log security violations for monitoring',
   ],
   configuration: [
     'Validate all configuration sources',
@@ -189,7 +189,7 @@ export const SECURITY_BEST_PRACTICES = {
     'Implement configuration schema validation',
     'Block code injection in config files',
     'Use secure defaults for all options',
-    'Audit configurations regularly'
+    'Audit configurations regularly',
   ],
   runtime: [
     'Validate all input from external sources',
@@ -197,6 +197,6 @@ export const SECURITY_BEST_PRACTICES = {
     'Use secure environment variable handling',
     'Implement proper error boundaries',
     'Log security events for monitoring',
-    'Follow principle of least privilege'
-  ]
+    'Follow principle of least privilege',
+  ],
 } as const;

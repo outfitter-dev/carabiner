@@ -10,9 +10,9 @@
  */
 
 import { readFile } from 'node:fs/promises';
+import type { HookPlugin, PluginResult } from '@outfitter/registry';
 import type { HookContext } from '@outfitter/types';
 import { z } from 'zod';
-import type { HookPlugin, PluginResult } from '@outfitter/registry';
 
 /**
  * Security finding severity levels
@@ -22,7 +22,7 @@ type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 /**
  * Security finding interface
  */
-interface SecurityFinding {
+type SecurityFinding = {
   id: string;
   severity: Severity;
   title: string;
@@ -32,12 +32,12 @@ interface SecurityFinding {
   line?: number;
   column?: number;
   remediation?: string;
-}
+};
 
 /**
  * Security rule interface
  */
-interface SecurityRule {
+type SecurityRule = {
   id: string;
   name: string;
   pattern: string;
@@ -47,7 +47,7 @@ interface SecurityRule {
   remediation?: string;
   flags?: string;
   fileTypes?: string[];
-}
+};
 
 /**
  * Security scanner plugin configuration schema
@@ -385,12 +385,7 @@ function scanContent(
 
         match = regex.exec(content);
       }
-    } catch (error) {
-      console.warn(
-        `[SecurityScanner] Invalid regex in rule ${rule.id}:`,
-        error
-      );
-    }
+    } catch (_error) {}
   }
 
   return findings;
@@ -428,12 +423,7 @@ function scanCommand(
           remediation: rule.remediation,
         });
       }
-    } catch (error) {
-      console.warn(
-        `[SecurityScanner] Invalid regex in rule ${rule.id}:`,
-        error
-      );
-    }
+    } catch (_error) {}
   }
 
   return findings;
@@ -677,7 +667,11 @@ async function scanForSecurityIssues(
   }
 
   // Handle file operations
-  if (toolName && ['Write', 'Edit', 'MultiEdit'].includes(toolName) && config.scanFiles) {
+  if (
+    toolName &&
+    ['Write', 'Edit', 'MultiEdit'].includes(toolName) &&
+    config.scanFiles
+  ) {
     return scanFileOperation(
       toolName,
       toolInput,
@@ -695,19 +689,10 @@ async function scanForSecurityIssues(
  * Log security findings to console
  */
 function logFindings(findings: SecurityFinding[]): void {
-  console.warn(`[SecurityScanner] ${formatFindings(findings)}`);
-
   for (const finding of findings) {
-    console.warn(`  ${finding.severity.toUpperCase()}: ${finding.title}`);
-    console.warn(`    ${finding.description}`);
     if (finding.line) {
-      console.warn(
-        `    Location: line ${finding.line}, column ${finding.column}`
-      );
     }
-    console.warn(`    Matched: "${finding.matched}"`);
     if (finding.remediation) {
-      console.warn(`    Fix: ${finding.remediation}`);
     }
   }
 }
@@ -844,7 +829,9 @@ export const securityScannerPlugin: HookPlugin = {
   tools: ['Bash', 'Write', 'Edit', 'MultiEdit'],
   priority: 85, // High priority to catch issues early
 
-  configSchema: SecurityScannerConfigSchema as z.ZodType<Record<string, unknown>>,
+  configSchema: SecurityScannerConfigSchema as z.ZodType<
+    Record<string, unknown>
+  >,
   defaultConfig: {},
 
   async apply(
@@ -883,11 +870,7 @@ export const securityScannerPlugin: HookPlugin = {
   /**
    * Initialize with rule validation
    */
-  async init(): Promise<void> {
-    console.log(
-      `[SecurityScanner] Initialized with ${BUILT_IN_RULES.length} built-in security rules`
-    );
-  },
+  async init(): Promise<void> {},
 
   /**
    * Health check

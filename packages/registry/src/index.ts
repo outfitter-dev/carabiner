@@ -208,10 +208,6 @@ export async function createPluginSystem(
     const { plugins, errors } = await loaderInstance.loadPlugins();
 
     if (errors.length > 0) {
-      console.warn(
-        `[PluginSystem] Failed to load ${errors.length} plugins:`,
-        errors
-      );
     }
 
     // Register discovered plugins
@@ -225,9 +221,6 @@ export async function createPluginSystem(
     // Register plugins from configuration that weren't discovered
     for (const pluginConfig of config.plugins) {
       if (!plugins.find((p: HookPlugin) => p.name === pluginConfig.name)) {
-        console.warn(
-          `[PluginSystem] Plugin ${pluginConfig.name} configured but not found`
-        );
       }
     }
 
@@ -239,7 +232,7 @@ export async function createPluginSystem(
             registryInstance.unregister(event.plugin.name);
 
             const pluginConfig = config.plugins.find(
-              (p: PluginConfig) => p.name === event.plugin!.name
+              (p: PluginConfig) => p.name === event.plugin?.name
             );
             registryInstance.register(event.plugin, pluginConfig);
           }
@@ -261,13 +254,6 @@ export async function createPluginSystem(
   if (enableHotReload) {
     configLoaderInstance.onChange(async (event: ConfigChangeEvent) => {
       if (event.type === 'changed' && event.config) {
-        // Reconfigure registry (simplified - could be more sophisticated)
-        // const newConfig = event.config; // TODO: Implement config hot reload
-
-        // Update registry options would require extending PluginRegistry
-        console.log(
-          '[PluginSystem] Configuration changed - restart recommended for full reload'
-        );
       }
     });
   }

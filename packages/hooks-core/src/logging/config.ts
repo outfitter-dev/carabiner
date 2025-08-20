@@ -1,22 +1,27 @@
 /**
  * Logging configuration management
- * 
+ *
  * Provides environment-based configuration with security defaults
  */
 
-import type { Environment, LoggingConfig, LogLevel, SanitizationOptions } from './types';
+import type {
+  Environment,
+  LoggingConfig,
+  LogLevel,
+  SanitizationOptions,
+} from './types';
 
 /**
  * Determine environment from NODE_ENV and other indicators
  */
 export function detectEnvironment(): Environment {
   const nodeEnv = Bun.env.NODE_ENV?.toLowerCase();
-  
+
   // Explicit test environment
   if (nodeEnv === 'test' || Bun.env.BUN_ENV === 'test') {
     return 'test';
   }
-  
+
   // Production indicators
   if (
     nodeEnv === 'production' ||
@@ -25,16 +30,16 @@ export function detectEnvironment(): Environment {
   ) {
     return 'production';
   }
-  
+
   // Binary distribution indicator (only if not in test environment)
-  if (!Bun.env.DEBUG && !nodeEnv && !Bun.env.BUN_ENV) {
+  if (!(Bun.env.DEBUG || nodeEnv || Bun.env.BUN_ENV)) {
     // Check if we're running from a compiled binary or in a test environment
     // In tests, we should default to development unless explicitly set
     if (typeof Bun !== 'undefined' && Bun.main && !Bun.main.includes('test')) {
       return 'production';
     }
   }
-  
+
   // Default to development
   return 'development';
 }
@@ -47,18 +52,18 @@ export function detectLogLevel(): LogLevel {
   if (Bun.env.DEBUG === 'true' || process.argv.includes('--debug')) {
     return 'debug';
   }
-  
+
   // CLI verbose flag
   if (process.argv.includes('--verbose')) {
     return 'info';
   }
-  
+
   // Explicit LOG_LEVEL environment variable
   const envLevel = Bun.env.LOG_LEVEL?.toLowerCase();
   if (envLevel && isValidLogLevel(envLevel)) {
     return envLevel as LogLevel;
   }
-  
+
   // Environment-based defaults
   const env = detectEnvironment();
   switch (env) {
@@ -66,7 +71,6 @@ export function detectLogLevel(): LogLevel {
       return 'error'; // Minimal logging in tests
     case 'production':
       return 'info'; // Info level for production observability
-    case 'development':
     default:
       return 'debug'; // Verbose development logging
   }
@@ -85,17 +89,19 @@ function isValidLogLevel(level: string): boolean {
 export function createLoggingConfig(service: string): LoggingConfig {
   const environment = detectEnvironment();
   const level = detectLogLevel();
-  
+
   return {
     level,
     environment,
     service,
     // Pretty printing only in development
-    pretty: environment === 'development' && !process.argv.includes('--no-pretty'),
+    pretty:
+      environment === 'development' && !process.argv.includes('--no-pretty'),
     // Console output enabled unless explicitly disabled
     console: !process.argv.includes('--no-console'),
     // Silent mode for tests unless explicitly enabled
-    silent: environment === 'test' && !process.argv.includes('--enable-test-logs'),
+    silent:
+      environment === 'test' && !process.argv.includes('--enable-test-logs'),
     // Additional context from environment
     context: {
       version: Bun.env.CLI_VERSION || 'development',
@@ -138,7 +144,7 @@ export const DEFAULT_SANITIZATION: SanitizationOptions = {
     'cvv',
     'pin',
   ],
-  
+
   // Fields to mask with [REDACTED]
   maskFields: [
     'email', // Partially mask emails
@@ -152,7 +158,7 @@ export const DEFAULT_SANITIZATION: SanitizationOptions = {
     'userId', // Hash user IDs
     'user_id',
   ],
-  
+
   // Patterns to search for and mask in string values
   sensitivePatterns: [
     // Credit card numbers
@@ -172,7 +178,7 @@ export const DEFAULT_SANITIZATION: SanitizationOptions = {
     // Generic secrets (long alphanumeric strings)
     /\b[a-zA-Z0-9]{40,}\b/g,
   ],
-  
+
   // Limits for performance and security
   maxStringLength: 1000,
   maxDepth: 10,

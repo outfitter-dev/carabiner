@@ -15,7 +15,7 @@ import { mockEnv } from './mock';
 /**
  * Test suite configuration
  */
-export interface TestSuiteConfig {
+export type TestSuiteConfig = {
   name: string;
   description?: string;
   timeout?: number;
@@ -23,12 +23,12 @@ export interface TestSuiteConfig {
   afterEach?: () => void | Promise<void>;
   beforeAll?: () => void | Promise<void>;
   afterAll?: () => void | Promise<void>;
-}
+};
 
 /**
  * Hook test case configuration
  */
-export interface HookTestConfig {
+export type HookTestConfig = {
   name: string;
   description?: string;
   context: HookContext;
@@ -41,24 +41,24 @@ export interface HookTestConfig {
     result: HookResult,
     context: HookContext
   ) => void | Promise<void>;
-}
+};
 
 /**
  * Test execution result
  */
-export interface TestExecutionResult {
+export type TestExecutionResult = {
   name: string;
   passed: boolean;
   duration: number;
   error?: Error;
   result?: HookResult;
   skipped?: boolean;
-}
+};
 
 /**
  * Test suite result
  */
-export interface TestSuiteResult {
+export type TestSuiteResult = {
   name: string;
   tests: TestExecutionResult[];
   passed: boolean;
@@ -69,13 +69,13 @@ export interface TestSuiteResult {
     failed: number;
     skipped: number;
   };
-}
+};
 
 /**
  * Hook test runner
  */
 export class HookTestRunner {
-  private suites: TestSuite[] = [];
+  private readonly suites: TestSuite[] = [];
   private currentSuite: TestSuite | null = null;
 
   /**
@@ -164,7 +164,7 @@ export class HookTestRunner {
  * Test suite class
  */
 export class TestSuite {
-  private tests: HookTest[] = [];
+  private readonly tests: HookTest[] = [];
 
   constructor(public config: TestSuiteConfig) {}
 
@@ -210,7 +210,7 @@ export class TestSuite {
       if (!testsToRun.includes(testCase)) {
         results.push({
           name: testCase.config.name,
-          passed: true,
+          passed: false,
           duration: 0,
           skipped: true,
         });
@@ -274,7 +274,7 @@ export class TestSuite {
  */
 export class HookTest {
   constructor(
-    private handler: HookHandler,
+    private readonly handler: HookHandler,
     public config: HookTestConfig
   ) {}
 
@@ -347,7 +347,7 @@ export class HookTest {
           throw new Error(`Expected property '${key}' not found in result`);
         }
 
-        const actualValue = result[key];
+        const actualValue = (result as any)[key];
         if (actualValue !== expectedValue) {
           throw new Error(
             `Expected ${key} to be ${expectedValue}, got ${actualValue}`
@@ -478,16 +478,12 @@ export async function runTests(): Promise<void> {
   const stats = testRunner.getStats(results);
 
   for (const suiteResult of results) {
-    const icon = suiteResult.passed ? '✅' : '❌';
-    console.log(`${icon} ${suiteResult.name}`);
+    // const icon = suiteResult.passed ? '✅' : '❌';
 
     for (const testResult of suiteResult.tests) {
       if (testResult.skipped) {
-        console.log(`  ⏭️  ${testResult.name} (skipped)`);
       } else if (testResult.passed) {
-        console.log(`  ✅ ${testResult.name} (${testResult.duration}ms)`);
       } else if (testResult.error) {
-        console.log(`  ❌ ${testResult.name}: ${testResult.error.message}`);
       }
     }
   }

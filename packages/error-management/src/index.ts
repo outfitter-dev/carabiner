@@ -1,12 +1,12 @@
 /**
  * Error Management System
- * 
+ *
  * Production-ready error handling for the Grapple monorepo
- * 
+ *
  * @example Basic usage:
  * ```typescript
  * import { GrappleError, ErrorCode, ErrorCategory, reportError } from '@outfitter/error-management';
- * 
+ *
  * try {
  *   // Some operation
  * } catch (error) {
@@ -19,22 +19,22 @@
  *   throw grappleError;
  * }
  * ```
- * 
+ *
  * @example With error recovery:
  * ```typescript
  * import { RetryManager, CircuitBreaker } from '@outfitter/error-management';
- * 
+ *
  * const retryManager = new RetryManager({ maxRetries: 3 });
  * const result = await retryManager.execute(async () => {
  *   // Potentially failing operation
  *   return await someOperation();
  * });
  * ```
- * 
+ *
  * @example With error boundaries:
  * ```typescript
  * import { executeWithBoundary } from '@outfitter/error-management';
- * 
+ *
  * const result = await executeWithBoundary(
  *   async () => await riskyOperation(),
  *   'risky-operation-boundary'
@@ -42,96 +42,99 @@
  * ```
  */
 
-// Core Types
-export type {
-  ErrorContext,
-  RecoveryStrategy,
-  ErrorReportingConfig,
-  ErrorReport,
-  CircuitBreakerConfig,
-  HealthStatus,
-  IGrappleError,
-} from './types.js';
-
-// Export enums and constants
-export {
-  ErrorSeverity,
-  ErrorCategory,
-  ErrorCode,
-  CircuitState,
-} from './types.js';
-
-// Core Error Classes
-export {
-  GrappleError,
-  ConfigurationError,
-  RuntimeError,
-  ValidationError,
-  FileSystemError,
-  NetworkError,
-  SecurityError,
-  UserInputError,
-  ResourceError,
-  AuthError,
-  TimeoutError,
-  ErrorFactory,
-} from './errors.js';
-
-// Recovery Mechanisms
-export {
-  RetryManager,
-  CircuitBreaker,
-  ErrorRecoveryManager,
-  GracefulDegradation,
-} from './recovery.js';
-
 // Error Boundaries
 export type {
   ErrorBoundaryConfig,
   ErrorBoundaryContext,
 } from './boundaries.js';
-
 export {
   ErrorBoundary,
   ErrorBoundaryRegistry,
   ErrorBoundaryState,
-  withErrorBoundary,
   executeWithBoundary,
+  withErrorBoundary,
 } from './boundaries.js';
 
+// Core Error Classes
+export {
+  AuthError,
+  ConfigurationError,
+  FileSystemError,
+  fromError,
+  fromMessage,
+  fromSystemError,
+  GrappleError,
+  NetworkError,
+  ResourceError,
+  RuntimeError,
+  SecurityError,
+  TimeoutError,
+  UserInputError,
+  ValidationError,
+} from './errors.js';
+
+// Recovery Mechanisms
+export {
+  CircuitBreaker,
+  ErrorRecoveryManager,
+  RetryManager,
+  withCleanup,
+  withFallback,
+  withPriorityFallback,
+} from './recovery.js';
 // Reporting and Logging
 export {
-  ErrorReporter,
-  ErrorSanitizer,
-  ErrorAggregator,
-  StructuredLogger,
-  getGlobalReporter,
   configureGlobalReporter,
+  ErrorAggregator,
+  ErrorReporter,
+  getGlobalReporter,
   reportError,
+  StructuredLogger,
+  sanitizeError,
+  sanitizeText,
 } from './reporting.js';
+// Core Types
+export type {
+  CircuitBreakerConfig,
+  ErrorContext,
+  ErrorReport,
+  ErrorReportingConfig,
+  HealthStatus,
+  IGrappleError,
+  RecoveryStrategy,
+} from './types.js';
+// Export enums and constants
+export {
+  CircuitState,
+  ErrorCategory,
+  ErrorCode,
+  ErrorSeverity,
+} from './types.js';
 
 // Utility Functions
 export {
+  createHealthChecker,
   createStandardError,
-  wrapWithErrorHandling,
   safeAsync,
   withTimeout,
-  createHealthChecker,
+  wrapWithErrorHandling,
 } from './utils.js';
 
 /**
  * Quick setup function for common error handling patterns
  */
-export function setupErrorHandling(config: {
-  reporting?: any;
-  recovery?: {
-    retry?: any;
-    circuitBreaker?: any;
-  };
-  boundaries?: {
-    [key: string]: any;
-  };
-} = {}) {
+export function setupErrorHandling(
+  config: {
+    reporting?: unknown;
+    recovery?: {
+      retry?: unknown;
+      circuitBreaker?: unknown;
+    };
+    boundaries?: {
+      [key: string]: unknown;
+    };
+  } = {}
+) {
   // Configure global reporter
   if (config.reporting) {
     const { configureGlobalReporter } = require('./reporting.js');
@@ -142,7 +145,7 @@ export function setupErrorHandling(config: {
   if (config.boundaries) {
     const { ErrorBoundaryRegistry } = require('./boundaries.js');
     const registry = ErrorBoundaryRegistry.getInstance();
-    
+
     for (const [name, boundaryConfig] of Object.entries(config.boundaries)) {
       registry.createBoundary(name, boundaryConfig);
     }
@@ -157,7 +160,7 @@ export function setupErrorHandling(config: {
     );
   }
 
-  return undefined;
+  return;
 }
 
 /**
@@ -167,7 +170,7 @@ export function setupProductionErrorHandling() {
   return setupErrorHandling({
     reporting: {
       enabled: true,
-      minSeverity: 'warning' as any,
+      minSeverity: 'warning' as const,
       includeStackTrace: true,
       includeEnvironment: true,
     },
@@ -180,9 +183,9 @@ export function setupProductionErrorHandling() {
       },
       circuitBreaker: {
         failureThreshold: 5,
-        timeout: 60000,
+        timeout: 60_000,
         successThreshold: 2,
-        monitoringPeriod: 300000,
+        monitoringPeriod: 300_000,
         expectedFailureRate: 0.5,
         minimumRequestVolume: 10,
       },
@@ -190,17 +193,17 @@ export function setupProductionErrorHandling() {
     boundaries: {
       'config-operations': {
         errorThreshold: 3,
-        timeWindow: 300000,
+        timeWindow: 300_000,
         autoRecover: true,
       },
       'hook-execution': {
         errorThreshold: 5,
-        timeWindow: 300000,
+        timeWindow: 300_000,
         autoRecover: true,
       },
       'file-operations': {
         errorThreshold: 10,
-        timeWindow: 300000,
+        timeWindow: 300_000,
         autoRecover: true,
       },
     },

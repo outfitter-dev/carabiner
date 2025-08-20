@@ -19,8 +19,8 @@ import type {
  * Central hook registry with composite key system for tool scoping
  */
 export class HookRegistry {
-  private hooks = new Map<string, HookRegistryEntry<HookEvent>[]>();
-  private stats = new Map<string, HookExecutionStats>();
+  private readonly hooks = new Map<string, HookRegistryEntry<HookEvent>[]>();
+  private readonly stats = new Map<string, HookExecutionStats>();
 
   /**
    * Generate registry key: universal hooks use "{event}", tool-specific use "{event}:{tool}"

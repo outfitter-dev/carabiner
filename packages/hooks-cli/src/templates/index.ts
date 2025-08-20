@@ -23,7 +23,7 @@ export type HookTemplateVariant = 'basic' | 'validation' | 'security';
 
 export type TemplateFunction = (name: string) => string;
 
-export interface TemplateRegistry {
+export type TemplateRegistry = {
   hook: {
     basic: {
       typescript: TemplateFunction;
@@ -50,7 +50,7 @@ export interface TemplateRegistry {
     typescript: TemplateFunction;
     javascript: TemplateFunction;
   };
-}
+};
 
 /**
  * Template registry containing all available templates
