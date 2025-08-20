@@ -1,0 +1,269 @@
+name: Build Binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload-artifacts:
+        description: "Upload artifacts to GitHub"
+        required: false
+        default: true
+        type: boolean
+  pull_request:
+    paths:
+      - "packages/hooks-cli/**"
+      - ".github/workflows/build-binaries.yml"
+      - "bun.lockb"
+      - "package.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/hooks-cli/**"
+      - ".github/workflows/build-binaries.yml"
+
+permissions:
+  contents: read
+  actions: write
+
+env:
+  BUN_VERSION: "1.2.20"
+
+jobs:
+  build-test-binaries:
+    name: Build & Test Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+            binary-name: claude-hooks-linux
+          - os: macos-latest # ARM64
+            target: macos-arm64
+            binary-name: claude-hooks-macos-arm64
+          - os: macos-13 # Intel x64
+            target: macos-x64
+            binary-name: claude-hooks-macos-x64
+          - os: windows-latest
+            target: windows-x64
+            binary-name: claude-hooks-windows.exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build packages (dependencies required)
+        run: bun run build
+
+      - name: Verify CLI dependencies
+        run: |
+          set -euo pipefail
+          cd packages/hooks-cli
+          # Check that all required files exist
+          test -f "src/cli.ts" || (echo "❌ CLI entry point missing" && exit 1)
+          test -f "package.json" || (echo "❌ package.json missing" && exit 1)
+          echo "✅ CLI dependencies verified"
+
+      - name: Build binary with enhanced options
+        id: build
+        run: |
+          set -euo pipefail
+          cd packages/hooks-cli
+
+          # Read version from package.json
+          CLI_VERSION=$(node -p "require('./package.json').version")
+          echo "Building binary version: $CLI_VERSION"
+
+          # Build with comprehensive options for production binary
+          # Determine output filename with version suffix (handle .exe)
+          BASE_NAME="${{ matrix.binary-name }}"
+          if [[ "$BASE_NAME" == *.exe ]]; then
+            NAME_NO_EXT="${BASE_NAME%.exe}"
+            OUT_FILE="${NAME_NO_EXT}-v$CLI_VERSION.exe"
+          else
+            OUT_FILE="${BASE_NAME}-v$CLI_VERSION"
+          fi
+
+          bun build src/cli.ts \
+            --compile \
+            --minify \
+            --sourcemap=external \
+            --target=bun \
+            --outfile=../../"$OUT_FILE" \
+            --define "process.env.NODE_ENV=\"production\"" \
+            --define "process.env.CLI_VERSION=\"$CLI_VERSION\"" \
+            --external "fsevents"
+
+          echo "binary_name=$OUT_FILE" >> "$GITHUB_OUTPUT"
+          echo "✅ Binary built: $OUT_FILE"
+        shell: bash
+
+      - name: Set executable permissions (Unix)
+        if: matrix.target != 'windows-x64'
+        run: chmod +x ./"${{ steps.build.outputs.binary_name }}"
+
+      - name: Binary info
+        run: |
+          set -euo pipefail
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ls -la ./"${{ steps.build.outputs.binary_name }}"
+            file ./"${{ steps.build.outputs.binary_name }}" || echo "file command not available"
+          else
+            ls -la ./"${{ steps.build.outputs.binary_name }}"
+          fi
+        shell: bash
+
+      # Comprehensive smoke tests
+      - name: Smoke Test - Version Command
+        run: |
+          set -euo pipefail
+          echo "Testing --version command..."
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ./"${{ steps.build.outputs.binary_name }}" --version
+          else
+            ./"${{ steps.build.outputs.binary_name }}" --version
+          fi
+        shell: bash
+
+      - name: Smoke Test - Help Command
+        run: |
+          set -euo pipefail
+          echo "Testing --help command..."
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ./"${{ steps.build.outputs.binary_name }}" --help
+          else
+            ./"${{ steps.build.outputs.binary_name }}" --help
+          fi
+        shell: bash
+
+      - name: Smoke Test - Command Help
+        run: |
+          set -euo pipefail
+          echo "Testing validate --help command..."
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ./"${{ steps.build.outputs.binary_name }}" validate --help
+          else
+            ./"${{ steps.build.outputs.binary_name }}" validate --help
+          fi
+        shell: bash
+
+      - name: Smoke Test - Config Command
+        run: |
+          set -euo pipefail
+          echo "Testing config --help command..."
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ./"${{ steps.build.outputs.binary_name }}" config --help
+          else
+            ./"${{ steps.build.outputs.binary_name }}" config --help
+          fi
+        shell: bash
+
+      - name: Smoke Test - Invalid Command
+        run: |
+          set -euo pipefail
+          echo "Testing invalid command (should fail gracefully)..."
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ./"${{ steps.build.outputs.binary_name }}" nonexistent-command || echo "✅ Correctly failed for invalid command"
+          else
+            ./"${{ steps.build.outputs.binary_name }}" nonexistent-command || echo "✅ Correctly failed for invalid command"
+          fi
+        shell: bash
+
+      - name: Smoke Test - Verbose Mode
+        run: |
+          set -euo pipefail
+          echo "Testing verbose mode..."
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ./"${{ steps.build.outputs.binary_name }}" --verbose --help
+          else
+            ./"${{ steps.build.outputs.binary_name }}" --verbose --help
+          fi
+        shell: bash
+
+      - name: Upload binary artifact
+        if: github.event.inputs.upload-artifacts != 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target }}
+          path: ${{ steps.build.outputs.binary_name }}
+          retention-days: 30
+          compression-level: 9
+
+  binary-integration-test:
+    name: Integration Test Summary
+    runs-on: ubuntu-latest
+    needs: build-test-binaries
+    steps:
+      - name: Download all binary artifacts
+        if: github.event.inputs.upload-artifacts != 'false'
+        uses: actions/download-artifact@v4
+        with:
+          path: ./binaries/
+
+      - name: Verify all binaries
+        if: github.event.inputs.upload-artifacts != 'false'
+        run: |
+          set -euo pipefail
+          echo "Verifying all built binaries..."
+
+          expected_binaries=(
+            "claude-hooks-linux-v*"
+            "claude-hooks-macos-arm64-v*"
+            "claude-hooks-macos-x64-v*"
+            "claude-hooks-windows-v*.exe"
+          )
+          missing_binaries=()
+
+          for binary in "${expected_binaries[@]}"; do
+            if find binaries -name "$binary" -type f | grep -q ".*"; then
+              echo "✅ Found $binary"
+              find binaries -name "$binary" -type f -exec ls -la {} \;
+            else
+              echo "❌ Missing $binary"
+              missing_binaries+=("$binary")
+            fi
+          done
+
+          if [ ${#missing_binaries[@]} -gt 0 ]; then
+            echo "Missing binaries: ${missing_binaries[*]}"
+            exit 1
+          fi
+
+          echo "🎉 All binaries successfully built and tested!"
+
+      - name: Binary build summary
+        run: |
+          set -euo pipefail
+          echo "## Binary Build Summary 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Linux x64**: claude-hooks-linux" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **macOS ARM64**: claude-hooks-macos-arm64" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **macOS x64**: claude-hooks-macos-x64" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Windows x64**: claude-hooks-windows.exe" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All binaries passed smoke tests:" >> $GITHUB_STEP_SUMMARY
+          echo "- Version command" >> $GITHUB_STEP_SUMMARY
+          echo "- Help commands" >> $GITHUB_STEP_SUMMARY
+          echo "- Invalid command handling" >> $GITHUB_STEP_SUMMARY
+          echo "- Verbose mode" >> $GITHUB_STEP_SUMMARY

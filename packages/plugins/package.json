@@ -1,0 +1,76 @@
+{
+  "name": "@outfitter/plugins",
+  "version": "1.0.0",
+  "description": "Example plugin collection for Claude Code hooks - demonstrates plugin architecture patterns",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./git-safety": {
+      "import": "./dist/git-safety/index.js",
+      "types": "./dist/git-safety/index.d.ts"
+    },
+    "./file-backup": {
+      "import": "./dist/file-backup/index.js",
+      "types": "./dist/file-backup/index.d.ts"
+    },
+    "./security-scanner": {
+      "import": "./dist/security-scanner/index.js",
+      "types": "./dist/security-scanner/index.d.ts"
+    },
+    "./performance-monitor": {
+      "import": "./dist/performance-monitor/index.js",
+      "types": "./dist/performance-monitor/index.d.ts"
+    },
+    "./audit-logger": {
+      "import": "./dist/audit-logger/index.js",
+      "types": "./dist/audit-logger/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bun run build:clean && bun run build:tsc",
+    "build:clean": "rm -rf dist",
+    "build:tsc": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist tsconfig.build.tsbuildinfo"
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "plugins",
+    "examples",
+    "git-safety",
+    "file-backup",
+    "security",
+    "performance",
+    "audit"
+  ],
+  "author": "Outfitter Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/outfitter-dev/carabiner",
+    "directory": "packages/plugins"
+  },
+  "dependencies": {
+    "@outfitter/registry": "workspace:*",
+    "@outfitter/types": "workspace:*",
+    "@outfitter/execution": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "bun-types": "^1.0.25",
+    "typescript": "^5.9.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

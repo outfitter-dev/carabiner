@@ -1,0 +1,36 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+  "extends": ["ultracite"],
+  "javascript": {
+    "globals": ["Bun"]
+  },
+  "json": {
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": true
+    }
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["**/*.{js,ts,jsx,tsx,json,jsonc}"]
+  },
+  "vcs": {
+    "useIgnoreFile": true
+  },
+  "linter": {
+    "rules": {
+      "style": {
+        "noMagicNumbers": "off",
+        "noEnum": "off"
+      },
+      "complexity": {
+        "noVoid": "off",
+        "noExcessiveCognitiveComplexity": "off",
+        "noExcessiveLinesPerFunction": "off"
+      },
+      "performance": {
+        "useTopLevelRegex": "off"
+      }
+    }
+  }
+}

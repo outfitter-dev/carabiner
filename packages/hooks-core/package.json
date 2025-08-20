@@ -1,0 +1,58 @@
+{
+  "name": "@outfitter/hooks-core",
+  "version": "0.2.0",
+  "description": "Core TypeScript types and runtime utilities for Claude Code hooks",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun run build:clean && bun run build:tsc",
+    "build:clean": "rm -rf dist",
+    "build:tsc": "tsc --project tsconfig.build.json",
+    "dev": "tsc --watch --project tsconfig.build.json",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build"
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "typescript",
+    "types"
+  ],
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "pino": "^9.8.0"
+  },
+  "devDependencies": {
+    "@types/bun": "*",
+    "pino-pretty": "^13.1.1",
+    "type-fest": "^4.41.0",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "type-fest": "^4.41.0"
+  }
+}

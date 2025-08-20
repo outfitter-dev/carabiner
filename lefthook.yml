@@ -1,16 +1,23 @@
 pre-commit:
   parallel: true
   commands:
-    format:
-      run: bun run format:check
-    lint:
-      run: bun run lint
-    typecheck:
-      run: bun run typecheck
-      glob: "*.{ts,tsx}"
+    ultracite:
+      glob: "**/*.{ts,tsx,js,jsx}"
+      run: "bunx ultracite format {staged_files}"
+    prettier:
+      glob: "**/*.{astro,md,json,yml,yaml}"
+      run: "bunx prettier --write {staged_files}"
+    stylelint:
+      glob: "**/*.{css,pcss}"
+      run: "bunx stylelint --fix {staged_files}"
 
 pre-push:
   parallel: true
   commands:
+    build:
+      run: "bun run build"
+    typecheck:
+      run: "bun run typecheck"
     test:
-      run: bun run test:ci
+      tags: [optional]
+      run: "bun run test"

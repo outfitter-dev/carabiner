@@ -1,0 +1,454 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: write
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  BUN_VERSION: "1.2.20"
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  # Intelligent change detection
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.filter.outputs.packages }}
+      apps: ${{ steps.filter.outputs.apps }}
+      docs: ${{ steps.filter.outputs.docs }}
+      ci: ${{ steps.filter.outputs.ci }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            packages:
+              - 'packages/**'
+              - 'package.json'
+              - 'bun.lockb'
+              - 'turbo.json'
+            apps:
+              - 'apps/**'
+            docs:
+              - '**/*.md'
+              - 'docs/**'
+            ci:
+              - '.github/**'
+
+  # Only run if packages changed
+  bundle-size:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event.pull_request.draft == false && needs.changes.outputs.packages == 'true'
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Generate cache key
+        id: deps-cache-key
+        run: |
+          echo "key=deps-${{ runner.os }}-bun-${{ env.BUN_VERSION }}-${{ hashFiles('**/bun.lockb') }}" >> $GITHUB_OUTPUT
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            packages/*/node_modules
+            apps/*/node_modules
+          key: ${{ steps.deps-cache-key.outputs.key }}
+          restore-keys: |
+            deps-${{ runner.os }}-bun-${{ env.BUN_VERSION }}-
+          compression-level: 9
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Cache build artifacts
+        id: build-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            packages/*/dist
+            apps/*/dist
+          key: build-pr-${{ github.event.pull_request.head.sha }}
+          restore-keys: |
+            build-pr-
+          compression-level: 9
+
+      - name: Build packages
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: bun run build
+
+      - name: Calculate bundle sizes
+        id: pr-size
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          # Initialize metrics
+          declare -A package_sizes
+          total_size=0
+          json_output="{"
+
+          for dist in packages/*/dist apps/*/dist; do
+            if [ -d "$dist" ]; then
+              pkg_name="$(basename "$(dirname "$dist")")"
+              size="$(du -sb "$dist" | cut -f1)"
+              package_sizes[$pkg_name]=$size
+              total_size=$((total_size + size))
+
+              # Build JSON for detailed output
+              json_output="$json_output\"$pkg_name\":$size,"
+            fi
+          done
+
+          json_output="${json_output%,}}"
+
+          echo "total_size=$total_size" >> "$GITHUB_OUTPUT"
+          echo "packages=$json_output" >> "$GITHUB_OUTPUT"
+
+          # Generate markdown table
+          {
+            echo "### 📦 Bundle Sizes"
+            echo ""
+            echo "| Package | Size | Gzipped |"
+            echo "|---------|------|---------|"
+
+            for pkg in "${!package_sizes[@]}"; do
+              size=${package_sizes[$pkg]}
+              # Estimate gzipped size (roughly 25-30% of original)
+              gzip_size=$((size * 28 / 100))
+              echo "| $pkg | $(numfmt --to=iec $size) | ~$(numfmt --to=iec $gzip_size) |"
+            done | sort
+
+            echo ""
+            echo "**Total:** $(numfmt --to=iec $total_size)"
+          } > bundle-report.md
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      - name: Get base bundle sizes
+        id: base-size
+        working-directory: base
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+
+          set -euo pipefail
+          shopt -s nullglob
+          total_size=0
+
+          for dist in packages/*/dist apps/*/dist; do
+            if [ -d "$dist" ]; then
+              size="$(du -sb "$dist" | cut -f1)"
+              total_size=$((total_size + size))
+            fi
+          done
+
+          echo "total_size=$total_size" >> "$GITHUB_OUTPUT"
+
+      - name: Generate size comparison report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prSize = parseInt(`${{ steps['pr-size'].outputs.total_size }}`, 10);
+            const baseSize = parseInt(`${{ steps['base-size'].outputs.total_size }}`, 10);
+            const packages = JSON.parse(`${{ toJSON(steps['pr-size'].outputs.packages) }}`);
+
+            const diff = prSize - baseSize;
+            const percentChange = baseSize > 0 ? ((diff / baseSize) * 100).toFixed(2) : 0;
+
+            const formatBytes = (bytes) => {
+              const sizes = ['B', 'KB', 'MB', 'GB'];
+              if (bytes === 0) return '0 B';
+              const i = Math.floor(Math.log(bytes) / Math.log(1024));
+              return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+            };
+
+            // Determine status emoji and message
+            let emoji, status;
+            if (Math.abs(percentChange) < 1) {
+              emoji = '✅';
+              status = 'No significant change';
+            } else if (diff > 0) {
+              if (percentChange > 10) {
+                emoji = '⚠️';
+                status = 'Large increase detected';
+              } else {
+                emoji = '📈';
+                status = 'Size increased';
+              }
+            } else {
+              emoji = '📉';
+              status = 'Size decreased';
+            }
+
+            const bundleReport = fs.readFileSync('bundle-report.md', 'utf8');
+
+            const message = `
+            ## ${emoji} Bundle Size Report - ${status}
+
+            ${bundleReport}
+
+            ### 📊 Comparison with base branch
+
+            | Metric | Size | Change |
+            |--------|------|--------|
+            | Base | ${formatBytes(baseSize)} | - |
+            | PR | ${formatBytes(prSize)} | ${diff > 0 ? '+' : ''}${formatBytes(Math.abs(diff))} (${diff > 0 ? '+' : ''}${percentChange}%) |
+
+            ${Math.abs(percentChange) > 10 ? '> ⚠️ **Warning:** Significant bundle size change detected. Please review.' : ''}
+            ${Math.abs(percentChange) > 20 ? '> 🚨 **Alert:** Bundle size changed by more than 20%. This requires careful review.' : ''}
+
+            <details>
+            <summary>View detailed metrics</summary>
+
+            \`\`\`json
+            ${JSON.stringify(packages, null, 2)}
+            \`\`\`
+
+            </details>
+            `;
+
+            // Find and update or create comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Bundle Size Report')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: message
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: message
+              });
+            }
+
+  # Lighthouse CI for apps (if applicable)
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event.pull_request.draft == false && needs.changes.outputs.apps == 'true'
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build apps
+        run: bun run build --filter='./apps/*'
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+  # PR label automation
+  auto-label:
+    name: Auto Label
+    runs-on: ubuntu-latest
+    if: contains(fromJSON('["opened","synchronize","reopened","ready_for_review"]'), github.event.action)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Label PR based on files
+        uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Add size labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { additions, deletions } = context.payload.pull_request;
+            const totalChanges = additions + deletions;
+
+            let sizeLabel;
+            if (totalChanges < 10) {
+              sizeLabel = 'size/XS';
+            } else if (totalChanges < 50) {
+              sizeLabel = 'size/S';
+            } else if (totalChanges < 200) {
+              sizeLabel = 'size/M';
+            } else if (totalChanges < 500) {
+              sizeLabel = 'size/L';
+            } else {
+              sizeLabel = 'size/XL';
+            }
+
+            // Remove existing size labels
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const sizeLabels = labels.filter(label => label.name.startsWith('size/'));
+            for (const label of sizeLabels) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: label.name,
+              });
+            }
+
+            // Add new size label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [sizeLabel],
+            });
+
+  # Performance regression detection
+  performance:
+    name: Performance Check
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event.pull_request.draft == false && (needs.changes.outputs.packages == 'true' || needs.changes.outputs.apps == 'true')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run performance benchmarks
+        run: |
+          # Run benchmarks if they exist
+          if [ -f "benchmark.js" ] || [ -f "benchmark.ts" ]; then
+            bun run benchmark || echo "No benchmarks configured"
+          fi
+
+      - name: Check test performance
+        run: |
+          # Time the test suite
+          start_time=$(date +%s)
+          if timeout 300 bun test; then
+            test_status=0
+          else
+            test_status=$?
+          fi
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+
+          echo "Test suite duration: ${duration}s"
+          echo "Test exit code: ${test_status:-0}"
+
+          # Optionally fail on non-timeout test failures
+          if [ "${test_status:-0}" -ne 0 ] && [ "${test_status:-0}" -ne 124 ]; then
+            echo "❌ Tests failed (non-timeout)."
+            exit 1
+          fi
+
+          # Fail if tests take too long
+          if [ $duration -gt 180 ]; then
+            echo "⚠️ Tests took longer than 3 minutes"
+            exit 1
+          fi
+
+  # Summary comment
+  pr-summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [changes, bundle-size, lighthouse, performance]
+    if: always() && github.event.pull_request.draft == false
+    steps:
+      - name: Generate PR summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const needs = ${{ toJSON(needs) }};
+            const pr = context.payload.pull_request;
+
+            let summary = `## 📋 PR Validation Summary\n\n`;
+            summary += `**PR #${pr.number}:** ${pr.title}\n`;
+            summary += `**Author:** @${pr.user.login}\n`;
+            summary += `**Branch:** \`${pr.head.ref}\` → \`${pr.base.ref}\`\n\n`;
+
+            summary += `### 🔍 Change Detection\n\n`;
+            summary += `| Area | Changed |\n`;
+            summary += `|------|------|\n`;
+            summary += `| Packages | ${needs.changes.outputs.packages === 'true' ? '✅' : '➖'} |\n`;
+            summary += `| Apps | ${needs.changes.outputs.apps === 'true' ? '✅' : '➖'} |\n`;
+            summary += `| Docs | ${needs.changes.outputs.docs === 'true' ? '✅' : '➖'} |\n`;
+            summary += `| CI/CD | ${needs.changes.outputs.ci === 'true' ? '✅' : '➖'} |\n\n`;
+
+            summary += `### ✅ Validation Status\n\n`;
+            summary += `| Check | Status |\n`;
+            summary += `|-------|--------|\n`;
+
+            for (const [job, data] of Object.entries(needs)) {
+              if (job !== 'changes' && data.result) {
+                const icon = data.result === 'success' ? '✅' :
+                            data.result === 'failure' ? '❌' :
+                            data.result === 'skipped' ? '⏭️' : '⚠️';
+                const jobName = job.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                summary += `| ${jobName} | ${icon} ${data.result} |\n`;
+              }
+            }
+
+            // Add footer
+            summary += `\n---\n`;
+            summary += `🤖 _Generated by GitHub Actions at ${new Date().toISOString()}_`;
+
+            core.summary.addRaw(summary).write();

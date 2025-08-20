@@ -3,9 +3,17 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "linked": [],
-  "access": "restricted",
+  "linked": [
+    [
+      "@outfitter/hooks-core",
+      "@outfitter/hooks-validators",
+      "@outfitter/hooks-config",
+      "@outfitter/hooks-testing",
+      "@outfitter/hooks-cli"
+    ]
+  ],
+  "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": ["@outfitter/hooks-examples"]
 }

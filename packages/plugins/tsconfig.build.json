@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "incremental": true,
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+  },
+  "exclude": ["**/*.test.ts", "**/__tests__/**/*"],
+  "references": [
+    { "path": "../registry/tsconfig.build.json" },
+    { "path": "../types/tsconfig.build.json" },
+    { "path": "../execution/tsconfig.build.json" }
+  ]
+}

@@ -1,0 +1,372 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "CHANGELOG.md"
+      - "package.json"
+      - "packages/**/package.json"
+      - "apps/**/package.json"
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: "Release type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  packages: write
+
+env:
+  BUN_VERSION: "1.2.20"
+
+jobs:
+  build-binaries:
+    name: Build Binaries
+    runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, 'chore(release)')"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+            binary-name: claude-hooks-linux
+          - os: macos-latest # ARM64
+            target: macos-arm64
+            binary-name: claude-hooks-macos-arm64
+          - os: macos-13 # Intel x64
+            target: macos-x64
+            binary-name: claude-hooks-macos-x64
+          - os: windows-latest
+            target: windows-x64
+            binary-name: claude-hooks-windows.exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build packages (required for CLI dependencies)
+        run: bun run build
+
+      - name: Build binary
+        run: |
+          cd packages/hooks-cli
+          # Read version from package.json
+          CLI_VERSION=$(node -p "require('./package.json').version")
+          echo "Building binary version: $CLI_VERSION"
+
+          # Create production build with all dependencies bundled
+          bun build src/cli.ts \
+            --compile \
+            --minify \
+            --sourcemap=external \
+            --target=bun \
+            --outfile=../../${{ matrix.binary-name }} \
+            --define "process.env.CLI_VERSION=\"$CLI_VERSION\""
+        shell: bash
+
+      - name: Test binary - version check
+        run: |
+          # Make binary executable on Unix systems
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            chmod +x ./${{ matrix.binary-name }}
+            ./${{ matrix.binary-name }} --version
+          else
+            ./${{ matrix.binary-name }} --version
+          fi
+        shell: bash
+
+      - name: Test binary - help command
+        run: |
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ./${{ matrix.binary-name }} validate --help
+          else
+            ./${{ matrix.binary-name }} validate --help
+          fi
+        shell: bash
+
+      - name: Test binary - basic functionality
+        run: |
+          if [[ "${{ matrix.target }}" != "windows-x64" ]]; then
+            ./${{ matrix.binary-name }} --help
+          else
+            ./${{ matrix.binary-name }} --help
+          fi
+        shell: bash
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target }}
+          path: ${{ matrix.binary-name }}
+          retention-days: 7
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: build-binaries
+    if: "!contains(github.event.head_commit.message, 'chore(release)')"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run tests
+        run: bun run test:ci
+
+      - name: Build packages
+        run: bun run build
+
+      - name: Determine version bump
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "bump=${{ github.event.inputs.release-type }}" >> $GITHUB_OUTPUT
+          else
+            # Analyse commit messages (subject + body) since last tag (or all if none)
+            range="$(git describe --tags --abbrev=0 2>/dev/null || echo "")"
+            if [ -n "$range" ]; then
+              commits="$(git log --pretty=format:%B "$range"..HEAD)"
+            else
+              commits="$(git log --pretty=format:%B)"
+            fi
+
+            # Major: any type with a bang or BREAKING CHANGE footer
+            if echo "$commits" | grep -qiE '(^[^:!]+![: ]|BREAKING[ -]CHANGE)'; then
+              echo "bump=major" >> $GITHUB_OUTPUT
+            # Minor: feat/feature (case-insensitive)
+            elif echo "$commits" | grep -qiE '^(feat|feature)(\(.+\))?:'; then
+              echo "bump=minor" >> $GITHUB_OUTPUT
+            else
+              echo "bump=patch" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Version packages
+        run: |
+          bump_type="${{ steps.version.outputs.bump }}"
+
+          # Update root package.json
+          current_version=$(node -p "require('./package.json').version")
+
+          # Calculate new version
+          IFS='.' read -ra VERSION_PARTS <<< "$current_version"
+          major=${VERSION_PARTS[0]}
+          minor=${VERSION_PARTS[1]}
+          patch=${VERSION_PARTS[2]}
+
+          case $bump_type in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+            prerelease)
+              # Use semver CLI to compute next pre-release, preserving/setting preid=beta
+              new_version="$(bunx --yes semver -i prerelease "$current_version" --preid beta)"
+              ;;
+          esac
+
+          if [[ "$bump_type" != "prerelease" ]]; then
+            new_version="$major.$minor.$patch"
+          fi
+
+          echo "New version: $new_version"
+          echo "new_version=$new_version" >> $GITHUB_ENV
+
+          # Update all package versions
+          for pkg in packages/*/package.json apps/*/package.json; do
+            if [ -f "$pkg" ]; then
+              node -e "
+                const fs = require('fs');
+                const p = '$pkg';
+                const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+                data.version = '$new_version';
+                const bumpDeps = (obj) => {
+                  if (!obj) return;
+                  for (const k of Object.keys(obj)) {
+                    // Update local workspace deps (adjust the predicate to your scopes/names)
+                    if (/^@grapple\//.test(k) || /^@outfitter\//.test(k)) {
+                      obj[k] = '$new_version';
+                    }
+                  }
+                };
+                bumpDeps(data.dependencies);
+                bumpDeps(data.devDependencies);
+                bumpDeps(data.peerDependencies);
+                fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\\n');
+              "
+            fi
+          done
+
+          # Update root package.json
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '$new_version';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
+          "
+
+          # Refresh lockfile without modifying installed node_modules
+          bun install --lockfile-only
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Generate changelog from commit messages
+          echo "# Changelog" > CHANGELOG_TEMP.md
+          echo "" >> CHANGELOG_TEMP.md
+          echo "## v${{ env.new_version }} - $(date +%Y-%m-%d)" >> CHANGELOG_TEMP.md
+          echo "" >> CHANGELOG_TEMP.md
+
+          # Determine log range
+          last_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -n "$last_tag" ]; then
+            range="$last_tag..HEAD"
+          else
+            range="HEAD"
+          fi
+
+          # Group commits by type
+          echo "### Features" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -E '^.*feat(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+
+          echo "" >> CHANGELOG_TEMP.md
+          echo "### Bug Fixes" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -E '^.*fix(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+
+          echo "" >> CHANGELOG_TEMP.md
+          echo "### Other Changes" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -vE '^.*(feat|fix)(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+
+          # Prepend to existing changelog
+          if [ -f CHANGELOG.md ]; then
+            echo "" >> CHANGELOG_TEMP.md
+            tail -n +2 CHANGELOG.md >> CHANGELOG_TEMP.md
+          fi
+
+          mv CHANGELOG_TEMP.md CHANGELOG.md
+
+      - name: Commit version bump
+        run: |
+          git add .
+          git commit -m "chore(release): v${{ env.new_version }}
+
+          🚀 Automated release v${{ env.new_version }}
+
+          Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+
+      - name: Push changes
+        run: git push origin main
+
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./binaries/
+
+      - name: Organize binary files
+        run: |
+          mkdir -p release-assets
+          find binaries -name "claude-hooks-*" -type f -exec cp {} release-assets/ \;
+          ls -la release-assets/
+
+          # Verify all expected binaries are present
+          expected_binaries=("claude-hooks-linux" "claude-hooks-macos-arm64" "claude-hooks-macos-x64" "claude-hooks-windows.exe")
+          for binary in "${expected_binaries[@]}"; do
+            if [ -f "release-assets/$binary" ]; then
+              echo "✅ Found $binary"
+              file "release-assets/$binary" || true
+            else
+              echo "❌ Missing $binary"
+              exit 1
+            fi
+          done
+
+      - name: Create GitHub Release with Assets
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.new_version }}
+          name: Release v${{ env.new_version }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ steps.version.outputs.bump == 'prerelease' }}
+          files: |
+            release-assets/claude-hooks-linux
+            release-assets/claude-hooks-macos-arm64
+            release-assets/claude-hooks-macos-x64
+            release-assets/claude-hooks-windows.exe
+          generate_release_notes: true
+
+      - name: Publish to NPM
+        if: steps.version.outputs.bump != 'prerelease'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Configure npm
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+
+          # Publish packages
+          for pkg in packages/*/package.json; do
+            dir=$(dirname "$pkg")
+            if [ -f "$dir/package.json" ]; then
+              cd "$dir"
+
+              # Check if package is private
+              is_private=$(node -p "require('./package.json').private || false")
+
+              if [ "$is_private" != "true" ]; then
+                echo "Publishing $(basename $dir)..."
+                npm publish --access public
+              else
+                echo "Skipping private package $(basename $dir)"
+              fi
+
+              cd - > /dev/null
+            fi
+          done

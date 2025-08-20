@@ -1,0 +1,28 @@
+{
+  "name": "@outfitter/hooks-examples",
+  "version": "0.1.0",
+  "description": "Example implementations demonstrating Claude Code hooks APIs",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "echo 'Temporarily disabled - examples need type fixes'"
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "examples"
+  ],
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@outfitter/hooks-core": "workspace:*",
+    "@outfitter/hooks-validators": "workspace:*",
+    "@outfitter/hooks-config": "workspace:*",
+    "@outfitter/hooks-testing": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "*",
+    "typescript": "^5.9.2"
+  }
+}

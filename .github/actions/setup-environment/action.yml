@@ -1,0 +1,66 @@
+name: "Setup Environment"
+description: "Composite action to setup Bun and restore caches"
+inputs:
+  bun-version:
+    description: "Bun version to install"
+    required: false
+    default: "1.2.20"
+  install-deps:
+    description: "Whether to install dependencies"
+    required: false
+    default: "true"
+  turbo-token:
+    description: "Turbo token for remote caching"
+    required: false
+  turbo-team:
+    description: "Turbo team for remote caching"
+    required: false
+
+outputs:
+  cache-hit:
+    description: "Whether dependency cache was hit"
+    value: ${{ steps.deps-cache.outputs.cache-hit }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+
+    - name: Cache dependencies
+      id: deps-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.bun/install/cache
+          node_modules
+          packages/*/node_modules
+          apps/*/node_modules
+        key: deps-${{ runner.os }}-bun-${{ inputs.bun-version }}-${{ hashFiles('**/bun.lockb') }}
+        restore-keys: |
+          deps-${{ runner.os }}-bun-${{ inputs.bun-version }}-
+          deps-${{ runner.os }}-bun-
+
+    - name: Cache Turbo
+      uses: actions/cache@v4
+      with:
+        path: .turbo
+        key: turbo-${{ runner.os }}-${{ github.sha }}
+        restore-keys: |
+          turbo-${{ runner.os }}-
+          turbo-
+
+    - name: Install dependencies
+      if: inputs.install-deps == 'true' && steps.deps-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: bun install --frozen-lockfile
+
+    - name: Setup Turbo Remote Caching
+      if: inputs.turbo-token != '' && inputs.turbo-team != ''
+      shell: bash
+      run: |
+        echo "TURBO_TOKEN=${{ inputs.turbo-token }}" >> $GITHUB_ENV
+        echo "TURBO_TEAM=${{ inputs.turbo-team }}" >> $GITHUB_ENV
+        echo "TURBO_TELEMETRY_DISABLED=1" >> $GITHUB_ENV

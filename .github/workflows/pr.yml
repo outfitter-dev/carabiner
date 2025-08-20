@@ -1,0 +1,139 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  BUN_VERSION: "1.2.20"
+
+jobs:
+  size-check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build packages
+        run: bun run build
+
+      - name: Calculate bundle sizes
+        id: pr-size
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          total_size=0
+          for dist in packages/*/dist; do
+            if [ -d "$dist" ]; then
+              size="$(du -sb "$dist" | cut -f1)"
+              total_size=$((total_size + size))
+              printf '%s: %s\n' "$(basename "$(dirname "$dist")")" "$(numfmt --to=iec "$size")"
+            fi
+          done
+          echo "total_size=$total_size" >> "$GITHUB_OUTPUT"
+          echo "Total: $(numfmt --to=iec "$total_size")"
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      - name: Install base dependencies
+        working-directory: base
+        run: bun install --frozen-lockfile
+
+      - name: Build base packages
+        working-directory: base
+        run: bun run build
+
+      - name: Calculate base bundle sizes
+        id: base-size
+        working-directory: base
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          total_size=0
+          for dist in packages/*/dist; do
+            if [ -d "$dist" ]; then
+              size="$(du -sb "$dist" | cut -f1)"
+              total_size=$((total_size + size))
+              printf '%s: %s\n' "$(basename "$(dirname "$dist")")" "$(numfmt --to=iec "$size")"
+            fi
+          done
+          echo "total_size=$total_size" >> "$GITHUB_OUTPUT"
+
+      - name: Comment size change
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prSize = ${{ steps.pr-size.outputs.total_size }};
+            const baseSize = ${{ steps.base-size.outputs.total_size }};
+            const diff = prSize - baseSize;
+            const percentChange = baseSize > 0 ? ((diff / baseSize) * 100).toFixed(2) : 0;
+
+            const formatBytes = (bytes) => {
+              const sizes = ['B', 'KB', 'MB', 'GB'];
+              if (bytes === 0) return '0 B';
+              const i = Math.floor(Math.log(bytes) / Math.log(1024));
+              return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+            };
+
+            const emoji = diff > 0 ? '📈' : diff < 0 ? '📉' : '✅';
+            const message = `
+            ${emoji} **Bundle Size Report**
+
+            | Metric | Size |
+            |--------|------|
+            | Base | ${formatBytes(baseSize)} |
+            | PR | ${formatBytes(prSize)} |
+            | Diff | ${diff > 0 ? '+' : ''}${formatBytes(Math.abs(diff))} (${percentChange}%) |
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
+
+      - name: Write bundle size summary
+        env:
+          PR_SIZE: ${{ steps.pr-size.outputs.total_size }}
+          BASE_SIZE: ${{ steps.base-size.outputs.total_size }}
+        run: |
+          pr_size="${PR_SIZE:-0}"
+          base_size="${BASE_SIZE:-0}"
+          diff=$((pr_size - base_size))
+          percent="0.00"
+          if [ "$base_size" -gt 0 ]; then
+            percent=$(awk "BEGIN { printf \"%.2f\", ($diff / $base_size) * 100 }")
+          fi
+          {
+            echo "## Bundle Size Report"
+            echo ""
+            echo "| Metric | Size |"
+            echo "|--------|------|"
+            echo "| Base | $(numfmt --to=iec "$base_size") |"
+            echo "| PR | $(numfmt --to=iec "$pr_size") |"
+            echo "| Diff | $( [ "$diff" -gt 0 ] && echo "+" || true )$(numfmt --to=iec "${diff#-}") (${percent}%) |"
+          } >> "$GITHUB_STEP_SUMMARY"
