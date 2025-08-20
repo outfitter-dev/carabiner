@@ -120,16 +120,35 @@ describe('StdinProtocol', () => {
       const protocol = new StdinProtocol({ inputTimeout: 5000 });
 
       // Start reading (but don't await)
-      const readPromise = protocol.readInput().catch(() => {});
+      const start = Date.now();
+      const readPromise = protocol.readInput().catch((e) => e);
 
       // Destroy protocol while read is in progress
       await new Promise((resolve) => setTimeout(resolve, 10));
       protocol.destroy();
 
-      // Wait for promise to reject
-      await readPromise;
+      // Wait for promise to reject promptly (well under the configured timeout)
+      const error = await readPromise;
+      expect(error).toBeInstanceOf(ProtocolInputError);
+      expect(error.message).toContain('Protocol destroyed while reading');
+      expect(Date.now() - start).toBeLessThan(200);
 
       expect(destroyCalled).toBe(true);
+    });
+
+    test('destroy should be idempotent', async () => {
+      const protocol = new StdinProtocol();
+      
+      // Should not throw when called multiple times
+      protocol.destroy();
+      protocol.destroy();
+      protocol.destroy();
+      
+      // Should still reject read operations after multiple destroy calls
+      const mockStdin = createMockReadableStream(JSON.stringify({ test: 'data' }));
+      process.stdin = mockStdin as any;
+      
+      await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
     });
   });
 

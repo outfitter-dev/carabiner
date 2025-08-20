@@ -72,6 +72,7 @@ export type StdinProtocolOptions = {
 export class StdinProtocol implements HookProtocol {
   private activeStream: NodeJS.ReadStream | null = null;
   private isDestroyed = false;
+  private pendingReadReject: ((error: Error) => void) | null = null;
 
   constructor(private readonly options: StdinProtocolOptions = {}) {}
 
@@ -79,16 +80,26 @@ export class StdinProtocol implements HookProtocol {
    * Read JSON input from stdin with timeout and robust stream destruction
    */
   async readInput(): Promise<unknown> {
+    // Check if protocol has been destroyed
+    if (this.isDestroyed) {
+      throw new ProtocolInputError(
+        'Cannot read from destroyed protocol',
+        new Error('StdinProtocol has been destroyed')
+      );
+    }
+    
     const timeout = this.options.inputTimeout ?? 30_000;
 
-    // Reset state for new read operation
-    this.isDestroyed = false;
+    // Set up for new read operation
     this.activeStream = process.stdin;
 
     try {
       const input: string = await new Promise((resolve, reject) => {
         const chunks: Buffer[] = [];
         let isCleanedUp = false;
+        
+        // Store reject function for destroy() to call
+        this.pendingReadReject = reject;
 
         const onData = (chunk: Buffer) => {
           if (!this.isDestroyed) {
@@ -116,6 +127,9 @@ export class StdinProtocol implements HookProtocol {
 
           // Clear the timeout
           clearTimeout(timeoutId);
+          
+          // Clear pending reject reference
+          this.pendingReadReject = null;
 
           // Remove all listeners
           if (this.activeStream) {
@@ -125,8 +139,6 @@ export class StdinProtocol implements HookProtocol {
 
             // On timeout, forcefully destroy the stream
             if (isTimeout && !this.isDestroyed) {
-              this.isDestroyed = true;
-
               // Pause the stream first to stop data flow
               if (this.activeStream.readable) {
                 this.activeStream.pause();
@@ -199,8 +211,9 @@ export class StdinProtocol implements HookProtocol {
       }
       throw new ProtocolInputError('Failed to read input from stdin', error);
     } finally {
-      // Clean up stream reference
+      // Clean up stream reference and pending reject
       this.activeStream = null;
+      this.pendingReadReject = null;
     }
   }
 
@@ -293,9 +306,25 @@ export class StdinProtocol implements HookProtocol {
    * This method ensures complete cleanup when the protocol needs to shut down
    */
   destroy(): void {
-    if (this.activeStream && !this.isDestroyed) {
-      this.isDestroyed = true;
-
+    // Idempotent - return early if already destroyed
+    if (this.isDestroyed) {
+      return;
+    }
+    
+    this.isDestroyed = true;
+    
+    // Reject any pending read operation
+    if (this.pendingReadReject) {
+      const error = new ProtocolInputError(
+        'Protocol destroyed while reading',
+        new Error('StdinProtocol.destroy() called during active read')
+      );
+      this.pendingReadReject(error);
+      this.pendingReadReject = null;
+    }
+    
+    // Clean up the stream if it exists
+    if (this.activeStream) {
       // Pause to stop data flow
       if (this.activeStream.readable) {
         this.activeStream.pause();
