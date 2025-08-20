@@ -70,45 +70,113 @@ export type StdinProtocolOptions = {
  * ```
  */
 export class StdinProtocol implements HookProtocol {
+  private activeStream: NodeJS.ReadStream | null = null;
+  private isDestroyed = false;
+
   constructor(private readonly options: StdinProtocolOptions = {}) {}
 
   /**
-   * Read JSON input from stdin with timeout
+   * Read JSON input from stdin with timeout and robust stream destruction
    */
   async readInput(): Promise<unknown> {
     const timeout = this.options.inputTimeout ?? 30_000;
 
+    // Reset state for new read operation
+    this.isDestroyed = false;
+    this.activeStream = process.stdin;
+
     try {
       const input: string = await new Promise((resolve, reject) => {
         const chunks: Buffer[] = [];
+        let isCleanedUp = false;
 
         const onData = (chunk: Buffer) => {
-          chunks.push(chunk);
+          if (!this.isDestroyed) {
+            chunks.push(chunk);
+          }
         };
+
         const onEnd = () => {
-          cleanup();
-          resolve(Buffer.concat(chunks).toString('utf-8'));
+          if (!(isCleanedUp || this.isDestroyed)) {
+            cleanup(false);
+            resolve(Buffer.concat(chunks).toString('utf-8'));
+          }
         };
+
         const onError = (err: unknown) => {
-          cleanup();
-          reject(err instanceof Error ? err : new Error(String(err)));
+          if (!(isCleanedUp || this.isDestroyed)) {
+            cleanup(false);
+            reject(err instanceof Error ? err : new Error(String(err)));
+          }
         };
-        const cleanup = () => {
+
+        const cleanup = (isTimeout = false) => {
+          if (isCleanedUp) return;
+          isCleanedUp = true;
+
+          // Clear the timeout
           clearTimeout(timeoutId);
-          process.stdin.off('data', onData);
-          process.stdin.off('end', onEnd);
-          process.stdin.off('error', onError);
+
+          // Remove all listeners
+          if (this.activeStream) {
+            this.activeStream.removeListener('data', onData);
+            this.activeStream.removeListener('end', onEnd);
+            this.activeStream.removeListener('error', onError);
+
+            // On timeout, forcefully destroy the stream
+            if (isTimeout && !this.isDestroyed) {
+              this.isDestroyed = true;
+
+              // Pause the stream first to stop data flow
+              if (this.activeStream.readable) {
+                this.activeStream.pause();
+              }
+
+              // Destroy the stream with an error
+              const timeoutError = new Error(
+                'Stdin read timed out - stream destroyed'
+              );
+              this.activeStream.destroy(timeoutError);
+
+              // Ensure any buffered data is cleared
+              if (this.activeStream.readableLength > 0) {
+                this.activeStream.read(this.activeStream.readableLength);
+              }
+
+              // Clear the reference
+              this.activeStream = null;
+            }
+          }
         };
+
         const timeoutId = setTimeout(() => {
-          cleanup();
-          // Destroy to unblock the stream if no further chunks arrive
-          process.stdin.destroy(new Error('Stdin read timed out'));
-          reject(new Error('Stdin read timed out'));
+          cleanup(true);
+          reject(
+            new ProtocolInputError(
+              'Stdin read timed out - hard timeout reached',
+              new Error(
+                'Hard timeout: stream forcibly destroyed after ' +
+                  timeout +
+                  'ms'
+              )
+            )
+          );
         }, timeout);
 
-        process.stdin.on('data', onData);
-        process.stdin.once('end', onEnd);
-        process.stdin.once('error', onError);
+        // Attach listeners
+        if (this.activeStream) {
+          this.activeStream.on('data', onData);
+          this.activeStream.once('end', onEnd);
+          this.activeStream.once('error', onError);
+
+          // Resume the stream if it was paused
+          if (this.activeStream.isPaused?.()) {
+            this.activeStream.resume();
+          }
+        } else {
+          cleanup(false);
+          reject(new ProtocolInputError('No stdin stream available'));
+        }
       });
 
       const trimmedInput = input.trim();
@@ -130,6 +198,9 @@ export class StdinProtocol implements HookProtocol {
         throw error;
       }
       throw new ProtocolInputError('Failed to read input from stdin', error);
+    } finally {
+      // Clean up stream reference
+      this.activeStream = null;
     }
   }
 
@@ -214,6 +285,36 @@ export class StdinProtocol implements HookProtocol {
         'Failed to write error to stderr',
         writeError
       );
+    }
+  }
+
+  /**
+   * Forcefully destroy any active stream operations
+   * This method ensures complete cleanup when the protocol needs to shut down
+   */
+  destroy(): void {
+    if (this.activeStream && !this.isDestroyed) {
+      this.isDestroyed = true;
+
+      // Pause to stop data flow
+      if (this.activeStream.readable) {
+        this.activeStream.pause();
+      }
+
+      // Remove all possible listeners
+      this.activeStream.removeAllListeners();
+
+      // Destroy the stream
+      this.activeStream.destroy(
+        new Error('Protocol destroyed - cleaning up active streams')
+      );
+
+      // Clear buffered data
+      if (this.activeStream.readableLength > 0) {
+        this.activeStream.read(this.activeStream.readableLength);
+      }
+
+      this.activeStream = null;
     }
   }
 

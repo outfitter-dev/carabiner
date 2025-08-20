@@ -65,6 +65,72 @@ describe('StdinProtocol', () => {
 
       await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
     });
+
+    test('should destroy stream on hard timeout', async () => {
+      let destroyCalled = false;
+      const mockStdin = createMockReadableStream('', {
+        delay: 100,
+        onDestroy: () => {
+          destroyCalled = true;
+        },
+      });
+      process.stdin = mockStdin as any;
+
+      const protocol = new StdinProtocol({ inputTimeout: 50 });
+
+      try {
+        await protocol.readInput();
+      } catch (error) {
+        expect(error).toBeInstanceOf(ProtocolInputError);
+        expect((error as ProtocolInputError).message).toContain('hard timeout');
+      }
+
+      // Give some time for destroy to be called
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(destroyCalled).toBe(true);
+    });
+
+    test('should handle multiple timeout scenarios gracefully', async () => {
+      const protocol = new StdinProtocol({ inputTimeout: 50 });
+
+      // First timeout
+      const mockStdin1 = createMockReadableStream('', { delay: 100 });
+      process.stdin = mockStdin1 as any;
+      await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
+
+      // Second read should work with fresh stream
+      const mockStdin2 = createMockReadableStream(
+        JSON.stringify({ test: 'data' })
+      );
+      process.stdin = mockStdin2 as any;
+      const result = await protocol.readInput();
+      expect(result).toEqual({ test: 'data' });
+    });
+
+    test('protocol destroy should clean up active streams', async () => {
+      let destroyCalled = false;
+      const mockStdin = createMockReadableStream('', {
+        delay: 1000,
+        onDestroy: () => {
+          destroyCalled = true;
+        },
+      });
+      process.stdin = mockStdin as any;
+
+      const protocol = new StdinProtocol({ inputTimeout: 5000 });
+
+      // Start reading (but don't await)
+      const readPromise = protocol.readInput().catch(() => {});
+
+      // Destroy protocol while read is in progress
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      protocol.destroy();
+
+      // Wait for promise to reject
+      await readPromise;
+
+      expect(destroyCalled).toBe(true);
+    });
   });
 
   describe('parseContext', () => {
@@ -211,19 +277,23 @@ describe('StdinProtocolFactory', () => {
 // Mock helper functions
 function createMockReadableStream(
   data: string,
-  options: { delay?: number } = {}
+  options: { delay?: number; onDestroy?: () => void } = {}
 ) {
   const chunks = [Buffer.from(data)];
   let index = 0;
+  let isPaused = false;
+  let isDestroyed = false;
   const listeners: Map<string, Array<(...args: any[]) => void>> = new Map();
 
   return {
+    readable: true,
+    readableLength: data.length,
     async *[Symbol.asyncIterator]() {
       if (options.delay) {
         await new Promise((resolve) => setTimeout(resolve, options.delay));
       }
 
-      while (index < chunks.length) {
+      while (index < chunks.length && !isDestroyed) {
         yield chunks[index++];
       }
     },
@@ -258,6 +328,12 @@ function createMockReadableStream(
         }
       }
     },
+    removeListener(event: string, listener: (...args: any[]) => void) {
+      this.off(event, listener);
+    },
+    removeAllListeners() {
+      listeners.clear();
+    },
     once(event: string, listener: (...args: any[]) => void) {
       const onceWrapper = (...args: any[]) => {
         this.off(event, onceWrapper);
@@ -265,11 +341,30 @@ function createMockReadableStream(
       };
       this.on(event, onceWrapper);
     },
+    pause() {
+      isPaused = true;
+    },
+    resume() {
+      isPaused = false;
+    },
+    isPaused() {
+      return isPaused;
+    },
+    read(size?: number) {
+      // Simulate reading buffered data
+      return null;
+    },
     destroy(error?: Error) {
-      if (error) {
-        const errorListeners = listeners.get('error');
-        if (errorListeners) {
-          errorListeners.forEach((listener) => listener(error));
+      if (!isDestroyed) {
+        isDestroyed = true;
+        if (options.onDestroy) {
+          options.onDestroy();
+        }
+        if (error) {
+          const errorListeners = listeners.get('error');
+          if (errorListeners) {
+            errorListeners.forEach((listener) => listener(error));
+          }
         }
       }
     },
