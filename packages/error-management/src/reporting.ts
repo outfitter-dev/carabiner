@@ -11,7 +11,7 @@ import type {
   ErrorReport,
   ErrorReportingConfig,
   ErrorSeverity,
-  IGrappleError,
+  ICarabinerError,
 } from './types.js';
 import { ErrorSeverity as Severity } from './types.js';
 
@@ -76,7 +76,7 @@ export function sanitizeText(text: string): string {
 /**
  * Sanitize error object for safe reporting
  */
-export function sanitizeError(error: IGrappleError): Partial<ErrorReport> {
+export function sanitizeError(error: ICarabinerError): Partial<ErrorReport> {
   return {
     error: {
       name: error.name,
@@ -148,7 +148,7 @@ export class ErrorAggregator {
       count: number;
       firstSeen: Date;
       lastSeen: Date;
-      error: IGrappleError;
+      error: ICarabinerError;
     }
   > = new Map();
 
@@ -158,7 +158,7 @@ export class ErrorAggregator {
   /**
    * Add error to aggregation
    */
-  add(error: IGrappleError): void {
+  add(error: ICarabinerError): void {
     const key = this.getErrorKey(error);
     const existing = this.errors.get(key);
 
@@ -181,7 +181,7 @@ export class ErrorAggregator {
    * Get aggregated error statistics
    */
   getAggregatedErrors(): Array<{
-    error: IGrappleError;
+    error: ICarabinerError;
     count: number;
     firstSeen: Date;
     lastSeen: Date;
@@ -235,7 +235,7 @@ export class ErrorAggregator {
   /**
    * Generate error key for aggregation
    */
-  private getErrorKey(error: IGrappleError): string {
+  private getErrorKey(error: ICarabinerError): string {
     return `${error.code}-${error.category}-${error.message}`;
   }
 
@@ -283,7 +283,7 @@ export class ErrorReporter {
   /**
    * Report an error
    */
-  async report(error: IGrappleError): Promise<void> {
+  async report(error: ICarabinerError): Promise<void> {
     if (!this.config.enabled) {
       return;
     }
@@ -318,7 +318,7 @@ export class ErrorReporter {
   /**
    * Create error report from error
    */
-  private createReport(error: IGrappleError): ErrorReport {
+  private createReport(error: ICarabinerError): ErrorReport {
     let report: ErrorReport = {
       error: {
         name: error.name,
@@ -487,7 +487,7 @@ export function configureGlobalReporter(
 /**
  * Report error using global reporter
  */
-export async function reportError(error: IGrappleError): Promise<void> {
+export async function reportError(error: ICarabinerError): Promise<void> {
   await getGlobalReporter().report(error);
 }
 
@@ -527,7 +527,7 @@ export class StructuredLogger {
   /**
    * Log error object
    */
-  async logError(error: IGrappleError, message?: string): Promise<void> {
+  async logError(error: ICarabinerError, message?: string): Promise<void> {
     const logMessage = message ? `${message}: ${error.message}` : error.message;
     this.log('error', logMessage, { error: error.toReport() });
 

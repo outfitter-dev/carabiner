@@ -165,7 +165,7 @@ export type RecoveryStrategy = {
   /** Whether to use jitter in retry delays */
   useJitter: boolean;
   /** Conditions under which to retry */
-  retryCondition?: (error: IGrappleError) => boolean;
+  retryCondition?: (error: ICarabinerError) => boolean;
   /** Fallback function to execute if all retries fail */
   fallback?: () => unknown;
 };
@@ -183,7 +183,7 @@ export type ErrorReportingConfig = {
   /** Whether to include environment info */
   includeEnvironment: boolean;
   /** Custom error transformation function */
-  transform?: (error: IGrappleError) => Record<string, JsonValue>;
+  transform?: (error: ICarabinerError) => Record<string, JsonValue>;
   /** Custom reporting handler */
   reporter?: (report: ErrorReport) => Promise<void> | void;
 };
@@ -258,9 +258,9 @@ export type HealthStatus = {
 };
 
 /**
- * Base interface for all Grapple errors
+ * Base interface for all Carabiner errors
  */
-export interface IGrappleError extends Error {
+export interface ICarabinerError extends Error {
   readonly code: ErrorCode;
   readonly category: ErrorCategory;
   readonly severity: ErrorSeverity;

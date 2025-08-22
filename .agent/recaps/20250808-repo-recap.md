@@ -7,7 +7,7 @@ Initial development launch. Complete Claude Code hooks TypeScript library establ
 ## Key Changes
 
 ```
-grapple/                       ✨ new monorepo structure
+carabiner/                       ✨ new monorepo structure
 ├── packages/
 │   ├── hooks-core/           ✨ core hooks library
 │   │   ├── src/

@@ -1,6 +1,6 @@
 # Architecture Guide
 
-This guide explains the system design, concepts, and patterns that make Grapple a robust, scalable Claude Code hooks library.
+This guide explains the system design, concepts, and patterns that make Carabiner a robust, scalable Claude Code hooks library.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ This guide explains the system design, concepts, and patterns that make Grapple 
 
 ## System Overview
 
-Grapple is designed as a comprehensive TypeScript monorepo that transforms Claude Code hook development from shell scripting to production-ready applications.
+Carabiner is designed as a comprehensive TypeScript monorepo that transforms Claude Code hook development from shell scripting to production-ready applications.
 
 ### Design Principles
 
@@ -55,7 +55,7 @@ graph TB
 
 ### Hook Events
 
-Grapple supports multiple hook events that correspond to different points in the Claude Code lifecycle:
+Carabiner supports multiple hook events that correspond to different points in the Claude Code lifecycle:
 
 #### PreToolUse
 
@@ -429,7 +429,7 @@ const createBashHook = <TEvent extends 'PreToolUse' | 'PostToolUse'>(
 
 ### Defense in Depth
 
-Grapple implements multiple security layers:
+Carabiner implements multiple security layers:
 
 #### 1. Input Validation
 
@@ -650,7 +650,7 @@ class PluginManager {
 
 ```typescript
 interface ConfigExtension {
-  extend(config: GrappleConfig): GrappleConfig;
+  extend(config: CarabinerConfig): CarabinerConfig;
 }
 
 const productionExtension: ConfigExtension = {

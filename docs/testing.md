@@ -1,6 +1,6 @@
 # Testing Guide
 
-This guide covers how to write and run tests for the Grapple monorepo, a TypeScript library for building type-safe Claude Code hooks.
+This guide covers how to write and run tests for the Carabiner monorepo, a TypeScript library for building type-safe Claude Code hooks.
 
 ## Quick Start
 
@@ -24,7 +24,7 @@ bun test packages/hooks-core
 
 ## Test Categories
 
-Grapple uses a comprehensive testing strategy with six distinct test categories:
+Carabiner uses a comprehensive testing strategy with six distinct test categories:
 
 ### Unit Tests
 
@@ -381,7 +381,7 @@ test(
 If you encounter issues:
 
 1. Check the [troubleshooting guide](./troubleshooting.md)
-2. Search existing [GitHub issues](https://github.com/outfitter-dev/grapple/issues)
+2. Search existing [GitHub issues](https://github.com/outfitter-dev/carabiner/issues)
 3. Ask in discussions or create a new issue
 
 Remember: Good tests make refactoring safe and development faster!

@@ -4,14 +4,14 @@
  * Helper functions for common error handling patterns
  */
 
-import { fromError, GrappleError, TimeoutError } from './errors.js';
+import { fromError, CarabinerError, TimeoutError } from './errors.js';
 import { reportError } from './reporting.js';
 import {
   type ErrorCategory,
   ErrorCode,
   ErrorSeverity,
   type HealthStatus,
-  type IGrappleError,
+  type ICarabinerError,
 } from './types.js';
 
 /**
@@ -28,8 +28,8 @@ export function createStandardError(
     userMessage?: string;
     metadata?: Record<string, unknown>;
   } = {}
-): GrappleError {
-  return new GrappleError({
+): CarabinerError {
+  return new CarabinerError({
     message,
     code,
     category,
@@ -49,22 +49,22 @@ export function wrapWithErrorHandling<TArgs extends unknown[], TReturn>(
   options: {
     operation?: string;
     reportErrors?: boolean;
-    transformError?: (error: Error) => IGrappleError;
-    onError?: (error: IGrappleError) => void;
+    transformError?: (error: Error) => ICarabinerError;
+    onError?: (error: ICarabinerError) => void;
   } = {}
 ): (...args: TArgs) => Promise<TReturn> {
   return async (...args: TArgs): Promise<TReturn> => {
     try {
       return await fn(...args);
     } catch (error) {
-      let grappleError: IGrappleError;
+      let carabinerError: ICarabinerError;
 
       if (options.transformError) {
-        grappleError = options.transformError(
+        carabinerError = options.transformError(
           error instanceof Error ? error : new Error(String(error))
         );
       } else {
-        grappleError = fromError(
+        carabinerError = fromError(
           error instanceof Error ? error : new Error(String(error)),
           options.operation
         );
@@ -72,7 +72,7 @@ export function wrapWithErrorHandling<TArgs extends unknown[], TReturn>(
 
       // Report error if enabled
       if (options.reportErrors !== false) {
-        await reportError(grappleError).catch((_reportError) => {
+        await reportError(carabinerError).catch((_reportError) => {
           // Silently ignore reporting errors
         });
       }
@@ -80,13 +80,13 @@ export function wrapWithErrorHandling<TArgs extends unknown[], TReturn>(
       // Call custom error handler
       if (options.onError) {
         try {
-          options.onError(grappleError);
+          options.onError(carabinerError);
         } catch (_handlerError) {
           // Silently ignore handler errors
         }
       }
 
-      throw grappleError;
+      throw carabinerError;
     }
   };
 }
@@ -100,20 +100,20 @@ export async function safeAsync<T>(
   options: {
     operation?: string;
     reportErrors?: boolean;
-    onError?: (error: IGrappleError) => void;
+    onError?: (error: ICarabinerError) => void;
   } = {}
 ): Promise<T> {
   try {
     return await operation();
   } catch (error) {
-    const grappleError = fromError(
+    const carabinerError = fromError(
       error instanceof Error ? error : new Error(String(error)),
       options.operation
     );
 
     // Report error if enabled
     if (options.reportErrors !== false) {
-      await reportError(grappleError).catch((_reportError) => {
+      await reportError(carabinerError).catch((_reportError) => {
         // Error reporting failed - continue gracefully
       });
     }
@@ -121,7 +121,7 @@ export async function safeAsync<T>(
     // Call custom error handler
     if (options.onError) {
       try {
-        options.onError(grappleError);
+        options.onError(carabinerError);
       } catch (_handlerError) {
         // Custom error handler failed - continue gracefully
       }
@@ -410,7 +410,7 @@ export function deepClone<T>(object: T): T {
  * Check if error is retryable based on its properties
  */
 export function isRetryableError(error: unknown): boolean {
-  if (error instanceof GrappleError) {
+  if (error instanceof CarabinerError) {
     return error.isRetryable();
   }
 

@@ -36,13 +36,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/outfitter-dev/grapple.git",
+    "url": "https://github.com/outfitter-dev/carabiner.git",
     "directory": "packages/protocol"
   },
   "bugs": {
-    "url": "https://github.com/outfitter-dev/grapple/issues"
+    "url": "https://github.com/outfitter-dev/carabiner/issues"
   },
-  "homepage": "https://github.com/outfitter-dev/grapple/tree/main/packages/protocol#readme",
+  "homepage": "https://github.com/outfitter-dev/carabiner/tree/main/packages/protocol#readme",
   "keywords": [
     "claude-code",
     "hooks",

@@ -15,7 +15,7 @@ const LEAK_THRESHOLD_MB = 50;
 const MAX_HEAP_INCREASE = HEAP_INCREASE_MB * MB; // 500MB
 const LEAK_THRESHOLD = LEAK_THRESHOLD_MB * MB; // 50MB
 
-export type GrappleTestConfig = {
+export type CarabinerTestConfig = {
   /** Coverage requirements */
   coverage: {
     /** Minimum line coverage percentage */
@@ -90,9 +90,9 @@ type EnvironmentConfig = {
 };
 
 /**
- * Main test configuration for Grapple monorepo
+ * Main test configuration for Carabiner monorepo
  */
-export const grappleTestConfig: GrappleTestConfig = {
+export const carabinerTestConfig: CarabinerTestConfig = {
   coverage: {
     minLinesCoverage: 90,
     minFunctionsCoverage: 95,
@@ -197,7 +197,7 @@ export const grappleTestConfig: GrappleTestConfig = {
 /**
  * Test environment detection
  */
-export function detectTestEnvironment(): keyof GrappleTestConfig['environments'] {
+export function detectTestEnvironment(): keyof CarabinerTestConfig['environments'] {
   if (process.env.CI === 'true') {
     return 'ci';
   }
@@ -214,7 +214,7 @@ export function detectTestEnvironment(): keyof GrappleTestConfig['environments']
  */
 export function getCurrentConfig(): EnvironmentConfig {
   const env = detectTestEnvironment();
-  return grappleTestConfig.environments[env];
+  return carabinerTestConfig.environments[env];
 }
 
 /**
@@ -233,11 +233,11 @@ export function generateBunTestConfig(): TestOptions {
  * Test execution orchestrator
  */
 export class TestOrchestrator {
-  private readonly config: GrappleTestConfig;
+  private readonly config: CarabinerTestConfig;
   private readonly environment: EnvironmentConfig;
 
-  constructor(config?: Partial<GrappleTestConfig>) {
-    this.config = { ...grappleTestConfig, ...config };
+  constructor(config?: Partial<CarabinerTestConfig>) {
+    this.config = { ...carabinerTestConfig, ...config };
     this.environment = getCurrentConfig();
   }
 
@@ -397,7 +397,7 @@ type TestExecutionPlan = {
   phases: TestPhase[];
   coverage: {
     enabled: boolean;
-    requirements: GrappleTestConfig['coverage'];
+    requirements: CarabinerTestConfig['coverage'];
   };
   performance: {
     maxSuiteRuntime: number;
@@ -455,4 +455,4 @@ type ValidationResult = {
 /**
  * Export default configuration for use in scripts
  */
-export default grappleTestConfig;
+export default carabinerTestConfig;

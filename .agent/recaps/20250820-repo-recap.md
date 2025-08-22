@@ -2,7 +2,7 @@
 
 ## tl;dr
 
-**Monumental v0.1 release** marking the complete transformation of grapple into a production-ready TypeScript monorepo. Major merge commit (682020c) from `fix/error-management-and-hooks-cli` branch consolidating 12 days of intensive branch-based development (104 commits from August 8-19), delivering a full Claude Code hooks ecosystem with 15 packages, comprehensive documentation, CI/CD pipelines, and binary distribution. Represents completion of 4-phase greenfield refactoring with 80% complexity reduction and 351 comprehensive tests.
+**Monumental v0.1 release** marking the complete transformation of carabiner into a production-ready TypeScript monorepo. Major merge commit (682020c) from `fix/error-management-and-hooks-cli` branch consolidating 12 days of intensive branch-based development (104 commits from August 8-19), delivering a full Claude Code hooks ecosystem with 15 packages, comprehensive documentation, CI/CD pipelines, and binary distribution. Represents completion of 4-phase greenfield refactoring with 80% complexity reduction and 351 comprehensive tests.
 
 ## Key Changes
 
@@ -202,4 +202,4 @@ This represents a **paradigm shift** from shell-script hooks to enterprise-grade
 - **Before**: Manual shell scripts, no type safety, limited testing
 - **After**: Type-safe monorepo, comprehensive testing, production binaries, plugin ecosystem
 
-**Conclusion**: August 20th marks grapple's transformation from experimental project to production-ready Claude Code hooks platform through 12 days of intensive branch-based development (104 commits). The v0.1 milestone represents excellent engineering practices with systematic development, comprehensive testing, and proper code review integration, establishing the foundation for scalable hook development across the AI-assisted coding ecosystem.
+**Conclusion**: August 20th marks carabiner's transformation from experimental project to production-ready Claude Code hooks platform through 12 days of intensive branch-based development (104 commits). The v0.1 milestone represents excellent engineering practices with systematic development, comprehensive testing, and proper code review integration, establishing the foundation for scalable hook development across the AI-assisted coding ecosystem.

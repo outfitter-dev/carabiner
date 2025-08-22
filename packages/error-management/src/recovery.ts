@@ -5,11 +5,11 @@
  * circuit breakers, and fallback mechanisms
  */
 
-import { GrappleError } from './errors.js';
+import { CarabinerError } from './errors.js';
 import type {
   CircuitBreakerConfig,
   CircuitState,
-  IGrappleError,
+  ICarabinerError,
   RecoveryStrategy,
 } from './types.js';
 import {
@@ -27,7 +27,7 @@ const DEFAULT_RECOVERY_STRATEGY: RecoveryStrategy = {
   backoffMultiplier: 2,
   maxRetryDelay: 30_000,
   useJitter: true,
-  retryCondition: (error: IGrappleError) => error.isRetryable(),
+  retryCondition: (error: ICarabinerError) => error.isRetryable(),
 };
 
 /**
@@ -74,7 +74,7 @@ export class RetryManager {
     operation: () => Promise<T> | T,
     operationName?: string
   ): Promise<T> {
-    let lastError: IGrappleError | undefined;
+    let lastError: ICarabinerError | undefined;
     let attempt = 0;
 
     while (attempt <= this.strategy.maxRetries) {
@@ -88,10 +88,10 @@ export class RetryManager {
 
         return result;
       } catch (error) {
-        const grappleError =
-          error instanceof GrappleError
+        const carabinerError =
+          error instanceof CarabinerError
             ? error
-            : new GrappleError({
+            : new CarabinerError({
                 message: error instanceof Error ? error.message : String(error),
                 code: 9001, // INTERNAL_ERROR
                 category: ErrorCategory.RUNTIME,
@@ -100,13 +100,13 @@ export class RetryManager {
                 operation: operationName,
               });
 
-        lastError = grappleError;
+        lastError = carabinerError;
         attempt++;
 
         // Check if we should retry
         if (
           attempt > this.strategy.maxRetries ||
-          !this.strategy.retryCondition?.(grappleError)
+          !this.strategy.retryCondition?.(carabinerError)
         ) {
           break;
         }
@@ -174,7 +174,7 @@ export class CircuitBreaker {
     this.updateStateBeforeExecution();
 
     if (this.state === State.OPEN) {
-      throw new GrappleError({
+      throw new CarabinerError({
         message: `Circuit breaker is OPEN for operation '${operationName}'. Too many failures detected.`,
         code: 1900, // OPERATION_TIMEOUT - closest semantic match
         category: ErrorCategory.RUNTIME,
@@ -411,7 +411,7 @@ export async function withPriorityFallback<T>(
   }
 
   // All operations failed
-  throw new GrappleError({
+  throw new CarabinerError({
     message: `All fallback operations failed for '${operationName}'`,
     code: 9001, // INTERNAL_ERROR
     category: ErrorCategory.RUNTIME,

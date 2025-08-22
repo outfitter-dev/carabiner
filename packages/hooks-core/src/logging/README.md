@@ -1,6 +1,6 @@
 # Production Logging System
 
-Enterprise-grade structured JSON logging for the Grapple monorepo with security, performance, and compliance features.
+Enterprise-grade structured JSON logging for the Carabiner monorepo with security, performance, and compliance features.
 
 ## Features
 

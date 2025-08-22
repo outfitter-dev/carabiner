@@ -1,6 +1,6 @@
 # Repository Recaps
 
-This directory contains daily and weekly repository recaps documenting the transformation journey of the grapple (formerly carabiner) project.
+This directory contains daily and weekly repository recaps documenting the transformation journey of the carabiner (formerly carabiner) project.
 
 ## Week 33, 2025 (Aug 10-16): Enterprise Transformation
 

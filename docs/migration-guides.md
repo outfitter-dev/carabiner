@@ -1,6 +1,6 @@
 # Migration Guides
 
-This guide covers upgrading between versions of Grapple and migrating from other Claude Code hook solutions.
+This guide covers upgrading between versions of Carabiner and migrating from other Claude Code hook solutions.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ This guide covers upgrading between versions of Grapple and migrating from other
 
 ### Overview
 
-Grapple v2.0 introduces significant architectural improvements that fix major issues from v1.x:
+Carabiner v2.0 introduces significant architectural improvements that fix major issues from v1.x:
 
 - **Fixed Runtime**: Proper stdin-based JSON input processing
 - **Fixed Tool Scoping**: Hooks now correctly target specific tools
@@ -212,7 +212,7 @@ echo '{
 
 ### From Shell Scripts
 
-If you're migrating from shell script hooks to Grapple:
+If you're migrating from shell script hooks to Carabiner:
 
 **Old Shell Script**:
 
@@ -231,7 +231,7 @@ echo "Command validated"
 exit 0
 ```
 
-**New Grapple Hook**:
+**New Carabiner Hook**:
 
 ```typescript
 #!/usr/bin/env bun
@@ -569,7 +569,7 @@ bun check hooks/typed-hook.ts
 
 ---
 
-**Successfully migrate to Grapple v2.0 and enjoy the improved reliability!** 🚀
+**Successfully migrate to Carabiner v2.0 and enjoy the improved reliability!** 🚀
 
 Need help with migration?
 

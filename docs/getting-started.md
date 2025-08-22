@@ -1,6 +1,6 @@
-# Getting Started with Grapple
+# Getting Started with Carabiner
 
-Welcome to Grapple, the production-ready TypeScript library for building Claude Code hooks. This guide will get you up and running with your first hook in minutes.
+Welcome to Carabiner, the production-ready TypeScript library for building Claude Code hooks. This guide will get you up and running with your first hook in minutes.
 
 ## Table of Contents
 
@@ -13,7 +13,7 @@ Welcome to Grapple, the production-ready TypeScript library for building Claude 
 
 ## Installation
 
-Grapple provides multiple installation methods to suit different needs:
+Carabiner provides multiple installation methods to suit different needs:
 
 ### 🚀 Binary Installation (Recommended)
 
@@ -164,7 +164,7 @@ Add the hook to your Claude Code settings. Create or edit `.claude/settings.json
 
 ## Understanding Hook Events
 
-Grapple supports several hook events that let you intercept different parts of the Claude Code lifecycle:
+Carabiner supports several hook events that let you intercept different parts of the Claude Code lifecycle:
 
 ### PreToolUse
 

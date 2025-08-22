@@ -1,6 +1,6 @@
 # Binary Distribution System
 
-This document outlines the comprehensive CI/CD pipeline for binary distribution of the Grapple monorepo's `claude-hooks` CLI tool.
+This document outlines the comprehensive CI/CD pipeline for binary distribution of the Carabiner monorepo's `claude-hooks` CLI tool.
 
 ## Overview
 

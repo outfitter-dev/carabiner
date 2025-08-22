@@ -137,7 +137,7 @@ export const PACKAGE_INFO = {
   name: '@outfitter/registry',
   version: VERSION,
   description: 'Plugin registry system for Claude Code hooks',
-  repository: 'https://github.com/outfitter-dev/grapple',
+  repository: 'https://github.com/outfitter-dev/carabiner',
 } as const;
 
 /**

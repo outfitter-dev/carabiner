@@ -4,7 +4,7 @@
 
 ## Executive Summary
 
-Successfully completed a comprehensive greenfield refactoring of the @outfitter/grapple Claude Code hooks system. The refactoring transformed a complex, over-engineered system with 477 lines of generic types into a simple, modular, and maintainable architecture using concrete types and a plugin-based approach.
+Successfully completed a comprehensive greenfield refactoring of the @outfitter/carabiner Claude Code hooks system. The refactoring transformed a complex, over-engineered system with 477 lines of generic types into a simple, modular, and maintainable architecture using concrete types and a plugin-based approach.
 
 ## Phases Completed
 
@@ -287,7 +287,7 @@ main();
 
 ## Conclusion
 
-The greenfield refactoring has been completed successfully, transforming the @outfitter/grapple hooks system from a complex, over-engineered framework into a simple, modular, and maintainable toolkit. The new architecture provides:
+The greenfield refactoring has been completed successfully, transforming the @outfitter/carabiner hooks system from a complex, over-engineered framework into a simple, modular, and maintainable toolkit. The new architecture provides:
 
 1. **Simplicity:** Concrete types instead of complex generics
 2. **Modularity:** Small, focused packages that compose well

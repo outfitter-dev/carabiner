@@ -3,7 +3,7 @@
  */
 
 import { beforeEach, describe, expect, test } from 'bun:test';
-import { GrappleError, NetworkError, TimeoutError } from '../errors.js';
+import { CarabinerError, NetworkError, TimeoutError } from '../errors.js';
 import {
   CircuitBreaker,
   ErrorRecoveryManager,
@@ -39,7 +39,7 @@ describe('RetryManager', () => {
     let attemptCount = 0;
     const operation = () => {
       attemptCount++;
-      throw new GrappleError({
+      throw new CarabinerError({
         message: 'Validation error',
         code: ErrorCode.INVALID_INPUT,
         category: ErrorCategory.VALIDATION,
@@ -188,8 +188,8 @@ describe('CircuitBreaker', () => {
       await circuitBreaker.execute(() => 'success', 'test-operation');
       expect(false).toBe(true); // Should have thrown
     } catch (error) {
-      expect(error).toBeInstanceOf(GrappleError);
-      expect((error as GrappleError).message).toContain(
+      expect(error).toBeInstanceOf(CarabinerError);
+      expect((error as CarabinerError).message).toContain(
         'Circuit breaker is OPEN'
       );
     }
@@ -383,8 +383,8 @@ describe('Graceful Degradation Functions', () => {
       await withPriorityFallback(operations, 'test-operation');
       expect(false).toBe(true); // Should have thrown
     } catch (error) {
-      expect(error).toBeInstanceOf(GrappleError);
-      expect((error as GrappleError).message).toContain(
+      expect(error).toBeInstanceOf(CarabinerError);
+      expect((error as CarabinerError).message).toContain(
         'All fallback operations failed'
       );
     }

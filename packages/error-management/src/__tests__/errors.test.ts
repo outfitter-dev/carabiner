@@ -10,7 +10,7 @@ import {
   fromError,
   fromMessage,
   fromSystemError,
-  GrappleError,
+  CarabinerError,
   NetworkError,
   RuntimeError,
   SecurityError,
@@ -19,9 +19,9 @@ import {
 } from '../errors.js';
 import { ErrorCategory, ErrorCode, ErrorSeverity } from '../types.js';
 
-describe('GrappleError', () => {
+describe('CarabinerError', () => {
   test('should create basic error with required properties', () => {
-    const error = new GrappleError({
+    const error = new CarabinerError({
       message: 'Test error message',
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
@@ -31,14 +31,14 @@ describe('GrappleError', () => {
     expect(error.code).toBe(ErrorCode.RUNTIME_EXCEPTION);
     expect(error.category).toBe(ErrorCategory.RUNTIME);
     expect(error.severity).toBe(ErrorSeverity.ERROR);
-    expect(error.name).toBe('GrappleError');
+    expect(error.name).toBe('CarabinerError');
     expect(error.context.correlationId).toBeDefined();
     expect(error.context.timestamp).toBeInstanceOf(Date);
   });
 
   test('should handle optional properties correctly', () => {
     const cause = new Error('Original error');
-    const error = new GrappleError({
+    const error = new CarabinerError({
       message: 'Test error',
       code: ErrorCode.CONFIG_INVALID,
       category: ErrorCategory.CONFIGURATION,
@@ -62,7 +62,7 @@ describe('GrappleError', () => {
 
   test('should determine recoverability correctly', () => {
     // Non-recoverable security error
-    const securityError = new GrappleError({
+    const securityError = new CarabinerError({
       message: 'Security violation',
       code: ErrorCode.SECURITY_VIOLATION,
       category: ErrorCategory.SECURITY,
@@ -70,7 +70,7 @@ describe('GrappleError', () => {
     expect(securityError.isRecoverable).toBe(false);
 
     // Recoverable network error
-    const networkError = new GrappleError({
+    const networkError = new CarabinerError({
       message: 'Connection timeout',
       code: ErrorCode.CONNECTION_TIMEOUT,
       category: ErrorCategory.NETWORK,
@@ -78,7 +78,7 @@ describe('GrappleError', () => {
     expect(networkError.isRecoverable).toBe(true);
 
     // Non-recoverable validation error
-    const validationError = new GrappleError({
+    const validationError = new CarabinerError({
       message: 'Invalid input',
       code: ErrorCode.INVALID_INPUT,
       category: ErrorCategory.VALIDATION,
@@ -87,21 +87,21 @@ describe('GrappleError', () => {
   });
 
   test('should generate user-friendly messages', () => {
-    const configError = new GrappleError({
+    const configError = new CarabinerError({
       message: 'Config file not found',
       code: ErrorCode.CONFIG_NOT_FOUND,
       category: ErrorCategory.CONFIGURATION,
     });
     expect(configError.toUserMessage()).toContain('Configuration error');
 
-    const networkError = new GrappleError({
+    const networkError = new CarabinerError({
       message: 'Connection failed',
       code: ErrorCode.CONNECTION_REFUSED,
       category: ErrorCategory.NETWORK,
     });
     expect(networkError.toUserMessage()).toContain('Network error');
 
-    const errorWithCustomMessage = new GrappleError({
+    const errorWithCustomMessage = new CarabinerError({
       message: 'Technical error',
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
@@ -112,7 +112,7 @@ describe('GrappleError', () => {
   });
 
   test('should generate detailed log messages', () => {
-    const error = new GrappleError({
+    const error = new CarabinerError({
       message: 'Test error',
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
@@ -122,7 +122,7 @@ describe('GrappleError', () => {
     });
 
     const logMessage = error.toLogMessage();
-    expect(logMessage).toContain('Error: GrappleError');
+    expect(logMessage).toContain('Error: CarabinerError');
     expect(logMessage).toContain('Message: Test error');
     expect(logMessage).toContain('Code: 1103');
     expect(logMessage).toContain('Category: runtime');
@@ -132,14 +132,14 @@ describe('GrappleError', () => {
   });
 
   test('should create error reports', () => {
-    const error = new GrappleError({
+    const error = new CarabinerError({
       message: 'Test error',
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
     });
 
     const report = error.toReport();
-    expect(report.error.name).toBe('GrappleError');
+    expect(report.error.name).toBe('CarabinerError');
     expect(report.error.message).toBe('Test error');
     expect(report.error.code).toBe(ErrorCode.RUNTIME_EXCEPTION);
     expect(report.error.category).toBe(ErrorCategory.RUNTIME);
@@ -150,14 +150,14 @@ describe('GrappleError', () => {
   });
 
   test('should determine retryability correctly', () => {
-    const retryableError = new GrappleError({
+    const retryableError = new CarabinerError({
       message: 'Timeout',
       code: ErrorCode.OPERATION_TIMEOUT,
       category: ErrorCategory.TIMEOUT,
     });
     expect(retryableError.isRetryable()).toBe(true);
 
-    const nonRetryableError = new GrappleError({
+    const nonRetryableError = new CarabinerError({
       message: 'Security violation',
       code: ErrorCode.SECURITY_VIOLATION,
       category: ErrorCategory.SECURITY,
@@ -216,32 +216,32 @@ describe('Factory Functions', () => {
     const enoentError = new Error('File not found') as NodeJS.ErrnoException;
     enoentError.code = 'ENOENT';
 
-    const grappleError = fromSystemError(enoentError, 'file-operation');
-    expect(grappleError).toBeInstanceOf(FileSystemError);
-    expect(grappleError.code).toBe(ErrorCode.FILE_NOT_FOUND);
-    expect(grappleError.context.operation).toBe('file-operation');
+    const carabinerError = fromSystemError(enoentError, 'file-operation');
+    expect(carabinerError).toBeInstanceOf(FileSystemError);
+    expect(carabinerError.code).toBe(ErrorCode.FILE_NOT_FOUND);
+    expect(carabinerError.context.operation).toBe('file-operation');
   });
 
   test('should create network errors from connection errors', () => {
     const connError = new Error('Connection refused') as NodeJS.ErrnoException;
     connError.code = 'ECONNREFUSED';
 
-    const grappleError = fromSystemError(connError);
-    expect(grappleError).toBeInstanceOf(NetworkError);
-    expect(grappleError.code).toBe(ErrorCode.CONNECTION_REFUSED);
+    const carabinerError = fromSystemError(connError);
+    expect(carabinerError).toBeInstanceOf(NetworkError);
+    expect(carabinerError.code).toBe(ErrorCode.CONNECTION_REFUSED);
   });
 
   test('should create appropriate errors from generic errors', () => {
     const genericError = new Error('Something went wrong');
-    const grappleError = fromError(genericError, 'test-operation');
+    const carabinerError = fromError(genericError, 'test-operation');
 
-    expect(grappleError).toBeInstanceOf(RuntimeError);
-    expect(grappleError.cause).toBe(genericError);
-    expect(grappleError.context.operation).toBe('test-operation');
+    expect(carabinerError).toBeInstanceOf(RuntimeError);
+    expect(carabinerError.cause).toBe(genericError);
+    expect(carabinerError.context.operation).toBe('test-operation');
   });
 
-  test('should return existing GrappleError unchanged', () => {
-    const originalError = new GrappleError({
+  test('should return existing CarabinerError unchanged', () => {
+    const originalError = new CarabinerError({
       message: 'Original error',
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
@@ -274,7 +274,7 @@ describe('Error Inheritance and Polymorphism', () => {
   test('should maintain proper inheritance chain', () => {
     const configError = new ConfigurationError('Config error');
 
-    expect(configError instanceof GrappleError).toBe(true);
+    expect(configError instanceof CarabinerError).toBe(true);
     expect(configError instanceof Error).toBe(true);
     expect(configError instanceof ConfigurationError).toBe(true);
   });
@@ -295,14 +295,14 @@ describe('Error Inheritance and Polymorphism', () => {
   });
 
   test('should capture stack traces correctly', () => {
-    const error = new GrappleError({
+    const error = new CarabinerError({
       message: 'Test error',
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
     });
 
     expect(error.stack).toBeDefined();
-    expect(error.stack).toContain('GrappleError');
+    expect(error.stack).toContain('CarabinerError');
     expect(error.context.stackTrace).toBeDefined();
   });
 });

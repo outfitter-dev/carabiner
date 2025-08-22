@@ -1,4 +1,4 @@
-# Grapple (Carabiner) - Claude Code Hooks TypeScript Library
+# Carabiner - Claude Code Hooks TypeScript Library
 
 A comprehensive, production-ready TypeScript monorepo for building type-safe, maintainable Claude Code hooks with modern development practices and enterprise-grade tooling.
 

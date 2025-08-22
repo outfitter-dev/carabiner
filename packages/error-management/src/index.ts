@@ -1,22 +1,22 @@
 /**
  * Error Management System
  *
- * Production-ready error handling for the Grapple monorepo
+ * Production-ready error handling for the Carabiner monorepo
  *
  * @example Basic usage:
  * ```typescript
- * import { GrappleError, ErrorCode, ErrorCategory, reportError } from '@outfitter/error-management';
+ * import { CarabinerError, ErrorCode, ErrorCategory, reportError } from '@outfitter/error-management';
  *
  * try {
  *   // Some operation
  * } catch (error) {
- *   const grappleError = new GrappleError(
+ *   const carabinerError = new CarabinerError(
  *     'Operation failed',
  *     ErrorCode.RUNTIME_EXCEPTION,
  *     ErrorCategory.RUNTIME
  *   );
- *   await reportError(grappleError);
- *   throw grappleError;
+ *   await reportError(carabinerError);
+ *   throw carabinerError;
  * }
  * ```
  *
@@ -63,7 +63,7 @@ export {
   fromError,
   fromMessage,
   fromSystemError,
-  GrappleError,
+  CarabinerError,
   NetworkError,
   ResourceError,
   RuntimeError,
@@ -100,7 +100,7 @@ export type {
   ErrorReport,
   ErrorReportingConfig,
   HealthStatus,
-  IGrappleError,
+  ICarabinerError,
   RecoveryStrategy,
 } from './types.js';
 // Export enums and constants

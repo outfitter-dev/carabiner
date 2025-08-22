@@ -113,5 +113,5 @@ export const PACKAGE_INFO = {
   name: '@outfitter/execution',
   version: VERSION,
   description: 'Simplified execution engine for Claude Code hooks',
-  repository: 'https://github.com/outfitter-dev/grapple',
+  repository: 'https://github.com/outfitter-dev/carabiner',
 } as const;

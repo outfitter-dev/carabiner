@@ -5,8 +5,8 @@
  * and fault isolation in production environments
  */
 
-import { fromError, GrappleError } from './errors.js';
-import type { HealthStatus, IGrappleError } from './types.js';
+import { fromError, CarabinerError } from './errors.js';
+import type { HealthStatus, ICarabinerError } from './types.js';
 import {
   ErrorCategory as Category,
   ErrorCode as Code,
@@ -26,7 +26,7 @@ export type ErrorBoundaryConfig = {
   /** Recovery timeout (ms) */
   recoveryTimeout: number;
   /** Custom error handler */
-  onError?: (error: IGrappleError, context: ErrorBoundaryContext) => void;
+  onError?: (error: ICarabinerError, context: ErrorBoundaryContext) => void;
   /** Custom fallback provider */
   fallbackProvider?: (context: ErrorBoundaryContext) => unknown;
   /** Health check function */
@@ -79,7 +79,7 @@ const DEFAULT_BOUNDARY_CONFIG: ErrorBoundaryConfig = {
 export class ErrorBoundary {
   private readonly config: ErrorBoundaryConfig;
   private readonly context: ErrorBoundaryContext;
-  private readonly errors: Array<{ error: IGrappleError; timestamp: Date }> =
+  private readonly errors: Array<{ error: ICarabinerError; timestamp: Date }> =
     [];
   private recoveryTimer?: NodeJS.Timeout;
 
@@ -116,13 +116,13 @@ export class ErrorBoundary {
       this.onSuccess();
       return result;
     } catch (error) {
-      const grappleError = fromError(
+      const carabinerError = fromError(
         error instanceof Error ? error : new Error(String(error)),
         operationName
       );
 
-      this.onError(grappleError);
-      throw grappleError;
+      this.onError(carabinerError);
+      throw carabinerError;
     }
   }
 
@@ -141,7 +141,7 @@ export class ErrorBoundary {
     }
 
     // No fallback available, throw error
-    throw new GrappleError({
+    throw new CarabinerError({
       message: `Error boundary '${this.context.name}' is in failed state`,
       code: Code.RUNTIME_EXCEPTION,
       category: Category.RUNTIME,
@@ -168,7 +168,7 @@ export class ErrorBoundary {
   /**
    * Handle error occurrence
    */
-  private onError(error: IGrappleError): void {
+  private onError(error: ICarabinerError): void {
     const now = new Date();
 
     // Add error to history

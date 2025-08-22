@@ -1,10 +1,10 @@
-# Greenfield Refactoring Plan: @outfitter/grapple
+# Greenfield Refactoring Plan: @outfitter/carabiner
 
 **Date:** 2025-01-11 **Author:** Claude Code **Status:** In Progress **Timeline:** 8-11 weeks total
 
 ## Executive Summary
 
-This document outlines a comprehensive refactoring of the @outfitter/grapple Claude Code hooks system, leveraging the freedom of having no existing users to implement breaking changes that will significantly improve developer experience, type safety, and maintainability.
+This document outlines a comprehensive refactoring of the @outfitter/carabiner Claude Code hooks system, leveraging the freedom of having no existing users to implement breaking changes that will significantly improve developer experience, type safety, and maintainability.
 
 ## Current State Analysis
 
@@ -44,15 +44,15 @@ This document outlines a comprehensive refactoring of the @outfitter/grapple Cla
 ````text
 
 packages/
-├── @grapple/types          # Core type definitions (branded types, domains)
-├── @grapple/schemas         # Zod validation schemas
-├── @grapple/protocol        # I/O abstraction layer
-├── @grapple/context         # Context creation and management
-├── @grapple/execution       # Hook execution engine
-├── @grapple/registry        # Hook registration and discovery
-├── @grapple/testing         # Testing utilities
-├── @grapple/cli            # CLI tools
-└── @grapple/examples       # Example implementations
+├── @carabiner/types          # Core type definitions (branded types, domains)
+├── @carabiner/schemas         # Zod validation schemas
+├── @carabiner/protocol        # I/O abstraction layer
+├── @carabiner/context         # Context creation and management
+├── @carabiner/execution       # Hook execution engine
+├── @carabiner/registry        # Hook registration and discovery
+├── @carabiner/testing         # Testing utilities
+├── @carabiner/cli            # CLI tools
+└── @carabiner/examples       # Example implementations
 
 ```text
 
@@ -69,7 +69,7 @@ packages/
 
 #### Deliverables
 
-**1.1 Create @grapple/types Package**
+**1.1 Create @carabiner/types Package**
 
 ```typescript
 // packages/types/src/brands.ts
@@ -104,12 +104,12 @@ export function createCommandString(value: string): CommandString {
 
 ```text
 
-**1.2 Create @grapple/schemas Package**
+**1.2 Create @carabiner/schemas Package**
 
 ```typescript
 // packages/schemas/src/tool-inputs.ts
 import { z } from 'zod';
-import { createCommandString, createFilePath } from '@grapple/types';
+import { createCommandString, createFilePath } from '@carabiner/types';
 
 export const BashInputSchema = z
   .object({
@@ -148,7 +148,7 @@ export type EditInput = z.infer<typeof EditInputSchema>;
 ```typescript
 // packages/types/src/contexts.ts
 import type { SessionId, FilePath, CommandString } from './brands';
-import type { BashInput, WriteInput, EditInput } from '@grapple/schemas';
+import type { BashInput, WriteInput, EditInput } from '@carabiner/schemas';
 
 interface BaseContext {
   sessionId: SessionId;
@@ -238,11 +238,11 @@ describe('Brand Types', () => {
 
 #### Deliverables
 
-**2.1 Create @grapple/protocol Package**
+**2.1 Create @carabiner/protocol Package**
 
 ```typescript
 // packages/protocol/src/interface.ts
-import type { HookContext, HookResult } from '@grapple/types';
+import type { HookContext, HookResult } from '@carabiner/types';
 
 export interface HookProtocol {
   readInput(): Promise<unknown>;
@@ -353,12 +353,12 @@ export class TestProtocol implements HookProtocol {
 
 #### Deliverables
 
-**3.1 Create @grapple/execution Package**
+**3.1 Create @carabiner/execution Package**
 
 ```typescript
 // packages/execution/src/executor.ts
-import type { HookProtocol } from '@grapple/protocol';
-import type { HookHandler, HookContext, HookResult } from '@grapple/types';
+import type { HookProtocol } from '@carabiner/protocol';
+import type { HookHandler, HookContext, HookResult } from '@carabiner/types';
 
 export class HookExecutor {
   constructor(private protocol: HookProtocol) {}
@@ -422,7 +422,7 @@ export function createRunner(handler: HookHandler) {
 
 ```typescript
 // packages/registry/src/plugin.ts
-import type { HookContext, HookResult } from '@grapple/types';
+import type { HookContext, HookResult } from '@carabiner/types';
 
 export interface HookPlugin {
   name: string;
@@ -470,7 +470,7 @@ export class PluginRegistry {
 
 ```typescript
 // packages/examples/src/plugins/git-safety.ts
-import type { HookPlugin, BashPreToolUseContext } from '@grapple/types';
+import type { HookPlugin, BashPreToolUseContext } from '@carabiner/types';
 
 export const gitSafetyPlugin: HookPlugin = {
   name: 'git-safety',
@@ -694,7 +694,7 @@ export const myHook: HookHandler<'PreToolUse', 'Bash'> = async (
 };
 
 // After: Simple, focused plugins
-import type { HookPlugin, BashPreToolUseContext } from '@grapple/types';
+import type { HookPlugin, BashPreToolUseContext } from '@carabiner/types';
 
 export const myPlugin: HookPlugin = {
   name: 'my-plugin',
@@ -763,8 +763,8 @@ gantt
 
 1. **Immediate** (Today)
 
-   - Create `@grapple/types` package with branded types
-   - Create `@grapple/schemas` package with Zod schemas
+   - Create `@carabiner/types` package with branded types
+   - Create `@carabiner/schemas` package with Zod schemas
    - Write initial unit tests
 
 1. **Week 1**
@@ -784,8 +784,8 @@ gantt
 
 ```typescript
 // my-git-hook.ts
-import type { HookPlugin } from '@grapple/types';
-import { BashInputSchema } from '@grapple/schemas';
+import type { HookPlugin } from '@carabiner/types';
+import { BashInputSchema } from '@carabiner/schemas';
 
 export default {
   name: 'git-safety',
@@ -821,7 +821,7 @@ export default {
 ```typescript
 import { describe, expect, test } from 'bun:test';
 import gitSafetyPlugin from './my-git-hook';
-import { createMockContext } from '@grapple/testing';
+import { createMockContext } from '@carabiner/testing';
 
 describe('Git Safety Plugin', () => {
   test('should block force push', async () => {
@@ -841,5 +841,5 @@ describe('Git Safety Plugin', () => {
 
 ---
 
-This plan provides a clear path forward for transforming the @outfitter/grapple hooks system into a simpler, more maintainable, and more developer-friendly architecture.
+This plan provides a clear path forward for transforming the @outfitter/carabiner hooks system into a simpler, more maintainable, and more developer-friendly architecture.
 ````

@@ -1,12 +1,12 @@
-# Grapple Documentation
+# Carabiner Documentation
 
-Welcome to the comprehensive documentation for Grapple, the production-ready TypeScript library for building Claude Code hooks. This documentation provides everything you need to build robust, type-safe, and maintainable hooks.
+Welcome to the comprehensive documentation for Carabiner, the production-ready TypeScript library for building Claude Code hooks. This documentation provides everything you need to build robust, type-safe, and maintainable hooks.
 
 ## 📚 Documentation Structure
 
 ### 🚀 Getting Started
 
-**New to Grapple? Start here.**
+**New to Carabiner? Start here.**
 
 - **[Getting Started Guide](getting-started.md)** - Install, create your first hook, and understand the basics
 - **[CLI Reference](cli-reference.md)** - Master the command-line tools with examples

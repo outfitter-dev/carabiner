@@ -2,7 +2,7 @@
  * Examples of how to use the production logging system
  *
  * These examples demonstrate enterprise-grade logging practices
- * for different components in the Grapple monorepo.
+ * for different components in the Carabiner monorepo.
  */
 
 import {

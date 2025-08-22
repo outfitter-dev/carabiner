@@ -12,7 +12,7 @@ import type {
   ErrorContext,
   ErrorReport,
   ErrorSeverity,
-  IGrappleError,
+  ICarabinerError,
 } from './types.js';
 import {
   ErrorCategory as Category,
@@ -21,9 +21,9 @@ import {
 } from './types.js';
 
 /**
- * Base error class for all Grapple errors
+ * Base error class for all Carabiner errors
  */
-export class GrappleError extends Error implements IGrappleError {
+export class CarabinerError extends Error implements ICarabinerError {
   override readonly name: string;
   readonly code: ErrorCode;
   readonly category: ErrorCategory;
@@ -234,12 +234,12 @@ export class GrappleError extends Error implements IGrappleError {
 /**
  * Configuration-related errors
  */
-export class ConfigurationError extends GrappleError {
+export class ConfigurationError extends CarabinerError {
   constructor(
     message: string,
     code: ErrorCode = Code.CONFIG_INVALID,
     options: Omit<
-      ConstructorParameters<typeof GrappleError>[0],
+      ConstructorParameters<typeof CarabinerError>[0],
       'message' | 'code' | 'category' | 'severity'
     > = {}
   ) {
@@ -256,12 +256,12 @@ export class ConfigurationError extends GrappleError {
 /**
  * Runtime execution errors
  */
-export class RuntimeError extends GrappleError {
+export class RuntimeError extends CarabinerError {
   constructor(
     message: string,
     code: ErrorCode = Code.RUNTIME_EXCEPTION,
     options: Omit<
-      ConstructorParameters<typeof GrappleError>[0],
+      ConstructorParameters<typeof CarabinerError>[0],
       'message' | 'code' | 'category' | 'severity'
     > = {}
   ) {
@@ -278,12 +278,12 @@ export class RuntimeError extends GrappleError {
 /**
  * Validation errors
  */
-export class ValidationError extends GrappleError {
+export class ValidationError extends CarabinerError {
   constructor(
     message: string,
     code: ErrorCode = Code.INVALID_INPUT,
     options: Omit<
-      ConstructorParameters<typeof GrappleError>[0],
+      ConstructorParameters<typeof CarabinerError>[0],
       'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
     > = {}
   ) {
@@ -301,12 +301,12 @@ export class ValidationError extends GrappleError {
 /**
  * File system operation errors
  */
-export class FileSystemError extends GrappleError {
+export class FileSystemError extends CarabinerError {
   constructor(
     message: string,
     code: ErrorCode = Code.FILE_NOT_FOUND,
     options: Omit<
-      ConstructorParameters<typeof GrappleError>[0],
+      ConstructorParameters<typeof CarabinerError>[0],
       'message' | 'code' | 'category' | 'severity'
     > = {}
   ) {
@@ -323,12 +323,12 @@ export class FileSystemError extends GrappleError {
 /**
  * Network and connectivity errors
  */
-export class NetworkError extends GrappleError {
+export class NetworkError extends CarabinerError {
   constructor(
     message: string,
     code: ErrorCode = Code.CONNECTION_REFUSED,
     options: Omit<
-      ConstructorParameters<typeof GrappleError>[0],
+      ConstructorParameters<typeof CarabinerError>[0],
       'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
     > = {}
   ) {
@@ -346,12 +346,12 @@ export class NetworkError extends GrappleError {
 /**
  * Security violation errors
  */
-export class SecurityError extends GrappleError {
+export class SecurityError extends CarabinerError {
   constructor(
     message: string,
     code: ErrorCode = Code.SECURITY_VIOLATION,
     options: Omit<
-      ConstructorParameters<typeof GrappleError>[0],
+      ConstructorParameters<typeof CarabinerError>[0],
       | 'message'
       | 'code'
       | 'category'
@@ -375,12 +375,12 @@ export class SecurityError extends GrappleError {
 /**
  * User input and command errors
  */
-export class UserInputError extends GrappleError {
+export class UserInputError extends CarabinerError {
   constructor(
     message: string,
     code: ErrorCode = Code.INVALID_COMMAND,
     options: Omit<
-      ConstructorParameters<typeof GrappleError>[0],
+      ConstructorParameters<typeof CarabinerError>[0],
       'message' | 'code' | 'category' | 'severity'
     > = {}
   ) {
@@ -397,12 +397,12 @@ export class UserInputError extends GrappleError {
 /**
  * Resource exhaustion errors
  */
-export class ResourceError extends GrappleError {
+export class ResourceError extends CarabinerError {
   constructor(
     message: string,
     code: ErrorCode = Code.RESOURCE_UNAVAILABLE,
     options: Omit<
-      ConstructorParameters<typeof GrappleError>[0],
+      ConstructorParameters<typeof CarabinerError>[0],
       'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
     > = {}
   ) {
@@ -420,12 +420,12 @@ export class ResourceError extends GrappleError {
 /**
  * Authentication and authorization errors
  */
-export class AuthError extends GrappleError {
+export class AuthError extends CarabinerError {
   constructor(
     message: string,
     code: ErrorCode = Code.AUTHENTICATION_FAILED,
     options: Omit<
-      ConstructorParameters<typeof GrappleError>[0],
+      ConstructorParameters<typeof CarabinerError>[0],
       | 'message'
       | 'code'
       | 'category'
@@ -449,12 +449,12 @@ export class AuthError extends GrappleError {
 /**
  * Timeout and performance errors
  */
-export class TimeoutError extends GrappleError {
+export class TimeoutError extends CarabinerError {
   constructor(
     message: string,
     code: ErrorCode = Code.OPERATION_TIMEOUT,
     options: Omit<
-      ConstructorParameters<typeof GrappleError>[0],
+      ConstructorParameters<typeof CarabinerError>[0],
       'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
     > = {}
   ) {
@@ -470,84 +470,84 @@ export class TimeoutError extends GrappleError {
 }
 
 /**
- * Create GrappleError from Node.js system error
+ * Create CarabinerError from Node.js system error
  */
 export function fromSystemError(
   error: NodeJS.ErrnoException,
   operation?: string
-): GrappleError {
+): CarabinerError {
   const code = error.code;
-  let grappleError: GrappleError;
+  let carabinerError: CarabinerError;
 
   switch (code) {
     case 'ENOENT':
-      grappleError = new FileSystemError(error.message, Code.FILE_NOT_FOUND, {
+      carabinerError = new FileSystemError(error.message, Code.FILE_NOT_FOUND, {
         cause: error,
         operation,
       });
       break;
     case 'EACCES':
     case 'EPERM':
-      grappleError = new FileSystemError(
+      carabinerError = new FileSystemError(
         error.message,
         Code.PERMISSION_DENIED,
         { cause: error, operation }
       );
       break;
     case 'ENOSPC':
-      grappleError = new FileSystemError(error.message, Code.DISK_FULL, {
+      carabinerError = new FileSystemError(error.message, Code.DISK_FULL, {
         cause: error,
         operation,
       });
       break;
     case 'EMFILE':
     case 'ENFILE':
-      grappleError = new ResourceError(
+      carabinerError = new ResourceError(
         error.message,
         Code.TOO_MANY_OPEN_FILES,
         { cause: error, operation }
       );
       break;
     case 'ECONNREFUSED':
-      grappleError = new NetworkError(error.message, Code.CONNECTION_REFUSED, {
+      carabinerError = new NetworkError(error.message, Code.CONNECTION_REFUSED, {
         cause: error,
         operation,
       });
       break;
     case 'ETIMEDOUT':
-      grappleError = new TimeoutError(error.message, Code.CONNECTION_TIMEOUT, {
+      carabinerError = new TimeoutError(error.message, Code.CONNECTION_TIMEOUT, {
         cause: error,
         operation,
       });
       break;
     case 'ENOTFOUND':
-      grappleError = new NetworkError(error.message, Code.HOST_NOT_FOUND, {
+      carabinerError = new NetworkError(error.message, Code.HOST_NOT_FOUND, {
         cause: error,
         operation,
       });
       break;
     case 'ECONNRESET':
-      grappleError = new NetworkError(error.message, Code.CONNECTION_RESET, {
+      carabinerError = new NetworkError(error.message, Code.CONNECTION_RESET, {
         cause: error,
         operation,
       });
       break;
     default:
-      grappleError = new RuntimeError(error.message, Code.INTERNAL_ERROR, {
+      carabinerError = new RuntimeError(error.message, Code.INTERNAL_ERROR, {
         cause: error,
         operation,
       });
       break;
   }
 
-  return grappleError;
+  return carabinerError;
 }
 
 /**
- * Create GrappleError from generic Error
+ * Create CarabinerError from generic Error
  */
-export function fromError(error: Error, operation?: string): GrappleError {
-  if (error instanceof GrappleError) {
+export function fromError(error: Error, operation?: string): CarabinerError {
+  if (error instanceof CarabinerError) {
     return error;
   }
 
@@ -566,7 +566,7 @@ export function fromError(error: Error, operation?: string): GrappleError {
 /**
  * Create appropriate error based on error message patterns
  */
-export function fromMessage(message: string, operation?: string): GrappleError {
+export function fromMessage(message: string, operation?: string): CarabinerError {
   const lowerMessage = message.toLowerCase();
 
   if (lowerMessage.includes('timeout') || lowerMessage.includes('timed out')) {

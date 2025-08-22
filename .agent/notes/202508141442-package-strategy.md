@@ -23,7 +23,7 @@
 - `@rulesets/parser` - Rule parsing
 - `@rulesets/types` - Rule type definitions
 
-**Carabiner** (`~/Developer/outfitter/grapple` → `@outfitter/carabiner`)
+**Carabiner** (`~/Developer/outfitter/carabiner` → `@outfitter/carabiner`)
 
 - `@outfitter/hooks-core` - Hook execution engine
 - `@outfitter/hooks-validators` - Input validation

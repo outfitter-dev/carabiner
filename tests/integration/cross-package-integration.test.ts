@@ -25,7 +25,7 @@ class TestWorkspace {
   public readonly path: string;
 
   constructor() {
-    this.path = mkdtempSync(join(tmpdir(), 'grapple-integration-'));
+    this.path = mkdtempSync(join(tmpdir(), 'carabiner-integration-'));
   }
 
   /**

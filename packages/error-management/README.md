@@ -1,6 +1,6 @@
 # @outfitter/error-management
 
-Production-ready error handling system for the Grapple monorepo.
+Production-ready error handling system for the Carabiner monorepo.
 
 ## Features
 
@@ -14,7 +14,7 @@ Production-ready error handling system for the Grapple monorepo.
 
 ```typescript
 import {
-  GrappleError,
+  CarabinerError,
   ErrorCode,
   ErrorCategory,
   reportError,
@@ -26,7 +26,7 @@ setupProductionErrorHandling();
 
 // Use typed errors
 try {
-  throw new GrappleError(
+  throw new CarabinerError(
     'Something went wrong',
     ErrorCode.RUNTIME_EXCEPTION,
     ErrorCategory.RUNTIME,

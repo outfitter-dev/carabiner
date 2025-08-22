@@ -47,7 +47,7 @@ class ProductionEnvironment {
   private processes: ChildProcess[] = [];
 
   constructor() {
-    this.tempDir = mkdtempSync(join(tmpdir(), 'grapple-prod-test-'));
+    this.tempDir = mkdtempSync(join(tmpdir(), 'carabiner-prod-test-'));
   }
 
   /**

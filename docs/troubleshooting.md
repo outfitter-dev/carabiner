@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-This guide helps you diagnose and resolve common issues when working with Grapple hooks.
+This guide helps you diagnose and resolve common issues when working with Carabiner hooks.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ This guide helps you diagnose and resolve common issues when working with Grappl
 
 ## Quick Diagnostics
 
-Start here for a quick health check of your Grapple setup:
+Start here for a quick health check of your Carabiner setup:
 
 ### Basic Health Check
 

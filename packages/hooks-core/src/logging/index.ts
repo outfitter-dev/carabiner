@@ -1,5 +1,5 @@
 /**
- * Production-ready logging system for Grapple monorepo
+ * Production-ready logging system for Carabiner monorepo
  *
  * Provides enterprise-grade structured JSON logging with:
  * - Environment-based configuration (DEV vs PROD)

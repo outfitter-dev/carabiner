@@ -1,6 +1,6 @@
 # API Reference
 
-Complete API documentation for all Grapple packages with types, examples, and usage patterns.
+Complete API documentation for all Carabiner packages with types, examples, and usage patterns.
 
 ## Table of Contents
 
@@ -589,7 +589,7 @@ Configuration management and template system.
 
 #### Configuration API
 
-##### `defineConfig(config: GrappleConfig): GrappleConfig`
+##### `defineConfig(config: CarabinerConfig): CarabinerConfig`
 
 Define comprehensive hook configuration.
 

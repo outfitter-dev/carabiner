@@ -1,6 +1,6 @@
 # Configuration Guide
 
-This guide covers all configuration options for Grapple hooks, from basic Claude Code settings to advanced environment-specific configurations.
+This guide covers all configuration options for Carabiner hooks, from basic Claude Code settings to advanced environment-specific configurations.
 
 ## Table of Contents
 
@@ -533,7 +533,7 @@ export default defineConfig({
 ### Complete Configuration Schema
 
 ```typescript
-interface GrappleConfig {
+interface CarabinerConfig {
   // Global settings
   runtime?: 'bun' | 'node' | 'deno';
   typescript?: boolean;
@@ -551,7 +551,7 @@ interface GrappleConfig {
 
   // Environment-specific overrides
   environments?: {
-    [env: string]: Partial<GrappleConfig>;
+    [env: string]: Partial<CarabinerConfig>;
   };
 
   // Template configuration
@@ -949,7 +949,7 @@ environments: {
 
 ---
 
-**Configure Grapple hooks for optimal development experience!** ⚙️
+**Configure Carabiner hooks for optimal development experience!** ⚙️
 
 Next steps:
 

@@ -230,7 +230,7 @@ jobs:
                   if (!obj) return;
                   for (const k of Object.keys(obj)) {
                     // Update local workspace deps (adjust the predicate to your scopes/names)
-                    if (/^@grapple\//.test(k) || /^@outfitter\//.test(k)) {
+                    if (/^@carabiner\//.test(k) || /^@outfitter\//.test(k)) {
                       obj[k] = '$new_version';
                     }
                   }
