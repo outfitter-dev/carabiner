@@ -70,7 +70,7 @@ Recommended template body:
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults, type HookContext } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults, type HookContext } from '@outfitter/hooks-core';
 
 async function handler(ctx: HookContext) {
   // Example: simple Bash guard
@@ -144,7 +144,7 @@ const protocol = createProtocol('test', {
 
 ```ts
 // scripts/smoke-import.ts
-import * as core from '@claude-code/hooks-core';
+import * as core from '@outfitter/hooks-core';
 console.log('hooks-core VERSION', core.VERSION);
 ```
 
@@ -156,7 +156,7 @@ console.log('hooks-core VERSION', core.VERSION);
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
 
 await runClaudeHook(
   async (ctx) => {
@@ -175,7 +175,7 @@ await runClaudeHook(
 ## Example: Config Manager → Claude settings
 
 ```ts
-import { ConfigManager } from '@claude-code/hooks-config';
+import { ConfigManager } from '@outfitter/hooks-config';
 const cm = new ConfigManager(process.cwd());
 const config = await cm.load();
 const settings = cm.generateClaudeSettings();

@@ -685,7 +685,7 @@ const hook = createHook('PreToolUse', {
 
 ```typescript
 // Before: Complex types and ceremony
-import type { HookContext, HookHandler } from '@claude-code/hooks-core';
+import type { HookContext, HookHandler } from '@outfitter/hooks-core';
 
 export const myHook: HookHandler<'PreToolUse', 'Bash'> = async (
   context: HookContext<'PreToolUse', 'Bash'>,

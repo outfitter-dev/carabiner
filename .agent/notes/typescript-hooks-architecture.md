@@ -91,7 +91,7 @@ Each hook is a standalone TypeScript file that can be executed by Bun:
 
 #!/usr/bin/env bun
 
-import { parseContext, respond } from '@claude-code/hooks-runtime';
+import { parseContext, respond } from '@outfitter/hooks-runtime';
 import { z } from 'zod';
 
 // Runtime helper parses stdin
