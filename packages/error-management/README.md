@@ -26,11 +26,11 @@ setupProductionErrorHandling();
 
 // Use typed errors
 try {
-  throw new CarabinerError(
-    'Something went wrong',
-    ErrorCode.RUNTIME_EXCEPTION,
-    ErrorCategory.RUNTIME,
-  );
+  throw new CarabinerError({
+    message: 'Failed to initialize database connection: Connection timeout after 30s',
+    code: ErrorCode.RUNTIME_EXCEPTION,
+    category: ErrorCategory.RUNTIME,
+  });
 } catch (error) {
   await reportError(error);
   throw error;
