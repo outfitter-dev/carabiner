@@ -137,7 +137,7 @@ test('should process user', () => {
 ```typescript
 import { mock } from 'bun:test';
 
-test('should call external service', () => {
+test('should call external service', async () => {
   const mockFetch = mock(() => Promise.resolve({ data: 'test' }));
 
   const service = new MyService({ fetch: mockFetch });

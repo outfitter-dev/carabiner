@@ -10,7 +10,7 @@
 
 ## Package Architecture
 
-### 1. `@carabiner/types` - Core Type System
+### 1. `@outfitter/types` - Core Type System
 
 ```typescript
 // Branded types for type safety
@@ -56,11 +56,11 @@ export interface HookContext<T extends HookEvent> {
 }
 ```
 
-### 2. `@carabiner/schemas` - Zod Validation
+### 2. `@outfitter/schemas` - Zod Validation
 
 ```typescript
 import { z } from 'zod';
-import type { SessionId, FilePath, CommandString } from '@carabiner/types';
+import type { SessionId, FilePath, CommandString } from '@outfitter/types';
 
 // Branded type constructors
 const SessionIdSchema = z.string().min(1).brand<'SessionId'>();
@@ -99,7 +99,7 @@ export function validateHookContext<T extends HookEvent>(
 }
 ```
 
-### 3. `@carabiner/protocols` - Protocol Abstraction
+### 3. `@outfitter/protocol` - Protocol Abstraction
 
 ```typescript
 // Protocol interface with phantom types
@@ -126,7 +126,7 @@ export class ProtocolHandler<P extends Protocol<any, any>> {
 }
 ```
 
-### 4. `@carabiner/builders` - Simplified Builder Pattern
+### 4. `@outfitter/builders` - Simplified Builder Pattern
 
 ```typescript
 // Builder with phantom types and state tracking
@@ -253,9 +253,9 @@ interface ValidationResult<TValid extends boolean> {
 
 ## Migration Path
 
-1. **Phase 1**: Introduce `@carabiner/types` with branded types
-2. **Phase 2**: Replace runtime guards with `@carabiner/schemas`
-3. **Phase 3**: Implement `@carabiner/protocols` abstraction
+1. **Phase 1**: Introduce `@outfitter/types` with branded types
+2. **Phase 2**: Replace runtime guards with `@outfitter/schemas`
+3. **Phase 3**: Implement `@outfitter/protocol` abstraction
 4. **Phase 4**: Simplify builders with phantom types
 5. **Phase 5**: Remove all `any`/`unknown` through strict typing
 

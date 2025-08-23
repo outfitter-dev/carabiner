@@ -221,17 +221,23 @@ jobs:
           # Update all package versions
           for pkg in packages/*/package.json apps/*/package.json; do
             if [ -f "$pkg" ]; then
+              # Expose the computed version to Node
+              export NEW_VERSION="$new_version"
               node -e "
                 const fs = require('fs');
                 const p = '$pkg';
                 const data = JSON.parse(fs.readFileSync(p, 'utf8'));
-                data.version = '$new_version';
+                const newVersion = process.env.NEW_VERSION;
+                if (!newVersion) {
+                  throw new Error('NEW_VERSION env var not set');
+                }
+                data.version = newVersion;
                 const bumpDeps = (obj) => {
                   if (!obj) return;
                   for (const k of Object.keys(obj)) {
                     // Update local workspace deps (adjust the predicate to your scopes/names)
                     if (/^@carabiner\//.test(k) || /^@outfitter\//.test(k)) {
-                      obj[k] = '$new_version';
+                      obj[k] = newVersion;
                     }
                   }
                 };
@@ -244,10 +250,15 @@ jobs:
           done
 
           # Update root package.json
+          export NEW_VERSION="$new_version"
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            pkg.version = '$new_version';
+            const newVersion = process.env.NEW_VERSION;
+            if (!newVersion) {
+              throw new Error('NEW_VERSION env var not set');
+            }
+            pkg.version = newVersion;
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
           "
 

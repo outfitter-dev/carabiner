@@ -1,4 +1,4 @@
-# Carabiner v0.1 Comprehensive Transformation Summary
+# Carabiner v0.1.0-beta Comprehensive Transformation Summary
 
 _Complete Enterprise-Grade Transformation: August 15, 2025_
 
@@ -544,7 +544,7 @@ Monorepo status: All targeted packages pass `turbo typecheck`. Hooks-config uses
 
 ### **Release Confidence Level**
 
-**MAXIMUM CONFIDENCE** - The Carabiner v0.1 release now represents a best-in-class, production-ready platform that exceeds enterprise standards across all dimensions.
+**MAXIMUM CONFIDENCE** - The Carabiner v0.1.0-beta release now represents a best-in-class, production-ready platform that exceeds enterprise standards across all dimensions.
 
 ### **Ready for Production Deployment**
 

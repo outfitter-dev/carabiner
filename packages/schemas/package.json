@@ -43,6 +43,11 @@
   ],
   "author": "Matt Galligan <matt@outfitter.dev>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/outfitter-dev/carabiner.git",
+    "directory": "packages/schemas"
+  },
   "dependencies": {
     "@outfitter/types": "workspace:*",
     "zod": "^3.24.1"

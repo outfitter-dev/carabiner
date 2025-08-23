@@ -271,11 +271,13 @@ export default async function auditLogger(context: HookContext): Promise<HookRes
 }
 
 function hashUserId(userId: string): string {
-  // Simple hash for demo - use proper crypto in production
-  return userId.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0).toString(16);
+  // Simple, non-bitwise hash for demo — use proper crypto in production
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = Math.imul(31, hash) + userId.charCodeAt(i); // fast multiply-add
+    hash %= 2_147_483_647; // keep in 32-bit positive range without bitwise ops
+  }
+  return hash.toString(16);
 }
 
 function hashInput(input: any): string {
@@ -424,8 +426,7 @@ console.log(JSON.stringify({
       }
     });
 
-    // biome-ignore lint/suspicious/useAwait: Test structure requires async
-    test('should handle cross-platform compatibility', async () => {
+    test('should handle cross-platform compatibility', () => {
       const platformTests = [
         {
           platform: 'linux',
@@ -505,7 +506,7 @@ console.log(JSON.stringify({
       }).not.toThrow();
     });
 
-    test('should handle log rotation and file management', async () => {
+    test('should handle log rotation and file management', () => {
       const logDir = join(prodEnv.tempDir, 'logs');
       const logFile = join(logDir, 'hooks.log');
 
@@ -562,7 +563,7 @@ console.log(JSON.stringify({
 
       for (const secTest of securityTests) {
         // Simulate security validation
-        const isBlocked = await simulateSecurityCheck(secTest.input, config);
+        const isBlocked = simulateSecurityCheck(secTest.input, config);
 
         if (secTest.shouldBlock) {
           expect(isBlocked).toBe(true);
@@ -595,7 +596,7 @@ console.log(JSON.stringify({
       ];
 
       for (const envTest of environmentTests) {
-        const isAllowed = await simulatePathValidation(envTest.path, config);
+        const isAllowed = simulatePathValidation(envTest.path, config);
 
         if (envTest.shouldAllow) {
           expect(isAllowed).toBe(true);
@@ -649,7 +650,7 @@ console.log(JSON.stringify({
           enableSandbox: true,
           requireSignedHooks: true,
         },
-      } as any;
+      } as unknown as HookConfiguration;
 
       const configPath = join(
         prodEnv.tempDir,
@@ -667,7 +668,7 @@ console.log(JSON.stringify({
       expect(savedConfig.environment.SECURITY_LEVEL).toBe('enterprise');
     });
 
-    test('should handle multi-environment configurations', async () => {
+    test('should handle multi-environment configurations', () => {
       const environments = ['development', 'staging', 'production'];
 
       for (const env of environments) {
@@ -710,25 +711,19 @@ console.log(JSON.stringify({
 
       // Simulate production load
       const concurrent = 20;
-      const promises: Promise<any>[] = [];
+      type ExecutionResult = { id: number; executionTime: number; success: boolean };
+      const promises: Array<Promise<ExecutionResult>> = [];
 
       const startTime = Date.now();
 
       for (let i = 0; i < concurrent; i++) {
-        const promise = new Promise(async (resolve) => {
+        const promise = new Promise<ExecutionResult>((resolve) => {
           // Simulate hook execution
           const executionStart = Date.now();
-
-          // Simulate work that would happen in production
-          await new Promise((r) => setTimeout(r, Math.random() * 50));
-
-          const executionTime = Date.now() - executionStart;
-
-          resolve({
-            id: i,
-            executionTime,
-            success: true,
-          });
+          setTimeout(() => {
+            const executionTime = Date.now() - executionStart;
+            resolve({ id: i, executionTime, success: true });
+          }, Math.random() * 50);
         });
 
         promises.push(promise);
@@ -742,8 +737,7 @@ console.log(JSON.stringify({
 
       // Check individual execution times
       // biome-ignore lint/complexity/noForEach: Immediate validation of results required
-      // biome-ignore lint/suspicious/noExplicitAny: Dynamic test result validation
-      results.forEach((result: any) => {
+      results.forEach((result: ExecutionResult) => {
         expect(result.success).toBe(true);
         expect(result.executionTime).toBeLessThan(1000); // Each execution < 1s
       });
@@ -753,7 +747,7 @@ console.log(JSON.stringify({
       const initialMemory = process.memoryUsage();
 
       // Simulate production workload
-      const workload = async () => {
+      const workload = () => {
         const data = new Array(10_000).fill(null).map((_, i) => ({
           id: i,
           timestamp: Date.now(),
@@ -773,7 +767,7 @@ console.log(JSON.stringify({
       // Run workload multiple times
       const iterations = 10;
       for (let i = 0; i < iterations; i++) {
-        const result = await workload();
+        const result = workload();
         expect(result).toBe(10_000);
 
         // Check memory usage periodically
@@ -794,32 +788,29 @@ console.log(JSON.stringify({
  * Helper functions for production testing
  */
 
-async function simulateSecurityCheck(
-  input: any,
-  _config: any
-): Promise<boolean> {
+function simulateSecurityCheck(
+  input: Record<string, unknown>,
+  _config: unknown
+): boolean {
   // Simulate the security validation logic
   if (input.handler?.includes('..')) {
     return true; // Blocked
   }
 
-  if (input.command) {
+  if (typeof (input as { command?: string }).command === 'string') {
     const dangerousCommands = ['rm -rf', 'sudo', 'chmod 777', '>/dev/'];
-    return dangerousCommands.some((cmd) => input.command.includes(cmd));
+    return dangerousCommands.some((cmd) =>
+      ((input as { command: string }).command).includes(cmd)
+    );
   }
 
   return false; // Not blocked
 }
 
-// biome-ignore lint/suspicious/useAwait: Async for consistency with other validators
-async function simulatePathValidation(
-  path: string,
-  // biome-ignore lint/suspicious/noExplicitAny: Config requires dynamic validation testing
-  config: any
-): Promise<boolean> {
-  const restrictedPaths = config.security?.restrictedPaths || [];
-
-  return !restrictedPaths.some((restricted: string) =>
-    path.startsWith(restricted)
-  );
+function simulatePathValidation(
+  pathStr: string,
+  config: { security?: { restrictedPaths?: string[] } }
+): boolean {
+  const restrictedPaths = config.security?.restrictedPaths ?? [];
+  return !restrictedPaths.some((restricted) => pathStr.startsWith(restricted));
 }
