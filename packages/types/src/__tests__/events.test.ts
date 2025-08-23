@@ -167,11 +167,11 @@ describe('HookResults builders', () => {
 
   describe('failure', () => {
     test('creates failure result with message', () => {
-      const result = HookResults.failure('Something went wrong');
+      const result = HookResults.failure('Validation failed: Tool parameter "command" contains disallowed characters');
 
       expect(result).toEqual({
         success: false,
-        message: 'Something went wrong',
+        message: 'Validation failed: Tool parameter "command" contains disallowed characters',
         block: false,
         data: undefined,
       });

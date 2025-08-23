@@ -236,14 +236,14 @@ describe('Result Pattern', () => {
     test('fromHookResult should convert failed hook result', () => {
       const hookResult = {
         success: false,
-        message: 'Something went wrong',
+        message: 'Hook validation failed: Invalid tool parameters provided',
         block: true,
       };
       const result = fromHookResult(hookResult);
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.message).toBe('Something went wrong');
+        expect(result.error.message).toBe('Hook validation failed: Invalid tool parameters provided');
       }
     });
 

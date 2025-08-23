@@ -140,16 +140,16 @@ async function fastHook() {
 ```typescript
 // ❌ Always blocks on any error
 if (someCondition) {
-  console.error('Error occurred');
+  console.error('Hook execution failed: Unspecified condition triggered');
   process.exit(1); // Blocks tool execution
 }
 
 // ✅ Only block on critical errors
 if (isCriticalError(error)) {
-  console.error('Critical error:', error);
+  console.error(`Critical security violation: ${error.code} - ${error.message}`, error);
   process.exit(1); // Block tool execution
 } else {
-  console.warn('Warning:', error);
+  console.warn(`Non-critical warning in ${error.context}: ${error.message}`, error);
   process.exit(0); // Continue with warning
 }
 ```

@@ -165,7 +165,7 @@ export class CarabinerError extends Error implements ICarabinerError {
       case Category.USER_INPUT:
         return 'Invalid command or input: Please check the documentation.';
       default:
-        return 'An unexpected error occurred: Please try again or contact support.';
+        return `System error (${this.category}): Operation failed. Please try again or contact support with correlation ID: ${this.context.correlationId}`;
     }
   }
 

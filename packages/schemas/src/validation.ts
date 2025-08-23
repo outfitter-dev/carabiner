@@ -322,7 +322,7 @@ export const ValidationUtils = {
       return [];
     }
     if (!result.error) {
-      return ['Unknown error'];
+      return ['Validation failed: No error details available from validator'];
     }
 
     if (result.error instanceof ValidationError) {
@@ -331,7 +331,7 @@ export const ValidationUtils = {
     if (result.error instanceof BrandValidationError) {
       return [result.error.message];
     }
-    return ['Unknown error'];
+    return ['Validation error: ' + (result.error.message || 'Unable to determine specific validation failure')];
   },
 
   /**

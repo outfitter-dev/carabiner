@@ -232,7 +232,7 @@ describe('Factory Functions', () => {
   });
 
   test('should create appropriate errors from generic errors', () => {
-    const genericError = new Error('Something went wrong');
+    const genericError = new Error('Database query failed: Connection pool exhausted');
     const carabinerError = fromError(genericError, 'test-operation');
 
     expect(carabinerError).toBeInstanceOf(RuntimeError);

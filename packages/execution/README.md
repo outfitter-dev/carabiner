@@ -135,7 +135,7 @@ import { success, failure, isSuccess, mapResult, chainResult } from '@outfitter/
 
 // Create results
 const successResult = success('value');
-const failureResult = failure(new Error('Something went wrong'));
+const failureResult = failure(new Error('Failed to parse configuration: Invalid JSON at line 42'));
 
 // Check results
 if (isSuccess(result)) {

@@ -453,5 +453,5 @@ export function extractErrorMessage(error: unknown): string {
     }
   }
 
-  return 'Unknown error';
+  return 'Error details unavailable: No message could be extracted from the error object';
 }
