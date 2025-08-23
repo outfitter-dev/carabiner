@@ -4,6 +4,7 @@
  */
 
 export type {
+  CarabinerConfig,
   ConfigFormat,
   ConfigOptions,
   ExtendedHookConfiguration,
@@ -18,6 +19,8 @@ export {
   loadConfig,
   saveConfig,
 } from './config';
+// Export configuration utilities
+export { defineConfig } from './define-config';
 
 // Version export (derived from package.json)
 import pkg from '../package.json' with { type: 'json' };

@@ -10,11 +10,11 @@
  * try {
  *   // Some operation
  * } catch (error) {
- *   const carabinerError = new CarabinerError(
- *     'Operation failed',
- *     ErrorCode.RUNTIME_EXCEPTION,
- *     ErrorCategory.RUNTIME
- *   );
+ *   const carabinerError = new CarabinerError({
+ *     message: 'Operation failed',
+ *     code: ErrorCode.RUNTIME_EXCEPTION,
+ *     category: ErrorCategory.RUNTIME,
+ *   });
  *   await reportError(carabinerError);
  *   throw carabinerError;
  * }

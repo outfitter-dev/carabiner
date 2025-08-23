@@ -77,6 +77,16 @@ export interface ExtendedHookConfiguration extends HookConfiguration {
 }
 
 /**
+ * Carabiner configuration type alias for consistency with documentation
+ */
+export type CarabinerConfig = ExtendedHookConfiguration;
+
+/**
+ * Configuration file paths
+ */
+export type CarabinerConfig = ExtendedHookConfiguration;
+
+/**
  * Configuration file paths
  */
 export const CONFIG_PATHS = {
