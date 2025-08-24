@@ -148,12 +148,17 @@ export class ClaudeHooksCli {
     values: CLIValues,
     positionals: string[]
   ): Promise<boolean> {
-    if (values.help && positionals.length === 0) {
-      await this.showHelp();
-      return true;
+    if (values.help) {
+      if (positionals.length === 0) {
+        await this.showHelp();
+        return true;
+      }
+      return false;
     }
 
     if (values.version) {
+      // biome-ignore lint/suspicious/noConsole: CLI version output requires console.log
+      console.log(this.config.version);
       process.exit(0);
     }
 
@@ -252,7 +257,12 @@ export class ClaudeHooksCli {
     }
 
     try {
-      await cmd.execute(commandArgs, this.config);
+      const originalArgs = process.argv.slice(2);
+      const commandIndex = originalArgs.indexOf(command);
+      const argsForCommand =
+        commandIndex >= 0 ? originalArgs.slice(commandIndex + 1) : commandArgs;
+
+      await cmd.execute(argsForCommand, this.config);
     } catch (error) {
       this.error(
         `Command failed: ${error instanceof Error ? error.message : error}`
