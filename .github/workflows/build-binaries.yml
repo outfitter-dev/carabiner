@@ -107,7 +107,7 @@ jobs:
             --external "fsevents"
 
           echo "binary_name=${{ matrix.binary-name }}" >> "$GITHUB_OUTPUT"
-          echo "✅ Binary built: $OUT_FILE"
+          echo "✅ Binary built: ${{ matrix.binary-name }}"
         shell: bash
 
       - name: Set executable permissions (Unix)
