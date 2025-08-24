@@ -32,7 +32,7 @@
     "prepublishOnly": "bun run build"
   },
   "keywords": [
-    "claude-code",
+    "outfitter",
     "hooks",
     "cli",
     "development-tools"

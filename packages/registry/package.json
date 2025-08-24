@@ -20,7 +20,7 @@
     "clean": "rm -rf dist tsconfig.build.tsbuildinfo"
   },
   "keywords": [
-    "claude-code",
+    "outfitter",
     "hooks",
     "plugins",
     "registry",

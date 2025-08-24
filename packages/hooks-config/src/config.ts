@@ -18,12 +18,12 @@ import type {
  * @deprecated Use ConfigurationError from @outfitter/error-management instead
  */
 export class ConfigError extends Error {
-  constructor(
-    message: string,
-    public readonly code?: string
-  ) {
+  readonly code?: string;
+
+  constructor(message: string, code?: string) {
     super(message);
     this.name = 'ConfigError';
+    this.code = code;
   }
 }
 
@@ -90,7 +90,7 @@ export const CONFIG_PATHS = {
  * Default hook configuration
  */
 export const DEFAULT_CONFIG: ExtendedHookConfiguration = {
-  $schema: 'https://claude-code-hooks.dev/schema.json',
+  $schema: 'https://outfitter-hooks.dev/schema.json',
   version: '1.0.0',
 
   PreToolUse: {
@@ -187,7 +187,11 @@ export class ConfigManager {
     (config: ExtendedHookConfiguration) => void
   > = [];
 
-  constructor(private readonly workspacePath: string) {}
+  private readonly workspacePath: string;
+
+  constructor(workspacePath: string) {
+    this.workspacePath = workspacePath;
+  }
 
   /**
    * Private setter method to assign readonly config property
@@ -253,7 +257,7 @@ export class ConfigManager {
   /**
    * Load configuration from workspace
    */
-  async load(options: ConfigOptions = {}): Promise<ExtendedHookConfiguration> {
+  load(options: ConfigOptions = {}): Promise<ExtendedHookConfiguration> {
     return this.withBoundary(
       () => this._loadInternal(options),
       'config-operations',
@@ -329,7 +333,7 @@ export class ConfigManager {
   /**
    * Save configuration to file
    */
-  async save(
+  save(
     config: ExtendedHookConfiguration,
     format: ConfigFormat = 'json'
   ): Promise<void> {
@@ -358,24 +362,17 @@ export class ConfigManager {
     try {
       let content: string;
 
-      switch (format) {
-        case 'json':
-          content = JSON.stringify(config, null, 2);
-          break;
-
-        case 'js':
-          content = this.generateJSConfig(config);
-          break;
-
-        case 'ts':
-          content = this.generateTSConfig(config);
-          break;
-
-        default:
-          throw new ConfigError(
-            `Unsupported format: ${format}`,
-            'UNSUPPORTED_FORMAT'
-          );
+      if (format === 'json') {
+        content = JSON.stringify(config, null, 2);
+      } else if (format === 'js') {
+        content = this.generateJSConfig(config);
+      } else if (format === 'ts') {
+        content = this.generateTSConfig(config);
+      } else {
+        throw new ConfigError(
+          `Unsupported format: ${format}`,
+          'UNSUPPORTED_FORMAT'
+        );
       }
 
       writeFileSync(configPath, content, 'utf-8');
@@ -617,7 +614,7 @@ export class ConfigManager {
    * Find configuration file in workspace
    */
   private findConfigFile(preferredFormat?: ConfigFormat): string | null {
-    const formats: ConfigFormat[] = preferredFormat
+    const formats: ConfigFormat[] = preferredFormat !== undefined
       ? [preferredFormat]
       : ['ts', 'js', 'json'];
 
@@ -637,23 +634,18 @@ export class ConfigManager {
   private async loadFromFile(path: string): Promise<ExtendedHookConfiguration> {
     const format = this.getFormatFromPath(path);
 
-    switch (format) {
-      case 'json': {
-        const jsonConfig = JSON.parse(readFileSync(path, 'utf-8'));
-        // Security: Validate JSON configuration
-        this.validateConfigSecurity(jsonConfig);
-        return jsonConfig;
-      }
-
-      case 'js':
-      case 'ts':
-        return await this.loadJsOrTsConfig(path);
-
-      default:
-        throw new ConfigError(
-          `Unknown configuration format: ${format}`,
-          'UNKNOWN_FORMAT'
-        );
+    if (format === 'json') {
+      const jsonConfig = JSON.parse(readFileSync(path, 'utf-8'));
+      // Security: Validate JSON configuration
+      this.validateConfigSecurity(jsonConfig);
+      return jsonConfig;
+    } else if (format === 'js' || format === 'ts') {
+      return await this.loadJsOrTsConfig(path);
+    } else {
+      throw new ConfigError(
+        `Unknown configuration format: ${format}`,
+        'UNKNOWN_FORMAT'
+      );
     }
   }
 
@@ -1033,7 +1025,7 @@ export function createConfigManager(workspacePath: string): ConfigManager {
 /**
  * Load configuration from workspace
  */
-export async function loadConfig(
+export function loadConfig(
   workspacePath: string,
   options?: ConfigOptions
 ): Promise<ExtendedHookConfiguration> {

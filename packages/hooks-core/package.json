@@ -36,7 +36,7 @@
     "prepublishOnly": "bun run build"
   },
   "keywords": [
-    "claude-code",
+    "outfitter",
     "hooks",
     "typescript",
     "types"

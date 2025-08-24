@@ -123,11 +123,11 @@ The Claude Code Hooks library is organized into focused packages:
 
 ### Core Packages
 
-- **[@claude-code/hooks-core](../packages/hooks-core/README.md)** - Core types, runtime utilities, and execution engine
-- **[@claude-code/hooks-config](../packages/hooks-config/README.md)** - Configuration management and settings generation
-- **[@claude-code/hooks-validators](../packages/hooks-validators/README.md)** - Security validators and validation rules
-- **[@claude-code/hooks-testing](../packages/hooks-testing/README.md)** - Testing framework and mock utilities
-- **[@claude-code/hooks-cli](../packages/hooks-cli/README.md)** - CLI tools for project management
+- **[@outfitter/hooks-core](../packages/hooks-core/README.md)** - Core types, runtime utilities, and execution engine
+- **[@outfitter/hooks-config](../packages/hooks-config/README.md)** - Configuration management and settings generation
+- **[@outfitter/hooks-validators](../packages/hooks-validators/README.md)** - Security validators and validation rules
+- **[@outfitter/hooks-testing](../packages/hooks-testing/README.md)** - Testing framework and mock utilities
+- **[@outfitter/hooks-cli](../packages/hooks-cli/README.md)** - CLI tools for project management
 
 ### Supporting Packages
 

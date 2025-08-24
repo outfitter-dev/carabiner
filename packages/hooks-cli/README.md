@@ -640,9 +640,9 @@ The CLI works with the Claude Code VS Code extension:
 ```json
 // .vscode/settings.json
 {
-  "claude-code.hooks.validateOnSave": true,
-  "claude-code.hooks.formatOnSave": true,
-  "claude-code.hooks.showInlineErrors": true
+  "outfitter.hooks.validateOnSave": true,
+  "outfitter.hooks.formatOnSave": true,
+  "outfitter.hooks.showInlineErrors": true
 }
 ```
 

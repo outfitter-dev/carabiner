@@ -39,7 +39,7 @@
     "test:watch": "bun test --watch"
   },
   "keywords": [
-    "claude-code",
+    "outfitter",
     "hooks",
     "typescript",
     "types",

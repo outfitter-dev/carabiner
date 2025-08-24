@@ -94,7 +94,7 @@ export type PluginMetadata = {
   engines?: {
     node?: string;
     bun?: string;
-    'claude-code'?: string;
+    outfitter?: string;
   };
 };
 
@@ -340,13 +340,14 @@ export function createPluginResult(
  * Plugin validation error
  */
 export class PluginValidationError extends Error {
-  constructor(
-    public readonly pluginName: string,
-    public readonly field: string,
-    message: string
-  ) {
+  readonly pluginName: string;
+  readonly field: string;
+
+  constructor(pluginName: string, field: string, message: string) {
     super(`Plugin ${pluginName}: ${field} - ${message}`);
     this.name = 'PluginValidationError';
+    this.pluginName = pluginName;
+    this.field = field;
   }
 }
 
@@ -354,13 +355,14 @@ export class PluginValidationError extends Error {
  * Plugin execution error
  */
 export class PluginExecutionError extends Error {
-  constructor(
-    public readonly pluginName: string,
-    message: string,
-    public readonly originalError?: Error
-  ) {
+  readonly pluginName: string;
+  readonly originalError?: Error;
+
+  constructor(pluginName: string, message: string, originalError?: Error) {
     super(`Plugin ${pluginName}: ${message}`);
     this.name = 'PluginExecutionError';
+    this.pluginName = pluginName;
+    this.originalError = originalError;
 
     if (originalError) {
       this.stack = originalError.stack;
@@ -372,12 +374,13 @@ export class PluginExecutionError extends Error {
  * Plugin configuration error
  */
 export class PluginConfigurationError extends Error {
-  constructor(
-    public readonly pluginName: string,
-    message: string,
-    public readonly configField?: string
-  ) {
+  readonly pluginName: string;
+  readonly configField?: string;
+
+  constructor(pluginName: string, message: string, configField?: string) {
     super(`Plugin ${pluginName} configuration error: ${message}`);
     this.name = 'PluginConfigurationError';
+    this.pluginName = pluginName;
+    this.configField = configField;
   }
 }
