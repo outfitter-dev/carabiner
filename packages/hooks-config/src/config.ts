@@ -614,9 +614,8 @@ export class ConfigManager {
    * Find configuration file in workspace
    */
   private findConfigFile(preferredFormat?: ConfigFormat): string | null {
-    const formats: ConfigFormat[] = preferredFormat !== undefined
-      ? [preferredFormat]
-      : ['ts', 'js', 'json'];
+    const formats: ConfigFormat[] =
+      preferredFormat !== undefined ? [preferredFormat] : ['ts', 'js', 'json'];
 
     for (const format of formats) {
       const path = join(this.workspacePath, CONFIG_PATHS[format]);
@@ -639,14 +638,14 @@ export class ConfigManager {
       // Security: Validate JSON configuration
       this.validateConfigSecurity(jsonConfig);
       return jsonConfig;
-    } else if (format === 'js' || format === 'ts') {
-      return await this.loadJsOrTsConfig(path);
-    } else {
-      throw new ConfigError(
-        `Unknown configuration format: ${format}`,
-        'UNKNOWN_FORMAT'
-      );
     }
+    if (format === 'js' || format === 'ts') {
+      return await this.loadJsOrTsConfig(path);
+    }
+    throw new ConfigError(
+      `Unknown configuration format: ${format}`,
+      'UNKNOWN_FORMAT'
+    );
   }
 
   /**
