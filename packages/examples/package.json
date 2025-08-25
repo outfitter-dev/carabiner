@@ -1,7 +1,7 @@
 {
   "name": "@outfitter/hooks-examples",
   "version": "0.1.0",
-  "description": "Example implementations demonstrating Claude Code hooks APIs",
+  "description": "Example implementations demonstrating Outfitter hooks APIs",
   "type": "module",
   "private": true,
   "scripts": {

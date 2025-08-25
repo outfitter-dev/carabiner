@@ -1,7 +1,7 @@
 {
   "name": "@outfitter/types",
   "version": "0.1.0",
-  "description": "Type system foundation for Claude Code hooks",
+  "description": "Type system foundation for Outfitter hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

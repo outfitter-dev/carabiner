@@ -1,7 +1,7 @@
 {
   "name": "@outfitter/plugins",
   "version": "1.0.0",
-  "description": "Example plugin collection for Claude Code hooks - demonstrates plugin architecture patterns",
+  "description": "Example plugin collection for Outfitter hooks - demonstrates plugin architecture patterns",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

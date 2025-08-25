@@ -1,7 +1,7 @@
 {
   "name": "@outfitter/hooks-core",
   "version": "0.2.0",
-  "description": "Core TypeScript types and runtime utilities for Claude Code hooks",
+  "description": "Core TypeScript types and runtime utilities for Outfitter hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

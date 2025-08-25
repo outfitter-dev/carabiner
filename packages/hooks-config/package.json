@@ -1,7 +1,7 @@
 {
   "name": "@outfitter/hooks-config",
   "version": "0.1.0",
-  "description": "Configuration management for Claude Code hooks",
+  "description": "Configuration management for Outfitter hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

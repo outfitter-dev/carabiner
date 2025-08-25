@@ -1,7 +1,7 @@
 {
   "name": "@outfitter/schemas",
   "version": "0.1.0",
-  "description": "Zod validation schemas for Claude Code hooks",
+  "description": "Zod validation schemas for Outfitter hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

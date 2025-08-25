@@ -1,7 +1,7 @@
 {
   "name": "@outfitter/hooks-validators",
   "version": "0.1.0",
-  "description": "Security and validation utilities for Claude Code hooks",
+  "description": "Security and validation utilities for Outfitter hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

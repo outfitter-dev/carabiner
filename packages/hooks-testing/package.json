@@ -1,7 +1,7 @@
 {
   "name": "@outfitter/hooks-testing",
   "version": "0.1.0",
-  "description": "Testing utilities for Claude Code hooks",
+  "description": "Testing utilities for Outfitter hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
