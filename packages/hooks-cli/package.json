@@ -1,12 +1,13 @@
 {
   "name": "@outfitter/hooks-cli",
   "version": "0.1.0",
-  "description": "CLI tools for Claude Code hooks development",
+  "description": "CLI tools for Outfitter hooks development",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "claude-hooks": "./dist/cli.js"
+    "claude-hooks": "./dist/cli.js",
+    "outfitter-hooks": "./dist/cli.js"
   },
   "exports": {
     ".": {

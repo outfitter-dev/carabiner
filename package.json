@@ -1,7 +1,7 @@
 {
   "name": "@outfitter/carabiner",
   "version": "0.1.0-beta",
-  "description": "A monorepo dedicated to tooling for Claude Code hooks",
+  "description": "A monorepo dedicated to tooling for Outfitter hooks",
   "private": true,
   "engines": {
     "node": ">=20",

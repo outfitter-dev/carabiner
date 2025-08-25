@@ -1,7 +1,7 @@
 {
   "name": "@outfitter/registry",
   "version": "1.0.0",
-  "description": "Plugin registry system for Claude Code hooks - enables composition of small, focused hooks through a plugin architecture",
+  "description": "Plugin registry system for Outfitter hooks - enables composition of small, focused hooks through a plugin architecture",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -31,7 +31,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/outfitter-dev/grapple",
+    "url": "https://github.com/outfitter-dev/carabiner",
     "directory": "packages/registry"
   },
   "dependencies": {

@@ -94,6 +94,8 @@ export type PluginMetadata = {
   engines?: {
     node?: string;
     bun?: string;
+    /** @deprecated Use `outfitter` instead. Will be removed in a future major. */
+    'claude-code'?: string;
     outfitter?: string;
   };
 };
@@ -363,9 +365,10 @@ export class PluginExecutionError extends Error {
     this.name = 'PluginExecutionError';
     this.pluginName = pluginName;
     this.originalError = originalError;
-
-    if (originalError) {
-      this.stack = originalError.stack;
+    // Preserve cause when supported
+    (this as any).cause = originalError;
+    if (originalError?.stack && !('cause' in this)) {
+      this.stack = `${this.stack ?? ''}\nCaused by: ${originalError.stack}`;
     }
   }
 }

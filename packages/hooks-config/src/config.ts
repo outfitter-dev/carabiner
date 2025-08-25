@@ -614,8 +614,10 @@ export class ConfigManager {
    * Find configuration file in workspace
    */
   private findConfigFile(preferredFormat?: ConfigFormat): string | null {
+    const defaultOrder: ConfigFormat[] =
+      typeof Bun === 'undefined' ? ['json', 'ts', 'js'] : ['ts', 'js', 'json'];
     const formats: ConfigFormat[] =
-      preferredFormat !== undefined ? [preferredFormat] : ['ts', 'js', 'json'];
+      preferredFormat !== undefined ? [preferredFormat] : defaultOrder;
 
     for (const format of formats) {
       const path = join(this.workspacePath, CONFIG_PATHS[format]);
@@ -737,7 +739,9 @@ export class ConfigManager {
   private applyEnvironmentOverrides(
     config: ExtendedHookConfiguration
   ): ExtendedHookConfiguration {
-    const env = Bun.env.NODE_ENV || 'development';
+    const runtimeEnv = 
+      typeof Bun !== 'undefined' ? Bun.env?.NODE_ENV : process.env?.NODE_ENV;
+    const env = runtimeEnv || 'development';
     const envOverrides = config.environments?.[env];
 
     if (!envOverrides) {
@@ -839,13 +843,10 @@ export default config;
 
       // Block commands with shell injection attempts
       const dangerousPatterns = [
-        /[;&|`$(){}[\]]/, // Shell metacharacters (after template removal)
-        /\.\.[/\\]/, // Directory traversal
-        /\/proc\//, // Process filesystem access
-        /\/dev\//, // Device access
-        /\beval\b/i, // Code evaluation
-        /\bexec\b/i, // Code execution
-        /system\s*\(/, // System calls
+        /rm\s+-rf\s+\/\b/i,                         // Destructive root deletion
+        /(?:curl|wget)[^|]*\|\s*(?:sh|bash)\b/i,    // Piped-to-shell downloads
+        /\bsudo\s+/i,                               // Privilege escalation
+        /\.\.[/\\]/,                                // Directory traversal
       ];
 
       for (const pattern of dangerousPatterns) {
@@ -858,7 +859,10 @@ export default config;
       }
 
       // Ensure commands start with allowed executables
-      const allowedExecutables = ['bun', 'node', 'npm', 'yarn', 'pnpm', 'bash'];
+      const allowedExecutables = [
+        'bun', 'node', 'npm', 'yarn', 'pnpm',
+        'bash', 'sh', 'zsh', 'npx', 'tsx', 'ts-node', 'deno'
+      ];
       const executable = cmd.trim().split(/\s+/)[0];
       if (!(executable && allowedExecutables.includes(executable))) {
         throw new ConfigError(
@@ -903,7 +907,7 @@ export default config;
     for (const [event, eventConfig] of Object.entries(config)) {
       if (
         event.startsWith('$') ||
-        ['version', 'templates', 'variables', 'environments'].includes(event)
+        ['version', 'templates', 'variables', 'environments', 'extends'].includes(event)
       ) {
         continue;
       }
