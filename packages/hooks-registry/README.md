@@ -115,7 +115,7 @@ chmod +x .claude/hooks/PostToolUse.js
 
 #### Prerequisites
 
-The hook requires at least one markdown formatter to be installed:
+The hook requires at least one markdown formatter to be available (globally or locally):
 
 ##### Option 1: markdownlint-cli2
 
@@ -132,6 +132,19 @@ npm install -g prettier
 # or
 bun add -g prettier
 ```
+
+##### Option 3: use project-local CLIs (no global install)
+
+```bash
+# if installed locally (devDependency)
+npx markdownlint-cli2 --version
+npx prettier --version
+# or with Bun
+bunx markdownlint-cli2 --version
+bunx prettier --version
+```
+
+**Note about check-only behavior**: When `autoFix` is `false`, both `markdownlint-cli2` and `prettier --check` return non-zero exits if changes are needed. The hook will report `success: false` in that case - this is an intentional signal that formatting issues were found, not a crash.
 
 ## Development
 

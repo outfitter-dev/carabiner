@@ -47,17 +47,26 @@ async function main() {
   const executor = new HookExecutor(protocol);
 
   // Use the markdown formatter hook
-  await executor.execute(createMarkdownFormatterHook({
-    formatter: 'auto',      // Auto-detect formatter
-    autoFix: true,         // Fix issues automatically
-    patterns: ['*.md'],    // Only process .md files
-    additionalArgs: []     // No additional arguments
-  }));
+  try {
+    await executor.execute(createMarkdownFormatterHook({
+      formatter: 'auto',      // Auto-detect formatter
+      autoFix: true,          // Fix issues automatically
+      patterns: ['*.md'],     // Only process .md files
+      additionalArgs: []      // No additional arguments
+    }));
+  } finally {
+    // Always release protocol resources even on failure
+    protocol.destroy();
+  }
 }
 
 // Run if executed directly
 if (import.meta.main) {
-  main().catch(console.error);
+  main().catch((err) => {
+    // biome-ignore lint/suspicious/noConsoleLog: CLI usage example needs console output
+    console.error(err);
+    process.exitCode = 1;
+  });
 }
 
 // Export for use in other configurations

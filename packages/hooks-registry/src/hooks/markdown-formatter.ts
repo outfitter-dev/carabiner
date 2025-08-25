@@ -5,8 +5,9 @@
  * markdownlint-cli2 or prettier, depending on what's available.
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { isMatch } from 'picomatch';
 import type { HookHandler, HookResult } from '@outfitter/types';
 
 /**
@@ -38,14 +39,23 @@ export type MarkdownFormatterConfig = {
 };
 
 /**
- * Check if a command exists in the system
+ * Check if a command exists in the system (cross-platform)
  */
 function commandExists(command: string): boolean {
   try {
-    execSync(`which ${command}`, { stdio: 'ignore' });
+    const isWindows = process.platform === 'win32';
+    const detector = isWindows ? 'where' : 'command';
+    const args = isWindows ? [command] : ['-v', command];
+    execFileSync(detector, args, { stdio: 'ignore' });
     return true;
   } catch {
-    return false;
+    // Try npx fallback for locally installed CLIs
+    try {
+      execFileSync('npx', ['--no-install', command, '--version'], { stdio: 'ignore' });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 
@@ -59,12 +69,12 @@ function formatWithMarkdownlint(
 ): { success: boolean; output: string } {
   try {
     const args = [
-      autoFix ? '--fix' : '',
+      ...(autoFix ? ['--fix'] : []),
       ...additionalArgs,
-      `"${filePath}"`
-    ].filter(Boolean).join(' ');
+      filePath
+    ];
     
-    const output = execSync(`markdownlint-cli2 ${args}`, {
+    const output = execFileSync('markdownlint-cli2', args, {
       encoding: 'utf-8',
       stdio: 'pipe'
     });
@@ -74,10 +84,13 @@ function formatWithMarkdownlint(
       output: output || 'Markdown file formatted successfully with markdownlint'
     };
   } catch (error) {
-    const errorOutput = error instanceof Error ? error.message : 'Unknown error';
+    const err = error as Record<string, unknown>;
+    const errorOutput = err.message || 'Unknown error';
+    const stderr = err.stderr || '';
+    const stdout = err.stdout || '';
     return {
       success: false,
-      output: `Failed to format with markdownlint: ${errorOutput}`
+      output: `Failed to format with markdownlint: ${errorOutput}${stderr ? `\n${stderr}` : ''}${stdout ? `\n${stdout}` : ''}`
     };
   }
 }
@@ -92,12 +105,12 @@ function formatWithPrettier(
 ): { success: boolean; output: string } {
   try {
     const args = [
-      autoFix ? '--write' : '--check',
+      ...(autoFix ? ['--write'] : ['--check']),
       ...additionalArgs,
-      `"${filePath}"`
-    ].filter(Boolean).join(' ');
+      filePath
+    ];
     
-    const output = execSync(`prettier ${args}`, {
+    const output = execFileSync('prettier', args, {
       encoding: 'utf-8',
       stdio: 'pipe'
     });
@@ -107,10 +120,13 @@ function formatWithPrettier(
       output: output || 'Markdown file formatted successfully with prettier'
     };
   } catch (error) {
-    const errorOutput = error instanceof Error ? error.message : 'Unknown error';
+    const err = error as Record<string, unknown>;
+    const errorOutput = err.message || 'Unknown error';
+    const stderr = err.stderr || '';
+    const stdout = err.stdout || '';
     return {
       success: false,
-      output: `Failed to format with prettier: ${errorOutput}`
+      output: `Failed to format with prettier: ${errorOutput}${stderr ? `\n${stderr}` : ''}${stdout ? `\n${stdout}` : ''}`
     };
   }
 }
@@ -140,70 +156,97 @@ export function createMarkdownFormatterHook(
       return { success: true };
     }
 
-    // Extract file path from tool input
+    // Extract file path(s) from tool input - handle both single and multi-file tools
     const toolInput = context.toolInput as Record<string, unknown>;
-    const filePath = toolInput.file_path || toolInput.path;
+    const singlePath = toolInput.file_path || toolInput.path;
+    const multiplePaths = toolInput.files || toolInput.paths || toolInput.file_paths;
     
-    if (typeof filePath !== 'string') {
+    const filePaths: string[] = Array.isArray(multiplePaths)
+      ? multiplePaths.filter((p: unknown): p is string => typeof p === 'string')
+      : typeof singlePath === 'string'
+      ? [singlePath]
+      : [];
+    
+    if (filePaths.length === 0) {
       return { success: true };
     }
 
-    // Check if the file matches our patterns
-    const isMarkdownFile = patterns.some(pattern => {
-      const regex = new RegExp(
-        pattern.replace(/\*/g, '.*').replace(/\?/g, '.'),
-        'i'
+    // Process all matching files
+    const results = [];
+    for (const filePath of filePaths) {
+      // Check if the file matches our patterns using proper glob matching
+      const isMarkdownFile = patterns.some(pattern =>
+        isMatch(filePath, pattern, { nocase: true })
       );
-      return regex.test(filePath);
-    });
 
-    if (!isMarkdownFile) {
-      return { success: true };
-    }
+      if (!isMarkdownFile) {
+        continue;
+      }
 
-    // Check if file exists (it should after an edit)
-    if (!existsSync(filePath)) {
-      return {
-        success: false,
-        message: `File not found: ${filePath}`
-      };
-    }
+      // Check if file exists (it should after an edit)
+      if (!existsSync(filePath)) {
+        results.push({
+          success: false,
+          message: `File not found: ${filePath}`,
+          filePath
+        });
+        continue;
+      }
 
-    // Determine which formatter to use
-    let selectedFormatter: 'markdownlint' | 'prettier' | null = null;
-    
-    if (formatter === 'auto') {
-      // Try markdownlint first, then prettier
-      if (commandExists('markdownlint-cli2')) {
+      // Determine which formatter to use
+      let selectedFormatter: 'markdownlint' | 'prettier' | null = null;
+      
+      if (formatter === 'auto') {
+        // Try markdownlint first, then prettier
+        if (commandExists('markdownlint-cli2')) {
+          selectedFormatter = 'markdownlint';
+        } else if (commandExists('prettier')) {
+          selectedFormatter = 'prettier';
+        }
+      } else if (formatter === 'markdownlint' && commandExists('markdownlint-cli2')) {
         selectedFormatter = 'markdownlint';
-      } else if (commandExists('prettier')) {
+      } else if (formatter === 'prettier' && commandExists('prettier')) {
         selectedFormatter = 'prettier';
       }
-    } else if (formatter === 'markdownlint' && commandExists('markdownlint-cli2')) {
-      selectedFormatter = 'markdownlint';
-    } else if (formatter === 'prettier' && commandExists('prettier')) {
-      selectedFormatter = 'prettier';
-    }
 
-    if (!selectedFormatter) {
-      return {
-        success: false,
-        message: 'No markdown formatter available. Install markdownlint-cli2 or prettier.'
-      };
-    }
+      if (!selectedFormatter) {
+        results.push({
+          success: false,
+          message: 'No markdown formatter available. Install markdownlint-cli2 or prettier.',
+          filePath
+        });
+        continue;
+      }
 
-    // Format the file
-    const result = selectedFormatter === 'markdownlint'
-      ? formatWithMarkdownlint(filePath, autoFix, additionalArgs)
-      : formatWithPrettier(filePath, autoFix, additionalArgs);
+      // Format the file
+      const result = selectedFormatter === 'markdownlint'
+        ? formatWithMarkdownlint(filePath, autoFix, additionalArgs)
+        : formatWithPrettier(filePath, autoFix, additionalArgs);
 
-    return {
-      success: result.success,
-      message: result.output,
-      metadata: {
-        formatter: selectedFormatter,
+      results.push({
+        success: result.success,
+        message: result.output,
         filePath,
-        autoFix
+        formatter: selectedFormatter
+      });
+    }
+
+    // Return aggregated results
+    if (results.length === 0) {
+      return { success: true };
+    }
+
+    const allSuccess = results.every(r => r.success);
+    const messages = results.map(r => `${r.filePath}: ${r.message}`).join('\n');
+    
+    return {
+      success: allSuccess,
+      message: messages,
+      metadata: {
+        formatter: results[0]?.formatter,
+        filesProcessed: results.length,
+        autoFix,
+        results
       }
     };
   };
