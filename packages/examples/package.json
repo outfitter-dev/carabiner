@@ -15,6 +15,11 @@
   ],
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/outfitter-dev/carabiner.git",
+    "directory": "packages/examples"
+  },
   "dependencies": {
     "@outfitter/hooks-core": "workspace:*",
     "@outfitter/hooks-validators": "workspace:*",
