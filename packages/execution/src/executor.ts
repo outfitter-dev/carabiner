@@ -11,9 +11,9 @@ import {
   executionLogger,
   type HookExecutionContext,
   type PerformanceMetrics,
-} from '@outfitter/hooks-core';
-import type { HookProtocol } from '@outfitter/protocol';
-import type { HookContext, HookHandler, HookResult } from '@outfitter/types';
+} from '@carabiner/hooks-core';
+import type { HookProtocol } from '@carabiner/protocol';
+import type { HookContext, HookHandler, HookResult } from '@carabiner/types';
 
 // Local structural type to avoid name clashes with runtime exports
 type ExecutorLogger = ReturnType<typeof executionLogger.child>;

@@ -2,7 +2,7 @@
 
 > **Sources**: [Claude Code Hooks Documentation](https://docs.anthropic.com/en/docs/claude-code/hooks), [Claude Code Settings Documentation](https://docs.anthropic.com/en/docs/claude-code/settings)
 
-This guide provides troubleshooting solutions, debugging techniques, and best practices for Claude Code hooks development and deployment.
+This guide provides troubleshooting solutions, debugging techniques, and best practices for Carabiner hooks development and deployment.
 
 ## Table of Contents
 
@@ -872,7 +872,7 @@ async function runHookWithInput(scriptPath: string, env: Record<string, string>)
 
 # scripts/test-hooks-e2e.sh
 
-echo "Testing Claude Code hooks end-to-end..."
+echo "Testing Carabiner hooks end-to-end..."
 
 # Test 1: Safe command should succeed
 
@@ -903,4 +903,4 @@ echo "All end-to-end tests passed!"
 
 ```
 
-This comprehensive troubleshooting and best practices guide should help developers successfully implement, debug, and maintain Claude Code hooks in their projects.
+This comprehensive troubleshooting and best practices guide should help developers successfully implement, debug, and maintain Carabiner hooks in their projects.

@@ -1,6 +1,6 @@
 # @outfitter/plugins
 
-Example plugin collection for Claude Code hooks - demonstrates plugin architecture patterns and best practices.
+Example plugin collection for Carabiner hooks - demonstrates plugin architecture patterns and best practices.
 
 ## Overview
 

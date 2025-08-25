@@ -15,7 +15,7 @@
  * 2. Expected output: Hook should block the dangerous command
  */
 
-import type { HookHandler } from '@outfitter/types';
+import type { HookHandler } from '@carabiner/types';
 
 type BashToolInput = {
   readonly command: string;
@@ -44,7 +44,7 @@ type NonBashContext = {
 type TestContext = BashContext | NonBashContext;
 
 // We would normally use:
-// import { runHook } from '@outfitter/execution';
+// import { runHook } from '@carabiner/execution';
 // But for this example, we'll simulate the execution
 
 import {

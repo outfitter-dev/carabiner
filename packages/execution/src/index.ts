@@ -15,7 +15,7 @@
  *
  * @example Basic Usage
  * ```typescript
- * import { runHook } from '@outfitter/execution';
+ * import { runHook } from '@carabiner/execution';
  *
  * await runHook(async (context) => {
  *   if (context.event === 'PreToolUse') {
@@ -28,7 +28,7 @@
  *
  * @example Testing
  * ```typescript
- * import { runTestHook } from '@outfitter/execution';
+ * import { runTestHook } from '@carabiner/execution';
  *
  * await runTestHook(
  *   myHandler,
@@ -110,7 +110,7 @@ export const VERSION = '1.0.0';
  * Package metadata
  */
 export const PACKAGE_INFO = {
-  name: '@outfitter/execution',
+  name: '@carabiner/execution',
   version: VERSION,
   description: 'Simplified execution engine for Claude Code hooks',
   repository: 'https://github.com/outfitter-dev/grapple',

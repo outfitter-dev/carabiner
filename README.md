@@ -1,6 +1,6 @@
 # Grapple (Carabiner) - Claude Code Hooks TypeScript Library
 
-A comprehensive, production-ready TypeScript monorepo for building type-safe, maintainable Claude Code hooks with modern development practices and enterprise-grade tooling.
+A comprehensive, production-ready TypeScript monorepo for building type-safe, maintainable Carabiner hooks with modern development practices and enterprise-grade tooling.
 
 ## 🚀 Overview
 
@@ -487,4 +487,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**Transform your Claude Code hooks from shell scripts to production-ready TypeScript applications.** 🚀
+**Transform your Carabiner hooks from shell scripts to production-ready TypeScript applications.** 🚀

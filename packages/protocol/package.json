@@ -1,7 +1,7 @@
 {
-  "name": "@outfitter/protocol",
+  "name": "@carabiner/protocol",
   "version": "0.1.0",
-  "description": "Protocol abstraction layer for Claude Code hooks I/O",
+  "description": "Protocol abstraction layer for Carabiner hooks I/O",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,8 +23,8 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@outfitter/types": "workspace:*",
-    "@outfitter/schemas": "workspace:*"
+    "@carabiner/types": "workspace:*",
+    "@carabiner/schemas": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -44,7 +44,7 @@
   },
   "homepage": "https://github.com/outfitter-dev/grapple/tree/main/packages/protocol#readme",
   "keywords": [
-    "claude-code",
+    "carabiner",
     "hooks",
     "protocol",
     "io",

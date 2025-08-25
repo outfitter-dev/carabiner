@@ -8,7 +8,7 @@ export const middlewareTypeScript = (name: string): string => `/**
  * Custom middleware: ${name}
  */
 
-import type { HookMiddleware, HookContext, HookResult } from '@outfitter/hooks-core';
+import type { HookMiddleware, HookContext, HookResult } from '@carabiner/hooks-core';
 
 /**
  * ${pascalCase(name)} middleware

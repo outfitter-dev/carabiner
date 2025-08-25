@@ -1,10 +1,10 @@
 # Claude Code Hooks TypeScript Library - Implementation Status
 
-> **Status**: ✅ **IMPLEMENTED** - Production-ready TypeScript library for Claude Code hooks **Achievement**: Successfully transformed hook development from shell scripts to type-safe TypeScript applications **Current Version**: 0.2.0 with stdin-based runtime
+> **Status**: ✅ **IMPLEMENTED** - Production-ready TypeScript library for Carabiner hooks **Achievement**: Successfully transformed hook development from shell scripts to type-safe TypeScript applications **Current Version**: 0.2.0 with stdin-based runtime
 
 ## 🎯 Executive Summary
 
-**COMPLETED**: Created `@claude-code/hooks` - a comprehensive TypeScript library that transforms Claude Code hook development from manual shell scripting to type-safe, testable, maintainable TypeScript applications.
+**COMPLETED**: Created `@carabiner/hooks` - a comprehensive TypeScript library that transforms Claude Code hook development from manual shell scripting to type-safe, testable, maintainable TypeScript applications.
 
 ### ✅ Delivered Benefits
 
@@ -268,7 +268,7 @@ const mockContext = createMockContext('PreToolUse', {
 
 ```json
 {
-  "name": "@claude-code/hooks",
+  "name": "@carabiner/hooks",
   "exports": {
     ".": "./packages/hooks-core/dist/index.js",
     "./core": "./packages/hooks-core/dist/index.js",
@@ -289,11 +289,11 @@ const mockContext = createMockContext('PreToolUse', {
 
 # ✅ All commands work
 
-npx @claude-code/hooks-cli init
-npx @claude-code/hooks-cli generate --type PreToolUse --tool Bash --name security
-npx @claude-code/hooks-cli build --output .claude/settings.json
-npx @claude-code/hooks-cli test --hook ./hooks/pre-tool-use.ts
-npx @claude-code/hooks-cli dev --watch
+npx @carabiner/hooks-cli init
+npx @carabiner/hooks-cli generate --type PreToolUse --tool Bash --name security
+npx @carabiner/hooks-cli build --output .claude/settings.json
+npx @carabiner/hooks-cli test --hook ./hooks/pre-tool-use.ts
+npx @carabiner/hooks-cli dev --watch
 
 ```text
 

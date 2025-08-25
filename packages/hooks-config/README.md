@@ -1,6 +1,6 @@
 # @outfitter/hooks-config
 
-Configuration management and settings generation for Claude Code hooks.
+Configuration management and settings generation for Carabiner hooks.
 
 ## Installation
 

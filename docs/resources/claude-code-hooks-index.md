@@ -5,11 +5,11 @@
 > - [Claude Code Hooks Documentation](https://docs.anthropic.com/en/docs/claude-code/hooks)
 > - [Claude Code Settings Documentation](https://docs.anthropic.com/en/docs/claude-code/settings)
 
-This index provides an organized overview of Claude Code hooks documentation and serves as the authoritative reference for common information shared across guides.
+This index provides an organized overview of Carabiner hooks documentation and serves as the authoritative reference for common information shared across guides.
 
 ## Documentation Structure
 
-### 📖 **[Overview](./claude-code-hooks-overview.md)**
+### 📖 **[Overview](./carabiner-hooks-overview.md)**
 
 - What hooks are and why they're useful
 - Quick start guide (3 steps to get running)
@@ -17,7 +17,7 @@ This index provides an organized overview of Claude Code hooks documentation and
 - Basic configuration examples
 - Security considerations and common use cases
 
-### 🔧 **[TypeScript Implementation](./claude-code-hooks-typescript.md)**
+### 🔧 **[TypeScript Implementation](./carabiner-hooks-typescript.md)**
 
 - Complete TypeScript development setup
 - Type definitions and interfaces
@@ -25,7 +25,7 @@ This index provides an organized overview of Claude Code hooks documentation and
 - Advanced patterns and utilities
 - Testing and debugging frameworks
 
-### ⚙️ **[Configuration Guide](./claude-code-hooks-configuration.md)**
+### ⚙️ **[Configuration Guide](./carabiner-hooks-configuration.md)**
 
 - Settings hierarchy and file locations
 - Hook configuration options
@@ -33,7 +33,7 @@ This index provides an organized overview of Claude Code hooks documentation and
 - Pattern matching and conditional execution
 - Configuration validation
 
-### 🔍 **[Troubleshooting](./claude-code-hooks-troubleshooting.md)**
+### 🔍 **[Troubleshooting](./carabiner-hooks-troubleshooting.md)**
 
 - Common issues and solutions
 - Debugging techniques
@@ -210,10 +210,10 @@ tail -f .claude/hook-trace.log
 
 ```
 
-For detailed troubleshooting, see the [Troubleshooting Guide](./claude-code-hooks-troubleshooting.md).
+For detailed troubleshooting, see the [Troubleshooting Guide](./carabiner-hooks-troubleshooting.md).
 
 ---
 
-> Last updated: Based on Claude Code hooks documentation as of 2024
+> Last updated: Based on Carabiner hooks documentation as of 2024
 >
 > **Feedback**: Found an issue or have suggestions? Please check the latest official documentation at [docs.anthropic.com](https://docs.anthropic.com/en/docs/claude-code/hooks)

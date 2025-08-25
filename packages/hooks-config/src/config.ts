@@ -10,7 +10,7 @@ import type {
   HookEvent,
   ToolHookConfig,
   ToolName,
-} from '@outfitter/hooks-core';
+} from '@carabiner/hooks-core';
 // Note: Error management lives in a separate package. To avoid build-order
 // coupling here, we use a local error type and keep integration optional.
 
@@ -90,7 +90,7 @@ export const CONFIG_PATHS = {
  * Default hook configuration
  */
 export const DEFAULT_CONFIG: ExtendedHookConfiguration = {
-  $schema: 'https://claude-code-hooks.dev/schema.json',
+  $schema: 'https://carabiner.outfitter.dev/schema.json',
   version: '1.0.0',
 
   PreToolUse: {
@@ -225,7 +225,7 @@ export class ConfigManager {
       return await op();
     }
     try {
-      const em = await import('@outfitter/error-management');
+      const em = await import('@carabiner/error-management');
       return await em.executeWithBoundary(
         op,
         boundaryName,
@@ -308,7 +308,7 @@ export class ConfigManager {
       // Optionally report via error-management if available
       if (this.advancedErrorManagementEnabled) {
         try {
-          const em = await import('@outfitter/error-management');
+          const em = await import('@carabiner/error-management');
           await em.reportError(
             new em.ConfigurationError(
               `Failed to load configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -387,7 +387,7 @@ export class ConfigManager {
     } catch (error) {
       if (this.advancedErrorManagementEnabled) {
         try {
-          const em = await import('@outfitter/error-management');
+          const em = await import('@carabiner/error-management');
           await em.reportError(
             new em.ConfigurationError(
               `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -813,7 +813,7 @@ export class ConfigManager {
   private generateJSConfig(config: ExtendedHookConfiguration): string {
     return `/**
  * Claude Code hooks configuration
- * @type {import('@outfitter/hooks-config').ExtendedHookConfiguration}
+ * @type {import('@carabiner/hooks-config').ExtendedHookConfiguration}
  */
 module.exports = ${JSON.stringify(config, null, 2)};
 `;
@@ -823,7 +823,7 @@ module.exports = ${JSON.stringify(config, null, 2)};
    * Generate TypeScript config content
    */
   private generateTSConfig(config: ExtendedHookConfiguration): string {
-    return `import type { ExtendedHookConfiguration } from '@outfitter/hooks-config';
+    return `import type { ExtendedHookConfiguration } from '@carabiner/hooks-config';
 
 /**
  * Claude Code hooks configuration

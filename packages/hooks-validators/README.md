@@ -1,6 +1,6 @@
 # @outfitter/hooks-validators
 
-Security validators and environment-specific validation rules for Claude Code hooks.
+Security validators and environment-specific validation rules for Carabiner hooks.
 
 ## Installation
 

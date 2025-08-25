@@ -1,7 +1,7 @@
 {
-  "name": "@outfitter/types",
+  "name": "@carabiner/types",
   "version": "0.1.0",
-  "description": "Type system foundation for Claude Code hooks",
+  "description": "Type system foundation for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -39,7 +39,7 @@
     "test:watch": "bun test --watch"
   },
   "keywords": [
-    "claude-code",
+    "carabiner",
     "hooks",
     "typescript",
     "types",

@@ -4,8 +4,8 @@
  * Provides plugin registration, discovery, priority ordering, and event-based execution.
  */
 
-import type { HookContext, HookResult } from '@outfitter/types';
-// import { ExecutionTimer, MemoryTracker } from '@outfitter/execution';
+import type { HookContext, HookResult } from '@carabiner/types';
+// import { ExecutionTimer, MemoryTracker } from '@carabiner/execution';
 import type {
   HookPlugin,
   PluginCondition,

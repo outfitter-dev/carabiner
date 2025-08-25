@@ -14,9 +14,9 @@
 import { appendFile, mkdir } from 'node:fs/promises';
 import { hostname, userInfo } from 'node:os';
 import { dirname, join } from 'node:path';
-import type { HookPlugin, PluginResult } from '@outfitter/registry';
-import type { HookContext } from '@outfitter/types';
-import { isBashHookContext, isFileHookContext } from '@outfitter/types';
+import type { HookPlugin, PluginResult } from '@carabiner/registry';
+import type { HookContext } from '@carabiner/types';
+import { isBashHookContext, isFileHookContext } from '@carabiner/types';
 import { z } from 'zod';
 
 /**

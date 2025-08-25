@@ -7,8 +7,8 @@ import type {
   HookContext,
   HookHandler,
   HookResult,
-} from '@outfitter/hooks-core';
-import { executeHook } from '@outfitter/hooks-core';
+} from '@carabiner/hooks-core';
+import { executeHook } from '@carabiner/hooks-core';
 import type { MockEnvironmentConfig } from './mock';
 import { mockEnv } from './mock';
 

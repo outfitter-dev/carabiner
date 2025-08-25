@@ -7,7 +7,7 @@ import {
   createDirectoryPath,
   createSessionId,
   createTranscriptPath,
-} from '@outfitter/types';
+} from '@carabiner/types';
 import {
   deltaMemoryUsage,
   ExecutionTimer,

@@ -12,7 +12,7 @@ import {
   createMockContextFor,
   TestUtils,
   mockEnv
-} from '@outfitter/hooks-testing';
+} from '@carabiner/hooks-testing';
 import { handle${pascalCase(name)} } from '../${name}.ts';
 
 describe('${name} hook tests', () => {
@@ -102,7 +102,7 @@ const {
   createMockContextFor,
   TestUtils,
   mockEnv
-} = require('@outfitter/hooks-testing');
+} = require('@carabiner/hooks-testing');
 const { handle${pascalCase(name)} } = require('../${name}.js');
 
 describe('${name} hook tests', () => {

@@ -4,12 +4,12 @@
  */
 
 import { extname, relative, resolve } from 'node:path';
-import type { HookContext } from '@outfitter/hooks-core';
+import type { HookContext } from '@carabiner/hooks-core';
 import {
   isBashToolInput,
   isEditToolInput,
   isWriteToolInput,
-} from '@outfitter/hooks-core';
+} from '@carabiner/hooks-core';
 
 // Regex patterns defined at module level for performance
 const DYNAMIC_REQUIRE_PATTERN = /require\s*\(\s*[^"'][^)]*[^"']\s*\)/;

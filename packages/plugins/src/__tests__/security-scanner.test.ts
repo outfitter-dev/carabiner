@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import type { HookContext } from '@outfitter/types';
+import type { HookContext } from '@carabiner/types';
 import { securityScannerPlugin } from '../security-scanner/index';
 
 const createBashContext = (command: string): HookContext =>

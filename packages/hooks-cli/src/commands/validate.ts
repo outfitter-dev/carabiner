@@ -8,8 +8,8 @@ import { join } from 'node:path';
 import {
   type ExtendedHookConfiguration,
   loadConfig,
-} from '@outfitter/hooks-config';
-import type { ToolHookConfig } from '@outfitter/hooks-core';
+} from '@carabiner/hooks-config';
+import type { ToolHookConfig } from '@carabiner/hooks-core';
 import { BaseCommand, type CliConfig } from '../types';
 
 // Regex patterns at top level
@@ -393,7 +393,7 @@ export class ValidateCommand extends BaseCommand {
 
       // Check for basic imports (TypeScript/JavaScript)
       const hasImports =
-        content.includes('@outfitter/hooks-core') ||
+        content.includes('@carabiner/hooks-core') ||
         content.includes('require(') ||
         content.includes('import');
 

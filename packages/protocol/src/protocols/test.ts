@@ -9,7 +9,7 @@
 import {
   parseClaudeHookInput,
   validateAndCreateBrandedInput,
-} from '@outfitter/schemas';
+} from '@carabiner/schemas';
 import type {
   BashToolInput,
   DirectoryPath,
@@ -20,7 +20,7 @@ import type {
   ToolHookEvent,
   ToolInput,
   TranscriptPath,
-} from '@outfitter/types';
+} from '@carabiner/types';
 import {
   createDirectoryPath,
   createNotificationContext,
@@ -28,7 +28,7 @@ import {
   createToolHookContext,
   createTranscriptPath,
   createUserPromptContext,
-} from '@outfitter/types';
+} from '@carabiner/types';
 import type { HookProtocol } from '../interface';
 import { ProtocolParseError } from '../interface';
 

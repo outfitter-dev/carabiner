@@ -12,7 +12,7 @@ import type {
   HookEvent,
   ToolInput,
   ToolName,
-} from '@outfitter/hooks-core';
+} from '@carabiner/hooks-core';
 
 /**
  * Mock environment configuration

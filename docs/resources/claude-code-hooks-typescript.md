@@ -1,6 +1,6 @@
 # Claude Code Hooks: TypeScript Implementation Guide
 
-This guide provides detailed instructions and examples for implementing Claude Code hooks using TypeScript and Bun, following the project's conventions.
+This guide provides detailed instructions and examples for implementing Carabiner hooks using TypeScript and Bun, following the project's conventions.
 
 ## Table of Contents
 
@@ -965,4 +965,4 @@ If using Turbo, add hook tasks to `turbo.json`:
 }
 ```
 
-This comprehensive TypeScript implementation guide provides everything needed to create sophisticated, type-safe Claude Code hooks following the project's conventions and best practices.
+This comprehensive TypeScript implementation guide provides everything needed to create sophisticated, type-safe Carabiner hooks following the project's conventions and best practices.

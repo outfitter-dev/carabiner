@@ -1,6 +1,6 @@
 # Core Concepts
 
-Understanding these fundamental concepts will help you build effective and maintainable Claude Code hooks.
+Understanding these fundamental concepts will help you build effective and maintainable Carabiner hooks.
 
 ## Hook Lifecycle
 
@@ -277,7 +277,7 @@ interface EditToolInput {
 Use type guards to safely access tool-specific properties:
 
 ```typescript
-import { isBashToolInput, isWriteToolInput } from '@claude-code/hooks-core';
+import { isBashToolInput, isWriteToolInput } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   if (isBashToolInput(context.toolInput)) {

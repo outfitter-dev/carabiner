@@ -37,7 +37,7 @@ import {
 } from 'node:fs';
 import { arch, platform, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { HookConfiguration } from '@outfitter/types';
+import type { HookConfiguration } from '@carabiner/types';
 
 /**
  * Production environment simulator
@@ -130,7 +130,7 @@ class ProductionEnvironment {
   createProductionHooks(): void {
     // Security scanner hook
     const securityHook = `
-import type { HookContext, HookResult } from '@outfitter/types';
+import type { HookContext, HookResult } from '@carabiner/types';
 
 export default async function securityScanner(context: HookContext): Promise<HookResult> {
   const startTime = Date.now();
@@ -226,7 +226,7 @@ async function scanForThreats(input: any): Promise<{passed: boolean; reason?: st
 
     // Audit logger hook
     const auditHook = `
-import type { HookContext, HookResult } from '@outfitter/types';
+import type { HookContext, HookResult } from '@carabiner/types';
 
 export default async function auditLogger(context: HookContext): Promise<HookResult> {
   const timestamp = new Date().toISOString();
@@ -489,7 +489,7 @@ console.log(JSON.stringify({
 
       // Test logging functionality by verifying logger can be created
       // and has expected interface
-      const { executionLogger } = await import('@outfitter/hooks-core');
+      const { executionLogger } = await import('@carabiner/hooks-core');
       expect(executionLogger).toBeDefined();
       expect(typeof executionLogger.info).toBe('function');
       expect(typeof executionLogger.error).toBe('function');

@@ -3,9 +3,9 @@
  */
 
 import { beforeEach, describe, expect, test } from 'bun:test';
-import { createProtocol, type TestProtocol } from '@outfitter/protocol';
-import type { HookHandler } from '@outfitter/types';
-import { isToolHookContext } from '@outfitter/types';
+import { createProtocol, type TestProtocol } from '@carabiner/protocol';
+import type { HookHandler } from '@carabiner/types';
+import { isToolHookContext } from '@carabiner/types';
 import { HookExecutor } from '../executor';
 import { MetricsCollector } from '../metrics';
 

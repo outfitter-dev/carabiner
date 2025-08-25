@@ -8,7 +8,7 @@
 import {
   parseClaudeHookInput,
   validateAndCreateBrandedInput,
-} from '@outfitter/schemas';
+} from '@carabiner/schemas';
 import type {
   DirectoryPath,
   HookContext,
@@ -18,12 +18,12 @@ import type {
   ToolHookEvent,
   ToolInput,
   TranscriptPath,
-} from '@outfitter/types';
+} from '@carabiner/types';
 import {
   createNotificationContext,
   createToolHookContext,
   createUserPromptContext,
-} from '@outfitter/types';
+} from '@carabiner/types';
 import type { HookProtocol } from '../interface';
 import {
   ProtocolInputError,
@@ -87,7 +87,7 @@ export class StdinProtocol implements HookProtocol {
         new Error('StdinProtocol has been destroyed')
       );
     }
-    
+
     const timeout = this.options.inputTimeout ?? 30_000;
 
     // Set up for new read operation
@@ -97,7 +97,7 @@ export class StdinProtocol implements HookProtocol {
       const input: string = await new Promise((resolve, reject) => {
         const chunks: Buffer[] = [];
         let isCleanedUp = false;
-        
+
         // Store reject function for destroy() to call
         this.pendingReadReject = reject;
 
@@ -127,7 +127,7 @@ export class StdinProtocol implements HookProtocol {
 
           // Clear the timeout
           clearTimeout(timeoutId);
-          
+
           // Clear pending reject reference
           this.pendingReadReject = null;
 
@@ -310,9 +310,9 @@ export class StdinProtocol implements HookProtocol {
     if (this.isDestroyed) {
       return;
     }
-    
+
     this.isDestroyed = true;
-    
+
     // Reject any pending read operation
     if (this.pendingReadReject) {
       const error = new ProtocolInputError(
@@ -322,7 +322,7 @@ export class StdinProtocol implements HookProtocol {
       this.pendingReadReject(error);
       this.pendingReadReject = null;
     }
-    
+
     // Clean up the stream if it exists
     if (this.activeStream) {
       // Pause to stop data flow

@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { createTestContext } from '@outfitter/types';
+import { createTestContext } from '@carabiner/types';
 import {
   createBashContext,
   createFileContext,

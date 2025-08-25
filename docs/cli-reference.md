@@ -1,6 +1,6 @@
 # CLI Reference
 
-The Grapple CLI (`claude-hooks`) provides comprehensive tools for developing, testing, and managing Claude Code hooks. This reference covers all commands, options, and usage patterns.
+The Grapple CLI (`claude-hooks`) provides comprehensive tools for developing, testing, and managing Carabiner hooks. This reference covers all commands, options, and usage patterns.
 
 ## Table of Contents
 
@@ -49,7 +49,7 @@ These options work with all commands:
 
 ### `init`
 
-Initialize Claude Code hooks in your project.
+Initialize Carabiner hooks in your project.
 
 #### Syntax
 

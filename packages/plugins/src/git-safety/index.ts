@@ -7,9 +7,9 @@
  * patterns and allow lists for fine-tuned control.
  */
 
-import type { HookPlugin, PluginResult } from '@outfitter/registry';
-import type { HookContext } from '@outfitter/types';
-import { isBashHookContext } from '@outfitter/types';
+import type { HookPlugin, PluginResult } from '@carabiner/registry';
+import type { HookContext } from '@carabiner/types';
+import { isBashHookContext } from '@carabiner/types';
 import { z } from 'zod';
 
 /**

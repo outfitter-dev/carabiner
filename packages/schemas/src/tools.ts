@@ -16,7 +16,7 @@ import type {
   WebFetchToolInput,
   WebSearchToolInput,
   WriteToolInput,
-} from '@outfitter/types';
+} from '@carabiner/types';
 import { z } from 'zod';
 
 /**

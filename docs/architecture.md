@@ -1,6 +1,6 @@
 # Architecture Guide
 
-This guide explains the system design, concepts, and patterns that make Grapple a robust, scalable Claude Code hooks library.
+This guide explains the system design, concepts, and patterns that make Grapple a robust, scalable Carabiner hooks library.
 
 ## Table of Contents
 

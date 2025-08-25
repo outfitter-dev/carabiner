@@ -5,13 +5,13 @@
 
 import { existsSync, statSync } from 'node:fs';
 import { dirname, extname, resolve } from 'node:path';
-import type { HookContext, ToolInput, ToolName } from '@outfitter/hooks-core';
+import type { HookContext, ToolInput, ToolName } from '@carabiner/hooks-core';
 import {
   isBashToolInput,
   isEditToolInput,
   isMultiEditToolInput,
   isWriteToolInput,
-} from '@outfitter/hooks-core';
+} from '@carabiner/hooks-core';
 
 /**
  * Validation error class

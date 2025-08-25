@@ -3,7 +3,7 @@
  * Provides comprehensive security validation for CLI commands and hook execution
  */
 
-import { SecurityValidationError } from '@outfitter/hooks-validators';
+import { SecurityValidationError } from '@carabiner/hooks-validators';
 
 /**
  * Command security configuration

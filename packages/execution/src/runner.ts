@@ -6,8 +6,8 @@
  * making it easy to create hooks with minimal boilerplate.
  */
 
-import { createProtocol } from '@outfitter/protocol';
-import type { HookHandler, HookResult } from '@outfitter/types';
+import { createProtocol } from '@carabiner/protocol';
+import type { HookHandler, HookResult } from '@carabiner/types';
 
 import { type ExecutionOptions, HookExecutor } from './executor';
 import { globalMetrics } from './metrics';
@@ -106,7 +106,7 @@ export class HookRunner {
  *
  * @example
  * ```typescript
- * import { runHook } from '@outfitter/execution';
+ * import { runHook } from '@carabiner/execution';
  *
  * await runHook(async (context) => {
  *   if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
@@ -146,7 +146,7 @@ export async function runHook(
  *
  * @example
  * ```typescript
- * import { runTestHook } from '@outfitter/execution';
+ * import { runTestHook } from '@carabiner/execution';
  *
  * const result = await runTestHook(
  *   async (context) => ({ success: true, message: 'Test passed' }),
@@ -189,7 +189,7 @@ export async function runTestHook(
  * @example
  * ```typescript
  * // my-hook.ts
- * import { createRunner } from '@outfitter/execution';
+ * import { createRunner } from '@carabiner/execution';
  *
  * async function myHookHandler(context: HookContext): Promise<HookResult> {
  *   // Hook logic here
@@ -223,7 +223,7 @@ export function createRunner(
  *
  * @example
  * ```typescript
- * import { createTestRunner } from '@outfitter/execution';
+ * import { createTestRunner } from '@carabiner/execution';
  *
  * const testRunner = createTestRunner(myHookHandler, {
  *   collectMetrics: true,
@@ -259,7 +259,7 @@ export function createTestRunner(
  *
  * @example
  * ```typescript
- * import { runTestHooks } from '@outfitter/execution';
+ * import { runTestHooks } from '@carabiner/execution';
  *
  * const results = await runTestHooks(
  *   [securityHook, validationHook, loggingHook],

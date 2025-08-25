@@ -3,8 +3,8 @@
  */
 
 import { beforeEach, describe, expect, test } from 'bun:test';
-import type { HookHandler } from '@outfitter/types';
-import { isToolHookContext } from '@outfitter/types';
+import type { HookHandler } from '@carabiner/types';
+import { isToolHookContext } from '@carabiner/types';
 
 import {
   clearExecutionMetrics,

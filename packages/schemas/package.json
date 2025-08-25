@@ -1,7 +1,7 @@
 {
-  "name": "@outfitter/schemas",
+  "name": "@carabiner/schemas",
   "version": "0.1.0",
-  "description": "Zod validation schemas for Claude Code hooks",
+  "description": "Zod validation schemas for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -35,7 +35,7 @@
     "test:watch": "bun test --watch"
   },
   "keywords": [
-    "claude-code",
+    "carabiner",
     "hooks",
     "validation",
     "zod",
@@ -44,7 +44,7 @@
   "author": "Matt Galligan <matt@outfitter.dev>",
   "license": "MIT",
   "dependencies": {
-    "@outfitter/types": "workspace:*",
+    "@carabiner/types": "workspace:*",
     "zod": "^3.24.1"
   },
   "devDependencies": {

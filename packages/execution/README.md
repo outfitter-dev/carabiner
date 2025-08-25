@@ -1,6 +1,6 @@
 # @outfitter/execution
 
-Simplified execution engine for Claude Code hooks with predictable error handling, comprehensive metrics, and excellent developer experience.
+Simplified execution engine for Carabiner hooks with predictable error handling, comprehensive metrics, and excellent developer experience.
 
 ## Features
 

@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { createCliLogger, type Logger } from '@outfitter/hooks-core';
+import { createCliLogger, type Logger } from '@carabiner/hooks-core';
 import { ConfigCommand } from './commands/config';
 import { GenerateCommand } from './commands/generate';
 // Statically import commands to guarantee inclusion in compiled binary

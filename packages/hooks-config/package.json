@@ -1,7 +1,7 @@
 {
-  "name": "@outfitter/hooks-config",
+  "name": "@carabiner/hooks-config",
   "version": "0.1.0",
-  "description": "Configuration management for Claude Code hooks",
+  "description": "Configuration management for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -28,15 +28,15 @@
     "prepublishOnly": "bun run build"
   },
   "keywords": [
-    "claude-code",
+    "carabiner",
     "hooks",
     "configuration"
   ],
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@outfitter/hooks-core": "workspace:*",
-    "@outfitter/error-management": "workspace:*"
+    "@carabiner/hooks-core": "workspace:*",
+    "@carabiner/error-management": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "*",
