@@ -1,0 +1,68 @@
+{
+  "name": "@carabiner/hooks-registry",
+  "version": "0.1.0",
+  "description": "Official registry of Claude Code hooks",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./hooks/*": {
+      "types": "./dist/hooks/*.d.ts",
+      "import": "./dist/hooks/*.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@carabiner/executor": "workspace:*",
+    "@carabiner/protocol": "workspace:*",
+    "@carabiner/schemas": "workspace:*",
+    "@carabiner/types": "workspace:*",
+    "picomatch": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "catalog:",
+    "type-fest": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "markdownlint-cli2": "^0.18.0",
+    "prettier": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "markdownlint-cli2": {
+      "optional": true
+    },
+    "prettier": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "registry",
+    "formatters",
+    "linters"
+  ],
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/outfitter-dev/grapple.git",
+    "directory": "packages/hooks-registry"
+  }
+}
