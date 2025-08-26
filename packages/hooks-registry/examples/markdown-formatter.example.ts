@@ -6,9 +6,9 @@
  * in a Claude Code hooks configuration.
  */
 
-import { HookExecutor } from '@outfitter/executor';
-import { StdinProtocol } from '@outfitter/protocol';
-import { createMarkdownFormatterHook } from '@outfitter/hooks-registry';
+import { HookExecutor } from '@carabiner/executor';
+import { StdinProtocol } from '@carabiner/protocol';
+import { createMarkdownFormatterHook } from '@carabiner/hooks-registry';
 
 // Example 1: Basic usage with auto-detection
 const basicHook = createMarkdownFormatterHook();

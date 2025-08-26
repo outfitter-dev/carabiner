@@ -1,5 +1,5 @@
 /**
- * @outfitter/hooks-registry - Official Claude Code Hooks Registry
+ * @carabiner/hooks-registry - Official Claude Code Hooks Registry
  * 
  * A collection of production-ready hooks for common development workflows.
  */
@@ -11,4 +11,4 @@ export {
 } from '@/hooks/markdown-formatter.js';
 
 // Re-export hook types for convenience
-export type { HookHandler, HookResult, HookContext } from '@outfitter/types';
+export type { HookHandler, HookResult, HookContext } from '@carabiner/types';

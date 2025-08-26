@@ -6,7 +6,7 @@ import { describe, expect, test, beforeEach, afterEach, spyOn, mock } from 'bun:
 import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import { createMarkdownFormatterHook } from '../hooks/markdown-formatter.js';
-import { createToolHookContext } from '@outfitter/types';
+import { createToolHookContext } from '@carabiner/types';
 
 // Create mocks
 let mockExecFileSync: ReturnType<typeof mock>;

@@ -1,11 +1,11 @@
-# @outfitter/hooks-registry
+# @carabiner/hooks-registry
 
 Official registry of production-ready Claude Code hooks for common development workflows.
 
 ## Installation
 
 ```bash
-bun add @outfitter/hooks-registry
+bun add @carabiner/hooks-registry
 ```
 
 ## Available Hooks
@@ -25,7 +25,7 @@ Automatically formats markdown files when they are edited using either `markdown
 #### Basic Usage
 
 ```typescript
-import { createMarkdownFormatterHook } from '@outfitter/hooks-registry';
+import { createMarkdownFormatterHook } from '@carabiner/hooks-registry';
 
 // Create hook with default settings
 const hook = createMarkdownFormatterHook();
@@ -90,9 +90,9 @@ Create a PostToolUse hook file at `.claude/hooks/PostToolUse.js`:
 ```javascript
 #!/usr/bin/env bun
 
-import { HookExecutor } from '@outfitter/executor';
-import { StdinProtocol } from '@outfitter/protocol';
-import { createMarkdownFormatterHook } from '@outfitter/hooks-registry';
+import { HookExecutor } from '@carabiner/executor';
+import { StdinProtocol } from '@carabiner/protocol';
+import { createMarkdownFormatterHook } from '@carabiner/hooks-registry';
 
 async function main() {
   const protocol = new StdinProtocol();

@@ -1,5 +1,5 @@
 /**
- * @outfitter/hooks-registry - Markdown Formatter Hook
+ * @carabiner/hooks-registry - Markdown Formatter Hook
  * 
  * Automatically formats markdown files when they are edited using either
  * markdownlint-cli2 or prettier, depending on what's available.
@@ -8,7 +8,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { isMatch } from 'picomatch';
-import type { HookHandler, HookResult } from '@outfitter/types';
+import type { HookHandler, HookResult } from '@carabiner/types';
 
 /**
  * Configuration for the markdown formatter hook

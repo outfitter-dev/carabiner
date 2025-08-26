@@ -1,5 +1,5 @@
 {
-  "name": "@outfitter/hooks-registry",
+  "name": "@carabiner/hooks-registry",
   "version": "0.1.0",
   "description": "Official registry of Claude Code hooks",
   "type": "module",
@@ -27,10 +27,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@outfitter/executor": "workspace:*",
-    "@outfitter/protocol": "workspace:*",
-    "@outfitter/schemas": "workspace:*",
-    "@outfitter/types": "workspace:*",
+    "@carabiner/executor": "workspace:*",
+    "@carabiner/protocol": "workspace:*",
+    "@carabiner/schemas": "workspace:*",
+    "@carabiner/types": "workspace:*",
     "picomatch": "catalog:"
   },
   "devDependencies": {
