@@ -696,7 +696,7 @@ console.log(JSON.stringify({
         expect(config.environment.NODE_ENV).toBe(env);
 
         if (env === 'production') {
-          expect(config.hooks['pre-tool-use'].timeout).toBe(5000);
+          expect(config.hooks.PreToolUse.timeout).toBe(5000);
           expect(config.environment.LOG_LEVEL).toBe('warn');
         }
       }

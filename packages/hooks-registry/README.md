@@ -90,7 +90,7 @@ Create a PostToolUse hook file at `.claude/hooks/PostToolUse.js`:
 ```javascript
 #!/usr/bin/env bun
 
-import { HookExecutor } from '@carabiner/executor';
+import { HookExecutor } from '@carabiner/execution';
 import { StdinProtocol } from '@carabiner/protocol';
 import { createMarkdownFormatterHook } from '@carabiner/hooks-registry';
 

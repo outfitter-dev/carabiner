@@ -83,8 +83,10 @@ describe('markdown formatter hook', () => {
   describe('file pattern matching', () => {
     test('should process .md files by default', async () => {
       mockExecFileSync.mockImplementation(
-        (command: string, args?: string[]) => {
-          if (command === 'command' || command === 'where') return '';
+        (command: string, _args?: string[]) => {
+          if (command === 'command' || command === 'where') {
+            return '';
+          }
           return 'Formatted';
         }
       );
@@ -110,8 +112,10 @@ describe('markdown formatter hook', () => {
 
     test('should process .mdx files by default', async () => {
       mockExecFileSync.mockImplementation(
-        (command: string, args?: string[]) => {
-          if (command === 'command' || command === 'where') return '';
+        (command: string, _args?: string[]) => {
+          if (command === 'command' || command === 'where') {
+            return '';
+          }
           return 'Formatted';
         }
       );
@@ -174,8 +178,10 @@ describe('markdown formatter hook', () => {
       );
 
       mockExecFileSync.mockImplementation(
-        (command: string, args?: string[]) => {
-          if (command === 'command' || command === 'where') return '';
+        (command: string, _args?: string[]) => {
+          if (command === 'command' || command === 'where') {
+            return '';
+          }
           return 'Formatted';
         }
       );
@@ -195,13 +201,15 @@ describe('markdown formatter hook', () => {
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('markdownlint-cli2')
-          )
+          ) {
             return '/usr/bin/markdownlint-cli2';
+          }
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('prettier')
-          )
+          ) {
             throw new Error('not found');
+          }
           if (command === 'markdownlint-cli2') {
             formatterUsed = 'markdownlint';
             return 'Formatted with markdownlint';
@@ -237,13 +245,18 @@ describe('markdown formatter hook', () => {
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('markdownlint-cli2')
-          )
+          ) {
             throw new Error('not found');
+          }
+          if (command === 'npx' && args?.includes('markdownlint-cli2')) {
+            throw new Error('not found');
+          }
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('prettier')
-          )
+          ) {
             return '/usr/bin/prettier';
+          }
           if (command === 'prettier') {
             formatterUsed = 'prettier';
             return 'Formatted with prettier';
@@ -252,7 +265,7 @@ describe('markdown formatter hook', () => {
         }
       );
 
-      const hook = createMarkdownFormatterHook({ formatter: 'prettier' });
+      const hook = createMarkdownFormatterHook({ formatter: 'auto' });
 
       const context = createToolHookContext(
         'PostToolUse',
@@ -279,13 +292,15 @@ describe('markdown formatter hook', () => {
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('markdownlint-cli2')
-          )
+          ) {
             return '/usr/bin/markdownlint-cli2';
+          }
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('prettier')
-          )
+          ) {
             return '/usr/bin/prettier';
+          }
           if (command === 'prettier') {
             formatterUsed = 'prettier';
             return 'Formatted with prettier';
@@ -315,9 +330,14 @@ describe('markdown formatter hook', () => {
 
     test('should fail if no formatter available', async () => {
       mockExecFileSync.mockImplementation(
-        (command: string, args?: string[]) => {
-          if (command === 'command' || command === 'where' || command === 'npx')
+        (command: string, _args?: string[]) => {
+          if (
+            command === 'command' ||
+            command === 'where' ||
+            command === 'npx'
+          ) {
             throw new Error('not found');
+          }
           return '';
         }
       );
@@ -349,13 +369,15 @@ describe('markdown formatter hook', () => {
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('markdownlint-cli2')
-          )
+          ) {
             return '/usr/bin/markdownlint-cli2';
+          }
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('prettier')
-          )
+          ) {
             throw new Error('not found');
+          }
           if (command === 'markdownlint-cli2') {
             return 'Fixed';
           }
@@ -381,7 +403,7 @@ describe('markdown formatter hook', () => {
       expect(mockExecFileSync).toHaveBeenCalledWith(
         'markdownlint-cli2',
         expect.arrayContaining(['--fix']),
-        expect.any(Object)
+        expect.anything()
       );
     });
 
@@ -391,13 +413,18 @@ describe('markdown formatter hook', () => {
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('markdownlint-cli2')
-          )
+          ) {
             throw new Error('not found');
+          }
+          if (command === 'npx' && args?.includes('markdownlint-cli2')) {
+            throw new Error('not found');
+          }
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('prettier')
-          )
+          ) {
             return '/usr/bin/prettier';
+          }
           if (command === 'prettier') {
             return 'Fixed';
           }
@@ -405,10 +432,7 @@ describe('markdown formatter hook', () => {
         }
       );
 
-      const hook = createMarkdownFormatterHook({
-        formatter: 'prettier',
-        autoFix: true,
-      });
+      const hook = createMarkdownFormatterHook({ autoFix: true });
 
       const context = createToolHookContext(
         'PostToolUse',
@@ -426,7 +450,7 @@ describe('markdown formatter hook', () => {
       expect(mockExecFileSync).toHaveBeenCalledWith(
         'prettier',
         expect.arrayContaining(['--write']),
-        expect.any(Object)
+        expect.anything()
       );
     });
 
@@ -436,13 +460,18 @@ describe('markdown formatter hook', () => {
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('markdownlint-cli2')
-          )
+          ) {
             throw new Error('not found');
+          }
+          if (command === 'npx' && args?.includes('markdownlint-cli2')) {
+            throw new Error('not found');
+          }
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('prettier')
-          )
+          ) {
             return '/usr/bin/prettier';
+          }
           if (command === 'prettier') {
             return 'Checked';
           }
@@ -450,10 +479,7 @@ describe('markdown formatter hook', () => {
         }
       );
 
-      const hook = createMarkdownFormatterHook({
-        formatter: 'prettier',
-        autoFix: false,
-      });
+      const hook = createMarkdownFormatterHook({ autoFix: false });
 
       const context = createToolHookContext(
         'PostToolUse',
@@ -471,7 +497,7 @@ describe('markdown formatter hook', () => {
       expect(mockExecFileSync).toHaveBeenCalledWith(
         'prettier',
         expect.arrayContaining(['--check']),
-        expect.any(Object)
+        expect.anything()
       );
       expect(mockExecFileSync).not.toHaveBeenCalledWith(
         'prettier',
@@ -485,8 +511,9 @@ describe('markdown formatter hook', () => {
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('markdownlint-cli2')
-          )
+          ) {
             return '/usr/bin/markdownlint-cli2';
+          }
           if (command === 'markdownlint-cli2') {
             return 'Fixed';
           }
@@ -514,7 +541,7 @@ describe('markdown formatter hook', () => {
       expect(mockExecFileSync).toHaveBeenCalledWith(
         'markdownlint-cli2',
         expect.arrayContaining(['--config', '.markdownlint.json']),
-        expect.any(Object)
+        expect.anything()
       );
     });
   });
@@ -548,8 +575,9 @@ describe('markdown formatter hook', () => {
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('markdownlint-cli2')
-          )
+          ) {
             return '/usr/bin/markdownlint-cli2';
+          }
           if (command === 'markdownlint-cli2') {
             throw new Error('Formatting failed: invalid syntax');
           }
@@ -579,9 +607,10 @@ describe('markdown formatter hook', () => {
     test('should accept toolInput.path as an alternative to file_path', async () => {
       mockExistsSync.mockReturnValue(true);
       mockExecFileSync.mockImplementation(
-        (command: string, args?: string[]) => {
-          if (command === 'command' || command === 'where')
+        (command: string, _args?: string[]) => {
+          if (command === 'command' || command === 'where') {
             return '/usr/bin/dummy';
+          }
           return 'Formatted';
         }
       );
@@ -605,9 +634,10 @@ describe('markdown formatter hook', () => {
   describe('additional test coverage', () => {
     test('should process MultiEdit and NotebookEdit tools', async () => {
       mockExecFileSync.mockImplementation(
-        (command: string, args?: string[]) => {
-          if (command === 'command' || command === 'where')
+        (command: string, _args?: string[]) => {
+          if (command === 'command' || command === 'where') {
             return '/usr/bin/dummy';
+          }
           return 'Formatted';
         }
       );
@@ -637,13 +667,15 @@ describe('markdown formatter hook', () => {
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('markdownlint-cli2')
-          )
+          ) {
             return '/usr/bin/markdownlint-cli2';
+          }
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('prettier')
-          )
+          ) {
             return '/usr/bin/prettier';
+          }
           if (command === 'markdownlint-cli2') {
             formatterUsed = 'markdownlint';
             return 'Formatted with markdownlint';
@@ -676,13 +708,18 @@ describe('markdown formatter hook', () => {
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('markdownlint-cli2')
-          )
+          ) {
             throw new Error('not found');
+          }
+          if (command === 'npx' && args?.includes('markdownlint-cli2')) {
+            throw new Error('not found');
+          }
           if (
             (command === 'command' || command === 'where') &&
             args?.includes('prettier')
-          )
+          ) {
             return '/usr/bin/prettier';
+          }
           if (command === 'prettier') {
             return 'Fixed';
           }
@@ -714,7 +751,7 @@ describe('markdown formatter hook', () => {
           '--print-width',
           '100',
         ]),
-        expect.any(Object)
+        expect.anything()
       );
     });
   });

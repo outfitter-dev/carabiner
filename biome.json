@@ -21,7 +21,8 @@
     "rules": {
       "style": {
         "noMagicNumbers": "off",
-        "noEnum": "off"
+        "noEnum": "off",
+        "noParameterProperties": "off"
       },
       "complexity": {
         "noVoid": "off",
@@ -30,6 +31,17 @@
       },
       "performance": {
         "useTopLevelRegex": "off"
+      },
+      "suspicious": {
+        "useAwait": "off",
+        "noExplicitAny": "warn",
+        "noConsole": "warn",
+        "noBitwiseOperators": "warn",
+        "noAsyncPromiseExecutor": "warn"
+      },
+      "nursery": {
+        "noUnnecessaryConditions": "off",
+        "useMaxParams": "off"
       }
     }
   }
