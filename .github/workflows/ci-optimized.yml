@@ -46,7 +46,7 @@ jobs:
       - name: Generate cache key
         id: deps-cache-key
         run: |
-          echo "key=deps-${{ runner.os }}-bun-${{ env.BUN_VERSION }}-${{ hashFiles('**/bun.lockb') }}" >> $GITHUB_OUTPUT
+          echo "key=deps-${{ runner.os }}-bun-${{ env.BUN_VERSION }}-${{ hashFiles('**/bun.lock') }}" >> $GITHUB_OUTPUT
 
       - name: Cache dependencies
         id: cache
