@@ -29,7 +29,7 @@ Type: A
 Name: carabiner
 IP: 185.199.108.153
 
-Type: A  
+Type: A
 Name: carabiner
 IP: 185.199.109.153
 

@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/hooks-config/src/types.ts'
-      - 'packages/hooks-config/src/config.ts'
-      - '.github/workflows/update-schema.yml'
+      - "packages/hooks-config/src/types.ts"
+      - "packages/hooks-config/src/config.ts"
+      - ".github/workflows/update-schema.yml"
   workflow_dispatch:
 
 permissions:
@@ -35,11 +35,11 @@ jobs:
         run: |
           cd packages/schema-server
           bun run generate-schema || echo "Schema generation needs fixing"
-          
+
       - name: Copy schema to docs
         run: |
           cp packages/schema-server/public/schema.json docs/schema.json
-          
+
       - name: Commit schema updates
         run: |
           git config --local user.email "action@github.com"
@@ -57,15 +57,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
-        
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './docs'
-          
+          path: "./docs"
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
