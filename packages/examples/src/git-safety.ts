@@ -170,18 +170,14 @@ function validateGitCommand(command: string): {
  * Main git safety hook
  */
 const gitSafetyHook: HookHandler = (context): HookResult => {
-  // Support both camelCase and snake_case for backward compatibility
-  const toolName = (context as any).toolName ?? (context as any).tool_name;
-  const toolInput = (context as any).toolInput ?? (context as any).tool_input;
-  
   // Only process Bash commands
-  if (toolName !== 'Bash') {
+  if (context.tool_name !== 'Bash') {
     return {
       success: true,
     };
   }
 
-  const command = toolInput?.command as string | undefined;
+  const command = context.tool_input?.command as string | undefined;
   if (!command?.includes('git')) {
     return {
       success: true,

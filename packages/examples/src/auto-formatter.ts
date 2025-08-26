@@ -14,7 +14,7 @@
  * - Respects project configuration files
  */
 
-import { execFileSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, extname } from 'node:path';
 import { HookExecutor } from '@carabiner/execution';
@@ -205,8 +205,7 @@ const FORMATTERS: Record<
  */
 function isFormatterAvailable(checkCommand: string): boolean {
   try {
-    const [command, ...args] = checkCommand.split(' ');
-    execFileSync(command, args, { stdio: 'ignore' });
+    execSync(checkCommand, { stdio: 'ignore' });
     return true;
   } catch {
     return false;
@@ -260,7 +259,7 @@ function formatFile(filePath: string): { success: boolean; message: string } {
   try {
     // Run formatter
     const cwd = dirname(filePath);
-    execFileSync(formatter.command, formatter.args, {
+    execSync(`${formatter.command} ${formatter.args.join(' ')}`, {
       cwd,
       stdio: 'pipe',
     });
@@ -281,13 +280,9 @@ function formatFile(filePath: string): { success: boolean; message: string } {
  * Main auto-formatter hook
  */
 const autoFormatterHook: HookHandler = (context): HookResult => {
-  // Support both camelCase and snake_case for backward compatibility
-  const toolName = (context as any).toolName ?? (context as any).tool_name;
-  const toolInput = (context as any).toolInput ?? (context as any).tool_input;
-  
   // Only process file modification tools
   const fileTools = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'];
-  if (!toolName || !fileTools.includes(toolName)) {
+  if (!fileTools.includes(context.tool_name)) {
     return {
       success: true,
       action: 'continue',
@@ -297,16 +292,16 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
   // Extract file path based on tool
   let filePath: string | undefined;
 
-  switch (toolName) {
+  switch (context.tool_name) {
     case 'Edit':
     case 'Write':
-      filePath = toolInput?.file_path as string;
+      filePath = context.tool_input?.file_path as string;
       break;
     case 'MultiEdit':
-      filePath = toolInput?.file_path as string;
+      filePath = context.tool_input?.file_path as string;
       break;
     case 'NotebookEdit':
-      filePath = toolInput?.notebook_path as string;
+      filePath = context.tool_input?.notebook_path as string;
       break;
     default:
       // Other tools don't have file paths
