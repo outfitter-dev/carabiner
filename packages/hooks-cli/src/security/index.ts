@@ -8,7 +8,7 @@ import { CommandValidator } from './command-validator';
 import { createWorkspaceValidator } from './workspace-validator';
 
 // Re-export security validation error for convenience
-export { SecurityValidationError } from '@outfitter/hooks-validators';
+export { SecurityValidationError } from '@carabiner/hooks-validators';
 
 // Command validation
 export {

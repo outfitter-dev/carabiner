@@ -1,6 +1,6 @@
 # @outfitter/hooks-testing
 
-Testing framework, mocks, and utilities for Claude Code hooks.
+Testing framework, mocks, and utilities for Carabiner hooks.
 
 ## Installation
 

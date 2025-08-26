@@ -4,7 +4,6 @@ You have access to the following global MCP servers:
 
 ## Research Tools
 
-- `deepwiki`: Search the web, scrape a website, or perform deep research on a given topic
 - `context7`: Latest official documentation for a given library, tool, project, service, API, etc.
   - Use when: You need current, accurate documentation for libraries, APIs, frameworks, or tools that may have changed since training data
 

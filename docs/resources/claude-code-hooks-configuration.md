@@ -2,7 +2,7 @@
 
 > **Source**: [Claude Code Settings Documentation](https://docs.anthropic.com/en/docs/claude-code/settings)
 
-This document provides comprehensive guidance on configuring Claude Code hooks through the settings system, including hierarchical configuration, advanced patterns, and project-specific setups.
+This document provides comprehensive guidance on configuring Carabiner hooks through the settings system, including hierarchical configuration, advanced patterns, and project-specific setups.
 
 ## Table of Contents
 
@@ -779,4 +779,4 @@ const configFiles = [
 configFiles.forEach(testHookConfiguration);
 ```
 
-This comprehensive configuration guide provides all the necessary information for setting up and managing Claude Code hooks across different environments and use cases.
+This comprehensive configuration guide provides all the necessary information for setting up and managing Carabiner hooks across different environments and use cases.

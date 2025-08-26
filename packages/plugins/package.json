@@ -1,7 +1,7 @@
 {
-  "name": "@outfitter/plugins",
+  "name": "@carabiner/plugins",
   "version": "1.0.0",
-  "description": "Example plugin collection for Claude Code hooks - demonstrates plugin architecture patterns",
+  "description": "Example plugin collection for Carabiner hooks - demonstrates plugin architecture patterns",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,7 +42,7 @@
     "clean": "rm -rf dist tsconfig.build.tsbuildinfo"
   },
   "keywords": [
-    "claude-code",
+    "carabiner",
     "hooks",
     "plugins",
     "examples",
@@ -60,9 +60,9 @@
     "directory": "packages/plugins"
   },
   "dependencies": {
-    "@outfitter/registry": "workspace:*",
-    "@outfitter/types": "workspace:*",
-    "@outfitter/execution": "workspace:*",
+    "@carabiner/registry": "workspace:*",
+    "@carabiner/types": "workspace:*",
+    "@carabiner/execution": "workspace:*",
     "zod": "^3.24.1"
   },
   "devDependencies": {

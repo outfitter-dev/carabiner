@@ -1,7 +1,7 @@
 {
-  "name": "@outfitter/hooks-examples",
+  "name": "@carabiner/hooks-examples",
   "version": "0.1.0",
-  "description": "Example implementations demonstrating Claude Code hooks APIs",
+  "description": "Example implementations demonstrating Carabiner hooks APIs",
   "type": "module",
   "private": true,
   "scripts": {
@@ -9,17 +9,17 @@
     "typecheck": "echo 'Temporarily disabled - examples need type fixes'"
   },
   "keywords": [
-    "claude-code",
+    "carabiner",
     "hooks",
     "examples"
   ],
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@outfitter/hooks-core": "workspace:*",
-    "@outfitter/hooks-validators": "workspace:*",
-    "@outfitter/hooks-config": "workspace:*",
-    "@outfitter/hooks-testing": "workspace:*"
+    "@carabiner/hooks-core": "workspace:*",
+    "@carabiner/hooks-validators": "workspace:*",
+    "@carabiner/hooks-config": "workspace:*",
+    "@carabiner/hooks-testing": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "*",

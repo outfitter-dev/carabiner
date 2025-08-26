@@ -3,13 +3,13 @@
  * Combines Zod schemas with branded type validation
  */
 
-import type { ToolName } from '@outfitter/types';
+import type { ToolName } from '@carabiner/types';
 import {
   BrandValidationError,
   createDirectoryPath,
   createSessionId,
   createTranscriptPath,
-} from '@outfitter/types';
+} from '@carabiner/types';
 import type { z } from 'zod';
 import { type ClaudeHookInput, safeParseClaudeHookInput } from './input.js';
 import { safeValidateToolInput, toolInputSchemas } from './tools.js';
@@ -57,10 +57,10 @@ export type ValidationResult<T> = {
  */
 export type ValidatedClaudeInput = {
   readonly original: ClaudeHookInput;
-  readonly sessionId: import('@outfitter/types').SessionId;
-  readonly transcriptPath: import('@outfitter/types').TranscriptPath;
-  readonly cwd: import('@outfitter/types').DirectoryPath;
-  readonly event: import('@outfitter/types').HookEvent;
+  readonly sessionId: import('@carabiner/types').SessionId;
+  readonly transcriptPath: import('@carabiner/types').TranscriptPath;
+  readonly cwd: import('@carabiner/types').DirectoryPath;
+  readonly event: import('@carabiner/types').HookEvent;
   readonly matcher?: string;
 };
 

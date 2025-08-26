@@ -17,7 +17,7 @@
  *
  * @example Basic Usage
  * ```typescript
- * import { PluginRegistry, PluginLoader } from '@outfitter/registry';
+ * import { PluginRegistry, PluginLoader } from '@carabiner/registry';
  * import { gitSafetyPlugin } from './plugins/git-safety';
  *
  * // Create registry
@@ -32,7 +32,7 @@
  *
  * @example With Configuration
  * ```typescript
- * import { PluginRegistry, ConfigLoader } from '@outfitter/registry';
+ * import { PluginRegistry, ConfigLoader } from '@carabiner/registry';
  *
  * // Load configuration
  * const configLoader = new ConfigLoader();
@@ -47,7 +47,7 @@
  *
  * @example With Plugin Discovery
  * ```typescript
- * import { PluginRegistry, PluginLoader } from '@outfitter/registry';
+ * import { PluginRegistry, PluginLoader } from '@carabiner/registry';
  *
  * // Auto-discover plugins
  * const loader = new PluginLoader({
@@ -134,7 +134,7 @@ export const VERSION = '1.0.0';
  * Package metadata
  */
 export const PACKAGE_INFO = {
-  name: '@outfitter/registry',
+  name: '@carabiner/registry',
   version: VERSION,
   description: 'Plugin registry system for Claude Code hooks',
   repository: 'https://github.com/outfitter-dev/grapple',

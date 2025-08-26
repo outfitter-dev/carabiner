@@ -1,6 +1,6 @@
 # Examples & Tutorials
 
-Real-world examples and best practices for building production-ready Claude Code hooks with Grapple.
+Real-world examples and best practices for building production-ready Carabiner hooks with Grapple.
 
 ## Table of Contents
 

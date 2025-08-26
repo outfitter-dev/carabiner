@@ -16,7 +16,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import type { HookConfiguration } from '@outfitter/types';
+import type { HookConfiguration } from '@carabiner/types';
 
 /**
  * Test workspace for integration tests
@@ -129,7 +129,7 @@ describe('Cross-Package Integration Tests', () => {
 
     test('should load and validate configuration through hooks-config', async () => {
       // Test loading config through the config package
-      const { ConfigManager } = await import('@outfitter/hooks-config');
+      const { ConfigManager } = await import('@carabiner/hooks-config');
 
       const config = {
         version: '1.0.0',
@@ -177,8 +177,8 @@ describe('Cross-Package Integration Tests', () => {
 
     test('should execute hooks through hooks-core runtime', async () => {
       // Test the complete execution flow
-      const { HookExecutor } = await import('@outfitter/execution');
-      const { TestProtocol } = await import('@outfitter/protocol');
+      const { HookExecutor } = await import('@carabiner/execution');
+      const { TestProtocol } = await import('@carabiner/protocol');
 
       // Create a simple hook
       const hookContent = `
@@ -214,7 +214,7 @@ export default async function(context) {
 
   describe('Configuration Validation Integration', () => {
     test('should validate complete hook configuration', async () => {
-      const { ConfigManager } = await import('@outfitter/hooks-config');
+      const { ConfigManager } = await import('@carabiner/hooks-config');
 
       const validConfig: HookConfiguration = {
         version: '1.0.0',
@@ -250,7 +250,7 @@ export default async function(context) {
     });
 
     test('should reject invalid configuration', async () => {
-      const { ConfigManager } = await import('@outfitter/hooks-config');
+      const { ConfigManager } = await import('@carabiner/hooks-config');
 
       const invalidConfig = {
         version: '1.0.0',
@@ -274,9 +274,9 @@ export default async function(context) {
   describe('End-to-End Hook Execution', () => {
     test('should execute complete hook workflow with metrics', async () => {
       // Test the complete flow from configuration loading to hook execution
-      const { ConfigManager } = await import('@outfitter/hooks-config');
+      const { ConfigManager } = await import('@carabiner/hooks-config');
       const { globalMetrics, clearExecutionMetrics, getExecutionStats } =
-        await import('@outfitter/execution');
+        await import('@carabiner/execution');
 
       // Clear any existing metrics
       clearExecutionMetrics();
@@ -355,7 +355,7 @@ export default async function(context) {
     });
 
     test('should handle hook execution errors gracefully', async () => {
-      const { ConfigManager } = await import('@outfitter/hooks-config');
+      const { ConfigManager } = await import('@carabiner/hooks-config');
 
       // Create a failing hook
       const failingHookContent = `
@@ -413,7 +413,7 @@ export default async function(context) {
 
   describe('Security Integration Tests', () => {
     test('should enforce security policies across packages', async () => {
-      const { ConfigManager } = await import('@outfitter/hooks-config');
+      const { ConfigManager } = await import('@carabiner/hooks-config');
 
       // Test configuration with potentially unsafe settings
       const unsafeConfig = {
@@ -438,7 +438,7 @@ export default async function(context) {
     });
 
     test('should validate environment variable safety', async () => {
-      const { ConfigManager } = await import('@outfitter/hooks-config');
+      const { ConfigManager } = await import('@carabiner/hooks-config');
 
       const configWithUnsafeEnv: HookConfiguration = {
         version: '1.0.0',
@@ -472,7 +472,7 @@ export default async function(context) {
   describe('Performance Integration', () => {
     test('should track performance across package boundaries', async () => {
       const { globalMetrics, clearExecutionMetrics } = await import(
-        '@outfitter/execution'
+        '@carabiner/execution'
       );
 
       // Clear existing metrics

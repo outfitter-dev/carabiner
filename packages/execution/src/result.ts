@@ -6,7 +6,7 @@
  * error handling predictability throughout the execution engine.
  */
 
-import type { HookResult } from '@outfitter/types';
+import type { HookResult } from '@carabiner/types';
 
 /**
  * Success result containing a value

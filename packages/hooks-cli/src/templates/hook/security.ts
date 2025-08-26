@@ -6,8 +6,8 @@ export const securityHookTypeScript = (
   name: string
 ): string => `#!/usr/bin/env bun
 
-import { runClaudeHook, HookResults, type HookContext } from '@outfitter/hooks-core';
-import { SecurityValidators } from '@outfitter/hooks-validators';
+import { runClaudeHook, HookResults, type HookContext } from '@carabiner/hooks-core';
+import { SecurityValidators } from '@carabiner/hooks-validators';
 
 async function handler(ctx: HookContext) {
   console.log(\`🔒 ${name} security hook triggered for: \${ctx.toolName}\`);
@@ -76,8 +76,8 @@ export const securityHookJavaScript = (
   name: string
 ): string => `#!/usr/bin/env bun
 
-const { runClaudeHook, HookResults } = require('@outfitter/hooks-core');
-const { SecurityValidators } = require('@outfitter/hooks-validators');
+const { runClaudeHook, HookResults } = require('@carabiner/hooks-core');
+const { SecurityValidators } = require('@carabiner/hooks-validators');
 
 async function handler(ctx) {
   console.log(\`🔒 ${name} security hook triggered for: \${ctx.toolName}\`);

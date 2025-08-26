@@ -1,4 +1,4 @@
-declare module '@outfitter/error-management' {
+declare module '@carabiner/error-management' {
   export const ErrorCode: Record<string, number>;
   export class ConfigurationError extends Error {
     constructor(message: string, code?: number, details?: unknown);

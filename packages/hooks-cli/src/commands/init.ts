@@ -5,7 +5,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { DEFAULT_CONFIG } from '@outfitter/hooks-config';
+import { DEFAULT_CONFIG } from '@carabiner/hooks-config';
 import { BaseCommand, type CliConfig } from '../types';
 
 export class InitCommand extends BaseCommand {
@@ -177,9 +177,9 @@ export class InitCommand extends BaseCommand {
     const typesContent = (useTypeScript: boolean) =>
       useTypeScript
         ? `
-export * from '@outfitter/hooks-core';
-export * from '@outfitter/hooks-validators';
-export * from '@outfitter/hooks-config';
+export * from '@carabiner/hooks-core';
+export * from '@carabiner/hooks-validators';
+export * from '@carabiner/hooks-config';
 
 // Custom types for your hooks
 export interface CustomHookData {
@@ -333,8 +333,8 @@ module.exports = { HookUtils };
     const advancedContent =
       extension === 'ts'
         ? `
-import { HookBuilder, middleware } from '@outfitter/hooks-core';
-import { SecurityValidators } from '@outfitter/hooks-validators';
+import { HookBuilder, middleware } from '@carabiner/hooks-core';
+import { SecurityValidators } from '@carabiner/hooks-validators';
 
 // Example of advanced hook composition
 export const advancedPreToolUse = HookBuilder
@@ -373,8 +373,8 @@ export const advancedPreToolUse = HookBuilder
     const securityContent =
       extension === 'ts'
         ? `
-import { SecurityValidators, validateHookSecurity } from '@outfitter/hooks-validators';
-import type { HookContext, HookResult } from '@outfitter/hooks-core';
+import { SecurityValidators, validateHookSecurity } from '@carabiner/hooks-validators';
+import type { HookContext, HookResult } from '@carabiner/hooks-core';
 
 /**
  * Security-focused hook handler
@@ -429,7 +429,7 @@ export async function securityHookHandler(context: HookContext): Promise<HookRes
       extension === 'ts'
         ? `
 import { test, expect } from 'bun:test';
-import { createMockContextFor, TestUtils } from '@outfitter/hooks-testing';
+import { createMockContextFor, TestUtils } from '@carabiner/hooks-testing';
 import { handlePreToolUse } from '../pre-tool-use.ts';
 
 test('PreToolUse hook should validate safe commands', async () => {
@@ -531,9 +531,9 @@ const { test, expect } = require('bun:test');
     if (isTypeScript) {
       return `#!/usr/bin/env bun
 
-import { createHookContext, exitWithResult, HookResults } from '@outfitter/hooks-core';
-import { validateHookSecurity } from '@outfitter/hooks-validators';
-import type { HookResult } from '@outfitter/hooks-core';
+import { createHookContext, exitWithResult, HookResults } from '@carabiner/hooks-core';
+import { validateHookSecurity } from '@carabiner/hooks-validators';
+import type { HookResult } from '@carabiner/hooks-core';
 
 /**
  * PreToolUse hook - validates tool usage before execution
@@ -572,8 +572,8 @@ export { handlePreToolUse };
     }
     return `#!/usr/bin/env bun
 
-const { createHookContext, exitWithResult, HookResults } = require('@outfitter/hooks-core');
-const { validateHookSecurity } = require('@outfitter/hooks-validators');
+const { createHookContext, exitWithResult, HookResults } = require('@carabiner/hooks-core');
+const { validateHookSecurity } = require('@carabiner/hooks-validators');
 
 /**
  * PreToolUse hook - validates tool usage before execution
@@ -618,8 +618,8 @@ module.exports = { handlePreToolUse };
     if (isTypeScript) {
       return `#!/usr/bin/env bun
 
-import { createHookContext, exitWithResult, HookResults } from '@outfitter/hooks-core';
-import type { HookResult } from '@outfitter/hooks-core';
+import { createHookContext, exitWithResult, HookResults } from '@carabiner/hooks-core';
+import type { HookResult } from '@carabiner/hooks-core';
 
 /**
  * PostToolUse hook - performs actions after tool execution
@@ -651,7 +651,7 @@ export { handlePostToolUse };
     }
     return `#!/usr/bin/env bun
 
-const { createHookContext, exitWithResult, HookResults } = require('@outfitter/hooks-core');
+const { createHookContext, exitWithResult, HookResults } = require('@carabiner/hooks-core');
 
 /**
  * PostToolUse hook - performs actions after tool execution
@@ -689,8 +689,8 @@ module.exports = { handlePostToolUse };
     if (isTypeScript) {
       return `#!/usr/bin/env bun
 
-import { createHookContext, exitWithResult, HookResults } from '@outfitter/hooks-core';
-import type { HookResult } from '@outfitter/hooks-core';
+import { createHookContext, exitWithResult, HookResults } from '@carabiner/hooks-core';
+import type { HookResult } from '@carabiner/hooks-core';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -744,7 +744,7 @@ export { handleSessionStart };
     }
     return `#!/usr/bin/env bun
 
-const { createHookContext, exitWithResult, HookResults } = require('@outfitter/hooks-core');
+const { createHookContext, exitWithResult, HookResults } = require('@carabiner/hooks-core');
 const { existsSync, readFileSync } = require('node:fs');
 const { join } = require('node:path');
 

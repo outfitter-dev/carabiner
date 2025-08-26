@@ -1,6 +1,6 @@
-# @outfitter/hooks-cli
+# @carabiner/hooks-cli
 
-Command-line tools, scaffolding, and project management for Claude Code hooks.
+Command-line tools, scaffolding, and project management for Carabiner hooks.
 
 ## Installation
 
@@ -8,11 +8,11 @@ Command-line tools, scaffolding, and project management for Claude Code hooks.
 
 # Global installation (recommended)
 
-npm install -g @outfitter/hooks-cli
+npm install -g @carabiner/hooks-cli
 
 # Or use directly with npx
 
-npx @outfitter/hooks-cli --help
+npx @carabiner/hooks-cli --help
 
 ```
 
@@ -24,23 +24,23 @@ npx @outfitter/hooks-cli --help
 
 # Initialize hooks in your project
 
-claude-hooks init
+carabiner init
 
 # Generate a new hook
 
-claude-hooks generate --type PreToolUse --tool Bash --name security-check
+carabiner generate --type PreToolUse --tool Bash --name security-check
 
 # Build and validate configuration
 
-claude-hooks build --output .claude/settings.json
+carabiner build --output .claude/settings.json
 
 # Test a specific hook
 
-claude-hooks test --hook ./hooks/pre-tool-use.ts
+carabiner test --hook ./hooks/pre-tool-use.ts
 
 # Development mode with file watching
 
-claude-hooks dev --watch
+carabiner dev --watch
 
 ```
 
@@ -50,17 +50,17 @@ claude-hooks dev --watch
 
 # Basic initialization
 
-claude-hooks init
+carabiner init
 
 # TypeScript project with strict configuration
 
-claude-hooks init --typescript --strict
+carabiner init --typescript --strict
 
 # Initialize with templates
 
-claude-hooks init --template security
-claude-hooks init --template formatting
-claude-hooks init --template audit
+carabiner init --template security
+carabiner init --template formatting
+carabiner init --template audit
 
 ```
 
@@ -89,10 +89,10 @@ README.md                     # Updated with hook documentation
 
 ### `init`
 
-Initialize Claude Code hooks in your project.
+Initialize Carabiner hooks in your project.
 
 ```bash
-claude-hooks init [options]
+carabiner init [options]
 
 Options:
   --typescript, -t     Generate TypeScript hooks (default: true)
@@ -110,19 +110,19 @@ Options:
 
 # Basic TypeScript setup with Bun
 
-claude-hooks init
+carabiner init
 
 # JavaScript with Node.js
 
-claude-hooks init --javascript --runtime node
+carabiner init --javascript --runtime node
 
 # Security-focused setup
 
-claude-hooks init --template security --strict
+carabiner init --template security --strict
 
 # See what would be created
 
-claude-hooks init --template audit --dry-run
+carabiner init --template audit --dry-run
 
 ```
 
@@ -131,7 +131,7 @@ claude-hooks init --template audit --dry-run
 Generate new hook scripts from templates.
 
 ```bash
-claude-hooks generate [options]
+carabiner generate [options]
 
 Options:
   --type <event>       Hook event (PreToolUse, PostToolUse, SessionStart, etc.)
@@ -149,23 +149,23 @@ Options:
 
 # Universal security hook for all tools
 
-claude-hooks generate --type PreToolUse --name universal-security
+carabiner generate --type PreToolUse --name universal-security
 
 # Bash-specific security hook
 
-claude-hooks generate --type PreToolUse --tool Bash --name bash-security
+carabiner generate --type PreToolUse --tool Bash --name bash-security
 
 # Post-write formatting hook
 
-claude-hooks generate --type PostToolUse --tool Write --name format-after-write
+carabiner generate --type PostToolUse --tool Write --name format-after-write
 
 # Session audit hook
 
-claude-hooks generate --type SessionStart --name session-audit
+carabiner generate --type SessionStart --name session-audit
 
 # Use template with custom name
 
-claude-hooks generate --type PreToolUse --template security --name custom-security
+carabiner generate --type PreToolUse --template security --name custom-security
 
 ```
 
@@ -182,7 +182,7 @@ Generated files include:
 Build and validate hook configuration for Claude Code.
 
 ```bash
-claude-hooks build [options]
+carabiner build [options]
 
 Options:
   --config <path>      Configuration file (default: .claude/hooks.config.ts)
@@ -199,19 +199,19 @@ Options:
 
 # Build default configuration
 
-claude-hooks build
+carabiner build
 
 # Build for production environment
 
-claude-hooks build --environment production --output .claude/settings.prod.json
+carabiner build --environment production --output .claude/settings.prod.json
 
 # Build with validation and minification
 
-claude-hooks build --validate --minify
+carabiner build --validate --minify
 
 # Watch mode for development
 
-claude-hooks build --watch
+carabiner build --watch
 
 ```
 
@@ -220,7 +220,7 @@ claude-hooks build --watch
 Test hooks with mock data or run validation checks.
 
 ```bash
-claude-hooks test [options] [hook-file...]
+carabiner test [options] [hook-file...]
 
 Options:
   --hook <path>        Specific hook file to test
@@ -238,23 +238,23 @@ Options:
 
 # Test all hooks
 
-claude-hooks test
+carabiner test
 
 # Test specific hook file
 
-claude-hooks test --hook ./hooks/bash-security.ts
+carabiner test --hook ./hooks/bash-security.ts
 
 # Test with specific tool context
 
-claude-hooks test --hook ./hooks/pre-tool-use.ts --tool Bash --input '{"command":"ls -la"}'
+carabiner test --hook ./hooks/pre-tool-use.ts --tool Bash --input '{"command":"ls -la"}'
 
 # Test PreToolUse event with mock data
 
-claude-hooks test --event PreToolUse --tool Write --input '{"file_path":"test.txt","content":"hello"}'
+carabiner test --event PreToolUse --tool Write --input '{"file_path":"test.txt","content":"hello"}'
 
 # Validate without execution
 
-claude-hooks test --dry-run --verbose
+carabiner test --dry-run --verbose
 
 ```
 
@@ -263,7 +263,7 @@ claude-hooks test --dry-run --verbose
 Development mode with file watching and hot reload.
 
 ```bash
-claude-hooks dev [options]
+carabiner dev [options]
 
 Options:
   --watch              Watch hook files for changes (default: true)
@@ -280,15 +280,15 @@ Options:
 
 # Basic development mode
 
-claude-hooks dev
+carabiner dev
 
 # Watch with testing and rebuilding
 
-claude-hooks dev --test-on-change --build-on-change
+carabiner dev --test-on-change --build-on-change
 
 # Development server with UI
 
-claude-hooks dev --port 3001 --open
+carabiner dev --port 3001 --open
 
 ```
 
@@ -297,7 +297,7 @@ claude-hooks dev --port 3001 --open
 Manage hook configuration.
 
 ```bash
-claude-hooks config <command> [options]
+carabiner config <command> [options]
 
 Commands:
   get <key>            Get configuration value
@@ -315,31 +315,31 @@ Commands:
 
 # List all hook configurations
 
-claude-hooks config list
+carabiner config list
 
 # Get specific hook configuration
 
-claude-hooks config get PreToolUse.Bash
+carabiner config get PreToolUse.Bash
 
 # Set hook configuration
 
-claude-hooks config set PreToolUse.Bash.timeout 10000
+carabiner config set PreToolUse.Bash.timeout 10000
 
 # Remove hook
 
-claude-hooks config remove PostToolUse.Write
+carabiner config remove PostToolUse.Write
 
 # Validate configuration
 
-claude-hooks config validate
+carabiner config validate
 
 # Create backup
 
-claude-hooks config backup
+carabiner config backup
 
 # Restore from backup
 
-claude-hooks config restore .claude/backups/settings-2024-01-15.json
+carabiner config restore .claude/backups/settings-2024-01-15.json
 
 ```
 
@@ -348,7 +348,7 @@ claude-hooks config restore .claude/backups/settings-2024-01-15.json
 Validate hooks and configuration.
 
 ```bash
-claude-hooks validate [options]
+carabiner validate [options]
 
 Options:
   --config             Validate configuration files
@@ -366,19 +366,19 @@ Options:
 
 # Validate everything
 
-claude-hooks validate
+carabiner validate
 
 # Validate only configuration
 
-claude-hooks validate --config
+carabiner validate --config
 
 # Syntax and type checking only
 
-claude-hooks validate --syntax --types
+carabiner validate --syntax --types
 
 # Security-focused validation
 
-claude-hooks validate --security
+carabiner validate --security
 
 ```
 
@@ -387,8 +387,8 @@ claude-hooks validate --security
 Create a `hooks.config.ts` file for advanced configuration:
 
 ```typescript
-import { defineConfig } from '@outfitter/hooks-cli';
-import { templates } from '@outfitter/hooks-config';
+import { defineConfig } from '@carabiner/hooks-cli';
+import { templates } from '@carabiner/hooks-config';
 
 export default defineConfig({
   // Runtime configuration
@@ -486,7 +486,7 @@ export default defineConfig({
 #### Security Template
 
 ```bash
-claude-hooks init --template security
+carabiner init --template security
 
 ```
 
@@ -500,7 +500,7 @@ Creates hooks for:
 #### Formatting Template
 
 ```bash
-claude-hooks init --template formatting
+carabiner init --template formatting
 
 ```
 
@@ -514,7 +514,7 @@ Creates hooks for:
 #### Audit Template
 
 ```bash
-claude-hooks init --template audit
+carabiner init --template audit
 
 ```
 
@@ -528,7 +528,7 @@ Creates hooks for:
 #### Minimal Template
 
 ```bash
-claude-hooks init --template minimal
+carabiner init --template minimal
 
 ```
 
@@ -540,7 +540,7 @@ Create custom templates in `templates/` directory:
 
 ```typescript
 // templates/my-template.ts
-import { defineTemplate } from '@outfitter/hooks-cli';
+import { defineTemplate } from '@carabiner/hooks-cli';
 
 export default defineTemplate({
   name: 'my-template',
@@ -559,7 +559,7 @@ export default defineTemplate({
     {
       path: 'hooks/custom-validator.ts',
       content: `#!/usr/bin/env bun
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   console.log(\`Custom validation for \${context.toolName}\`);
@@ -568,7 +568,7 @@ runClaudeHook(async (context) => {
     },
   ],
 
-  dependencies: ['@outfitter/hooks-core'],
+  dependencies: ['@carabiner/hooks-core'],
 
   postInstall: async (context) => {
     console.log('Custom template installed successfully!');
@@ -579,7 +579,7 @@ runClaudeHook(async (context) => {
 Use with:
 
 ```bash
-claude-hooks init --template ./templates/my-template.ts
+carabiner init --template ./templates/my-template.ts
 
 ```
 
@@ -592,11 +592,11 @@ Add to your `package.json`:
 ```json
 {
   "scripts": {
-    "hooks:build": "claude-hooks build",
-    "hooks:test": "claude-hooks test",
-    "hooks:dev": "claude-hooks dev",
-    "hooks:validate": "claude-hooks validate",
-    "hooks:init": "claude-hooks init"
+    "hooks:build": "carabiner build",
+    "hooks:test": "carabiner test",
+    "hooks:dev": "carabiner dev",
+    "hooks:validate": "carabiner validate",
+    "hooks:init": "carabiner init"
   }
 }
 ```
@@ -626,9 +626,9 @@ jobs:
 
       - name: Validate hooks
         run: |
-          bunx @outfitter/hooks-cli validate --all
-          bunx @outfitter/hooks-cli test --dry-run
-          bunx @outfitter/hooks-cli build --validate
+          bunx @carabiner/hooks-cli validate --all
+          bunx @carabiner/hooks-cli test --dry-run
+          bunx @carabiner/hooks-cli build --validate
 ```
 
 ### IDE Integration
@@ -640,9 +640,9 @@ The CLI works with the Claude Code VS Code extension:
 ```json
 // .vscode/settings.json
 {
-  "claude-code.hooks.validateOnSave": true,
-  "claude-code.hooks.formatOnSave": true,
-  "claude-code.hooks.showInlineErrors": true
+  "carabiner.hooks.validateOnSave": true,
+  "carabiner.hooks.formatOnSave": true,
+  "carabiner.hooks.showInlineErrors": true
 }
 ```
 
@@ -654,7 +654,7 @@ The CLI generates TypeScript definitions:
 
 ```typescript
 // types/hooks.d.ts (auto-generated)
-import type { HookContext, HookResult } from '@outfitter/hooks-core';
+import type { HookContext, HookResult } from '@carabiner/hooks-core';
 
 export interface ProjectHookContext extends HookContext {
   // Project-specific context extensions
@@ -671,11 +671,11 @@ export interface ProjectHookResult extends HookResult {
 
 # Type check all hooks
 
-claude-hooks validate --types
+carabiner validate --types
 
 # Type check specific hook
 
-claude-hooks validate --types --hook ./hooks/bash-security.ts
+carabiner validate --types --hook ./hooks/bash-security.ts
 
 ```
 
@@ -689,11 +689,11 @@ claude-hooks validate --types --hook ./hooks/bash-security.ts
 
 # Check configuration
 
-claude-hooks config validate
+carabiner config validate
 
 # Test hook directly
 
-claude-hooks test --hook ./hooks/problematic-hook.ts --verbose
+carabiner test --hook ./hooks/problematic-hook.ts --verbose
 
 ```
 
@@ -703,11 +703,11 @@ claude-hooks test --hook ./hooks/problematic-hook.ts --verbose
 
 # Analyze hook performance
 
-claude-hooks validate --performance
+carabiner validate --performance
 
 # Check timeout settings
 
-claude-hooks config get PreToolUse.Bash.timeout
+carabiner config get PreToolUse.Bash.timeout
 
 ```
 
@@ -722,7 +722,7 @@ ls -la hooks/
 # Test with explicit permissions
 
 chmod +x hooks/*.ts
-claude-hooks test
+carabiner test
 
 ```
 
@@ -732,11 +732,11 @@ claude-hooks test
 
 # Enable debug output
 
-DEBUG=claude-hooks:* claude-hooks dev
+DEBUG=carabiner:* carabiner dev
 
 # Verbose logging
 
-claude-hooks test --verbose --hook ./hooks/debug-me.ts
+carabiner test --verbose --hook ./hooks/debug-me.ts
 
 ```
 
@@ -748,29 +748,29 @@ claude-hooks test --verbose --hook ./hooks/debug-me.ts
 
 # 1. Initialize project with security template
 
-claude-hooks init --template security --typescript --strict
+carabiner init --template security --typescript --strict
 
 # 2. Generate additional hooks
 
-claude-hooks generate --type PostToolUse --tool Write --name format-typescript
-claude-hooks generate --type PreToolUse --tool Bash --name dangerous-command-blocker
+carabiner generate --type PostToolUse --tool Write --name format-typescript
+carabiner generate --type PreToolUse --tool Bash --name dangerous-command-blocker
 
 # 3. Configure for different environments
 
-claude-hooks config set environments.production.hooks.PreToolUse.*.timeout 15000
-claude-hooks config set environments.development.hooks.PreToolUse.*.timeout 5000
+carabiner config set environments.production.hooks.PreToolUse.*.timeout 15000
+carabiner config set environments.development.hooks.PreToolUse.*.timeout 5000
 
 # 4. Build production configuration
 
-claude-hooks build --environment production --output .claude/settings.prod.json
+carabiner build --environment production --output .claude/settings.prod.json
 
 # 5. Test everything
 
-claude-hooks test --all
+carabiner test --all
 
 # 6. Start development mode
 
-claude-hooks dev --watch --test-on-change
+carabiner dev --watch --test-on-change
 
 ```
 
@@ -780,10 +780,10 @@ claude-hooks dev --watch --test-on-change
 
 # Generate tool-specific hooks for different scenarios
 
-claude-hooks generate --type PreToolUse --tool Bash --name production-bash-security --template security
-claude-hooks generate --type PreToolUse --tool Write --name file-validation --template validation
-claude-hooks generate --type PostToolUse --tool Edit --name format-and-lint --template formatting
-claude-hooks generate --type SessionStart --name project-initialization
+carabiner generate --type PreToolUse --tool Bash --name production-bash-security --template security
+carabiner generate --type PreToolUse --tool Write --name file-validation --template validation
+carabiner generate --type PostToolUse --tool Edit --name format-and-lint --template formatting
+carabiner generate --type SessionStart --name project-initialization
 
 ```
 
@@ -792,7 +792,7 @@ claude-hooks generate --type SessionStart --name project-initialization
 For programmatic usage:
 
 ```typescript
-import { CLI, ConfigManager, TemplateEngine } from '@outfitter/hooks-cli';
+import { CLI, ConfigManager, TemplateEngine } from '@carabiner/hooks-cli';
 
 // Programmatic CLI usage
 const cli = new CLI();

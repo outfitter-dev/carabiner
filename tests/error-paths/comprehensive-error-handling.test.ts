@@ -11,7 +11,7 @@ import type {
   HookContext,
   HookHandler,
   HookResult,
-} from '@outfitter/types';
+} from '@carabiner/types';
 
 /**
  * Error simulation utilities

@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import type { HookContext } from '@outfitter/types';
+import type { HookContext } from '@carabiner/types';
 import { gitSafetyPlugin } from '../git-safety/index';
 
 const createBashContext = (command: string): HookContext =>

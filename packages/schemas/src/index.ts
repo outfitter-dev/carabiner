@@ -24,7 +24,7 @@ export type {
   SessionId,
   ToolName,
   TranscriptPath,
-} from '@outfitter/types';
+} from '@carabiner/types';
 
 export type {
   ClaudeHookInput,

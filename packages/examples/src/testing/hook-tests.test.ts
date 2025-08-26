@@ -239,7 +239,7 @@ describe('Custom Hook Scenarios', () => {
     // Create a custom hook for testing
     const customValidationHook = HookBuilder.forPreToolUse()
       .forTool('Write')
-      .withHandler(async (context) => {
+      .withHandler((context) => {
         const filePath = (context.toolInput as Record<string, unknown>)
           .file_path;
 
@@ -273,7 +273,7 @@ describe('Custom Hook Scenarios', () => {
   });
 
   test('should test hook with middleware', async () => {
-    const { middleware } = await import('@outfitter/hooks-core');
+    const { middleware } = await import('@carabiner/hooks-core');
 
     // Create hook with timing middleware
     const timedHook = HookBuilder.forPostToolUse()
@@ -328,7 +328,7 @@ describe('Integration Testing', () => {
   test('should handle error propagation correctly', async () => {
     // Test error handling in hook chain
     const errorHook = HookBuilder.forPreToolUse()
-      .withHandler(async () => {
+      .withHandler(() => {
         throw new Error('Simulated hook error');
       })
       .build();

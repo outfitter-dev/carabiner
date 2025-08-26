@@ -1,5 +1,5 @@
 {
-  "name": "@outfitter/error-management",
+  "name": "@carabiner/error-management",
   "version": "0.1.0-beta",
   "description": "Production-ready error handling system for Grapple monorepo",
   "type": "module",

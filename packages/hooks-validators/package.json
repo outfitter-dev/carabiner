@@ -1,7 +1,7 @@
 {
-  "name": "@outfitter/hooks-validators",
+  "name": "@carabiner/hooks-validators",
   "version": "0.1.0",
-  "description": "Security and validation utilities for Claude Code hooks",
+  "description": "Security and validation utilities for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -28,7 +28,7 @@
     "prepublishOnly": "bun run build"
   },
   "keywords": [
-    "claude-code",
+    "carabiner",
     "hooks",
     "validation",
     "security"
@@ -36,7 +36,7 @@
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@outfitter/hooks-core": "workspace:*"
+    "@carabiner/hooks-core": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "*",

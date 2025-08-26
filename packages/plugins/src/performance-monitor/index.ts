@@ -10,8 +10,8 @@
  */
 
 import { PerformanceObserver, performance } from 'node:perf_hooks';
-import type { HookPlugin, PluginResult } from '@outfitter/registry';
-import type { HookContext } from '@outfitter/types';
+import type { HookPlugin, PluginResult } from '@carabiner/registry';
+import type { HookContext } from '@carabiner/types';
 import { z } from 'zod';
 
 /**

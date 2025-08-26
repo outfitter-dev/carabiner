@@ -5,7 +5,7 @@
  *
  * @example Basic usage:
  * ```typescript
- * import { GrappleError, ErrorCode, ErrorCategory, reportError } from '@outfitter/error-management';
+ * import { GrappleError, ErrorCode, ErrorCategory, reportError } from '@carabiner/error-management';
  *
  * try {
  *   // Some operation
@@ -22,7 +22,7 @@
  *
  * @example With error recovery:
  * ```typescript
- * import { RetryManager, CircuitBreaker } from '@outfitter/error-management';
+ * import { RetryManager, CircuitBreaker } from '@carabiner/error-management';
  *
  * const retryManager = new RetryManager({ maxRetries: 3 });
  * const result = await retryManager.execute(async () => {
@@ -33,7 +33,7 @@
  *
  * @example With error boundaries:
  * ```typescript
- * import { executeWithBoundary } from '@outfitter/error-management';
+ * import { executeWithBoundary } from '@carabiner/error-management';
  *
  * const result = await executeWithBoundary(
  *   async () => await riskyOperation(),

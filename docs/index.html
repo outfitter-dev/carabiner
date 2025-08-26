@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carabiner - Type-safe Hooks for Claude Code</title>
+  <meta name="description" content="Carabiner provides a type-safe foundation for building Claude Code hooks with TypeScript">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 3rem;
+      max-width: 800px;
+      margin: 2rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #764ba2;
+      margin-bottom: 1rem;
+      font-size: 2.5rem;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 2rem;
+      font-size: 1.2rem;
+    }
+    .links {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+    }
+    .link {
+      padding: 0.75rem 1.5rem;
+      background: #667eea;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    .link.secondary {
+      background: #f4f4f5;
+      color: #333;
+    }
+    .link.secondary:hover {
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 1.5rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    code {
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .schema-section {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e5e5e5;
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 1rem;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .feature {
+      padding: 1rem;
+      background: #f9fafb;
+      border-radius: 6px;
+    }
+    .feature h3 {
+      color: #667eea;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+    }
+    .feature p {
+      font-size: 0.9rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🪝 Carabiner</h1>
+    <p class="subtitle">Type-safe hooks for Claude Code</p>
+    
+    <div class="links">
+      <a href="https://github.com/outfitter-dev/carabiner" class="link">GitHub</a>
+      <a href="https://www.npmjs.com/package/@carabiner/hooks-core" class="link">NPM</a>
+      <a href="/schema.json" class="link secondary">JSON Schema</a>
+      <a href="https://github.com/outfitter-dev/carabiner#readme" class="link secondary">Documentation</a>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <h3>🔒 Type-Safe</h3>
+        <p>Full TypeScript support with strict type checking</p>
+      </div>
+      <div class="feature">
+        <h3>⚡ Fast</h3>
+        <p>Built with Bun for lightning-fast execution</p>
+      </div>
+      <div class="feature">
+        <h3>🧪 Tested</h3>
+        <p>Comprehensive test suite with high coverage</p>
+      </div>
+      <div class="feature">
+        <h3>📦 Modular</h3>
+        <p>Monorepo architecture with reusable packages</p>
+      </div>
+    </div>
+
+    <h2>Quick Start</h2>
+    <pre><code># Install the CLI
+npm install -g @carabiner/hooks-cli
+
+# Initialize hooks in your project
+carabiner init
+
+# Generate a new hook
+carabiner generate --type PreToolUse --tool Bash --name security-check</code></pre>
+
+    <div class="schema-section">
+      <h2>JSON Schema</h2>
+      <p>Use our JSON Schema for autocomplete and validation in your hook configurations:</p>
+      <pre><code>{
+  "$schema": "https://carabiner.outfitter.dev/schema.json",
+  "hooks": {
+    "PreToolUse": {
+      "Bash": {
+        "command": "bun run hooks/bash-security.ts"
+      }
+    }
+  }
+}</code></pre>
+      <p style="margin-top: 1rem;">
+        <a href="/schema.json" style="color: #667eea;">View Full Schema →</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

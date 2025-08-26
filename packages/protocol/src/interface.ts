@@ -5,7 +5,7 @@
  * from specific transport mechanisms like stdin/stdout, HTTP, or testing.
  */
 
-import type { HookContext, HookResult } from '@outfitter/types';
+import type { HookContext, HookResult } from '@carabiner/types';
 
 /**
  * Core protocol interface for Claude Code hooks I/O

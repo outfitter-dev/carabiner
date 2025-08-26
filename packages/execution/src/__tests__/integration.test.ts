@@ -3,12 +3,12 @@
  */
 
 import { beforeEach, describe, expect, test } from 'bun:test';
-import type { HookContext, HookHandler } from '@outfitter/types';
+import type { HookContext, HookHandler } from '@carabiner/types';
 import {
   createDirectoryPath,
   createSessionId,
   createTranscriptPath,
-} from '@outfitter/types';
+} from '@carabiner/types';
 import {
   ExecutionTimer,
   MetricsCollector,

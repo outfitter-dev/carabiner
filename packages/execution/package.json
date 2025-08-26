@@ -1,7 +1,7 @@
 {
-  "name": "@outfitter/execution",
+  "name": "@carabiner/execution",
   "version": "1.0.0",
-  "description": "Simplified execution engine for Claude Code hooks",
+  "description": "Simplified execution engine for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -17,7 +17,7 @@
     "README.md"
   ],
   "keywords": [
-    "claude-code",
+    "carabiner",
     "hooks",
     "execution",
     "typescript"
@@ -40,9 +40,9 @@
     "clean": "rm -rf dist/"
   },
   "dependencies": {
-    "@outfitter/hooks-core": "workspace:*",
-    "@outfitter/protocol": "workspace:*",
-    "@outfitter/types": "workspace:*",
+    "@carabiner/hooks-core": "workspace:*",
+    "@carabiner/protocol": "workspace:*",
+    "@carabiner/types": "workspace:*",
     "type-fest": "^4.41.0"
   },
   "devDependencies": {

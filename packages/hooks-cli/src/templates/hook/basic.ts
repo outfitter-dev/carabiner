@@ -4,7 +4,7 @@
 
 export const basicHookTypeScript = (name: string): string => `#!/usr/bin/env bun
 
-import { runClaudeHook, HookResults, type HookContext } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults, type HookContext } from '@carabiner/hooks-core';
 
 async function handler(ctx: HookContext) {
   console.log(\`${name} hook triggered for: \${ctx.toolName}\`);
@@ -29,7 +29,7 @@ export { handler };
 
 export const basicHookJavaScript = (name: string): string => `#!/usr/bin/env bun
 
-const { runClaudeHook, HookResults } = require('@outfitter/hooks-core');
+const { runClaudeHook, HookResults } = require('@carabiner/hooks-core');
 
 async function handler(ctx) {
   console.log(\`${name} hook triggered for: \${ctx.toolName}\`);

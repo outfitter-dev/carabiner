@@ -6,7 +6,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import type { HookContext, HookHandler, HookResult } from '@outfitter/types';
+import type { HookContext, HookHandler, HookResult } from '@carabiner/types';
 
 /**
  * Performance measurement utilities

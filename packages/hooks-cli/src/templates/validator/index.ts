@@ -8,8 +8,8 @@ export const validatorTypeScript = (name: string): string => `/**
  * Custom validator: ${name}
  */
 
-import type { HookContext, ValidationResult } from '@outfitter/hooks-core';
-import { ValidationError } from '@outfitter/hooks-validators';
+import type { HookContext, ValidationResult } from '@carabiner/hooks-core';
+import { ValidationError } from '@carabiner/hooks-validators';
 
 const SESSION_ID_REGEX = /^[a-zA-Z0-9-]+$/;
 
@@ -96,7 +96,7 @@ export const validatorJavaScript = (name: string): string => `/**
  * Custom validator: ${name}
  */
 
-const { ValidationError } = require('@outfitter/hooks-validators');
+const { ValidationError } = require('@carabiner/hooks-validators');
 
 const SESSION_ID_REGEX = /^[a-zA-Z0-9-]+$/;
 

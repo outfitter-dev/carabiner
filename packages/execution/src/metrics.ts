@@ -6,7 +6,7 @@
  * minimal impact on execution performance.
  */
 
-import type { HookContext, HookEvent, HookResult } from '@outfitter/types';
+import type { HookContext, HookEvent, HookResult } from '@carabiner/types';
 
 /**
  * Execution timing information

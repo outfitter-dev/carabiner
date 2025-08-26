@@ -1,6 +1,6 @@
 # @outfitter/registry
 
-Plugin registry system for Claude Code hooks - enables composition of small, focused hooks through a plugin architecture.
+Plugin registry system for Carabiner hooks - enables composition of small, focused hooks through a plugin architecture.
 
 ## Features
 

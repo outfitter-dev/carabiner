@@ -5,7 +5,7 @@
 > - [Claude Code Hooks Documentation](https://docs.anthropic.com/en/docs/claude-code/hooks)
 > - [Claude Code Settings Documentation](https://docs.anthropic.com/en/docs/claude-code/settings)
 
-Claude Code hooks are a powerful configuration mechanism that allows you to execute custom commands at specific events during Claude Code's operation. This document provides comprehensive coverage of how hooks work, their types, configuration, and implementation.
+Carabiner hooks are a powerful configuration mechanism that allows you to execute custom commands at specific events during Claude Code's operation. This document provides comprehensive coverage of how hooks work, their types, configuration, and implementation.
 
 ## Quick Start
 
@@ -36,7 +36,7 @@ Claude Code hooks are a powerful configuration mechanism that allows you to exec
 
 ## Table of Contents
 
-1. [What are Claude Code Hooks?](#what-are-claude-code-hooks)
+1. [What are Claude Code Hooks?](#what-are-carabiner-hooks)
 2. [Hook Types and Events](#hook-types-and-events)
 3. [Configuration](#configuration)
 4. [TypeScript Implementation](#typescript-implementation)
@@ -45,7 +45,7 @@ Claude Code hooks are a powerful configuration mechanism that allows you to exec
 
 ## What are Claude Code Hooks?
 
-Claude Code hooks are event-driven commands that execute automatically at specific points in Claude Code's workflow. They provide a way to:
+Carabiner hooks are event-driven commands that execute automatically at specific points in Claude Code's workflow. They provide a way to:
 
 - **Extend functionality**: Add custom behavior without modifying Claude Code itself
 - **Validate operations**: Check inputs before tools execute
@@ -347,7 +347,7 @@ main().catch((error) => {
 
 **🚨 CRITICAL SECURITY WARNING**:
 
-- Claude Code hooks execute shell commands **automatically** with the same permissions as the Claude Code process
+- Carabiner hooks execute shell commands **automatically** with the same permissions as the Claude Code process
 - On macOS, this often includes **full disk access**
 - These scripts can **delete files, access sensitive data, and modify your system**
 - Use extreme caution, especially in production environments

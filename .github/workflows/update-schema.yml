@@ -1,0 +1,71 @@
+name: Update JSON Schema
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/hooks-config/src/types.ts"
+      - "packages/hooks-config/src/config.ts"
+      - ".github/workflows/update-schema.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  update-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Generate schema
+        run: |
+          cd packages/schema-server
+          bun run generate-schema || echo "Schema generation needs fixing"
+
+      - name: Copy schema to docs
+        run: |
+          cp packages/schema-server/public/schema.json docs/schema.json
+
+      - name: Commit schema updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/schema.json
+          git diff --staged --quiet || git commit -m "chore: update JSON schema [skip ci]"
+          git push || echo "No changes to push"
+
+  deploy-pages:
+    needs: update-schema
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./docs"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

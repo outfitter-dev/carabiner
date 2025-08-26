@@ -9,12 +9,12 @@ import type {
   ClaudeToolHookInput,
   HookContext,
   HookResult,
-} from '@outfitter/hooks-core';
+} from '@carabiner/hooks-core';
 import {
   createHookContext,
   HookResults,
   runClaudeHook,
-} from '@outfitter/hooks-core';
+} from '@carabiner/hooks-core';
 
 function hasCommand(input: unknown): input is { command: string } {
   return (

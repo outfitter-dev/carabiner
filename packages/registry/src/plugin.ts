@@ -4,7 +4,7 @@
  * Enables composition of small, focused hooks through a plugin architecture.
  */
 
-import type { HookContext, HookEvent, HookResult } from '@outfitter/types';
+import type { HookContext, HookEvent, HookResult } from '@carabiner/types';
 import type { z } from 'zod';
 
 /**

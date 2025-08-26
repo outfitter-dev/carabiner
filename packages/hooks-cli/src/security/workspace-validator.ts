@@ -5,7 +5,7 @@
 
 import { existsSync, lstatSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
-import { SecurityValidationError } from '@outfitter/hooks-validators';
+import { SecurityValidationError } from '@carabiner/hooks-validators';
 
 /**
  * Workspace security configuration

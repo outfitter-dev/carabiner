@@ -1,6 +1,6 @@
 # @outfitter/hooks-core
 
-Core types, runtime utilities, and execution engine for Claude Code hooks TypeScript library.
+Core types, runtime utilities, and execution engine for Carabiner hooks TypeScript library.
 
 ## Installation
 

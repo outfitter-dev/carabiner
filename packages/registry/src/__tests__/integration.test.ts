@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { HookContext } from '@outfitter/types';
+import type { HookContext } from '@carabiner/types';
 import type { HookConfig, HookPlugin } from '../index';
 import { ConfigLoader, createPluginSystem, PluginRegistry } from '../index';
 

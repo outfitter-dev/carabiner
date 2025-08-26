@@ -6,7 +6,7 @@ Base instructions: @.agent/prompts/CORE.md
 
 ## Repository Overview
 
-Carabiner is a modern TypeScript monorepo for building type-safe Claude Code hooks. Built with Bun, Turbo, and Ultracite, it provides a foundation for scalable development with strict type safety and automated quality gates.
+Carabiner is a modern TypeScript monorepo for building type-safe Carabiner hooks. Built with Bun, Turbo, and Ultracite, it provides a foundation for scalable development with strict type safety and automated quality gates.
 
 ## Important Rules
 

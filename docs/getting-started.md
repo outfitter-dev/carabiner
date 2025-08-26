@@ -1,6 +1,6 @@
 # Getting Started with Grapple
 
-Welcome to Grapple, the production-ready TypeScript library for building Claude Code hooks. This guide will get you up and running with your first hook in minutes.
+Welcome to Grapple, the production-ready TypeScript library for building Carabiner hooks. This guide will get you up and running with your first hook in minutes.
 
 ## Table of Contents
 
@@ -98,7 +98,7 @@ runClaudeHook(async (context) => {
     // Type-safe access to command property
     const toolInput = context.toolInput as Record<string, unknown>;
     const command = toolInput?.command;
-    
+
     if (typeof command !== 'string') {
       return HookResults.failure('Invalid command input');
     }
@@ -489,7 +489,7 @@ For more detailed troubleshooting, see the [Troubleshooting Guide](troubleshooti
 
 ---
 
-**Ready to build production-ready Claude Code hooks!** 🚀
+**Ready to build production-ready Carabiner hooks!** 🚀
 
 Continue with:
 

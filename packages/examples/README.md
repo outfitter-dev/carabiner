@@ -1,6 +1,6 @@
 # Claude Code Hooks - Examples
 
-This package contains comprehensive examples demonstrating the different approaches to building Claude Code hooks with TypeScript.
+This package contains comprehensive examples demonstrating the different approaches to building Carabiner hooks with TypeScript.
 
 ## 🚀 Quick Start
 
@@ -307,4 +307,4 @@ echo '{
 - [Testing Framework Documentation](../hooks-testing/README.md)
 - [CLI Tools Documentation](../hooks-cli/README.md)
 
-All examples are production-ready and demonstrate real-world patterns for building robust, maintainable Claude Code hooks.
+All examples are production-ready and demonstrate real-world patterns for building robust, maintainable Carabiner hooks.

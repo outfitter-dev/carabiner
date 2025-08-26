@@ -1,10 +1,10 @@
 # Getting Started with Claude Code Hooks
 
-This guide will get you up and running with Claude Code hooks in minutes. You'll learn the basic concepts, create your first hook, and understand the new runtime architecture.
+This guide will get you up and running with Carabiner hooks in minutes. You'll learn the basic concepts, create your first hook, and understand the new runtime architecture.
 
 ## What are Claude Code Hooks?
 
-Claude Code hooks are TypeScript/JavaScript programs that run at specific points during Claude Code's execution. They allow you to:
+Carabiner hooks are TypeScript/JavaScript programs that run at specific points during Claude Code's execution. They allow you to:
 
 - **Validate tool usage** before execution (PreToolUse)
 - **Process results** after execution (PostToolUse)
@@ -27,7 +27,7 @@ Before starting, ensure you have:
 
 # Install the CLI globally
 
-npm install -g @claude-code/hooks-cli
+npm install -g @carabiner/hooks-cli
 
 # Initialize hooks in your project
 
@@ -43,12 +43,12 @@ This creates a complete hook setup with security-focused examples.
 
 # Install core library
 
-bun add @claude-code/hooks-core
+bun add @carabiner/hooks-core
 
 # Install optional packages
 
-bun add @claude-code/hooks-validators  # Security validation
-bun add --dev @claude-code/hooks-testing  # Testing utilities
+bun add @carabiner/hooks-validators  # Security validation
+bun add --dev @carabiner/hooks-testing  # Testing utilities
 
 ```
 
@@ -65,7 +65,7 @@ Create `hooks/security-check.ts`:
 #!/usr/bin/env bun
 
 import pino from 'pino';
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 const logger = pino({ level: process.env.LOG_LEVEL ?? 'info' }, pino.destination(2));
 
 runClaudeHook(async (context) => {
@@ -289,7 +289,7 @@ Now that you have a basic hook working, you can:
 ### Add Security Validation
 
 ```typescript
-import { SecurityValidators } from '@claude-code/hooks-validators';
+import { SecurityValidators } from '@carabiner/hooks-validators';
 
 runClaudeHook(async (context) => {
   // Environment-specific security
@@ -311,7 +311,7 @@ runClaudeHook(async (context) => {
 ### Add Testing
 
 ```typescript
-import { createMockContext, testHook } from '@claude-code/hooks-testing';
+import { createMockContext, testHook } from '@carabiner/hooks-testing';
 
 test('security hook blocks dangerous commands', async () => {
   await testHook('PreToolUse')
@@ -353,7 +353,7 @@ claude-hooks dev --watch
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   console.log(`🔍 Universal security check: ${context.toolName}`);
@@ -386,7 +386,7 @@ runClaudeHook(async (context) => {
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   const environment = process.env.NODE_ENV || 'development';
@@ -424,7 +424,7 @@ runClaudeHook(async (context) => {
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@claude-code/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   // Only process Write and Edit tools

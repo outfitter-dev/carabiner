@@ -1,7 +1,7 @@
 {
-  "name": "@outfitter/hooks-core",
+  "name": "@carabiner/hooks-core",
   "version": "0.2.0",
-  "description": "Core TypeScript types and runtime utilities for Claude Code hooks",
+  "description": "Core TypeScript types and runtime utilities for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -36,7 +36,7 @@
     "prepublishOnly": "bun run build"
   },
   "keywords": [
-    "claude-code",
+    "carabiner",
     "hooks",
     "typescript",
     "types"

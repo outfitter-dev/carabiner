@@ -12,7 +12,7 @@ import {
   spyOn,
   test,
 } from 'bun:test';
-import type { HookContext } from '@outfitter/types';
+import type { HookContext } from '@carabiner/types';
 import type { HookPlugin, PluginConfig } from '../plugin';
 import { PluginRegistry } from '../registry';
 

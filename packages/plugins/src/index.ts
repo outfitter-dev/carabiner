@@ -14,8 +14,8 @@
  *
  * @example Using Individual Plugins
  * ```typescript
- * import { gitSafetyPlugin, fileBackupPlugin } from '@outfitter/plugins';
- * import { PluginRegistry } from '@outfitter/registry';
+ * import { gitSafetyPlugin, fileBackupPlugin } from '@carabiner/plugins';
+ * import { PluginRegistry } from '@carabiner/registry';
  *
  * const registry = new PluginRegistry();
  * registry.register(gitSafetyPlugin);
@@ -24,8 +24,8 @@
  *
  * @example Using Plugin Collection
  * ```typescript
- * import { createPluginCollection } from '@outfitter/plugins';
- * import { PluginRegistry } from '@outfitter/registry';
+ * import { createPluginCollection } from '@carabiner/plugins';
+ * import { PluginRegistry } from '@carabiner/registry';
  *
  * const plugins = createPluginCollection({
  *   gitSafety: true,
@@ -410,7 +410,7 @@ export const VERSION = '1.0.0';
  * Package metadata
  */
 export const PACKAGE_INFO = {
-  name: '@outfitter/plugins',
+  name: '@carabiner/plugins',
   version: VERSION,
   description: 'Example plugin collection for Claude Code hooks',
   repository: 'https://github.com/outfitter-dev/carabiner',

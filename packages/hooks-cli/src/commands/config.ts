@@ -5,8 +5,8 @@
 import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
-import { ConfigManager } from '@outfitter/hooks-config';
-import type { HookEvent, ToolName } from '@outfitter/hooks-core';
+import { ConfigManager } from '@carabiner/hooks-config';
+import type { HookEvent, ToolName } from '@carabiner/hooks-core';
 import { BaseCommand, type CliConfig } from '../types';
 
 // Regex constants for better command parsing

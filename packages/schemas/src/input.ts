@@ -3,7 +3,7 @@
  * Validates the JSON input structure from Claude Code
  */
 
-import { HOOK_EVENTS, type ToolName } from '@outfitter/types';
+import { HOOK_EVENTS, type ToolName } from '@carabiner/types';
 import { z } from 'zod';
 
 /**
@@ -187,7 +187,7 @@ export async function validateAndCreateBrandedInput(input: unknown) {
 
   // Import brands dynamically to avoid circular dependency
   const { createSessionId, createTranscriptPath, createDirectoryPath } =
-    await import('@outfitter/types');
+    await import('@carabiner/types');
 
   return {
     ...parsed,

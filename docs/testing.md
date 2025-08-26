@@ -1,6 +1,6 @@
 # Testing Guide
 
-This guide covers how to write and run tests for the Grapple monorepo, a TypeScript library for building type-safe Claude Code hooks.
+This guide covers how to write and run tests for the Grapple monorepo, a TypeScript library for building type-safe Carabiner hooks.
 
 ## Quick Start
 

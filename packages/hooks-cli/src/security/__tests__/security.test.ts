@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { SecurityValidationError } from '@outfitter/hooks-validators';
+import { SecurityValidationError } from '@carabiner/hooks-validators';
 import { CommandValidator, validateCommand } from '../command-validator';
 import { createWorkspaceValidator } from '../workspace-validator';
 

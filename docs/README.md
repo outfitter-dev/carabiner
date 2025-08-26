@@ -1,6 +1,6 @@
 # Grapple Documentation
 
-Welcome to the comprehensive documentation for Grapple, the production-ready TypeScript library for building Claude Code hooks. This documentation provides everything you need to build robust, type-safe, and maintainable hooks.
+Welcome to the comprehensive documentation for Grapple, the production-ready TypeScript library for building Carabiner hooks. This documentation provides everything you need to build robust, type-safe, and maintainable hooks.
 
 ## 📚 Documentation Structure
 
@@ -123,11 +123,11 @@ The Claude Code Hooks library is organized into focused packages:
 
 ### Core Packages
 
-- **[@claude-code/hooks-core](../packages/hooks-core/README.md)** - Core types, runtime utilities, and execution engine
-- **[@claude-code/hooks-config](../packages/hooks-config/README.md)** - Configuration management and settings generation
-- **[@claude-code/hooks-validators](../packages/hooks-validators/README.md)** - Security validators and validation rules
-- **[@claude-code/hooks-testing](../packages/hooks-testing/README.md)** - Testing framework and mock utilities
-- **[@claude-code/hooks-cli](../packages/hooks-cli/README.md)** - CLI tools for project management
+- **[@carabiner/hooks-core](../packages/hooks-core/README.md)** - Core types, runtime utilities, and execution engine
+- **[@carabiner/hooks-config](../packages/hooks-config/README.md)** - Configuration management and settings generation
+- **[@carabiner/hooks-validators](../packages/hooks-validators/README.md)** - Security validators and validation rules
+- **[@carabiner/hooks-testing](../packages/hooks-testing/README.md)** - Testing framework and mock utilities
+- **[@carabiner/hooks-cli](../packages/hooks-cli/README.md)** - CLI tools for project management
 
 ### Supporting Packages
 
@@ -350,14 +350,14 @@ Choose your path based on your experience level:
 ### Experienced Developer
 
 1. Check [Migration Guide](./migration-guide.md) for v2.0 changes
-2. Review the [Configuration Reference](./resources/claude-code-hooks-configuration.md)
-3. Explore the [TypeScript Integration Guide](./resources/claude-code-hooks-typescript.md)
+2. Review the [Configuration Reference](./resources/carabiner-hooks-configuration.md)
+3. Explore the [TypeScript Integration Guide](./resources/carabiner-hooks-typescript.md)
 
 ### Contributor
 
 1. Review the package structure and examples
-2. Check [Project Planning](./plans/claude-code-hooks-typescript-library.md)
-3. Explore the [Troubleshooting Guide](./resources/claude-code-hooks-troubleshooting.md)
+2. Check [Project Planning](./plans/carabiner-hooks-typescript-library.md)
+3. Explore the [Troubleshooting Guide](./resources/carabiner-hooks-troubleshooting.md)
 
 ---
 

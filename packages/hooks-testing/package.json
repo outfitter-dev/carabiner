@@ -1,7 +1,7 @@
 {
-  "name": "@outfitter/hooks-testing",
+  "name": "@carabiner/hooks-testing",
   "version": "0.1.0",
-  "description": "Testing utilities for Claude Code hooks",
+  "description": "Testing utilities for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -28,7 +28,7 @@
     "prepublishOnly": "bun run build"
   },
   "keywords": [
-    "claude-code",
+    "carabiner",
     "hooks",
     "testing",
     "utilities"
@@ -36,8 +36,8 @@
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@outfitter/hooks-core": "workspace:*",
-    "@outfitter/hooks-validators": "workspace:*"
+    "@carabiner/hooks-core": "workspace:*",
+    "@carabiner/hooks-validators": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "*",
