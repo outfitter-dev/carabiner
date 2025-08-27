@@ -148,6 +148,13 @@ export class WorkspaceValidator {
 
     // Prevent access to system directories, but allow temp directories for testing
     const systemPaths = ['/etc', '/bin', '/usr', '/root'];
+    const blockedVarPaths = [
+      '/var/log',
+      '/var/lib',
+      '/var/cache',
+      '/var/run',
+      '/var/spool',
+    ];
 
     if (systemPaths.some((sysPath) => resolved.startsWith(sysPath))) {
       throw new SecurityValidationError(
@@ -157,23 +164,7 @@ export class WorkspaceValidator {
       );
     }
 
-    // Block /var root and specific /var paths but allow temp directories
-    if (resolved === '/var') {
-      throw new SecurityValidationError(
-        `Access to system directory blocked: ${resolved}`,
-        'workspaceValidation',
-        'critical'
-      );
-    }
-
-    const blockedVarPaths = [
-      '/var/log',
-      '/var/lib',
-      '/var/cache',
-      '/var/run',
-      '/var/spool',
-    ];
-
+    // Block specific /var paths but allow temp directories
     if (blockedVarPaths.some((varPath) => resolved.startsWith(varPath))) {
       throw new SecurityValidationError(
         `Access to system directory blocked: ${resolved}`,
@@ -312,15 +303,10 @@ export class WorkspaceValidator {
 
     // Check against blocked patterns
     const relativePath = relative(this.normalizedRoot, resolved);
-    const relNorm = relativePath.replace(/\\/g, '/');
-
     for (const pattern of this.config.blockedPatterns) {
-      // Detect absolute patterns (POSIX root "^/", Windows drive "^[A-Z]:\", UNC "^\\")
-      const src = pattern.source;
+      // For absolute patterns (starting with /), only check if the path is outside workspace
       const isAbsolutePattern =
-        src.startsWith('^\\/') ||
-        /^\^[A-Za-z]:\\\\/.test(src) ||
-        src.startsWith('^\\\\\\\\');
+        pattern.source.startsWith('^/') || pattern.source.startsWith('^\\\\');
 
       if (isAbsolutePattern) {
         // Skip absolute pattern checks for paths within the workspace
@@ -336,9 +322,10 @@ export class WorkspaceValidator {
             'high'
           );
         }
-      } else if (pattern.test(relNorm)) {
-        // For relative patterns, check against the normalized relative path within workspace
+      } else if (pattern.test(relativePath)) {
+        // For relative patterns, check against the relative path within workspace
         // Allow .claude directory and its contents
+        const relNorm = relativePath.replace(/\\/g, '/');
         if (relNorm === '.claude' || relNorm.startsWith('.claude/')) {
           continue;
         }
@@ -417,9 +404,8 @@ export class WorkspaceValidator {
 
     // Check if directory is in allowed list for strict mode
     if (this.config.strictMode) {
-      const relativeRaw = relative(this.normalizedRoot, resolved);
-      const relativePath = relativeRaw.replace(/\\/g, '/');
-      const topLevelDir = relativePath.split('/')[0] || '';
+      const relativePath = relative(this.normalizedRoot, resolved);
+      const topLevelDir = relativePath.split('/')[0];
 
       if (topLevelDir && !this.config.allowedDirectories.has(topLevelDir)) {
         throw new SecurityValidationError(
@@ -517,12 +503,7 @@ export class WorkspaceValidator {
    * Get current security configuration
    */
   getConfig(): WorkspaceSecurityConfig {
-    return {
-      ...this.config,
-      allowedExtensions: new Set(this.config.allowedExtensions),
-      allowedDirectories: new Set(this.config.allowedDirectories),
-      blockedPatterns: [...this.config.blockedPatterns],
-    };
+    return { ...this.config };
   }
 }
 
