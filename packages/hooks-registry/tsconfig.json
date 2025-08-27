@@ -6,7 +6,10 @@
     "declaration": true,
     "declarationDir": "./dist",
     "declarationMap": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["src/**/*.test.ts", "src/**/__tests__/**"]
