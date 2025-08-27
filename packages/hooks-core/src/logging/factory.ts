@@ -17,6 +17,7 @@ import type {
   Logger,
   LoggingConfig,
   PerformanceMetrics,
+  LogLevel,
 } from './types';
 
 /**
@@ -118,7 +119,7 @@ export class HookLoggerImpl implements HookLogger {
     return new HookLoggerImpl(this.baseLogger.child(context));
   }
 
-  isLevelEnabled(level: string): boolean {
+  isLevelEnabled(level: LogLevel): boolean {
     return this.baseLogger.isLevelEnabled(level);
   }
 

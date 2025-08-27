@@ -254,9 +254,10 @@ export class HookExecutor {
     handler: HookHandler,
     context: HookContext
   ): Promise<Result<HookResult, Error>> {
-    // Create timeout promise
+    // Create timeout promise (clear when race resolves)
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         reject(
           new TimeoutError(this.options.timeout, {
             event: context.event,
@@ -273,8 +274,10 @@ export class HookExecutor {
         timeoutPromise,
       ]);
 
+      if (timeoutId) clearTimeout(timeoutId);
       return success(result);
     } catch (error) {
+      if (timeoutId) clearTimeout(timeoutId);
       return failure(error instanceof Error ? error : new Error(String(error)));
     }
   }
@@ -363,9 +366,7 @@ export class HookExecutor {
    * Read input from protocol with error handling
    */
   private readInput(): Promise<Result<unknown, Error>> {
-    return tryAsyncResult(async () => {
-      return await this.protocol.readInput();
-    });
+    return tryAsyncResult(() => this.protocol.readInput());
   }
 
   /**
@@ -374,27 +375,21 @@ export class HookExecutor {
   private parseContext(
     input: unknown
   ): Promise<Result<HookContext, Error>> {
-    return tryAsyncResult(async () => {
-      return await this.protocol.parseContext(input);
-    });
+    return tryAsyncResult(() => this.protocol.parseContext(input));
   }
 
   /**
    * Write output through protocol with error handling
    */
   private writeOutput(result: HookResult): Promise<Result<void, Error>> {
-    return tryAsyncResult(async () => {
-      await this.protocol.writeOutput(result);
-    });
+    return tryAsyncResult(() => this.protocol.writeOutput(result));
   }
 
   /**
    * Write error through protocol with error handling
    */
-  private async writeError(error: Error): Promise<Result<void, Error>> {
-    return tryAsyncResult(async () => {
-      await this.protocol.writeError(error);
-    });
+  private writeError(error: Error): Promise<Result<void, Error>> {
+    return tryAsyncResult(() => this.protocol.writeError(error));
   }
 
   /**

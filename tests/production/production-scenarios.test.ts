@@ -116,8 +116,7 @@ class ProductionEnvironment {
           maxBackups: 5,
         },
       },
-      // biome-ignore lint/suspicious/noExplicitAny: Extended production configuration requires dynamic typing
-    } as any;
+    };
 
     const configPath = join(this.tempDir, 'config', 'claude-hooks.json');
     writeFileSync(configPath, JSON.stringify(config, null, 2));
@@ -424,7 +423,6 @@ console.log(JSON.stringify({
       }
     });
 
-    // biome-ignore lint/suspicious/useAwait: Test structure requires async
     test('should handle cross-platform compatibility', async () => {
       const platformTests = [
         {
@@ -468,6 +466,7 @@ console.log(JSON.stringify({
 
         const stats = statSync(expectedPath);
         if (platformTest.platform !== 'win32') {
+          // biome-ignore lint/suspicious/noBitwiseOperators: Bitmask check for POSIX file mode is intentional
           expect(stats.mode & 0o755).toBe(0o755);
         }
       }
@@ -608,7 +607,7 @@ console.log(JSON.stringify({
 
   describe('Real-world Configuration Scenarios', () => {
     test('should handle enterprise configuration patterns', async () => {
-      const enterpriseConfig: HookConfiguration = {
+      const enterpriseConfig = {
         version: '1.0.0',
         hooks: {
           'pre-tool-use': {
@@ -649,7 +648,7 @@ console.log(JSON.stringify({
           enableSandbox: true,
           requireSignedHooks: true,
         },
-      } as any;
+      } satisfies HookConfiguration;
 
       const configPath = join(
         prodEnv.tempDir,
@@ -710,25 +709,19 @@ console.log(JSON.stringify({
 
       // Simulate production load
       const concurrent = 20;
-      const promises: Promise<any>[] = [];
+      type ExecutionResult = { id: number; executionTime: number; success: boolean };
+      const promises: Promise<ExecutionResult>[] = [];
 
       const startTime = Date.now();
 
       for (let i = 0; i < concurrent; i++) {
-        const promise = new Promise(async (resolve) => {
+        const promise = new Promise<ExecutionResult>((resolve) => {
           // Simulate hook execution
           const executionStart = Date.now();
-
-          // Simulate work that would happen in production
-          await new Promise((r) => setTimeout(r, Math.random() * 50));
-
-          const executionTime = Date.now() - executionStart;
-
-          resolve({
-            id: i,
-            executionTime,
-            success: true,
-          });
+          setTimeout(() => {
+            const executionTime = Date.now() - executionStart;
+            resolve({ id: i, executionTime, success: true });
+          }, Math.floor(Math.random() * 50));
         });
 
         promises.push(promise);
@@ -742,8 +735,7 @@ console.log(JSON.stringify({
 
       // Check individual execution times
       // biome-ignore lint/complexity/noForEach: Immediate validation of results required
-      // biome-ignore lint/suspicious/noExplicitAny: Dynamic test result validation
-      results.forEach((result: any) => {
+      results.forEach((result) => {
         expect(result.success).toBe(true);
         expect(result.executionTime).toBeLessThan(1000); // Each execution < 1s
       });
@@ -794,16 +786,24 @@ console.log(JSON.stringify({
  * Helper functions for production testing
  */
 
+type SecurityInput = { handler?: string; command?: string };
+
+function isSecurityInput(v: unknown): v is SecurityInput {
+  if (typeof v !== 'object' || v === null) return false;
+  const r = v as Record<string, unknown>;
+  return (typeof r.handler === 'string') || (typeof r.command === 'string');
+}
+
 async function simulateSecurityCheck(
-  input: any,
-  _config: any
+  input: unknown,
+  _config: unknown
 ): Promise<boolean> {
   // Simulate the security validation logic
-  if (input.handler?.includes('..')) {
+  if (isSecurityInput(input) && input.handler?.includes('..')) {
     return true; // Blocked
   }
 
-  if (input.command) {
+  if (isSecurityInput(input) && input.command) {
     const dangerousCommands = ['rm -rf', 'sudo', 'chmod 777', '>/dev/'];
     return dangerousCommands.some((cmd) => input.command.includes(cmd));
   }
@@ -811,13 +811,11 @@ async function simulateSecurityCheck(
   return false; // Not blocked
 }
 
-// biome-ignore lint/suspicious/useAwait: Async for consistency with other validators
 async function simulatePathValidation(
   path: string,
-  // biome-ignore lint/suspicious/noExplicitAny: Config requires dynamic validation testing
-  config: any
+  config: { security?: { restrictedPaths?: string[] } }
 ): Promise<boolean> {
-  const restrictedPaths = config.security?.restrictedPaths || [];
+  const restrictedPaths = config.security?.restrictedPaths ?? [];
 
   return !restrictedPaths.some((restricted: string) =>
     path.startsWith(restricted)

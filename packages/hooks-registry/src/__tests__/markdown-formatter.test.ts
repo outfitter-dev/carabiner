@@ -26,6 +26,9 @@ describe('markdown formatter hook', () => {
     mockExistsSync = spyOn(fs, 'existsSync');
     mockExecFileSync = spyOn(childProcess, 'execFileSync');
 
+    // Clear the command cache
+    (globalThis as any).__carabinerCmdCache?.clear();
+
     // Default mock implementations
     mockExistsSync.mockReturnValue(true);
     mockExecFileSync.mockReturnValue('');
@@ -240,6 +243,22 @@ describe('markdown formatter hook', () => {
 
     test('should fall back to prettier if markdownlint not available', async () => {
       let formatterUsed = '';
+      
+      // Mock existsSync to return false for markdownlint-cli2 in node_modules/.bin
+      // but true for the test file and prettier command
+      mockExistsSync.mockImplementation((path: string) => {
+        if (typeof path === 'string' && path.includes('markdownlint-cli2')) {
+          return false;
+        }
+        if (typeof path === 'string' && path.includes('prettier')) {
+          return true;
+        }
+        if (typeof path === 'string' && path.includes('test.md')) {
+          return true; // Mock the test file exists
+        }
+        return false;
+      });
+      
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
@@ -249,6 +268,12 @@ describe('markdown formatter hook', () => {
             throw new Error('not found');
           }
           if (command === 'npx' && args?.includes('markdownlint-cli2')) {
+            throw new Error('not found');
+          }
+          if (command === 'pnpm' && args?.includes('markdownlint-cli2')) {
+            throw new Error('not found');
+          }
+          if (command === 'bunx' && args?.includes('markdownlint-cli2')) {
             throw new Error('not found');
           }
           if (
@@ -329,12 +354,22 @@ describe('markdown formatter hook', () => {
     });
 
     test('should fail if no formatter available', async () => {
+      // Mock existsSync to return false for all local binaries but true for the test file
+      mockExistsSync.mockImplementation((path: string) => {
+        if (typeof path === 'string' && path.includes('test.md')) {
+          return true; // Mock the test file exists
+        }
+        return false; // All commands return false
+      });
+      
       mockExecFileSync.mockImplementation(
         (command: string, _args?: string[]) => {
           if (
             command === 'command' ||
             command === 'where' ||
-            command === 'npx'
+            command === 'npx' ||
+            command === 'pnpm' ||
+            command === 'bunx'
           ) {
             throw new Error('not found');
           }
@@ -408,6 +443,20 @@ describe('markdown formatter hook', () => {
     });
 
     test('should use --write flag for prettier when autoFix is true', async () => {
+      // Mock existsSync to return false for markdownlint but true for prettier and test file
+      mockExistsSync.mockImplementation((path: string) => {
+        if (typeof path === 'string' && path.includes('markdownlint-cli2')) {
+          return false;
+        }
+        if (typeof path === 'string' && path.includes('prettier')) {
+          return true;
+        }
+        if (typeof path === 'string' && path.includes('test.md')) {
+          return true; // Mock the test file exists
+        }
+        return false;
+      });
+      
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
@@ -417,6 +466,12 @@ describe('markdown formatter hook', () => {
             throw new Error('not found');
           }
           if (command === 'npx' && args?.includes('markdownlint-cli2')) {
+            throw new Error('not found');
+          }
+          if (command === 'pnpm' && args?.includes('markdownlint-cli2')) {
+            throw new Error('not found');
+          }
+          if (command === 'bunx' && args?.includes('markdownlint-cli2')) {
             throw new Error('not found');
           }
           if (
@@ -455,6 +510,20 @@ describe('markdown formatter hook', () => {
     });
 
     test('should use --check flag for prettier when autoFix is false', async () => {
+      // Mock existsSync to return false for markdownlint but true for prettier and test file
+      mockExistsSync.mockImplementation((path: string) => {
+        if (typeof path === 'string' && path.includes('markdownlint-cli2')) {
+          return false;
+        }
+        if (typeof path === 'string' && path.includes('prettier')) {
+          return true;
+        }
+        if (typeof path === 'string' && path.includes('test.md')) {
+          return true; // Mock the test file exists
+        }
+        return false;
+      });
+      
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
@@ -464,6 +533,12 @@ describe('markdown formatter hook', () => {
             throw new Error('not found');
           }
           if (command === 'npx' && args?.includes('markdownlint-cli2')) {
+            throw new Error('not found');
+          }
+          if (command === 'pnpm' && args?.includes('markdownlint-cli2')) {
+            throw new Error('not found');
+          }
+          if (command === 'bunx' && args?.includes('markdownlint-cli2')) {
             throw new Error('not found');
           }
           if (

@@ -7,6 +7,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { HookHandler } from '@carabiner/types';
 import { isMatch } from 'picomatch';
 
@@ -42,21 +43,50 @@ export type MarkdownFormatterConfig = {
  * Check if a command exists in the system (cross-platform)
  */
 function commandExists(command: string): boolean {
+  // Simple memo cache
+  const key = `cmd:${process.cwd()}:${process.platform}:${command}`;
+  (globalThis as any).__carabinerCmdCache ??= new Map<string, boolean>();
+  const cache: Map<string, boolean> = (globalThis as any).__carabinerCmdCache;
+  if (cache.has(key)) return cache.get(key)!;
+
   try {
+    // 1) local node_modules/.bin
+    const ext = process.platform === 'win32' ? '.cmd' : '';
+    const localBin = join(process.cwd(), 'node_modules', '.bin', `${command}${ext}`);
+    if (existsSync(localBin)) {
+      cache.set(key, true);
+      return true;
+    }
+
     const isWindows = process.platform === 'win32';
     const detector = isWindows ? 'where' : 'command';
     const args = isWindows ? [command] : ['-v', command];
     execFileSync(detector, args, { stdio: 'ignore' });
+    cache.set(key, true);
     return true;
   } catch {
-    // Try npx fallback for locally installed CLIs
+    // Try common package runner fallbacks for locally installed CLIs
     try {
       execFileSync('npx', ['--no-install', command, '--version'], {
         stdio: 'ignore',
       });
+      cache.set(key, true);
       return true;
     } catch {
-      return false;
+      try {
+        execFileSync('pnpm', ['dlx', command, '--version'], { stdio: 'ignore' });
+        cache.set(key, true);
+        return true;
+      } catch {
+        try {
+          execFileSync('bunx', [command, '--version'], { stdio: 'ignore' });
+          cache.set(key, true);
+          return true;
+        } catch {
+          cache.set(key, false);
+          return false;
+        }
+      }
     }
   }
 }

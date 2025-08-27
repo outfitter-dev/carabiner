@@ -274,7 +274,7 @@ export function createLogEntry(
     pid: process.pid,
     hostname: 'localhost', // Sanitized hostname
     service: 'unknown',
-    env: 'unknown' as string,
+    env: 'unknown',
     correlationId: generateCorrelationId(),
     ...context,
   };
