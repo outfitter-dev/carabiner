@@ -180,10 +180,13 @@ export class ProductionLogger implements Logger {
  * Child logger implementation that wraps a Pino child logger
  */
 class ChildLogger implements Logger {
-  constructor(
-    private readonly pino: pino.Logger,
-    private readonly config: LoggingConfig
-  ) {}
+  private readonly pino: pino.Logger;
+  private readonly config: LoggingConfig;
+
+  constructor(logger: pino.Logger, config: LoggingConfig) {
+    this.pino = logger;
+    this.config = config;
+  }
 
   error(message: string, context?: Record<string, unknown>): void;
   error(
@@ -274,7 +277,7 @@ export function createLogEntry(
     pid: process.pid,
     hostname: 'localhost', // Sanitized hostname
     service: 'unknown',
-    env: 'unknown',
+    env: 'development',
     correlationId: generateCorrelationId(),
     ...context,
   };

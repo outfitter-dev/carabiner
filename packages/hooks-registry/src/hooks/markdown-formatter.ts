@@ -40,14 +40,35 @@ export type MarkdownFormatterConfig = {
 };
 
 /**
+ * Convert Buffer or other value to string safely
+ */
+function convertBufferToString(value: unknown): string {
+  if (!value) {
+    return '';
+  }
+  if (Buffer.isBuffer(value)) {
+    return value.toString('utf-8');
+  }
+  return String(value);
+}
+
+/**
  * Check if a command exists in the system (cross-platform)
  */
 function commandExists(command: string): boolean {
   // Simple memo cache
   const key = `cmd:${process.cwd()}:${process.platform}:${command}`;
-  (globalThis as any).__carabinerCmdCache ??= new Map<string, boolean>();
-  const cache: Map<string, boolean> = (globalThis as any).__carabinerCmdCache;
-  if (cache.has(key)) return cache.get(key)!;
+
+  type GlobalWithCache = typeof globalThis & {
+    __carabinerCmdCache?: Map<string, boolean>;
+  };
+  const global = globalThis as GlobalWithCache;
+  global.__carabinerCmdCache ??= new Map<string, boolean>();
+  const cache = global.__carabinerCmdCache;
+
+  if (cache.has(key)) {
+    return cache.get(key) ?? false;
+  }
 
   try {
     // 1) local node_modules/.bin
@@ -121,9 +142,9 @@ function formatWithMarkdownlint(
     };
   } catch (error) {
     const err = error as Record<string, unknown>;
-    const errorOutput = err.message || 'Unknown error';
-    const stderr = err.stderr || '';
-    const stdout = err.stdout || '';
+    const errorOutput = err?.message ? String(err.message) : 'Unknown error';
+    const stderr = convertBufferToString(err?.stderr);
+    const stdout = convertBufferToString(err?.stdout);
     return {
       success: false,
       output: `Failed to format with markdownlint: ${errorOutput}${stderr ? `\n${stderr}` : ''}${stdout ? `\n${stdout}` : ''}`,
@@ -157,9 +178,9 @@ function formatWithPrettier(
     };
   } catch (error) {
     const err = error as Record<string, unknown>;
-    const errorOutput = err.message || 'Unknown error';
-    const stderr = err.stderr || '';
-    const stdout = err.stdout || '';
+    const errorOutput = err?.message ? String(err.message) : 'Unknown error';
+    const stderr = convertBufferToString(err?.stderr);
+    const stdout = convertBufferToString(err?.stdout);
     return {
       success: false,
       output: `Failed to format with prettier: ${errorOutput}${stderr ? `\n${stderr}` : ''}${stdout ? `\n${stdout}` : ''}`,
@@ -200,11 +221,16 @@ export function createMarkdownFormatterHook(
     const multiplePaths =
       toolInput.files || toolInput.paths || toolInput.file_paths;
 
-    const filePaths: string[] = Array.isArray(multiplePaths)
-      ? multiplePaths.filter((p: unknown): p is string => typeof p === 'string')
-      : typeof singlePath === 'string'
-        ? [singlePath]
-        : [];
+    let filePaths: string[];
+    if (Array.isArray(multiplePaths)) {
+      filePaths = multiplePaths.filter(
+        (p: unknown): p is string => typeof p === 'string'
+      );
+    } else if (typeof singlePath === 'string') {
+      filePaths = [singlePath];
+    } else {
+      filePaths = [];
+    }
 
     if (filePaths.length === 0) {
       return { success: true };
