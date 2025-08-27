@@ -34,7 +34,7 @@ export type MarkdownFormatterConfig = {
 
   /**
    * File patterns to include (glob patterns)
-   * @default ['*.md', '*.mdx']
+   * @default ['**\/*.md', '**\/*.mdx']
    */
   patterns?: string[];
 };
@@ -198,7 +198,7 @@ export function createMarkdownFormatterHook(
     formatter = 'auto',
     additionalArgs = [],
     autoFix = true,
-    patterns = ['*.md', '*.mdx'],
+    patterns = ['**/*.md', '**/*.mdx'],
   } = config;
 
   return (context) => {
@@ -246,7 +246,7 @@ export function createMarkdownFormatterHook(
     for (const filePath of filePaths) {
       // Check if the file matches our patterns using proper glob matching
       const isMarkdownFile = patterns.some((pattern) =>
-        isMatch(filePath, pattern, { nocase: true })
+        isMatch(filePath, pattern, { nocase: true, basename: true })
       );
 
       if (!isMarkdownFile) {
