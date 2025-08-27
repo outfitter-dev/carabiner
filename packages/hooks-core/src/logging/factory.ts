@@ -18,7 +18,6 @@ import type {
   LoggingConfig,
   LogLevel,
   PerformanceMetrics,
-  LogLevel,
 } from './types';
 
 /**
