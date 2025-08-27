@@ -27,7 +27,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@carabiner/executor": "workspace:*",
+    "@carabiner/execution": "workspace:*",
     "@carabiner/protocol": "workspace:*",
     "@carabiner/schemas": "workspace:*",
     "@carabiner/types": "workspace:*",

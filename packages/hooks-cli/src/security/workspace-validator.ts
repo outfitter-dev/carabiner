@@ -61,6 +61,10 @@ export const DEFAULT_WORKSPACE_CONFIG: WorkspaceSecurityConfig = {
     /keystore$/i,
     /truststore$/i,
 
+    // SSH and security directories (relative paths)
+    /^\.ssh\//,
+    /\.ssh\//,
+
     // Temporary and cache files
     /^\/tmp\//,
     /^\/var\/tmp\//,
@@ -300,7 +304,26 @@ export class WorkspaceValidator {
     // Check against blocked patterns
     const relativePath = relative(this.normalizedRoot, resolved);
     for (const pattern of this.config.blockedPatterns) {
-      if (pattern.test(resolved) || pattern.test(relativePath)) {
+      // For absolute patterns (starting with /), only check if the path is outside workspace
+      const isAbsolutePattern =
+        pattern.source.startsWith('^/') || pattern.source.startsWith('^\\\\');
+
+      if (isAbsolutePattern) {
+        // Skip absolute pattern checks for paths within the workspace
+        // This allows workspaces in /tmp/, /var/, etc. to function properly
+        if (resolved.startsWith(this.normalizedRoot)) {
+          continue;
+        }
+        // Only check absolute patterns against absolute paths outside workspace
+        if (pattern.test(resolved)) {
+          throw new SecurityValidationError(
+            `Access to blocked path: ${filePath}`,
+            'pathValidation',
+            'high'
+          );
+        }
+      } else if (pattern.test(relativePath)) {
+        // For relative patterns, check against the relative path within workspace
         // Allow .claude directory and its contents
         const relNorm = relativePath.replace(/\\/g, '/');
         if (relNorm === '.claude' || relNorm.startsWith('.claude/')) {
