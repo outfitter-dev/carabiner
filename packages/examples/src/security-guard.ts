@@ -183,7 +183,7 @@ function validateFileOperation(
  * Main security guard hook
  */
 const securityGuardHook: HookHandler = (context): HookResult => {
-  const { tool_name: toolName, tool_input: toolInput } = context;
+  const { toolName, toolInput } = context;
 
   // Handle Bash commands
   if (toolName === 'Bash') {

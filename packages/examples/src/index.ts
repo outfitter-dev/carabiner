@@ -48,4 +48,5 @@ export {
   validateBashCommand,
   validateFileOperation,
 } from './security-guard.js';
-export * from './testing/hook-tests.test.js';
+// Test files should not be exported from the public API
+// export * from './testing/hook-tests.test.js';

@@ -170,14 +170,16 @@ function validateGitCommand(command: string): {
  * Main git safety hook
  */
 const gitSafetyHook: HookHandler = (context): HookResult => {
+  const { toolName, toolInput } = context;
+  
   // Only process Bash commands
-  if (context.tool_name !== 'Bash') {
+  if (toolName !== 'Bash') {
     return {
       success: true,
     };
   }
 
-  const command = context.tool_input?.command as string | undefined;
+  const command = toolInput?.command as string | undefined;
   if (!command?.includes('git')) {
     return {
       success: true,
@@ -203,14 +205,13 @@ const gitSafetyHook: HookHandler = (context): HookResult => {
 
     return {
       success: false,
-      action: 'block',
-      error: `Git safety violation:\n${validation.blocked.map((i) => `• ${i}`).join('\n')}\n\nCurrent branch: ${getCurrentBranch() || 'unknown'}`,
+      block: true,
+      message: `Git safety violation:\n${validation.blocked.map((i) => `• ${i}`).join('\n')}\n\nCurrent branch: ${getCurrentBranch() || 'unknown'}`,
     };
   }
 
   return {
     success: true,
-    action: 'continue',
   };
 };
 
