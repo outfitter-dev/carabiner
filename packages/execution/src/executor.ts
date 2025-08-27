@@ -254,31 +254,37 @@ export class HookExecutor {
     handler: HookHandler,
     context: HookContext
   ): Promise<Result<HookResult, Error>> {
-    // Create timeout promise (clear when race resolves)
+    // Create timeout promise with proper cleanup
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => {
-        reject(
-          new TimeoutError(this.options.timeout, {
-            event: context.event,
-            toolName: 'toolName' in context ? context.toolName : undefined,
-          })
-        );
-      }, this.options.timeout);
-    });
 
-    // Race handler execution against timeout
+    // Wrap in try-finally to ensure cleanup in all cases
     try {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(
+            new TimeoutError(this.options.timeout, {
+              event: context.event,
+              toolName: 'toolName' in context ? context.toolName : undefined,
+            })
+          );
+        }, this.options.timeout);
+      });
+
+      // Race handler execution against timeout
       const result = await Promise.race([
         this.runHandler(handler, context),
         timeoutPromise,
       ]);
 
-      if (timeoutId) clearTimeout(timeoutId);
       return success(result);
     } catch (error) {
-      if (timeoutId) clearTimeout(timeoutId);
       return failure(error instanceof Error ? error : new Error(String(error)));
+    } finally {
+      // Always cleanup timeout, even if an error occurs before the race
+      // This ensures no memory leaks or dangling timers
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 
