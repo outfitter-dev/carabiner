@@ -148,13 +148,6 @@ export class WorkspaceValidator {
 
     // Prevent access to system directories, but allow temp directories for testing
     const systemPaths = ['/etc', '/bin', '/usr', '/root'];
-    const blockedVarPaths = [
-      '/var/log',
-      '/var/lib',
-      '/var/cache',
-      '/var/run',
-      '/var/spool',
-    ];
 
     if (systemPaths.some((sysPath) => resolved.startsWith(sysPath))) {
       throw new SecurityValidationError(
@@ -164,7 +157,23 @@ export class WorkspaceValidator {
       );
     }
 
-    // Block specific /var paths but allow temp directories
+    // Block /var root and specific /var paths but allow temp directories
+    if (resolved === '/var') {
+      throw new SecurityValidationError(
+        `Access to system directory blocked: ${resolved}`,
+        'workspaceValidation',
+        'critical'
+      );
+    }
+
+    const blockedVarPaths = [
+      '/var/log',
+      '/var/lib',
+      '/var/cache',
+      '/var/run',
+      '/var/spool',
+    ];
+
     if (blockedVarPaths.some((varPath) => resolved.startsWith(varPath))) {
       throw new SecurityValidationError(
         `Access to system directory blocked: ${resolved}`,
