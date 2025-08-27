@@ -303,10 +303,15 @@ export class WorkspaceValidator {
 
     // Check against blocked patterns
     const relativePath = relative(this.normalizedRoot, resolved);
+    const relNorm = relativePath.replace(/\\/g, '/');
+
     for (const pattern of this.config.blockedPatterns) {
-      // For absolute patterns (starting with /), only check if the path is outside workspace
+      // Detect absolute patterns (POSIX root "^/", Windows drive "^[A-Z]:\", UNC "^\\")
+      const src = pattern.source;
       const isAbsolutePattern =
-        pattern.source.startsWith('^/') || pattern.source.startsWith('^\\\\');
+        src.startsWith('^\\/') ||
+        /^\^[A-Za-z]:\\\\/.test(src) ||
+        src.startsWith('^\\\\\\\\');
 
       if (isAbsolutePattern) {
         // Skip absolute pattern checks for paths within the workspace
@@ -322,10 +327,9 @@ export class WorkspaceValidator {
             'high'
           );
         }
-      } else if (pattern.test(relativePath)) {
-        // For relative patterns, check against the relative path within workspace
+      } else if (pattern.test(relNorm)) {
+        // For relative patterns, check against the normalized relative path within workspace
         // Allow .claude directory and its contents
-        const relNorm = relativePath.replace(/\\/g, '/');
         if (relNorm === '.claude' || relNorm.startsWith('.claude/')) {
           continue;
         }
@@ -404,8 +408,9 @@ export class WorkspaceValidator {
 
     // Check if directory is in allowed list for strict mode
     if (this.config.strictMode) {
-      const relativePath = relative(this.normalizedRoot, resolved);
-      const topLevelDir = relativePath.split('/')[0];
+      const relativeRaw = relative(this.normalizedRoot, resolved);
+      const relativePath = relativeRaw.replace(/\\/g, '/');
+      const topLevelDir = relativePath.split('/')[0] || '';
 
       if (topLevelDir && !this.config.allowedDirectories.has(topLevelDir)) {
         throw new SecurityValidationError(
@@ -503,7 +508,12 @@ export class WorkspaceValidator {
    * Get current security configuration
    */
   getConfig(): WorkspaceSecurityConfig {
-    return { ...this.config };
+    return {
+      ...this.config,
+      allowedExtensions: new Set(this.config.allowedExtensions),
+      allowedDirectories: new Set(this.config.allowedDirectories),
+      blockedPatterns: [...this.config.blockedPatterns],
+    };
   }
 }
 
