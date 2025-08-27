@@ -52,7 +52,12 @@ function commandExists(command: string): boolean {
   try {
     // 1) local node_modules/.bin
     const ext = process.platform === 'win32' ? '.cmd' : '';
-    const localBin = join(process.cwd(), 'node_modules', '.bin', `${command}${ext}`);
+    const localBin = join(
+      process.cwd(),
+      'node_modules',
+      '.bin',
+      `${command}${ext}`
+    );
     if (existsSync(localBin)) {
       cache.set(key, true);
       return true;
@@ -74,7 +79,9 @@ function commandExists(command: string): boolean {
       return true;
     } catch {
       try {
-        execFileSync('pnpm', ['dlx', command, '--version'], { stdio: 'ignore' });
+        execFileSync('pnpm', ['dlx', command, '--version'], {
+          stdio: 'ignore',
+        });
         cache.set(key, true);
         return true;
       } catch {

@@ -16,8 +16,8 @@ import type {
   HookLogger,
   Logger,
   LoggingConfig,
-  PerformanceMetrics,
   LogLevel,
+  PerformanceMetrics,
 } from './types';
 
 /**

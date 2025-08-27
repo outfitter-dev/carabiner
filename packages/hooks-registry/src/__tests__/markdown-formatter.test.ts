@@ -243,7 +243,7 @@ describe('markdown formatter hook', () => {
 
     test('should fall back to prettier if markdownlint not available', async () => {
       let formatterUsed = '';
-      
+
       // Mock existsSync to return false for markdownlint-cli2 in node_modules/.bin
       // but true for the test file and prettier command
       mockExistsSync.mockImplementation((path: string) => {
@@ -258,7 +258,7 @@ describe('markdown formatter hook', () => {
         }
         return false;
       });
-      
+
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
@@ -361,7 +361,7 @@ describe('markdown formatter hook', () => {
         }
         return false; // All commands return false
       });
-      
+
       mockExecFileSync.mockImplementation(
         (command: string, _args?: string[]) => {
           if (
@@ -456,7 +456,7 @@ describe('markdown formatter hook', () => {
         }
         return false;
       });
-      
+
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
@@ -523,7 +523,7 @@ describe('markdown formatter hook', () => {
         }
         return false;
       });
-      
+
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (

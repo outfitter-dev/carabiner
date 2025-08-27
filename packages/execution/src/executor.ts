@@ -372,9 +372,7 @@ export class HookExecutor {
   /**
    * Parse context from raw input with error handling
    */
-  private parseContext(
-    input: unknown
-  ): Promise<Result<HookContext, Error>> {
+  private parseContext(input: unknown): Promise<Result<HookContext, Error>> {
     return tryAsyncResult(() => this.protocol.parseContext(input));
   }
 
@@ -440,7 +438,9 @@ export class HookExecutor {
    * Create execution context for logging
    */
   private createExecutionContext(context: HookContext): HookExecutionContext {
-    const env = (globalThis as { Bun?: { env: NodeJS.ProcessEnv } }).Bun?.env ?? process.env;
+    const env =
+      (globalThis as { Bun?: { env: NodeJS.ProcessEnv } }).Bun?.env ??
+      process.env;
     return {
       event: context.event,
       toolName: 'toolName' in context ? context.toolName : undefined,

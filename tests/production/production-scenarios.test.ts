@@ -709,7 +709,11 @@ console.log(JSON.stringify({
 
       // Simulate production load
       const concurrent = 20;
-      type ExecutionResult = { id: number; executionTime: number; success: boolean };
+      type ExecutionResult = {
+        id: number;
+        executionTime: number;
+        success: boolean;
+      };
       const promises: Promise<ExecutionResult>[] = [];
 
       const startTime = Date.now();
@@ -718,10 +722,13 @@ console.log(JSON.stringify({
         const promise = new Promise<ExecutionResult>((resolve) => {
           // Simulate hook execution
           const executionStart = Date.now();
-          setTimeout(() => {
-            const executionTime = Date.now() - executionStart;
-            resolve({ id: i, executionTime, success: true });
-          }, Math.floor(Math.random() * 50));
+          setTimeout(
+            () => {
+              const executionTime = Date.now() - executionStart;
+              resolve({ id: i, executionTime, success: true });
+            },
+            Math.floor(Math.random() * 50)
+          );
         });
 
         promises.push(promise);
@@ -791,7 +798,7 @@ type SecurityInput = { handler?: string; command?: string };
 function isSecurityInput(v: unknown): v is SecurityInput {
   if (typeof v !== 'object' || v === null) return false;
   const r = v as Record<string, unknown>;
-  return (typeof r.handler === 'string') || (typeof r.command === 'string');
+  return typeof r.handler === 'string' || typeof r.command === 'string';
 }
 
 async function simulateSecurityCheck(
