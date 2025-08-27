@@ -197,7 +197,16 @@ test('sanitizer handles deep nested objects', () => {
     },
   };
 
-  const sanitized = sanitizeForLogging(deepObject) as any;
+  const sanitized = sanitizeForLogging(deepObject) as {
+    level1: {
+      level2: {
+        level3: {
+          data?: string;
+          password?: string;
+        };
+      };
+    };
+  };
 
   // Should traverse deep structures
   expect(sanitized.level1.level2.level3.data).toBe('normal');
@@ -210,7 +219,7 @@ test('sanitizer handles arrays correctly', () => {
     { name: 'item2', token: 'secret2' },
   ];
 
-  const sanitized = sanitizeForLogging(arrayData) as any[];
+  const sanitized = sanitizeForLogging(arrayData) as Array<{ name: string; password?: string; token?: string }>;
 
   expect(Array.isArray(sanitized)).toBe(true);
   expect(sanitized[0].name).toBe('item1');

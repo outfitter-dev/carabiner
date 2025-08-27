@@ -362,7 +362,7 @@ export class HookExecutor {
   /**
    * Read input from protocol with error handling
    */
-  private async readInput(): Promise<Result<unknown, Error>> {
+  private readInput(): Promise<Result<unknown, Error>> {
     return tryAsyncResult(async () => {
       return await this.protocol.readInput();
     });
@@ -371,7 +371,7 @@ export class HookExecutor {
   /**
    * Parse context from raw input with error handling
    */
-  private async parseContext(
+  private parseContext(
     input: unknown
   ): Promise<Result<HookContext, Error>> {
     return tryAsyncResult(async () => {
@@ -382,7 +382,7 @@ export class HookExecutor {
   /**
    * Write output through protocol with error handling
    */
-  private async writeOutput(result: HookResult): Promise<Result<void, Error>> {
+  private writeOutput(result: HookResult): Promise<Result<void, Error>> {
     return tryAsyncResult(async () => {
       await this.protocol.writeOutput(result);
     });
@@ -445,7 +445,7 @@ export class HookExecutor {
    * Create execution context for logging
    */
   private createExecutionContext(context: HookContext): HookExecutionContext {
-    const env = (globalThis as any).Bun?.env ?? process.env;
+    const env = (globalThis as { Bun?: { env: NodeJS.ProcessEnv } }).Bun?.env ?? process.env;
     return {
       event: context.event,
       toolName: 'toolName' in context ? context.toolName : undefined,

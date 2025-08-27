@@ -118,7 +118,7 @@ export class HookLoggerImpl implements HookLogger {
     return new HookLoggerImpl(this.baseLogger.child(context));
   }
 
-  isLevelEnabled(level: any): boolean {
+  isLevelEnabled(level: string): boolean {
     return this.baseLogger.isLevelEnabled(level);
   }
 

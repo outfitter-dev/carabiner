@@ -37,13 +37,13 @@ const hook = createMarkdownFormatterHook();
 type MarkdownFormatterConfig = {
   // Preferred formatter ('markdownlint' | 'prettier' | 'auto')
   formatter?: 'markdownlint' | 'prettier' | 'auto';
-  
+
   // Additional arguments to pass to the formatter
   additionalArgs?: string[];
-  
+
   // Whether to fix issues automatically (default: true)
   autoFix?: boolean;
-  
+
   // File patterns to include (default: ['*.md', '*.mdx'])
   patterns?: string[];
 };
@@ -63,7 +63,7 @@ const hook = createMarkdownFormatterHook();
 const hook = createMarkdownFormatterHook({
   formatter: 'markdownlint',
   additionalArgs: ['--config', '.markdownlint.json'],
-  autoFix: true
+  autoFix: true,
 });
 ```
 
@@ -71,7 +71,7 @@ const hook = createMarkdownFormatterHook({
 
 ```typescript
 const hook = createMarkdownFormatterHook({
-  autoFix: false
+  autoFix: false,
 });
 ```
 
@@ -79,7 +79,7 @@ const hook = createMarkdownFormatterHook({
 
 ```typescript
 const hook = createMarkdownFormatterHook({
-  patterns: ['*.md', '*.mdx', '*.markdown', 'README*']
+  patterns: ['*.md', '*.mdx', '*.markdown', 'README*'],
 });
 ```
 
@@ -97,11 +97,13 @@ import { createMarkdownFormatterHook } from '@carabiner/hooks-registry';
 async function main() {
   const protocol = new StdinProtocol();
   const executor = new HookExecutor(protocol);
-  
-  await executor.execute(createMarkdownFormatterHook({
-    formatter: 'auto',
-    autoFix: true
-  }));
+
+  await executor.execute(
+    createMarkdownFormatterHook({
+      formatter: 'auto',
+      autoFix: true,
+    }),
+  );
 }
 
 main().catch(console.error);
