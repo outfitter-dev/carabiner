@@ -246,7 +246,7 @@ export function createMarkdownFormatterHook(
     for (const filePath of filePaths) {
       // Check if the file matches our patterns using proper glob matching
       const isMarkdownFile = patterns.some((pattern) =>
-        isMatch(filePath, pattern, { nocase: true, basename: true })
+        isMatch(filePath, pattern, { nocase: true })
       );
 
       if (!isMarkdownFile) {

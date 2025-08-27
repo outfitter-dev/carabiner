@@ -48,4 +48,3 @@ export {
   validateBashCommand,
   validateFileOperation,
 } from './security-guard.js';
-export * from './testing/hook-tests.test.js';
