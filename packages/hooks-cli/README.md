@@ -68,7 +68,7 @@ This creates:
 
 ```text
 .claude/
-├── settings.json              # Claude Code settings
+├── settings.json              # AI assistant settings
 └── settings.local.json        # Local settings (gitignored)
 
 hooks/
@@ -179,7 +179,7 @@ Generated files include:
 
 ### `build`
 
-Build and validate hook configuration for Claude Code.
+Build and validate hook configuration for AI assistant.
 
 ```bash
 carabiner build [options]
@@ -559,9 +559,9 @@ export default defineTemplate({
     {
       path: 'hooks/custom-validator.ts',
       content: `#!/usr/bin/env bun
-import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
+import { runHook, HookResults } from '@carabiner/hooks-core';
 
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   console.log(\`Custom validation for \${context.toolName}\`);
   return HookResults.success('Custom validation passed');
 });`,
@@ -635,7 +635,7 @@ jobs:
 
 #### VS Code Extension Support
 
-The CLI works with the Claude Code VS Code extension:
+The CLI works with the AI assistant VS Code extension:
 
 ```json
 // .vscode/settings.json

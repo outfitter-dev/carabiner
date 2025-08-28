@@ -1,4 +1,4 @@
-# @outfitter/error-management
+# @carabiner/error-management
 
 Production-ready error handling system for the Grapple monorepo.
 
@@ -19,7 +19,7 @@ import {
   ErrorCategory,
   reportError,
   setupProductionErrorHandling,
-} from '@outfitter/error-management';
+} from '@carabiner/error-management';
 
 // Setup production error handling
 setupProductionErrorHandling();
@@ -40,7 +40,7 @@ try {
 ## Error Recovery
 
 ```typescript
-import { RetryManager, CircuitBreaker } from '@outfitter/error-management';
+import { RetryManager, CircuitBreaker } from '@carabiner/error-management';
 
 // Retry with exponential backoff
 const retryManager = new RetryManager({ maxRetries: 3 });
@@ -56,7 +56,7 @@ await circuitBreaker.execute(() => unreliableService());
 ## Error Boundaries
 
 ```typescript
-import { executeWithBoundary } from '@outfitter/error-management';
+import { executeWithBoundary } from '@carabiner/error-management';
 
 const result = await executeWithBoundary(
   async () => await riskyOperation(),

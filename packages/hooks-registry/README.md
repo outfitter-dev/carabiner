@@ -1,6 +1,6 @@
 # @carabiner/hooks-registry
 
-Official registry of production-ready Claude Code hooks for common development workflows.
+Official registry of production-ready AI assistant hooks for common development workflows.
 
 ## Installation
 
@@ -83,7 +83,7 @@ const hook = createMarkdownFormatterHook({
 });
 ```
 
-#### Integration with Claude Code
+#### Integration with AI assistant
 
 Create a PostToolUse hook file at `.claude/hooks/PostToolUse.js`:
 

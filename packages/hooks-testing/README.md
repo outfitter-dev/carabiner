@@ -1,11 +1,11 @@
-# @outfitter/hooks-testing
+# @carabiner/hooks-testing
 
 Testing framework, mocks, and utilities for Carabiner hooks.
 
 ## Installation
 
 ```bash
-bun add --dev @outfitter/hooks-testing
+bun add --dev @carabiner/hooks-testing
 
 ```
 
@@ -14,8 +14,8 @@ bun add --dev @outfitter/hooks-testing
 ### Quick Start
 
 ```typescript
-import { createMockContext, testHook, TestUtils } from '@outfitter/hooks-testing';
-import { HookResults } from '@outfitter/hooks-core';
+import { createMockContext, testHook, TestUtils } from '@carabiner/hooks-testing';
+import { HookResults } from '@carabiner/hooks-core';
 
 describe('Security Hook', () => {
   test('blocks dangerous commands', async () => {
@@ -46,7 +46,7 @@ describe('Security Hook', () => {
 ### Mock Environment Setup
 
 ```typescript
-import { mockEnv, TestUtils } from '@outfitter/hooks-testing';
+import { mockEnv, TestUtils } from '@carabiner/hooks-testing';
 
 describe('Environment Tests', () => {
   afterEach(() => {
@@ -76,7 +76,7 @@ describe('Environment Tests', () => {
 ### Tool-Specific Testing
 
 ```typescript
-import { createMockContextFor, mockToolInputs } from '@outfitter/hooks-testing';
+import { createMockContextFor, mockToolInputs } from '@carabiner/hooks-testing';
 
 describe('Tool-Specific Hooks', () => {
   test('Bash security validation', async () => {
@@ -224,7 +224,7 @@ Environment variable mocking for testing.
 **Example:**
 
 ```typescript
-import { mockEnv } from '@outfitter/hooks-testing';
+import { mockEnv } from '@carabiner/hooks-testing';
 
 // Setup mock environment
 mockEnv.setup({
@@ -274,7 +274,7 @@ Create Grep tool input.
 **Example:**
 
 ```typescript
-import { mockToolInputs } from '@outfitter/hooks-testing';
+import { mockToolInputs } from '@carabiner/hooks-testing';
 
 const bashInput = mockToolInputs.bash('ls -la', 5000);
 const writeInput = mockToolInputs.write('output.txt', 'Hello World');
@@ -389,7 +389,7 @@ await TestUtils.waitFor(
 ### Unit Testing Hooks
 
 ```typescript
-import { createMockContext, HookResults } from '@outfitter/hooks-testing';
+import { createMockContext, HookResults } from '@carabiner/hooks-testing';
 
 describe('Universal Security Hook', () => {
   const securityHook = (context) => {
@@ -448,8 +448,8 @@ describe('Universal Security Hook', () => {
 ### Integration Testing
 
 ```typescript
-import { TestUtils, mockEnv } from '@outfitter/hooks-testing';
-import { ConfigManager } from '@outfitter/hooks-config';
+import { TestUtils, mockEnv } from '@carabiner/hooks-testing';
+import { ConfigManager } from '@carabiner/hooks-config';
 
 describe('Hook Integration', () => {
   test('complete hook workflow', async () => {
@@ -488,7 +488,7 @@ describe('Hook Integration', () => {
 ### Performance Testing
 
 ```typescript
-import { TestUtils, createMockContext } from '@outfitter/hooks-testing';
+import { TestUtils, createMockContext } from '@carabiner/hooks-testing';
 
 describe('Hook Performance', () => {
   test('hook executes within timeout', async () => {
@@ -527,7 +527,7 @@ describe('Hook Performance', () => {
 ### Error Handling Tests
 
 ```typescript
-import { createMockContext, TestUtils } from '@outfitter/hooks-testing';
+import { createMockContext, TestUtils } from '@carabiner/hooks-testing';
 
 describe('Error Handling', () => {
   test('handles invalid tool input gracefully', async () => {
@@ -564,7 +564,7 @@ describe('Error Handling', () => {
 ### Parameterized Testing
 
 ```typescript
-import { createMockContextFor } from '@outfitter/hooks-testing';
+import { createMockContextFor } from '@carabiner/hooks-testing';
 
 describe('Security Hook - Dangerous Commands', () => {
   const dangerousCommands = [
@@ -617,7 +617,7 @@ import type {
   HookTestBuilder,
   MockEnvironment,
   TestUtilsType,
-} from '@outfitter/hooks-testing';
+} from '@carabiner/hooks-testing';
 
 // Type-safe mock context creation
 const context: MockContextOptions<'PreToolUse', 'Bash'> = {
@@ -635,7 +635,7 @@ const testBuilder: HookTestBuilder = testHook('PreToolUse').withContext({ toolNa
 ### 1. **Always Clean Up**
 
 ```typescript
-import { mockEnv } from '@outfitter/hooks-testing';
+import { mockEnv } from '@carabiner/hooks-testing';
 
 describe('My Tests', () => {
   afterEach(() => {

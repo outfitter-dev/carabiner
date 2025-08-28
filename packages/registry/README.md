@@ -1,4 +1,4 @@
-# @outfitter/registry
+# @carabiner/registry
 
 Plugin registry system for Carabiner hooks - enables composition of small, focused hooks through a plugin architecture.
 
@@ -18,7 +18,7 @@ Plugin registry system for Carabiner hooks - enables composition of small, focus
 ### Basic Plugin
 
 ```typescript
-import type { HookPlugin } from '@outfitter/registry';
+import type { HookPlugin } from '@carabiner/registry';
 
 export const myPlugin: HookPlugin = {
   name: 'my-plugin',
@@ -41,7 +41,7 @@ export const myPlugin: HookPlugin = {
 ### Plugin Registry
 
 ```typescript
-import { PluginRegistry } from '@outfitter/registry';
+import { PluginRegistry } from '@carabiner/registry';
 import { myPlugin } from './my-plugin';
 
 const registry = new PluginRegistry();
@@ -106,8 +106,8 @@ interface HookPlugin {
 
 ```typescript
 import { test, expect } from 'bun:test';
-import { PluginRegistry } from '@outfitter/registry';
-import { createMockContext } from '@outfitter/types';
+import { PluginRegistry } from '@carabiner/registry';
+import { createMockContext } from '@carabiner/types';
 
 test('should execute plugins in priority order', async () => {
   const registry = new PluginRegistry();

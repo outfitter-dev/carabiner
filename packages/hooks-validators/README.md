@@ -1,11 +1,11 @@
-# @outfitter/hooks-validators
+# @carabiner/hooks-validators
 
 Security validators and environment-specific validation rules for Carabiner hooks.
 
 ## Installation
 
 ```bash
-bun add @outfitter/hooks-validators
+bun add @carabiner/hooks-validators
 
 ```
 
@@ -17,10 +17,10 @@ bun add @outfitter/hooks-validators
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
-import { SecurityValidators } from '@outfitter/hooks-validators';
+import { runHook, HookResults } from '@carabiner/hooks-core';
+import { SecurityValidators } from '@carabiner/hooks-validators';
 
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   try {
     // Environment-specific validation
     switch (Bun.env.NODE_ENV) {
@@ -45,9 +45,9 @@ runClaudeHook(async (context) => {
 ### Tool Input Validation
 
 ```typescript
-import { validateToolInput, ToolSchemas } from '@outfitter/hooks-validators';
+import { validateToolInput, ToolSchemas } from '@carabiner/hooks-validators';
 
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   // Validate tool input structure
   const result = await validateToolInput(context.toolName, context.toolInput, context);
 
@@ -70,7 +70,7 @@ runClaudeHook(async (context) => {
 ### Custom Validation Rules
 
 ```typescript
-import { ValidationRules, validateSchema } from '@outfitter/hooks-validators';
+import { ValidationRules, validateSchema } from '@carabiner/hooks-validators';
 
 const customSchema = {
   file_path: [
@@ -88,7 +88,7 @@ const customSchema = {
   ],
 };
 
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   const result = await validateSchema(context.toolInput, customSchema, context);
 
   if (!result.valid) {
@@ -134,7 +134,7 @@ Validate tool input against tool-specific schema.
 
 **Parameters:**
 
-- `toolName` - Name of the Claude Code tool
+- `toolName` - Name of the AI assistant tool
 - `input` - Tool input parameters
 - `context` - Optional hook context for path resolution
 
@@ -192,7 +192,7 @@ Create custom validation rule.
 
 ### Tool Schemas
 
-Pre-built validation schemas for all Claude Code tools:
+Pre-built validation schemas for all AI assistant tools:
 
 #### `ToolSchemas.Bash`
 
@@ -368,7 +368,7 @@ import type {
   SecurityRuleSet,
   SecurityError,
   ToolSchemaType,
-} from '@outfitter/hooks-validators';
+} from '@carabiner/hooks-validators';
 
 // Type-safe validation
 const schema: ValidationSchema = {
@@ -438,10 +438,10 @@ if (result.warnings.length > 0) {
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
-import { SecurityValidators, validateToolInput } from '@outfitter/hooks-validators';
+import { runHook, HookResults } from '@carabiner/hooks-core';
+import { SecurityValidators, validateToolInput } from '@carabiner/hooks-validators';
 
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   // Always validate input structure
   const inputValidation = await validateToolInput(context.toolName, context.toolInput, context);
 
@@ -482,7 +482,7 @@ runClaudeHook(async (context) => {
 ### Custom Security Rules
 
 ```typescript
-import { SecurityValidators, ValidationRules } from '@outfitter/hooks-validators';
+import { SecurityValidators, ValidationRules } from '@carabiner/hooks-validators';
 
 const customSecurityRules = {
   dangerousCommands: {
@@ -516,7 +516,7 @@ const customSecurityRules = {
   },
 };
 
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   try {
     await SecurityValidators.custom(customSecurityRules, context);
     return HookResults.success('Custom security validation passed');
@@ -529,10 +529,10 @@ runClaudeHook(async (context) => {
 ### Tool-Specific Validation
 
 ```typescript
-import { isBashToolInput, isWriteToolInput } from '@outfitter/hooks-core';
-import { ValidationRules, validateSchema } from '@outfitter/hooks-validators';
+import { isBashToolInput, isWriteToolInput } from '@carabiner/hooks-core';
+import { ValidationRules, validateSchema } from '@carabiner/hooks-validators';
 
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   if (isBashToolInput(context.toolInput)) {
     // Custom Bash validation
     const bashSchema = {

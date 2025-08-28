@@ -1,11 +1,11 @@
-# @outfitter/hooks-core
+# @carabiner/hooks-core
 
 Core types, runtime utilities, and execution engine for Carabiner hooks TypeScript library.
 
 ## Installation
 
 ```bash
-bun add @outfitter/hooks-core
+bun add @carabiner/hooks-core
 
 ```
 
@@ -19,10 +19,10 @@ The simplest way to create hooks using the new stdin-based runtime:
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runHook, HookResults } from '@carabiner/hooks-core';
 
 // Universal hook - runs for all tools
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   console.log(`🔍 Validating ${context.toolName} usage`);
   console.log(`Session: ${context.sessionId}`);
   console.log(`Working Directory: ${context.cwd}`);
@@ -50,7 +50,7 @@ Fluent interface for complex hooks with middleware and tool scoping:
 
 #!/usr/bin/env bun
 
-import { HookBuilder, middleware, runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { HookBuilder, middleware, runHook, HookResults } from '@carabiner/hooks-core';
 
 // Tool-specific hook - ONLY runs for Bash commands
 const bashSecurityHook = HookBuilder.forPreToolUse()
@@ -86,7 +86,7 @@ const universalAuditHook = HookBuilder.forPostToolUse()
 
 // Use the stdin-based runtime
 if (import.meta.main) {
-  runClaudeHook(async (context) => {
+  runHook(async (context) => {
     // Run appropriate hooks based on tool and event
     if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
       return await bashSecurityHook.handler(context);
@@ -105,7 +105,7 @@ if (import.meta.main) {
 Configuration-driven approach for managing hooks:
 
 ```typescript
-import { defineHook, HookResults, middleware } from '@outfitter/hooks-core';
+import { defineHook, HookResults, middleware } from '@carabiner/hooks-core';
 
 export const projectHooks = [
   // Universal security check (all tools)
@@ -150,7 +150,7 @@ export const projectHooks = [
 
 ### Core Functions
 
-#### `runClaudeHook(handler: HookHandler): void`
+#### `runHook(handler: HookHandler): void`
 
 Main runtime function that reads JSON from stdin and executes your hook handler.
 
@@ -161,7 +161,7 @@ Main runtime function that reads JSON from stdin and executes your hook handler.
 **Example:**
 
 ```typescript
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   // Your hook logic here
   return HookResults.success('Hook executed successfully');
 });
@@ -258,7 +258,7 @@ import type {
   GetToolInput,
   HookHandler,
   HookConfig,
-} from '@outfitter/hooks-core';
+} from '@carabiner/hooks-core';
 
 // Type-safe hook handler
 const handler: HookHandler = async (context) => {
@@ -308,7 +308,7 @@ Your hooks receive JSON via stdin with this structure:
 
 - **`PreToolUse`**: Before tool execution (can block with non-zero exit)
 - **`PostToolUse`**: After tool execution (processing/cleanup)
-- **`SessionStart`**: New Claude Code session begins
+- **`SessionStart`**: New AI assistant session begins
 - **`UserPromptSubmit`**: User submits a prompt
 - **`Stop`**: Session ends
 - **`SubagentStop`**: Subagent workflow ends
@@ -372,8 +372,8 @@ const toolInput = JSON.parse(process.env.TOOL_INPUT || '{}');
 
 ```typescript
 // ✅ Reads JSON from stdin automatically
-runClaudeHook(async (context) => {
-  // All data comes from Claude Code's JSON input
+runHook(async (context) => {
+  // All data comes from AI assistant's JSON input
   console.log(context.sessionId); // From session_id
   console.log(context.cwd); // From cwd
   console.log(context.toolInput); // From tool_input
@@ -401,7 +401,7 @@ HookBuilder.forPreToolUse().withHandler(handler);
 
 **Changed Properties**:
 
-- `context.workspacePath` → `context.cwd` (matches Claude Code's JSON structure)
+- `context.workspacePath` → `context.cwd` (matches AI assistant's JSON structure)
 - `context.toolOutput` → `context.toolResponse` (consistent with tool_response field)
 - Metadata is on the **result**, not context: `result.metadata.duration`
 
