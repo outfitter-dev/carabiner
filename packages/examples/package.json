@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/hooks-examples",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha",
   "description": "Example implementations demonstrating Carabiner hooks APIs",
   "type": "module",
   "private": true,
@@ -15,6 +15,10 @@
   ],
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "@carabiner/execution": "workspace:*",
     "@carabiner/hooks-core": "workspace:*",

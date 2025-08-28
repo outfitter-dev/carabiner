@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/hooks-config",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha",
   "description": "Configuration management for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/registry",
-  "version": "1.0.0",
+  "version": "0.1.0-alpha",
   "description": "Plugin registry system for Carabiner hooks - enables composition of small, focused hooks through a plugin architecture",
   "type": "module",
   "main": "./dist/index.js",

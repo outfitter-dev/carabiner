@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/execution",
-  "version": "1.0.0",
+  "version": "0.1.0-alpha",
   "description": "Simplified execution engine for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",

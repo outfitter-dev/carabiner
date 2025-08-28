@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/hooks-testing",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha",
   "description": "Testing utilities for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",
