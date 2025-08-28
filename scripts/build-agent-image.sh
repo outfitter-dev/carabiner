@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 if [[ -n "${BUN_VERSION:-}" ]]; then
   bun_version="$BUN_VERSION"
 else
-  bun_version=$(node -e "const p=require('./package.json'); const pm=p.packageManager||''; const m=pm.match(/^bun@(.*)$/); if(m){console.log(m[1]); process.exit(0);} const eb=p.engines && p.engines.bun; if(eb){console.log(String(eb).replace(/^\\^|~|>=?\\s*/,'')); process.exit(0);} process.stderr.write('Could not determine Bun version from package.json\\n'); process.exit(1);")
+  bun_version=$(node -e "const p=require('./package.json'); const pm=String(p.packageManager||'').replace(/^bun@/,''); const eb=(p.engines&&String(p.engines.bun))||''; const src=pm||eb; const m=String(src).match(/\\b\\d+\\.\\d+\\.\\d+\\b/); if(m){console.log(m[0]); process.exit(0);} process.stderr.write('Could not determine Bun version from package.json\\n'); process.exit(1);")
 fi
 
 # Optional custom tag as first arg; default to background-agent + bun version
@@ -19,6 +19,6 @@ docker build -f .cursor/Dockerfile . \
   --build-arg BUN_VERSION="${bun_version}" \
   -t "${image_tag}"
 
-echo "\nBuilt ${image_tag} successfully."
+printf "\nBuilt %s successfully.\n" "${image_tag}"
 
 

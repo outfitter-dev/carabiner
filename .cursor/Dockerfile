@@ -14,12 +14,23 @@ RUN apt-get update \
     build-essential \
   && rm -rf /var/lib/apt/lists/*
 
-# Install Bun (version controlled via build-arg with sensible default)
+# Install Bun (version controlled via build-arg with secure checksum verification)
 ARG BUN_VERSION=1.2.20
+ARG BUN_SHA256=
 ENV BUN_VERSION=${BUN_VERSION}
-RUN curl -fsSL https://bun.sh/install | bash -s -- bun-v${BUN_VERSION} \
-  && ln -s /root/.bun/bin/bun /usr/local/bin/bun \
-  && ln -s /root/.bun/bin/bunx /usr/local/bin/bunx
+
+# Download and verify Bun release tarball
+RUN set -eux; \
+  curl -fsSL -o /tmp/bun.tgz \
+    "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64-baseline.tar.gz"; \
+  if [ -n "${BUN_SHA256}" ]; then \
+    echo "${BUN_SHA256}  /tmp/bun.tgz" | sha256sum -c -; \
+  fi; \
+  mkdir -p /opt/bun && \
+    tar -xzf /tmp/bun.tgz -C /opt/bun --strip-components=1; \
+  ln -sf /opt/bun/bin/bun /usr/local/bin/bun; \
+  ln -sf /opt/bun/bin/bunx /usr/local/bin/bunx; \
+  rm -f /tmp/bun.tgz
 
 # Create non-root user with home and switch
 RUN useradd -ms /bin/bash ubuntu
