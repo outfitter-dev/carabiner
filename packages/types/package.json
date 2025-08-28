@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/types",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha",
   "description": "Type system foundation for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",
@@ -47,6 +47,10 @@
   ],
   "author": "Matt Galligan <matt@outfitter.dev>",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "type-fest": "^4.41.0"
   },

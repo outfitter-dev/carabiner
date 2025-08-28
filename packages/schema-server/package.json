@@ -1,0 +1,19 @@
+{
+  "name": "@carabiner/schema-server",
+  "version": "0.1.0-alpha",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler publish",
+    "generate-schema": "bun run src/generate-schema.ts"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.95.0",
+    "typescript": "^5.9.2",
+    "ts-json-schema-generator": "^2.3.0"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/schemas",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha",
   "description": "Zod validation schemas for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",
@@ -43,6 +43,10 @@
   ],
   "author": "Matt Galligan <matt@outfitter.dev>",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "@carabiner/types": "workspace:*",
     "zod": "^3.24.1"

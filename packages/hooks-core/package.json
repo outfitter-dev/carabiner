@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/hooks-core",
-  "version": "0.2.0",
+  "version": "0.1.0-alpha",
   "description": "Core TypeScript types and runtime utilities for Carabiner hooks",
   "type": "module",
   "main": "./dist/index.js",

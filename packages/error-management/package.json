@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/error-management",
-  "version": "0.1.0-beta",
+  "version": "0.1.0-alpha",
   "description": "Production-ready error handling system for Grapple monorepo",
   "type": "module",
   "main": "dist/index.js",

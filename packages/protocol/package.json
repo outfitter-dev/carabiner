@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/protocol",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha",
   "description": "Protocol abstraction layer for Carabiner hooks I/O",
   "type": "module",
   "main": "./dist/index.js",
