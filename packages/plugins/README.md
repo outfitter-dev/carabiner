@@ -1,10 +1,10 @@
-# @outfitter/plugins
+# @carabiner/plugins
 
 Example plugin collection for Carabiner hooks - demonstrates plugin architecture patterns and best practices.
 
 ## Overview
 
-This package provides a collection of production-ready plugins that showcase the power and flexibility of the Claude Code plugin system. Each plugin demonstrates different aspects of plugin development while solving real-world problems in development workflows.
+This package provides a collection of production-ready plugins that showcase the power and flexibility of the AI assistant plugin system. Each plugin demonstrates different aspects of plugin development while solving real-world problems in development workflows.
 
 ## Included Plugins
 
@@ -121,7 +121,7 @@ Tracks execution time and resource usage.
 
 ### 📋 Audit Logger (`audit-logger`)
 
-Comprehensive logging of all Claude Code operations.
+Comprehensive logging of all AI assistant operations.
 
 **Features:**
 
@@ -151,8 +151,8 @@ Comprehensive logging of all Claude Code operations.
 ### Individual Plugin Usage
 
 ```typescript
-import { gitSafetyPlugin, fileBackupPlugin } from '@outfitter/plugins';
-import { PluginRegistry } from '@outfitter/registry';
+import { gitSafetyPlugin, fileBackupPlugin } from '@carabiner/plugins';
+import { PluginRegistry } from '@carabiner/registry';
 
 const registry = new PluginRegistry();
 registry.register(gitSafetyPlugin);
@@ -165,8 +165,8 @@ const results = await registry.execute(context);
 ### Plugin Collection
 
 ```typescript
-import { createPluginCollection } from '@outfitter/plugins';
-import { PluginRegistry } from '@outfitter/registry';
+import { createPluginCollection } from '@carabiner/plugins';
+import { PluginRegistry } from '@carabiner/registry';
 
 const plugins = createPluginCollection({
   gitSafety: true,
@@ -227,7 +227,7 @@ export default {
 Balanced settings suitable for most development workflows:
 
 ```typescript
-import { createDefaultConfiguration } from '@outfitter/plugins';
+import { createDefaultConfiguration } from '@carabiner/plugins';
 
 const config = createDefaultConfiguration();
 ```
@@ -237,7 +237,7 @@ const config = createDefaultConfiguration();
 Enhanced security with stricter rules:
 
 ```typescript
-import { createSecurityConfiguration } from '@outfitter/plugins';
+import { createSecurityConfiguration } from '@carabiner/plugins';
 
 const config = createSecurityConfiguration();
 ```
@@ -247,7 +247,7 @@ const config = createSecurityConfiguration();
 Relaxed settings for development environments:
 
 ```typescript
-import { createDevelopmentConfiguration } from '@outfitter/plugins';
+import { createDevelopmentConfiguration } from '@carabiner/plugins';
 
 const config = createDevelopmentConfiguration();
 ```

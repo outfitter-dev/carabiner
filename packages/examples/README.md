@@ -1,10 +1,10 @@
-# Claude Code Hooks - Examples
+# AI assistant Hooks - Examples
 
 This package contains comprehensive examples demonstrating the different approaches to building Carabiner hooks with TypeScript.
 
 ## 🚀 Quick Start
 
-All examples use the **new stdin-based runtime** that reads JSON input from Claude Code and provides properly typed contexts.
+All examples use the **new stdin-based runtime** that reads JSON input from AI assistant and provides properly typed contexts.
 
 ### Running Examples
 
@@ -32,7 +32,7 @@ Simple, direct approach for straightforward hook logic.
 
 #### [`pre-tool-use.ts`](src/function-based/pre-tool-use.ts)
 
-- ✅ **Correct Runtime**: Uses `runClaudeHook()` with JSON stdin input
+- ✅ **Correct Runtime**: Uses `runHook()` with JSON stdin input
 - ✅ **Tool Validation**: Demonstrates bash command, file write, and edit validation
 - ✅ **Security Checks**: Environment-specific security validation
 - ✅ **Error Handling**: Proper error handling with `HookResults`
@@ -42,9 +42,9 @@ Simple, direct approach for straightforward hook logic.
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@/hooks-core';
+import { runHook, HookResults } from '@/hooks-core';
 
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   console.log(`🔍 PreToolUse validation for: ${context.toolName}`);
 
   if (context.toolName === 'Bash') {
@@ -151,7 +151,7 @@ console.log(context.toolInput); // From TOOL_INPUT env var
 
 ```typescript
 // ✅ Uses JSON stdin input
-runClaudeHook(async (context) => {
+runHook(async (context) => {
   console.log(context.sessionId); // From session_id
   console.log(context.cwd); // From cwd (not workspacePath)
   console.log(context.toolInput); // From tool_input
@@ -189,7 +189,7 @@ const universalHook = HookBuilder.forPreToolUse()
 
 **Changed Properties**:
 
-- `context.workspacePath` → `context.cwd` (matches Claude Code's actual JSON structure)
+- `context.workspacePath` → `context.cwd` (matches AI assistant's actual JSON structure)
 - `context.toolOutput` → `context.toolResponse` (consistent with tool_response field)
 - Metadata is on the **result**, not context: `result.metadata.duration`
 
@@ -198,7 +198,7 @@ const universalHook = HookBuilder.forPreToolUse()
 All examples use the monorepo-friendly import paths:
 
 ```typescript
-import { runClaudeHook, HookResults } from '@/hooks-core';
+import { runHook, HookResults } from '@/hooks-core';
 import { SecurityValidators } from '@/hooks-validators';
 ```
 
