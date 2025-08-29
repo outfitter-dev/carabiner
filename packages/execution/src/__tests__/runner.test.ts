@@ -524,8 +524,14 @@ describe('Edge cases and error handling', () => {
   test('should handle malformed input deterministically', async () => {
     const handler: HookHandler = async () => ({ success: true });
 
+    // Helper to avoid repeated double-casts in tests
+    const asRecord = (v: unknown): Record<string, unknown> =>
+      v as Record<string, unknown>;
+
     // Only undefined causes immediate rejection due to testInput validation
-    await expect(runTestHook(handler, undefined as any)).rejects.toBeDefined();
+    await expect(
+      runTestHook(handler, asRecord(undefined))
+    ).rejects.toBeDefined();
 
     // All other inputs are handled gracefully by the executor's error handling
     const toleratedInputs = [
@@ -533,10 +539,12 @@ describe('Edge cases and error handling', () => {
       'not an object',
       {},
       { hook_event_name: 'InvalidEvent' },
-      { hook_event_name: 'PreToolUse', tool_name: 123 as any }, // Wrong type, but runner should not throw
+      { hook_event_name: 'PreToolUse', tool_name: 123 as unknown }, // Wrong type, but runner should not throw
     ];
     for (const input of toleratedInputs) {
-      await expect(runTestHook(handler, input as any)).resolves.toBeUndefined();
+      await expect(
+        runTestHook(handler, asRecord(input))
+      ).resolves.toBeUndefined();
     }
   });
 });

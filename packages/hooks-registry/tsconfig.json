@@ -4,7 +4,11 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "declarationDir": "./dist",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "declarationMap": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["src/**/*.test.ts", "src/**/__tests__/**"]
