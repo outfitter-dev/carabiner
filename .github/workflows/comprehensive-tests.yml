@@ -181,12 +181,12 @@ jobs:
         run: |
           set -euo pipefail
           # Test Linux binary
-          ./claude-hooks-linux --version || echo "Linux binary test failed"
+          ./carabiner-linux --version || echo "Linux binary test failed"
 
           # Test binary execution (if available)
-          if [ -f "./claude-hooks-linux" ]; then
+          if [ -f "./carabiner-linux" ]; then
             echo '{"version": "1.0.0", "hooks": {}}' > test-config.json
-            timeout 10s ./claude-hooks-linux --config=test-config.json --dry-run || echo "Binary execution test completed"
+            timeout 10s ./carabiner-linux --config=test-config.json --dry-run || echo "Binary execution test completed"
           fi
 
       - name: Upload production test results
@@ -196,7 +196,7 @@ jobs:
           name: production-test-results
           path: |
             test-results/
-            claude-hooks-*
+            carabiner-*
           retention-days: 30
 
   # Edge case and error path testing

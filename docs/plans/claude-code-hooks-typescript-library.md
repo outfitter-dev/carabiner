@@ -277,7 +277,7 @@ const mockContext = createMockContext('PreToolUse', {
     "./testing": "./packages/hooks-testing/dist/index.js"
   },
   "bin": {
-    "claude-hooks": "./packages/hooks-cli/bin/cli.js"
+    "carabiner": "./packages/hooks-cli/bin/cli.js"
   }
 }
 

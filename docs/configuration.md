@@ -40,13 +40,13 @@ Create `.claude/settings.json` in your project root:
 
 ```bash
 # Initialize with template
-claude-hooks init --template security
+carabiner init --template security
 
 # Build configuration
-claude-hooks build --output .claude/settings.json
+carabiner build --output .claude/settings.json
 
 # Validate configuration
-claude-hooks validate --config
+carabiner validate --config
 ```
 
 ## Claude Code Settings
@@ -312,9 +312,9 @@ Create different settings for each environment:
 
 ```bash
 # Build for specific environment
-claude-hooks build --environment production --output .claude/settings.production.json
-claude-hooks build --environment staging --output .claude/settings.staging.json
-claude-hooks build --environment test --output .claude/settings.test.json
+carabiner build --environment production --output .claude/settings.production.json
+carabiner build --environment staging --output .claude/settings.staging.json
+carabiner build --environment test --output .claude/settings.test.json
 ```
 
 ## Advanced Configuration
@@ -811,13 +811,13 @@ export default defineConfig({
 
 ```bash
 # Build configurations for all environments
-claude-hooks build --environment development --output .claude/settings.json
-claude-hooks build --environment production --output .claude/settings.prod.json
-claude-hooks build --environment staging --output .claude/settings.staging.json
-claude-hooks build --environment test --output .claude/settings.test.json
+carabiner build --environment development --output .claude/settings.json
+carabiner build --environment production --output .claude/settings.prod.json
+carabiner build --environment staging --output .claude/settings.staging.json
+carabiner build --environment test --output .claude/settings.test.json
 
 # Validate all configurations
-claude-hooks validate --config
+carabiner validate --config
 ```
 
 ### Package.json Scripts
@@ -825,13 +825,13 @@ claude-hooks validate --config
 ```json
 {
   "scripts": {
-    "hooks:build": "claude-hooks build",
-    "hooks:build:prod": "claude-hooks build --environment production --output .claude/settings.prod.json",
-    "hooks:build:staging": "claude-hooks build --environment staging --output .claude/settings.staging.json",
+    "hooks:build": "carabiner build",
+    "hooks:build:prod": "carabiner build --environment production --output .claude/settings.prod.json",
+    "hooks:build:staging": "carabiner build --environment staging --output .claude/settings.staging.json",
     "hooks:build:all": "npm run hooks:build && npm run hooks:build:prod && npm run hooks:build:staging",
-    "hooks:validate": "claude-hooks validate --config",
-    "hooks:test": "claude-hooks test",
-    "hooks:dev": "claude-hooks dev --watch"
+    "hooks:validate": "carabiner validate --config",
+    "hooks:test": "carabiner test",
+    "hooks:dev": "carabiner dev --watch"
   }
 }
 ```
