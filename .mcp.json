@@ -2,21 +2,21 @@
   "mcpServers": {
     "ultracite": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://www.ultracite.ai/api/mcp/mcp"]
+      "args": ["-y", "mcp-remote@^1.0.0", "https://www.ultracite.ai/api/mcp/mcp"]
     },
     "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"]
+      "command": "npx", 
+      "args": ["-y", "@upstash/context7-mcp@^1.0.0"]
     },
     "sequential-thinking": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@^0.1.0"],
       "env": {}
     },
     "convex": {
       "command": "npx",
-      "args": ["-y", "convex@latest", "mcp", "start"]
+      "args": ["-y", "convex@^1.0.0", "mcp", "start"]
     }
   }
 }

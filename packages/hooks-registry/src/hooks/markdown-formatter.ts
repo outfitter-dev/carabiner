@@ -7,6 +7,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { HookHandler } from '@carabiner/types';
 import { isMatch } from 'picomatch';
 
@@ -33,30 +34,87 @@ export type MarkdownFormatterConfig = {
 
   /**
    * File patterns to include (glob patterns)
-   * @default ['*.md', '*.mdx']
+   * @default ['**\/*.md', '**\/*.mdx']
    */
   patterns?: string[];
 };
 
 /**
+ * Convert Buffer or other value to string safely
+ */
+function convertBufferToString(value: unknown): string {
+  if (!value) {
+    return '';
+  }
+  if (Buffer.isBuffer(value)) {
+    return value.toString('utf-8');
+  }
+  return String(value);
+}
+
+/**
  * Check if a command exists in the system (cross-platform)
  */
 function commandExists(command: string): boolean {
+  // Simple memo cache
+  const key = `cmd:${process.cwd()}:${process.platform}:${command}`;
+
+  type GlobalWithCache = typeof globalThis & {
+    __carabinerCmdCache?: Map<string, boolean>;
+  };
+  const global = globalThis as GlobalWithCache;
+  global.__carabinerCmdCache ??= new Map<string, boolean>();
+  const cache = global.__carabinerCmdCache;
+
+  if (cache.has(key)) {
+    return cache.get(key) ?? false;
+  }
+
   try {
+    // 1) local node_modules/.bin
+    const ext = process.platform === 'win32' ? '.cmd' : '';
+    const localBin = join(
+      process.cwd(),
+      'node_modules',
+      '.bin',
+      `${command}${ext}`
+    );
+    if (existsSync(localBin)) {
+      cache.set(key, true);
+      return true;
+    }
+
     const isWindows = process.platform === 'win32';
     const detector = isWindows ? 'where' : 'command';
     const args = isWindows ? [command] : ['-v', command];
     execFileSync(detector, args, { stdio: 'ignore' });
+    cache.set(key, true);
     return true;
   } catch {
-    // Try npx fallback for locally installed CLIs
+    // Try common package runner fallbacks for locally installed CLIs
     try {
       execFileSync('npx', ['--no-install', command, '--version'], {
         stdio: 'ignore',
       });
+      cache.set(key, true);
       return true;
     } catch {
-      return false;
+      try {
+        execFileSync('pnpm', ['dlx', command, '--version'], {
+          stdio: 'ignore',
+        });
+        cache.set(key, true);
+        return true;
+      } catch {
+        try {
+          execFileSync('bunx', [command, '--version'], { stdio: 'ignore' });
+          cache.set(key, true);
+          return true;
+        } catch {
+          cache.set(key, false);
+          return false;
+        }
+      }
     }
   }
 }
@@ -84,9 +142,9 @@ function formatWithMarkdownlint(
     };
   } catch (error) {
     const err = error as Record<string, unknown>;
-    const errorOutput = err.message || 'Unknown error';
-    const stderr = err.stderr || '';
-    const stdout = err.stdout || '';
+    const errorOutput = err?.message ? String(err.message) : 'Unknown error';
+    const stderr = convertBufferToString(err?.stderr);
+    const stdout = convertBufferToString(err?.stdout);
     return {
       success: false,
       output: `Failed to format with markdownlint: ${errorOutput}${stderr ? `\n${stderr}` : ''}${stdout ? `\n${stdout}` : ''}`,
@@ -120,9 +178,9 @@ function formatWithPrettier(
     };
   } catch (error) {
     const err = error as Record<string, unknown>;
-    const errorOutput = err.message || 'Unknown error';
-    const stderr = err.stderr || '';
-    const stdout = err.stdout || '';
+    const errorOutput = err?.message ? String(err.message) : 'Unknown error';
+    const stderr = convertBufferToString(err?.stderr);
+    const stdout = convertBufferToString(err?.stdout);
     return {
       success: false,
       output: `Failed to format with prettier: ${errorOutput}${stderr ? `\n${stderr}` : ''}${stdout ? `\n${stdout}` : ''}`,
@@ -140,7 +198,7 @@ export function createMarkdownFormatterHook(
     formatter = 'auto',
     additionalArgs = [],
     autoFix = true,
-    patterns = ['*.md', '*.mdx'],
+    patterns = ['**/*.md', '**/*.mdx'],
   } = config;
 
   return (context) => {
@@ -163,13 +221,15 @@ export function createMarkdownFormatterHook(
     const multiplePaths =
       toolInput.files || toolInput.paths || toolInput.file_paths;
 
-    let filePaths: string[] = [];
+    let filePaths: string[];
     if (Array.isArray(multiplePaths)) {
       filePaths = multiplePaths.filter(
         (p: unknown): p is string => typeof p === 'string'
       );
     } else if (typeof singlePath === 'string') {
       filePaths = [singlePath];
+    } else {
+      filePaths = [];
     }
 
     if (filePaths.length === 0) {
@@ -185,9 +245,9 @@ export function createMarkdownFormatterHook(
     }> = [];
     for (const filePath of filePaths) {
       // Check if the file matches our patterns using proper glob matching
-      const isMarkdownFile = patterns.some((pattern) => {
-        return isMatch(filePath, pattern, { nocase: true });
-      });
+      const isMarkdownFile = patterns.some((pattern) =>
+        isMatch(filePath, pattern, { nocase: true })
+      );
 
       if (!isMarkdownFile) {
         continue;
