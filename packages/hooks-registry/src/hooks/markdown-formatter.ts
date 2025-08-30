@@ -221,16 +221,11 @@ export function createMarkdownFormatterHook(
     const multiplePaths =
       toolInput.files || toolInput.paths || toolInput.file_paths;
 
-    let filePaths: string[];
-    if (Array.isArray(multiplePaths)) {
-      filePaths = multiplePaths.filter(
-        (p: unknown): p is string => typeof p === 'string'
-      );
-    } else if (typeof singlePath === 'string') {
-      filePaths = [singlePath];
-    } else {
-      filePaths = [];
-    }
+    const filePaths: string[] = Array.isArray(multiplePaths)
+      ? multiplePaths.filter((p: unknown): p is string => typeof p === 'string')
+      : typeof singlePath === 'string'
+        ? [singlePath]
+        : [];
 
     if (filePaths.length === 0) {
       return { success: true };
