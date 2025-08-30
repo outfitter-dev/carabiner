@@ -312,7 +312,7 @@ NODE_ENV=production
 LOG_LEVEL=info
 
 # CLI runs with optimized logging
-./claude-hooks generate security-hook
+./carabiner generate security-hook
 ```
 
 ### Log Output Format

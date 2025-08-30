@@ -389,7 +389,7 @@ export const TestUtils = {
     const { tmpdir } = await import('node:os');
     const { join } = await import('node:path');
 
-    const tempDir = mkdtempSync(join(tmpdir(), 'claude-hooks-test-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'carabiner-test-'));
 
     try {
       return await Promise.resolve(testFn(tempDir));

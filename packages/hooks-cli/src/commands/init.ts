@@ -478,7 +478,7 @@ const { test, expect } = require('bun:test');
       const scripts = packageJson.scripts || {};
       const newScripts = {
         'hooks:test': 'bun test hooks/test/',
-        'hooks:validate': 'claude-hooks validate',
+        'hooks:validate': 'carabiner validate',
         'hooks:debug': 'bun run hooks/debug.ts',
       };
 

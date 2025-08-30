@@ -64,7 +64,7 @@
     "verify:imports": "bun scripts/smoke-import.ts",
     "build:binary": "bun scripts/build-binary.ts",
     "build:binary:all": "bun scripts/build-binary.ts --target linux && bun scripts/build-binary.ts --target macos && bun scripts/build-binary.ts --target windows",
-    "clean": "turbo clean && (find packages -name 'dist' -type d -exec rm -rf {} + 2>/dev/null || true) && rm -f claude-hooks-* || true",
+    "clean": "turbo clean && (find packages -name 'dist' -type d -exec rm -rf {} + 2>/dev/null || true) && rm -f carabiner-* || true",
     "prepare": "lefthook install"
   },
   "devDependencies": {

@@ -284,9 +284,9 @@ export class ClaudeHooksCli {
     }
 
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('Claude Code Hooks CLI');
+    console.log('Carabiner CLI');
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('Usage: claude-hooks <command> [options]');
+    console.log('Usage: carabiner <command> [options]');
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('');
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log

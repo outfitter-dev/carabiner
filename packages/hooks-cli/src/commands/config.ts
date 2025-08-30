@@ -113,13 +113,13 @@ Configuration commands:
   set-timeout         Set timeout for a specific hook
 
 Examples:
-  claude-hooks config show
-  claude-hooks config validate
-  claude-hooks config export --format json --output my-config.json
-  claude-hooks config generate-settings
-  claude-hooks config enable PreToolUse:Bash
-  claude-hooks config disable PostToolUse:Write
-  claude-hooks config set-timeout PreToolUse:Bash 10000
+  carabiner config show
+  carabiner config validate
+  carabiner config export --format json --output my-config.json
+  carabiner config generate-settings
+  carabiner config enable PreToolUse:Bash
+  carabiner config disable PostToolUse:Write
+  carabiner config set-timeout PreToolUse:Bash 10000
 `);
   }
 

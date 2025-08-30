@@ -430,7 +430,7 @@ function containsSensitiveInfo(context: HookContext): boolean {
  * {
  *   "audit-logger": {
  *     "enabled": true,
- *     "logFile": "/var/log/claude-hooks/audit.log",
+ *     "logFile": "/var/log/carabiner/audit.log",
  *     "absoluteLogPath": true,
  *     "format": "json",
  *     "level": "operations",

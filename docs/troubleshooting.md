@@ -21,10 +21,10 @@ Start here for a quick health check of your Grapple setup:
 
 ```bash
 # Check CLI installation
-claude-hooks --version
+carabiner --version
 
 # Validate configuration
-claude-hooks validate
+carabiner validate
 
 # Test a simple hook
 echo '{
@@ -42,13 +42,13 @@ echo '{
 1. **File Permissions**: `chmod +x hooks/*.ts`
 2. **Dependencies**: `bun install`
 3. **TypeScript**: `bun run typecheck`
-4. **Configuration**: `claude-hooks config validate`
+4. **Configuration**: `carabiner config validate`
 
 ## Installation Issues
 
 ### CLI Not Found
 
-**Problem**: `claude-hooks: command not found`
+**Problem**: `carabiner: command not found`
 
 **Solutions**:
 
@@ -64,7 +64,7 @@ echo $PATH
 npm config get prefix  # Should be in PATH
 
 # Option 4: Use local installation
-./node_modules/.bin/claude-hooks --help
+./node_modules/.bin/carabiner --help
 ```
 
 ### Binary Installation Issues
@@ -78,14 +78,14 @@ npm config get prefix  # Should be in PATH
 uname -a
 
 # Manual download
-curl -L https://github.com/outfitter-dev/carabiner/releases/latest/download/claude-hooks-linux -o claude-hooks
-chmod +x claude-hooks
+curl -L https://github.com/outfitter-dev/carabiner/releases/latest/download/carabiner-linux -o carabiner
+chmod +x carabiner
 
 # Verify binary
-./claude-hooks --version
+./carabiner --version
 
 # Check dependencies (Linux)
-ldd claude-hooks
+ldd carabiner
 
 # macOS signing issues (avoid using sudo when possible)
 # Consider alternative approaches before disabling security:
@@ -182,7 +182,7 @@ bun check hooks/your-hook.ts
 
 ```bash
 # Test with verbose output
-claude-hooks test --hook ./hooks/problematic-hook.ts --verbose
+carabiner test --hook ./hooks/problematic-hook.ts --verbose
 
 # Check TypeScript errors
 bun run typecheck
@@ -234,7 +234,7 @@ echo '{
 
 ```bash
 # Check timeout settings
-claude-hooks config get PreToolUse.Bash.timeout
+carabiner config get PreToolUse.Bash.timeout
 
 # Test hook performance
 time echo '{...}' | bun hooks/slow-hook.ts
@@ -284,13 +284,13 @@ time echo '{...}' | bun hooks/slow-hook.ts
 
 ```bash
 # Validate configuration
-claude-hooks config validate
+carabiner config validate
 
 # Check configuration structure
-claude-hooks config list
+carabiner config list
 
 # Test configuration build
-claude-hooks build --check
+carabiner build --check
 ```
 
 **Solutions**:
@@ -339,7 +339,7 @@ echo $NODE_ENV
 diff .claude/settings.json .claude/settings.prod.json
 
 # Test specific environment
-NODE_ENV=production claude-hooks build
+NODE_ENV=production carabiner build
 ```
 
 **Solutions**:
@@ -368,7 +368,7 @@ NODE_ENV=production claude-hooks build
 
 2. **Build for Environment**:
    ```bash
-   claude-hooks build --environment production --output .claude/settings.prod.json
+   carabiner build --environment production --output .claude/settings.prod.json
    ```
 
 ## Performance Problems
@@ -384,7 +384,7 @@ NODE_ENV=production claude-hooks build
 time echo '{...}' | bun hooks/slow-hook.ts
 
 # Performance analysis
-claude-hooks validate --performance
+carabiner validate --performance
 
 # Add timing middleware to hooks
 ```
@@ -520,7 +520,7 @@ cat tsconfig.json
 
 ### Development Server Issues
 
-**Problem**: `claude-hooks dev` doesn't work
+**Problem**: `carabiner dev` doesn't work
 
 **Diagnostics**:
 
@@ -529,10 +529,10 @@ cat tsconfig.json
 lsof -i :3000
 
 # Start with verbose logging
-claude-hooks dev --verbose
+carabiner dev --verbose
 
 # Check file watching
-claude-hooks dev --watch --verbose
+carabiner dev --watch --verbose
 ```
 
 **Solutions**:
@@ -540,7 +540,7 @@ claude-hooks dev --watch --verbose
 1. **Use Different Port**:
 
    ```bash
-   claude-hooks dev --port 3001
+   carabiner dev --port 3001
    ```
 
 2. **Fix File Watching**:
@@ -550,7 +550,7 @@ claude-hooks dev --watch --verbose
    ls -la hooks/
 
    # Restart development server
-   claude-hooks dev --no-hot-reload
+   carabiner dev --no-hot-reload
    ```
 
 ### Testing Issues
@@ -561,10 +561,10 @@ claude-hooks dev --watch --verbose
 
 ```bash
 # Run tests with verbose output
-claude-hooks test --verbose
+carabiner test --verbose
 
 # Test specific hook
-claude-hooks test --hook ./hooks/failing-hook.ts
+carabiner test --hook ./hooks/failing-hook.ts
 
 # Check test configuration
 cat package.json  # Look for test scripts
@@ -601,13 +601,13 @@ cat package.json  # Look for test scripts
 
 ```bash
 # Test with production environment
-NODE_ENV=production claude-hooks test
+NODE_ENV=production carabiner test
 
 # Compare configurations
 diff .claude/settings.json .claude/settings.prod.json
 
 # Check production-specific settings
-claude-hooks config get environments.production
+carabiner config get environments.production
 ```
 
 **Solutions**:
@@ -670,13 +670,13 @@ docker exec -it container-name env
 
 ```bash
 # Enable CLI debug logs
-DEBUG=claude-hooks:* claude-hooks dev
+DEBUG=carabiner:* carabiner dev
 
 # Enable hook debug logs
 DEBUG=hooks:* bun hooks/your-hook.ts
 
 # Verbose output
-claude-hooks test --verbose --hook ./hooks/debug-hook.ts
+carabiner test --verbose --hook ./hooks/debug-hook.ts
 ```
 
 ### Hook Debugging
@@ -773,19 +773,19 @@ Include this information when reporting issues:
 echo "OS: $(uname -a)"
 echo "Node: $(node --version)"
 echo "Bun: $(bun --version)"
-echo "CLI: $(claude-hooks --version)"
+echo "CLI: $(carabiner --version)"
 
 # Configuration
-claude-hooks config list
+carabiner config list
 
 # Error reproduction
-claude-hooks test --verbose --hook ./problematic-hook.ts
+carabiner test --verbose --hook ./problematic-hook.ts
 ```
 
 ### Before Asking for Help
 
 1. **Check this guide**: Look for similar issues and solutions
-2. **Validate configuration**: Run `claude-hooks validate`
+2. **Validate configuration**: Run `carabiner validate`
 3. **Test manually**: Try running hooks directly with sample input
 4. **Check logs**: Look for error messages in console output
 5. **Minimal reproduction**: Create the smallest possible example that demonstrates the issue

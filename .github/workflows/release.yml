@@ -42,16 +42,16 @@ jobs:
         include:
           - os: ubuntu-latest
             target: linux-x64
-            binary-name: claude-hooks-linux
+            binary-name: carabiner-linux
           - os: macos-latest # ARM64
             target: macos-arm64
-            binary-name: claude-hooks-macos-arm64
+            binary-name: carabiner-macos-arm64
           - os: macos-13 # Intel x64
             target: macos-x64
-            binary-name: claude-hooks-macos-x64
+            binary-name: carabiner-macos-x64
           - os: windows-latest
             target: windows-x64
-            binary-name: claude-hooks-windows.exe
+            binary-name: carabiner-windows.exe
 
     steps:
       - name: Checkout code
@@ -311,11 +311,11 @@ jobs:
       - name: Organize binary files
         run: |
           mkdir -p release-assets
-          find binaries -name "claude-hooks-*" -type f -exec cp {} release-assets/ \;
+          find binaries -name "carabiner-*" -type f -exec cp {} release-assets/ \;
           ls -la release-assets/
 
           # Verify all expected binaries are present
-          expected_binaries=("claude-hooks-linux" "claude-hooks-macos-arm64" "claude-hooks-macos-x64" "claude-hooks-windows.exe")
+          expected_binaries=("carabiner-linux" "carabiner-macos-arm64" "carabiner-macos-x64" "carabiner-windows.exe")
           for binary in "${expected_binaries[@]}"; do
             if [ -f "release-assets/$binary" ]; then
               echo "✅ Found $binary"
@@ -337,10 +337,10 @@ jobs:
           draft: false
           prerelease: ${{ steps.version.outputs.bump == 'prerelease' }}
           files: |
-            release-assets/claude-hooks-linux
-            release-assets/claude-hooks-macos-arm64
-            release-assets/claude-hooks-macos-x64
-            release-assets/claude-hooks-windows.exe
+            release-assets/carabiner-linux
+            release-assets/carabiner-macos-arm64
+            release-assets/carabiner-macos-x64
+            release-assets/carabiner-windows.exe
           generate_release_notes: true
 
       - name: Publish to NPM

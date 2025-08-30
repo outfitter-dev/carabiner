@@ -195,7 +195,7 @@ No changes needed to `.claude/settings.json` - it uses the same format.
 
 ```bash
 # Test your updated hooks
-claude-hooks test
+carabiner test
 
 # Test with sample data
 echo '{
@@ -389,10 +389,10 @@ Verify all command paths still work:
 
 ```bash
 # Test all configured hooks
-claude-hooks validate --config
+carabiner validate --config
 
 # Test individual hooks
-claude-hooks test --hook ./hooks/security.ts
+carabiner test --hook ./hooks/security.ts
 ```
 
 ### New Configuration Options
@@ -522,7 +522,7 @@ After migration, verify everything works:
 
 ```bash
 # Test hooks execute correctly
-claude-hooks test
+carabiner test
 
 # Test with real Claude Code input
 echo '{
@@ -551,10 +551,10 @@ echo '{"tool_name": "Write", ...}' | bun hooks/bash-specific-hook.ts  # Should n
 
 ```bash
 # Validate configuration
-claude-hooks config validate
+carabiner config validate
 
 # Build and test configuration
-claude-hooks build --check
+carabiner build --check
 ```
 
 ### ✅ Type Safety Verification

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Claude Hooks CLI Installation Script
+# Carabiner CLI Installation Script
 # Downloads and installs the latest binary release for the current platform
 
 set -e
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO="outfitter-dev/carabiner"
-BINARY_NAME="claude-hooks"
+BINARY_NAME="carabiner"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 
 # Functions

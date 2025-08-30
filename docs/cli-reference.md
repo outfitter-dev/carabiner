@@ -1,6 +1,6 @@
 # CLI Reference
 
-The Grapple CLI (`claude-hooks`) provides comprehensive tools for developing, testing, and managing Carabiner hooks. This reference covers all commands, options, and usage patterns.
+The Grapple CLI (`carabiner`) provides comprehensive tools for developing, testing, and managing Carabiner hooks. This reference covers all commands, options, and usage patterns.
 
 ## Table of Contents
 
@@ -29,7 +29,7 @@ npm install -g @outfitter/hooks-cli
 npx @outfitter/hooks-cli --help
 
 # Verify installation
-claude-hooks --version
+carabiner --version
 ```
 
 ## Global Options
@@ -54,7 +54,7 @@ Initialize Carabiner hooks in your project.
 #### Syntax
 
 ```bash
-claude-hooks init [options]
+carabiner init [options]
 ```
 
 #### Options
@@ -74,19 +74,19 @@ claude-hooks init [options]
 
 ```bash
 # Basic TypeScript setup with Bun runtime
-claude-hooks init
+carabiner init
 
 # JavaScript project with Node.js
-claude-hooks init --javascript --runtime node
+carabiner init --javascript --runtime node
 
 # Security-focused setup with strict TypeScript
-claude-hooks init --template security --strict
+carabiner init --template security --strict
 
 # See what would be created without making changes
-claude-hooks init --template audit --dry-run
+carabiner init --template audit --dry-run
 
 # Force overwrite existing files
-claude-hooks init --template security --force
+carabiner init --template security --force
 ```
 
 #### Created Structure
@@ -116,7 +116,7 @@ Generate new hook scripts from templates.
 #### Syntax
 
 ```bash
-claude-hooks generate [options]
+carabiner generate [options]
 ```
 
 #### Options
@@ -136,25 +136,25 @@ claude-hooks generate [options]
 
 ```bash
 # Universal security hook for all tools
-claude-hooks generate --type PreToolUse --name universal-security
+carabiner generate --type PreToolUse --name universal-security
 
 # Bash-specific security hook
-claude-hooks generate --type PreToolUse --tool Bash --name bash-security
+carabiner generate --type PreToolUse --tool Bash --name bash-security
 
 # Post-write formatting hook
-claude-hooks generate --type PostToolUse --tool Write --name format-after-write
+carabiner generate --type PostToolUse --tool Write --name format-after-write
 
 # Session audit hook
-claude-hooks generate --type SessionStart --name session-audit
+carabiner generate --type SessionStart --name session-audit
 
 # Use specific template
-claude-hooks generate --type PreToolUse --template security --name custom-security
+carabiner generate --type PreToolUse --template security --name custom-security
 
 # Generate in specific directory
-claude-hooks generate --type PreToolUse --tool Edit --name edit-validator --output ./custom-hooks
+carabiner generate --type PreToolUse --tool Edit --name edit-validator --output ./custom-hooks
 
 # Force overwrite existing hook
-claude-hooks generate --type PostToolUse --tool Write --name formatter --force
+carabiner generate --type PostToolUse --tool Write --name formatter --force
 ```
 
 #### Generated Files Include
@@ -173,7 +173,7 @@ Build and validate hook configuration for Claude Code.
 #### Syntax
 
 ```bash
-claude-hooks build [options]
+carabiner build [options]
 ```
 
 #### Options
@@ -192,22 +192,22 @@ claude-hooks build [options]
 
 ```bash
 # Build default configuration
-claude-hooks build
+carabiner build
 
 # Build for production environment
-claude-hooks build --environment production --output .claude/settings.prod.json
+carabiner build --environment production --output .claude/settings.prod.json
 
 # Build with validation and minification
-claude-hooks build --validate --minify
+carabiner build --validate --minify
 
 # Watch mode for development
-claude-hooks build --watch
+carabiner build --watch
 
 # Check configuration without building output
-claude-hooks build --check
+carabiner build --check
 
 # Build from custom config file
-claude-hooks build --config ./custom-hooks.config.ts
+carabiner build --config ./custom-hooks.config.ts
 ```
 
 #### Build Process
@@ -225,7 +225,7 @@ Test hooks with mock data or run validation checks.
 #### Syntax
 
 ```bash
-claude-hooks test [options] [hook-file...]
+carabiner test [options] [hook-file...]
 ```
 
 #### Options
@@ -246,28 +246,28 @@ claude-hooks test [options] [hook-file...]
 
 ```bash
 # Test all hooks
-claude-hooks test
+carabiner test
 
 # Test specific hook file
-claude-hooks test --hook ./hooks/bash-security.ts
+carabiner test --hook ./hooks/bash-security.ts
 
 # Test with specific tool context
-claude-hooks test --hook ./hooks/pre-tool-use.ts --tool Bash --input '{"command":"ls -la"}'
+carabiner test --hook ./hooks/pre-tool-use.ts --tool Bash --input '{"command":"ls -la"}'
 
 # Test PreToolUse event with mock data
-claude-hooks test --event PreToolUse --tool Write --input '{"file_path":"test.txt","content":"hello"}'
+carabiner test --event PreToolUse --tool Write --input '{"file_path":"test.txt","content":"hello"}'
 
 # Validate without execution
-claude-hooks test --dry-run --verbose
+carabiner test --dry-run --verbose
 
 # Watch mode for development
-claude-hooks test --watch
+carabiner test --watch
 
 # Generate coverage report
-claude-hooks test --coverage
+carabiner test --coverage
 
 # Test multiple hook files
-claude-hooks test ./hooks/security.ts ./hooks/formatting.ts
+carabiner test ./hooks/security.ts ./hooks/formatting.ts
 ```
 
 #### Test Features
@@ -285,7 +285,7 @@ Development mode with file watching and hot reload.
 #### Syntax
 
 ```bash
-claude-hooks dev [options]
+carabiner dev [options]
 ```
 
 #### Options
@@ -304,19 +304,19 @@ claude-hooks dev [options]
 
 ```bash
 # Basic development mode
-claude-hooks dev
+carabiner dev
 
 # Watch with testing and rebuilding
-claude-hooks dev --test-on-change --build-on-change
+carabiner dev --test-on-change --build-on-change
 
 # Development server with UI
-claude-hooks dev --port 3001 --open
+carabiner dev --port 3001 --open
 
 # Verbose development mode
-claude-hooks dev --verbose
+carabiner dev --verbose
 
 # Development without hot reload
-claude-hooks dev --no-hot-reload
+carabiner dev --no-hot-reload
 ```
 
 #### Development Features
@@ -334,7 +334,7 @@ Manage hook configuration settings.
 #### Syntax
 
 ```bash
-claude-hooks config <command> [options]
+carabiner config <command> [options]
 ```
 
 #### Commands
@@ -353,25 +353,25 @@ restore <file>       Restore from backup
 
 ```bash
 # List all hook configurations
-claude-hooks config list
+carabiner config list
 
 # Get specific hook configuration
-claude-hooks config get PreToolUse.Bash
+carabiner config get PreToolUse.Bash
 
 # Set hook configuration
-claude-hooks config set PreToolUse.Bash.timeout 10000
+carabiner config set PreToolUse.Bash.timeout 10000
 
 # Remove hook
-claude-hooks config remove PostToolUse.Write
+carabiner config remove PostToolUse.Write
 
 # Validate configuration
-claude-hooks config validate
+carabiner config validate
 
 # Create backup
-claude-hooks config backup
+carabiner config backup
 
 # Restore from backup
-claude-hooks config restore .claude/backups/settings-2024-01-15.json
+carabiner config restore .claude/backups/settings-2024-01-15.json
 ```
 
 #### Configuration Keys
@@ -398,7 +398,7 @@ Validate hooks and configuration files.
 #### Syntax
 
 ```bash
-claude-hooks validate [options]
+carabiner validate [options]
 ```
 
 #### Options
@@ -418,22 +418,22 @@ claude-hooks validate [options]
 
 ```bash
 # Validate everything
-claude-hooks validate
+carabiner validate
 
 # Validate only configuration
-claude-hooks validate --config
+carabiner validate --config
 
 # Syntax and type checking only
-claude-hooks validate --syntax --types
+carabiner validate --syntax --types
 
 # Security-focused validation
-claude-hooks validate --security
+carabiner validate --security
 
 # Performance analysis
-claude-hooks validate --performance
+carabiner validate --performance
 
 # Auto-fix issues
-claude-hooks validate --fix
+carabiner validate --fix
 ```
 
 #### Validation Checks
@@ -543,7 +543,7 @@ export default defineConfig({
 #### Security Template
 
 ```bash
-claude-hooks init --template security
+carabiner init --template security
 ```
 
 Creates hooks for:
@@ -556,7 +556,7 @@ Creates hooks for:
 #### Formatting Template
 
 ```bash
-claude-hooks init --template formatting
+carabiner init --template formatting
 ```
 
 Creates hooks for:
@@ -569,7 +569,7 @@ Creates hooks for:
 #### Audit Template
 
 ```bash
-claude-hooks init --template audit
+carabiner init --template audit
 ```
 
 Creates hooks for:
@@ -582,7 +582,7 @@ Creates hooks for:
 #### Minimal Template
 
 ```bash
-claude-hooks init --template minimal
+carabiner init --template minimal
 ```
 
 Creates basic hook structure with minimal dependencies.
@@ -632,7 +632,7 @@ runClaudeHook(async (context) => {
 Use with:
 
 ```bash
-claude-hooks init --template ./templates/my-template.ts
+carabiner init --template ./templates/my-template.ts
 ```
 
 ## Examples
@@ -641,24 +641,24 @@ claude-hooks init --template ./templates/my-template.ts
 
 ```bash
 # 1. Initialize project with security template
-claude-hooks init --template security --typescript --strict
+carabiner init --template security --typescript --strict
 
 # 2. Generate additional hooks
-claude-hooks generate --type PostToolUse --tool Write --name format-typescript
-claude-hooks generate --type PreToolUse --tool Bash --name dangerous-command-blocker
+carabiner generate --type PostToolUse --tool Write --name format-typescript
+carabiner generate --type PreToolUse --tool Bash --name dangerous-command-blocker
 
 # 3. Configure for different environments
-claude-hooks config set environments.production.hooks.PreToolUse.*.timeout 15000
-claude-hooks config set environments.development.hooks.PreToolUse.*.timeout 5000
+carabiner config set environments.production.hooks.PreToolUse.*.timeout 15000
+carabiner config set environments.development.hooks.PreToolUse.*.timeout 5000
 
 # 4. Build production configuration
-claude-hooks build --environment production --output .claude/settings.prod.json
+carabiner build --environment production --output .claude/settings.prod.json
 
 # 5. Test everything
-claude-hooks test
+carabiner test
 
 # 6. Start development mode
-claude-hooks dev --watch --test-on-change
+carabiner dev --watch --test-on-change
 ```
 
 ### CI/CD Integration
@@ -697,11 +697,11 @@ Add to your `package.json`:
 ```json
 {
   "scripts": {
-    "hooks:build": "claude-hooks build",
-    "hooks:test": "claude-hooks test",
-    "hooks:dev": "claude-hooks dev",
-    "hooks:validate": "claude-hooks validate",
-    "hooks:init": "claude-hooks init"
+    "hooks:build": "carabiner build",
+    "hooks:test": "carabiner test",
+    "hooks:dev": "carabiner dev",
+    "hooks:validate": "carabiner validate",
+    "hooks:init": "carabiner init"
   }
 }
 ```
@@ -727,60 +727,60 @@ npx @outfitter/hooks-cli --version
 chmod +x hooks/*.ts
 
 # Avoid using sudo; fix file permissions or install to a user-writable location instead
-claude-hooks init
+carabiner init
 ```
 
 #### Configuration Issues
 
 ```bash
 # Validate configuration
-claude-hooks config validate
+carabiner config validate
 
 # Check specific configuration
-claude-hooks config get PreToolUse.Bash
+carabiner config get PreToolUse.Bash
 
 # Reset configuration
-claude-hooks config backup
-claude-hooks init --force
+carabiner config backup
+carabiner init --force
 ```
 
 #### Hook Not Executing
 
 ```bash
 # Test hook directly
-claude-hooks test --hook ./hooks/problematic-hook.ts --verbose
+carabiner test --hook ./hooks/problematic-hook.ts --verbose
 
 # Check syntax
-claude-hooks validate --syntax --hooks
+carabiner validate --syntax --hooks
 
 # Verify configuration
-claude-hooks config validate
+carabiner config validate
 ```
 
 ### Debug Mode
 
 ```bash
 # Enable debug output
-DEBUG=claude-hooks:* claude-hooks dev
+DEBUG=carabiner:* carabiner dev
 
 # Verbose logging
-claude-hooks test --verbose --hook ./hooks/debug-me.ts
+carabiner test --verbose --hook ./hooks/debug-me.ts
 
 # Check internal state
-claude-hooks config list --verbose
+carabiner config list --verbose
 ```
 
 ### Performance Issues
 
 ```bash
 # Analyze performance
-claude-hooks validate --performance
+carabiner validate --performance
 
 # Check hook timeouts
-claude-hooks config get global.timeout
+carabiner config get global.timeout
 
 # Monitor execution time
-claude-hooks test --verbose --coverage
+carabiner test --verbose --coverage
 ```
 
 For more detailed troubleshooting, see the [Troubleshooting Guide](troubleshooting.md).
