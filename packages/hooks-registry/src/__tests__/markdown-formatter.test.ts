@@ -238,8 +238,7 @@ describe('markdown formatter hook', () => {
       const result = await hook(context);
       expect(result.success).toBe(true);
       expect(formatterUsed).toBe('markdownlint');
-      expect((result as any).data?.formatter).toBe('markdownlint');
-    });
+      expect((result as any).data?.formatter).toBe('markdownlint');    });
 
     test('should fall back to prettier if markdownlint not available', async () => {
       let formatterUsed = '';
