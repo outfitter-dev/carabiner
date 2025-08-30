@@ -221,11 +221,16 @@ export function createMarkdownFormatterHook(
     const multiplePaths =
       toolInput.files || toolInput.paths || toolInput.file_paths;
 
-    const filePaths: string[] = Array.isArray(multiplePaths)
-      ? multiplePaths.filter((p: unknown): p is string => typeof p === 'string')
-      : typeof singlePath === 'string'
-        ? [singlePath]
-        : [];
+    let filePaths: string[];
+    if (Array.isArray(multiplePaths)) {
+      filePaths = multiplePaths.filter(
+        (p: unknown): p is string => typeof p === 'string'
+      );
+    } else if (typeof singlePath === 'string') {
+      filePaths = [singlePath];
+    } else {
+      filePaths = [];
+    }
 
     if (filePaths.length === 0) {
       return { success: true };
@@ -241,7 +246,7 @@ export function createMarkdownFormatterHook(
     for (const filePath of filePaths) {
       // Check if the file matches our patterns using proper glob matching
       const isMarkdownFile = patterns.some((pattern) =>
-        isMatch(filePath, pattern, { nocase: true })
+        isMatch(filePath, pattern, { nocase: true, basename: true })
       );
 
       if (!isMarkdownFile) {
