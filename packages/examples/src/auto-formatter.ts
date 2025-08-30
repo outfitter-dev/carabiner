@@ -281,17 +281,12 @@ function formatFile(filePath: string): { success: boolean; message: string } {
 /**
  * Main auto-formatter hook
  */
-const autoFormatterHook: HookHandler = (context: HookContext): HookResult => {
-  // Only process tool hooks
-  if (!isToolHookContext(context)) {
-    return {
-      success: true,
-    };
-  }
-
+const autoFormatterHook: HookHandler = (context): HookResult => {
+  const { toolName, toolInput } = context;
+  
   // Only process file modification tools
   const fileTools = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'];
-  if (!fileTools.includes(context.toolName)) {
+  if (!toolName || !fileTools.includes(toolName)) {
     return {
       success: true,
     };
