@@ -53,7 +53,7 @@ Choose your installation method:
 curl -fsSL https://raw.githubusercontent.com/outfitter-dev/carabiner/main/scripts/install.sh | bash
 
 # Verify installation
-claude-hooks --version
+carabiner --version
 ```
 
 **Library Development**:
@@ -70,10 +70,10 @@ npm install @outfitter/hooks-core @outfitter/hooks-cli @outfitter/hooks-validato
 
 ```bash
 # Create hooks with security template
-claude-hooks init --template security --typescript --strict
+carabiner init --template security --typescript --strict
 
 # Or minimal setup
-claude-hooks init --template minimal
+carabiner init --template minimal
 ```
 
 ### 3. Create Your First Hook
@@ -105,7 +105,7 @@ runClaudeHook(async (context) => {
 
 ```bash
 # Test with CLI
-claude-hooks test --hook ./your-hook.ts
+carabiner test --hook ./your-hook.ts
 
 # Or test manually
 echo '{"session_id":"test","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la"},"cwd":"/tmp","transcript_path":"/tmp/transcript.md"}' | bun your-hook.ts
@@ -295,7 +295,7 @@ Start with these comprehensive guides:
 **Hook not executing?**
 
 1. Check file permissions: `chmod +x your-hook.ts`
-2. Validate configuration: `claude-hooks config validate`
+2. Validate configuration: `carabiner config validate`
 3. Test manually: `echo '{...}' | bun your-hook.ts`
 
 **TypeScript errors?**
@@ -306,8 +306,8 @@ Start with these comprehensive guides:
 
 **Performance issues?**
 
-1. Add timing: `claude-hooks test --verbose`
-2. Check timeouts: `claude-hooks config get PreToolUse.*.timeout`
+1. Add timing: `carabiner test --verbose`
+2. Check timeouts: `carabiner config get PreToolUse.*.timeout`
 3. Profile hooks: Add middleware.timing()
 
 ### 🐛 Report Issues
@@ -319,10 +319,10 @@ When reporting bugs, include:
 echo "OS: $(uname -a)"
 echo "Node: $(node --version)"
 echo "Bun: $(bun --version)"
-echo "CLI: $(claude-hooks --version)"
+echo "CLI: $(carabiner --version)"
 
 # Error reproduction
-claude-hooks test --verbose --hook ./problematic-hook.ts
+carabiner test --verbose --hook ./problematic-hook.ts
 ```
 
 ### 💬 Community Resources

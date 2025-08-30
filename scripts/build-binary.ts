@@ -2,7 +2,7 @@
 
 /**
  * Local binary build script for development and testing
- * Builds the claude-hooks CLI as a standalone binary
+ * Builds the carabiner CLI as a standalone binary
  */
 
 import { existsSync } from 'node:fs';
@@ -42,16 +42,16 @@ async function buildBinary(options: BuildOptions = {}) {
   } else {
     switch (target) {
       case 'linux':
-        binaryName = 'claude-hooks-linux';
+        binaryName = 'carabiner-linux';
         break;
       case 'macos':
         binaryName =
           process.arch === 'arm64'
-            ? 'claude-hooks-macos-arm64'
-            : 'claude-hooks-macos-x64';
+            ? 'carabiner-macos-arm64'
+            : 'carabiner-macos-x64';
         break;
       case 'windows':
-        binaryName = 'claude-hooks-windows.exe';
+        binaryName = 'carabiner-windows.exe';
         break;
       default: {
         const platform =
@@ -62,7 +62,7 @@ async function buildBinary(options: BuildOptions = {}) {
               : 'linux';
         const arch = process.arch === 'arm64' ? '-arm64' : '-x64';
         const ext = process.platform === 'win32' ? '.exe' : '';
-        binaryName = `claude-hooks-${platform}${arch}${ext}`;
+        binaryName = `carabiner-${platform}${arch}${ext}`;
       }
     }
   }

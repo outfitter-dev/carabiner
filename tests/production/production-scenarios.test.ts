@@ -118,7 +118,7 @@ class ProductionEnvironment {
       },
     };
 
-    const configPath = join(this.tempDir, 'config', 'claude-hooks.json');
+    const configPath = join(this.tempDir, 'config', 'carabiner.json');
     writeFileSync(configPath, JSON.stringify(config, null, 2));
     return config;
   }
@@ -374,12 +374,12 @@ console.log(JSON.stringify({
 }));
       `;
 
-      const binaryPath = join(prodEnv.tempDir, 'bin', 'claude-hooks');
+      const binaryPath = join(prodEnv.tempDir, 'bin', 'carabiner');
       writeFileSync(binaryPath, scriptContent);
       chmodSync(binaryPath, 0o755); // Make executable
 
       // Test binary execution
-      const configPath = join(prodEnv.tempDir, 'config', 'claude-hooks.json');
+      const configPath = join(prodEnv.tempDir, 'config', 'carabiner.json');
       prodEnv.createProductionConfig();
 
       const proc = prodEnv.spawnProcess(
@@ -427,17 +427,17 @@ console.log(JSON.stringify({
       const platformTests = [
         {
           platform: 'linux',
-          executable: 'claude-hooks',
+          executable: 'carabiner',
           pathSeparator: '/',
         },
         {
           platform: 'darwin',
-          executable: 'claude-hooks',
+          executable: 'carabiner',
           pathSeparator: '/',
         },
         {
           platform: 'win32',
-          executable: 'claude-hooks.exe',
+          executable: 'carabiner.exe',
           pathSeparator: '\\',
         },
       ];

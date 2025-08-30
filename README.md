@@ -31,12 +31,54 @@ bun add -d @carabiner/hooks-testing @carabiner/hooks-validators
 
 All packages are available on npm under the `@carabiner` scope:
 
+<<<<<<< HEAD
 - **Core**: `@carabiner/hooks-core` - Core hook functionality  
 - **Types**: `@carabiner/types` - TypeScript type definitions
 - **Execution**: `@carabiner/execution` - Hook execution engine
 - **Testing**: `@carabiner/hooks-testing` - Testing utilities
 - **Validators**: `@carabiner/hooks-validators` - Security validators
 - **Registry**: `@carabiner/hooks-registry` - Pre-built hooks collection
+=======
+- **Linux x64**: `carabiner-linux`  
+- **macOS ARM64**: `carabiner-macos-arm64`
+- **macOS Intel**: `carabiner-macos-x64`
+- **Windows x64**: `carabiner-windows.exe`
+
+```bash
+# Make executable (Unix/macOS)
+chmod +x carabiner-*
+
+# Test installation
+./carabiner-linux --version
+```
+
+### 📚 Library Installation
+
+**For Development with TypeScript**
+
+```bash
+# Install the core library
+npm install @outfitter/hooks-core
+
+# Or install the full suite
+npm install @outfitter/hooks-core @outfitter/hooks-validators @outfitter/hooks-testing @outfitter/hooks-cli
+```
+
+## 🏗️ Architecture
+
+### Monorepo Structure
+
+```text
+packages/
+├── hooks-core/           # Core types, runtime utilities, execution engine
+├── hooks-validators/     # Security validators, environment-specific rules
+├── hooks-config/         # Configuration management, settings generation
+├── hooks-testing/        # Testing framework, mocks, utilities
+├── hooks-cli/           # CLI tools, scaffolding, project management
+└── examples/            # Real-world hook implementations
+
+```
+>>>>>>> 5c6accd (fix: rename all claude-hooks references to carabiner (fixes #38))
 
 ## 🎯 Quick Start
 
