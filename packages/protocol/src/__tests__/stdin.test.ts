@@ -371,7 +371,7 @@ function createMockReadableStream(
     isPaused() {
       return isPaused;
     },
-    read(size?: number) {
+    read(_size?: number) {
       // Simulate reading buffered data
       return null;
     },
