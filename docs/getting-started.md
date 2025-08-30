@@ -24,7 +24,7 @@ The fastest way to get started is with our standalone binary:
 curl -fsSL https://raw.githubusercontent.com/outfitter-dev/carabiner/main/scripts/install.sh | bash
 
 # Verify installation
-claude-hooks --version
+carabiner --version
 ```
 
 ### 📚 Library Installation
@@ -66,11 +66,11 @@ Let's create a simple security hook that validates Bash commands.
 
 ```bash
 # Create a new directory for your hooks
-mkdir my-claude-hooks
-cd my-claude-hooks
+mkdir my-carabiner
+cd my-carabiner
 
 # Initialize with the CLI (creates project structure)
-claude-hooks init --template security
+carabiner init --template security
 
 # Or manually create a hook file
 touch pre-tool-security.ts
@@ -321,13 +321,13 @@ echo '{
 
 ```bash
 # Test all hooks
-claude-hooks test
+carabiner test
 
 # Test specific hook
-claude-hooks test --hook ./pre-tool-security.ts
+carabiner test --hook ./pre-tool-security.ts
 
 # Test with custom input
-claude-hooks test --hook ./pre-tool-security.ts --tool Bash --input '{"command":"ls -la"}'
+carabiner test --hook ./pre-tool-security.ts --tool Bash --input '{"command":"ls -la"}'
 ```
 
 ### Unit Testing
