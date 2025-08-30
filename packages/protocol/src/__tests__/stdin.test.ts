@@ -138,16 +138,18 @@ describe('StdinProtocol', () => {
 
     test('destroy should be idempotent', async () => {
       const protocol = new StdinProtocol();
-      
+
       // Should not throw when called multiple times
       protocol.destroy();
       protocol.destroy();
       protocol.destroy();
-      
+
       // Should still reject read operations after multiple destroy calls
-      const mockStdin = createMockReadableStream(JSON.stringify({ test: 'data' }));
+      const mockStdin = createMockReadableStream(
+        JSON.stringify({ test: 'data' })
+      );
       process.stdin = mockStdin as any;
-      
+
       await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
     });
   });
@@ -369,7 +371,7 @@ function createMockReadableStream(
     isPaused() {
       return isPaused;
     },
-    read(size?: number) {
+    read(_size?: number) {
       // Simulate reading buffered data
       return null;
     },

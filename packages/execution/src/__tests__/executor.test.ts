@@ -68,4 +68,104 @@ describe('HookExecutor', () => {
       expect(metric.timing.duration).toBeGreaterThan(0);
     }
   });
+
+  test('should handle timeout and cleanup timer', async () => {
+    // Track if setTimeout and clearTimeout are called properly
+    const originalSetTimeout = global.setTimeout;
+    const originalClearTimeout = global.clearTimeout;
+
+    let setTimeoutCalled = false;
+    let clearTimeoutCalled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    // Mock setTimeout to track calls
+    global.setTimeout = ((callback: () => void, ms: number) => {
+      setTimeoutCalled = true;
+      timeoutId = originalSetTimeout(callback, ms);
+      return timeoutId;
+    }) as typeof setTimeout;
+
+    // Mock clearTimeout to track cleanup
+    global.clearTimeout = ((id: ReturnType<typeof setTimeout>) => {
+      if (id === timeoutId) {
+        clearTimeoutCalled = true;
+      }
+      originalClearTimeout(id);
+    }) as typeof clearTimeout;
+
+    try {
+      const handler: HookHandler = async () => {
+        // Simulate work that completes before timeout
+        await new Promise((resolve) => originalSetTimeout(resolve, 50));
+        return { success: true, message: 'Completed' };
+      };
+
+      const executor = new HookExecutor(mockProtocol, {
+        exitProcess: false,
+        timeout: 500, // 500ms timeout
+        collectMetrics: false,
+      });
+
+      await executor.execute(handler);
+
+      // Verify setTimeout was called for the timeout
+      expect(setTimeoutCalled).toBe(true);
+
+      // Verify clearTimeout was called to cleanup
+      expect(clearTimeoutCalled).toBe(true);
+
+      // Verify the handler succeeded
+      expect(mockProtocol.output?.success).toBe(true);
+      expect(mockProtocol.output?.message).toBe('Completed');
+    } finally {
+      // Restore original functions
+      global.setTimeout = originalSetTimeout;
+      global.clearTimeout = originalClearTimeout;
+    }
+  });
+
+  test('should cleanup timer even when handler fails', async () => {
+    const originalSetTimeout = global.setTimeout;
+    const originalClearTimeout = global.clearTimeout;
+
+    let clearTimeoutCalled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    global.setTimeout = ((callback: () => void, ms: number) => {
+      timeoutId = originalSetTimeout(callback, ms);
+      return timeoutId;
+    }) as typeof setTimeout;
+
+    global.clearTimeout = ((id: ReturnType<typeof setTimeout>) => {
+      if (id === timeoutId) {
+        clearTimeoutCalled = true;
+      }
+      originalClearTimeout(id);
+    }) as typeof clearTimeout;
+
+    try {
+      const handler: HookHandler = () => {
+        throw new Error('Handler failed');
+      };
+
+      const executor = new HookExecutor(mockProtocol, {
+        exitProcess: false,
+        timeout: 500,
+        collectMetrics: false,
+      });
+
+      await executor.execute(handler);
+
+      // Verify clearTimeout was called even though handler failed
+      expect(clearTimeoutCalled).toBe(true);
+
+      // Verify the error was handled
+      expect(mockProtocol.output?.success).toBe(false);
+      // The error might be in different fields based on the protocol output structure
+      expect(mockProtocol.output).toBeDefined();
+    } finally {
+      global.setTimeout = originalSetTimeout;
+      global.clearTimeout = originalClearTimeout;
+    }
+  });
 });
