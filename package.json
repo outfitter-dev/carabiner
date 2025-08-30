@@ -16,7 +16,8 @@
     "catalog": {
       "@types/node": "^24.2.1",
       "typescript": "^5.9.2",
-      "type-fest": "^4.41.0"
+      "type-fest": "^4.41.0",
+      "picomatch": "^4.0.3"
     }
   },
   "scripts": {
