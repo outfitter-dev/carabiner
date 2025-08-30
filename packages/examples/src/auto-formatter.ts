@@ -14,11 +14,7 @@
  * - Respects project configuration files
  */
 
-<<<<<<< HEAD
 import { execFileSync } from 'node:child_process';
-=======
-import { execSync } from 'node:child_process';
->>>>>>> d590abc (fix: correct context field access in auto-formatter and git-safety hooks)
 import { existsSync } from 'node:fs';
 import { dirname, extname } from 'node:path';
 import { HookExecutor } from '@carabiner/execution';
@@ -209,12 +205,8 @@ const FORMATTERS: Record<
  */
 function isFormatterAvailable(checkCommand: string): boolean {
   try {
-<<<<<<< HEAD
     const [command, ...args] = checkCommand.split(' ');
     execFileSync(command, args, { stdio: 'ignore' });
-=======
-    execSync(checkCommand, { stdio: 'ignore' });
->>>>>>> d590abc (fix: correct context field access in auto-formatter and git-safety hooks)
     return true;
   } catch {
     return false;
@@ -268,11 +260,7 @@ function formatFile(filePath: string): { success: boolean; message: string } {
   try {
     // Run formatter
     const cwd = dirname(filePath);
-<<<<<<< HEAD
     execFileSync(formatter.command, formatter.args, {
-=======
-    execSync(`${formatter.command} ${formatter.args.join(' ')}`, {
->>>>>>> d590abc (fix: correct context field access in auto-formatter and git-safety hooks)
       cwd,
       stdio: 'pipe',
     });
@@ -293,7 +281,6 @@ function formatFile(filePath: string): { success: boolean; message: string } {
  * Main auto-formatter hook
  */
 const autoFormatterHook: HookHandler = (context): HookResult => {
-<<<<<<< HEAD
   // Support both camelCase and snake_case for backward compatibility
   const toolName = (context as any).toolName ?? (context as any).tool_name;
   const toolInput = (context as any).toolInput ?? (context as any).tool_input;
@@ -301,11 +288,6 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
   // Only process file modification tools
   const fileTools = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'];
   if (!toolName || !fileTools.includes(toolName)) {
-=======
-  // Only process file modification tools
-  const fileTools = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'];
-  if (!('toolName' in context) || !fileTools.includes(context.toolName)) {
->>>>>>> d590abc (fix: correct context field access in auto-formatter and git-safety hooks)
     return {
       success: true,
       action: 'continue',
@@ -315,7 +297,6 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
   // Extract file path based on tool
   let filePath: string | undefined;
 
-<<<<<<< HEAD
   switch (toolName) {
     case 'Edit':
     case 'Write':
@@ -326,18 +307,6 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
       break;
     case 'NotebookEdit':
       filePath = toolInput?.notebook_path as string;
-=======
-  switch (context.toolName) {
-    case 'Edit':
-    case 'Write':
-      filePath = context.toolInput?.file_path as string;
-      break;
-    case 'MultiEdit':
-      filePath = context.toolInput?.file_path as string;
-      break;
-    case 'NotebookEdit':
-      filePath = context.toolInput?.notebook_path as string;
->>>>>>> d590abc (fix: correct context field access in auto-formatter and git-safety hooks)
       break;
     default:
       // Other tools don't have file paths
