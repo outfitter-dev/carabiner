@@ -6,7 +6,7 @@
  * in a Claude Code hooks configuration.
  */
 
-import { HookExecutor } from '@carabiner/executor';
+import { HookExecutor } from '@carabiner/execution';
 import { createMarkdownFormatterHook } from '@carabiner/hooks-registry';
 import { StdinProtocol } from '@carabiner/protocol';
 
