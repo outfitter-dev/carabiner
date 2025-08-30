@@ -144,44 +144,11 @@ function validateFileOperation(
   }
 
   // Check for directory traversal attempts
-  // Check for various forms of directory traversal
-  const traversalPatterns = [
-    '../',
-    '..\\',
-    '..%2f',
-    '..%2F',
-    '..%5c',
-    '..%5C',
-    '%2e%2e/',
-    '%2e%2e\\',
-    '..\\\\',
-    '..//',
-    '..\\//',
-  ];
-  
-  const lowerPath = filePath.toLowerCase();
-  for (const pattern of traversalPatterns) {
-    if (lowerPath.includes(pattern.toLowerCase())) {
-      return {
-        safe: false,
-        issue: 'Directory traversal attempt detected',
-      };
-    }
-  }
-  
-  // Also check normalized path doesn't escape working directory
-  const normalizedPath = normalize(filePath);
-  const resolvedPath = resolve(filePath);
-  const cwd = process.cwd();
-  
-  if (!resolvedPath.startsWith(cwd) && !filePath.startsWith('/')) {
-    // Allow absolute paths that don't try to escape via traversal
-    if (normalizedPath.includes('..')) {
-      return {
-        safe: false,
-        issue: 'Path traversal detected in normalized path',
-      };
-    }
+  if (filePath.includes('../') || filePath.includes('..\\')) {
+    return {
+      safe: false,
+      issue: 'Directory traversal attempt detected',
+    };
   }
 
   // Check if path is sensitive
@@ -216,9 +183,7 @@ function validateFileOperation(
  * Main security guard hook
  */
 const securityGuardHook: HookHandler = (context): HookResult => {
-  // Support both camelCase and snake_case for backward compatibility
-  const toolName = (context as any).toolName ?? (context as any).tool_name;
-  const toolInput = (context as any).toolInput ?? (context as any).tool_input;
+  const { toolName, toolInput } = context;
 
   // Handle Bash commands
   if (toolName === 'Bash') {
