@@ -282,11 +282,9 @@ function formatFile(filePath: string): { success: boolean; message: string } {
  */
 const autoFormatterHook: HookHandler = (context): HookResult => {
   // Support both camelCase and snake_case for backward compatibility
-  const contextWithFallback = context as Record<string, unknown>;
-  const toolName =
-    contextWithFallback.toolName ?? contextWithFallback.tool_name;
-  const toolInput =
-    contextWithFallback.toolInput ?? contextWithFallback.tool_input;
+  const contextRecord = context as Record<string, unknown>;
+  const toolName = contextRecord.toolName ?? contextRecord.tool_name;
+  const toolInput = contextRecord.toolInput ?? contextRecord.tool_input;
 
   // Only process file modification tools
   const fileTools = ["Edit", "Write", "MultiEdit", "NotebookEdit"];
