@@ -18,7 +18,8 @@ import { existsSync, statSync } from 'node:fs';
 import { normalize, resolve } from 'node:path';
 import { HookExecutor } from '@carabiner/execution';
 import { StdinProtocol } from '@carabiner/protocol';
-import type { HookHandler, HookResult } from '@carabiner/types';
+import type { HookContext, HookHandler, HookResult } from '@carabiner/types';
+import { isToolHookContext } from '@carabiner/types';
 
 // Dangerous bash command patterns
 const DANGEROUS_COMMANDS = [
@@ -182,12 +183,18 @@ function validateFileOperation(
 /**
  * Main security guard hook
  */
-const securityGuardHook: HookHandler = (context): HookResult => {
-  const { toolName, toolInput } = context;
+const securityGuardHook: HookHandler = (context: HookContext): HookResult => {
+  // Only process tool hooks
+  if (!isToolHookContext(context)) {
+    return {
+      success: true,
+    };
+  }
 
   // Handle Bash commands
-  if (toolName === 'Bash') {
-    const command = toolInput?.command as string | undefined;
+  if (context.toolName === 'Bash') {
+    // biome-ignore lint/suspicious/noExplicitAny: Tool input is a union type
+    const command = (context.toolInput as any)?.command as string | undefined;
     if (command) {
       const validation = validateBashCommand(command);
       if (!validation.safe) {
@@ -206,9 +213,12 @@ const securityGuardHook: HookHandler = (context): HookResult => {
   }
 
   // Handle file operations
-  if (['Edit', 'Write', 'MultiEdit', 'Read'].includes(toolName)) {
-    const filePath = toolInput?.file_path as string | undefined;
-    const validation = validateFileOperation(toolName, filePath);
+  if (['Edit', 'Write', 'MultiEdit', 'Read'].includes(context.toolName)) {
+    // biome-ignore lint/suspicious/noExplicitAny: Tool input is a union type
+    const filePath = (context.toolInput as any)?.file_path as
+      | string
+      | undefined;
+    const validation = validateFileOperation(context.toolName, filePath);
 
     if (!validation.safe) {
       return {
@@ -220,9 +230,12 @@ const securityGuardHook: HookHandler = (context): HookResult => {
   }
 
   // Handle NotebookEdit
-  if (toolName === 'NotebookEdit') {
-    const notebookPath = toolInput?.notebook_path as string | undefined;
-    const validation = validateFileOperation(toolName, notebookPath);
+  if (context.toolName === 'NotebookEdit') {
+    // biome-ignore lint/suspicious/noExplicitAny: Tool input is a union type
+    const notebookPath = (context.toolInput as any)?.notebook_path as
+      | string
+      | undefined;
+    const validation = validateFileOperation(context.toolName, notebookPath);
 
     if (!validation.safe) {
       return {

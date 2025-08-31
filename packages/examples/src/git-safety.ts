@@ -17,7 +17,8 @@
 import { execSync } from 'node:child_process';
 import { HookExecutor } from '@carabiner/execution';
 import { StdinProtocol } from '@carabiner/protocol';
-import type { HookHandler, HookResult } from '@carabiner/types';
+import type { HookContext, HookHandler, HookResult } from '@carabiner/types';
+import { isToolHookContext } from '@carabiner/types';
 
 // Protected branch names
 const PROTECTED_BRANCHES = [
@@ -169,17 +170,23 @@ function validateGitCommand(command: string): {
 /**
  * Main git safety hook
  */
-const gitSafetyHook: HookHandler = (context): HookResult => {
-  const { toolName, toolInput } = context;
-  
-  // Only process Bash commands
-  if (toolName !== 'Bash') {
+const gitSafetyHook: HookHandler = (context: HookContext): HookResult => {
+  // Only process tool hooks
+  if (!isToolHookContext(context)) {
     return {
       success: true,
     };
   }
 
-  const command = toolInput?.command as string | undefined;
+  // Only process Bash commands
+  if (context.toolName !== 'Bash') {
+    return {
+      success: true,
+    };
+  }
+
+  // biome-ignore lint/suspicious/noExplicitAny: Tool input is a union type
+  const command = (context.toolInput as any)?.command as string | undefined;
   if (!command?.includes('git')) {
     return {
       success: true,

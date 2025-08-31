@@ -35,7 +35,8 @@
 
 import { HookExecutor } from '@carabiner/execution';
 import { StdinProtocol } from '@carabiner/protocol';
-import type { HookHandler } from '@carabiner/types';
+import type { HookContext, HookHandler } from '@carabiner/types';
+import { isToolHookContext } from '@carabiner/types';
 
 // Define validation rules as an array of [regex pattern, message] tuples
 export const VALIDATION_RULES: [RegExp, string][] = [
@@ -87,15 +88,23 @@ export function validateCommand(command: string): string[] {
 /**
  * Main hook handler
  */
-export const bashCommandValidatorHook: HookHandler = (context) => {
-  // Only process Bash tool events
-  if (!('toolName' in context) || context.toolName !== 'Bash') {
+export const bashCommandValidatorHook: HookHandler = (context: HookContext) => {
+  // Only process tool hooks
+  if (!isToolHookContext(context)) {
     return {
       success: true,
     };
   }
 
-  const command = context.toolInput?.command as string | undefined;
+  // Only process Bash tool events
+  if (context.toolName !== 'Bash') {
+    return {
+      success: true,
+    };
+  }
+
+  // biome-ignore lint/suspicious/noExplicitAny: Tool input is a union type
+  const command = (context.toolInput as any)?.command as string | undefined;
 
   // If no command provided, continue without validation
   if (!command) {
