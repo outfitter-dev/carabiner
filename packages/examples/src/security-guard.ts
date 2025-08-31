@@ -183,13 +183,18 @@ function validateFileOperation(
 /**
  * Main security guard hook
  */
-const securityGuardHook: HookHandler = (context): HookResult => {
-  const { toolName, toolInput } = context;
+const securityGuardHook: HookHandler = (context: HookContext): HookResult => {
+  // Only process tool hooks
+  if (!isToolHookContext(context)) {
+    return {
+      success: true,
+    };
+  }
 
   // Handle Bash commands
-  if (toolName === 'Bash') {
+  if (context.toolName === 'Bash') {
     // biome-ignore lint/suspicious/noExplicitAny: Tool input is a union type
-    const command = (toolInput as any)?.command as string | undefined;
+    const command = (context.toolInput as any)?.command as string | undefined;
     if (command) {
       const validation = validateBashCommand(command);
       if (!validation.safe) {
