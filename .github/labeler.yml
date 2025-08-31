@@ -1,72 +1,125 @@
 # Configuration for auto-labeling PRs based on changed files (v5 format)
 
-changed-files:
-  # Package-specific labels
-  "package: hooks-core":
-    - packages/hooks-core/**/*
+# Package-specific labels
+"package: error-management":
+  - changed-files:
+      - any-glob-to-any-file: packages/error-management/**/*
 
-  "package: hooks-cli":
-    - packages/hooks-cli/**/*
+"package: execution":
+  - changed-files:
+      - any-glob-to-any-file: packages/execution/**/*
 
-  "package: hooks-config":
-    - packages/hooks-config/**/*
+"package: hooks-core":
+  - changed-files:
+      - any-glob-to-any-file: packages/hooks-core/**/*
 
-  "package: hooks-validators":
-    - packages/hooks-validators/**/*
+"package: hooks-cli":
+  - changed-files:
+      - any-glob-to-any-file: packages/hooks-cli/**/*
 
-  "package: hooks-testing":
-    - packages/hooks-testing/**/*
+"package: hooks-config":
+  - changed-files:
+      - any-glob-to-any-file: packages/hooks-config/**/*
 
-  "package: examples":
-    - packages/examples/**/*
+"package: hooks-registry":
+  - changed-files:
+      - any-glob-to-any-file: packages/hooks-registry/**/*
 
-  # Type labels
-  documentation:
-    - "**/*.md"
-    - docs/**/*
-    - .agent/**/*.md
+"package: hooks-validators":
+  - changed-files:
+      - any-glob-to-any-file: packages/hooks-validators/**/*
 
-  tests:
-    - "**/*.test.ts"
-    - "**/*.test.tsx"
-    - "**/*.spec.ts"
-    - "**/*.spec.tsx"
-    - "**/test/**"
-    - "**/__tests__/**"
+"package: hooks-testing":
+  - changed-files:
+      - any-glob-to-any-file: packages/hooks-testing/**/*
 
-  ci/cd:
-    - .github/workflows/**/*
-    - .github/**/*
-    - lefthook.yml
+"package: examples":
+  - changed-files:
+      - any-glob-to-any-file: packages/examples/**/*
 
-  dependencies:
-    - package.json
-    - packages/*/package.json
-    - apps/*/package.json
-    - bun.lockb
+"package: plugins":
+  - changed-files:
+      - any-glob-to-any-file: packages/plugins/**/*
 
-  config:
-    - tsconfig.json
-    - packages/*/tsconfig.json
-    - apps/*/tsconfig.json
-    - turbo.json
-    - biome.json
-    - .prettierrc
+"package: protocol":
+  - changed-files:
+      - any-glob-to-any-file: packages/protocol/**/*
 
-  security:
-    - "**/*auth*"
-    - "**/*security*"
-    - "**/*permission*"
-    - "**/*validate*"
-    - "**/*sanitize*"
+"package: registry":
+  - changed-files:
+      - any-glob-to-any-file: packages/registry/**/*
 
-  performance:
-    - "**/*perf*"
-    - "**/*optimize*"
-    - "**/*cache*"
-    - "**/*worker*"
+"package: schemas":
+  - changed-files:
+      - any-glob-to-any-file: packages/schemas/**/*
 
-  breaking-change:
-    - packages/*/src/types.ts
-    - packages/*/src/index.ts
-    - "**/*breaking*"
+"package: types":
+  - changed-files:
+      - any-glob-to-any-file: packages/types/**/*
+
+# Type labels
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - docs/**/*
+          - .agent/**/*.md
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.test.ts"
+          - "**/*.test.tsx"
+          - "**/*.spec.ts"
+          - "**/*.spec.tsx"
+          - "**/test/**"
+          - "**/__tests__/**"
+
+ci/cd:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/**/*
+          - .github/**/*
+          - lefthook.yml
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - package.json
+          - packages/*/package.json
+          - apps/*/package.json
+          - bun.lockb
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tsconfig.json
+          - packages/*/tsconfig.json
+          - apps/*/tsconfig.json
+          - turbo.json
+          - biome.json
+          - .prettierrc
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*auth*"
+          - "**/*security*"
+          - "**/*permission*"
+          - "**/*validate*"
+          - "**/*sanitize*"
+
+performance:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*perf*"
+          - "**/*optimize*"
+          - "**/*cache*"
+          - "**/*worker*"
+
+breaking-change:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/*/src/types.ts
+          - packages/*/src/index.ts
+          - "**/*breaking*"

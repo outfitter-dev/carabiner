@@ -83,7 +83,7 @@ jobs:
       fail-fast: false
       matrix:
         task:
-          - { name: "Lint", cmd: "bun x ultracite@latest lint" }
+          - { name: "Lint", cmd: "npx ultracite lint" }
           - { name: "Type Check", cmd: "bun run typecheck" }
           - { name: "Format Check", cmd: "bun run format:check" }
     steps:
