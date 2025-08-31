@@ -19,7 +19,8 @@ import { existsSync } from 'node:fs';
 import { dirname, extname } from 'node:path';
 import { HookExecutor } from '@carabiner/execution';
 import { StdinProtocol } from '@carabiner/protocol';
-import type { HookHandler, HookResult } from '@carabiner/types';
+import type { HookContext, HookHandler, HookResult } from '@carabiner/types';
+import { isToolHookContext } from '@carabiner/types';
 
 // Formatter configurations by file extension
 const FORMATTERS: Record<
@@ -280,12 +281,17 @@ function formatFile(filePath: string): { success: boolean; message: string } {
 /**
  * Main auto-formatter hook
  */
-const autoFormatterHook: HookHandler = (context): HookResult => {
-  const { toolName, toolInput } = context;
-  
+const autoFormatterHook: HookHandler = (context: HookContext): HookResult => {
+  // Only process tool hooks
+  if (!isToolHookContext(context)) {
+    return {
+      success: true,
+    };
+  }
+
   // Only process file modification tools
   const fileTools = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'];
-  if (!toolName || !fileTools.includes(toolName)) {
+  if (!fileTools.includes(context.toolName)) {
     return {
       success: true,
     };
@@ -293,17 +299,19 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
 
   // Extract file path based on tool
   let filePath: string | undefined;
+  // biome-ignore lint/suspicious/noExplicitAny: Tool input is a union type
+  const toolInput = context.toolInput as any;
 
-  switch (toolName) {
+  switch (context.toolName) {
     case 'Edit':
     case 'Write':
-      filePath = toolInput?.file_path as string;
+      filePath = toolInput?.file_path;
       break;
     case 'MultiEdit':
-      filePath = toolInput?.file_path as string;
+      filePath = toolInput?.file_path;
       break;
     case 'NotebookEdit':
-      filePath = toolInput?.notebook_path as string;
+      filePath = toolInput?.notebook_path;
       break;
     default:
       // Other tools don't have file paths
