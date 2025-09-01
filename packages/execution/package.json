@@ -1,56 +1,56 @@
 {
-    "name": "@carabiner/execution",
-    "version": "1.0.0",
-    "description": "Simplified execution engine for Carabiner hooks",
-    "type": "module",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "import": "./dist/index.js",
-            "types": "./dist/index.d.ts"
-        }
-    },
-    "files": [
-        "dist/",
-        "README.md"
-    ],
-    "keywords": [
-        "carabiner",
-        "hooks",
-        "execution",
-        "typescript"
-    ],
-    "author": "Matt Galligan <matt.galligan@gmail.com>",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/outfitter-dev/grapple.git",
-        "directory": "packages/execution"
-    },
-    "scripts": {
-        "build": "tsc --project tsconfig.build.json",
-        "dev": "tsc -p tsconfig.build.json --watch",
-        "test": "bun test",
-        "test:watch": "bun test --watch",
-        "typecheck": "tsc --noEmit",
-        "lint": "bun x ultracite@latest lint src/",
-        "format": "bun x ultracite@latest format src/",
-        "clean": "rm -rf dist/"
-    },
-    "dependencies": {
-        "@carabiner/hooks-core": "workspace:*",
-        "@carabiner/protocol": "workspace:*",
-        "@carabiner/types": "workspace:*",
-        "type-fest": "^4.41.0"
-    },
-    "devDependencies": {
-        "@types/bun": "*",
-        "typescript": "^5.9.2",
-        "ultracite": "^5.1.5"
-    },
-    "publishConfig": {
-        "access": "public"
+  "name": "@carabiner/execution",
+  "version": "1.0.0",
+  "description": "Simplified execution engine for Carabiner hooks",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "keywords": [
+    "carabiner",
+    "hooks",
+    "execution",
+    "typescript"
+  ],
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/outfitter-dev/grapple.git",
+    "directory": "packages/execution"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "bun x ultracite@latest lint src/",
+    "format": "bun x ultracite@latest format src/",
+    "clean": "rm -rf dist/"
+  },
+  "dependencies": {
+    "@carabiner/hooks-core": "workspace:*",
+    "@carabiner/protocol": "workspace:*",
+    "@carabiner/types": "workspace:*",
+    "type-fest": "^4.41.0"
+  },
+  "devDependencies": {
+    "@types/bun": "*",
+    "typescript": "^5.9.2",
+    "ultracite": "^5.1.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

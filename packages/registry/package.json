@@ -1,51 +1,51 @@
 {
-    "name": "@carabiner/registry",
-    "version": "1.0.0",
-    "description": "Plugin registry system for Carabiner hooks - enables composition of small, focused hooks through a plugin architecture",
-    "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "import": "./dist/index.js",
-            "types": "./dist/index.d.ts"
-        }
-    },
-    "scripts": {
-        "build": "tsc --project tsconfig.build.json",
-        "dev": "tsc --project tsconfig.build.json --watch",
-        "test": "bun test",
-        "test:watch": "bun test --watch",
-        "typecheck": "tsc --noEmit",
-        "clean": "rm -rf dist tsconfig.build.tsbuildinfo"
-    },
-    "keywords": [
-        "carabiner",
-        "hooks",
-        "plugins",
-        "registry",
-        "composition",
-        "architecture"
-    ],
-    "author": "Outfitter Team",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/outfitter-dev/grapple",
-        "directory": "packages/registry"
-    },
-    "dependencies": {
-        "@carabiner/execution": "workspace:*",
-        "@carabiner/types": "workspace:*",
-        "@carabiner/schemas": "workspace:*",
-        "zod": "^3.24.1"
-    },
-    "devDependencies": {
-        "@types/node": "^24.2.1",
-        "bun-types": "^1.0.25",
-        "typescript": "^5.9.2"
-    },
-    "publishConfig": {
-        "access": "public"
+  "name": "@carabiner/registry",
+  "version": "1.0.0",
+  "description": "Plugin registry system for Carabiner hooks - enables composition of small, focused hooks through a plugin architecture",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist tsconfig.build.tsbuildinfo"
+  },
+  "keywords": [
+    "carabiner",
+    "hooks",
+    "plugins",
+    "registry",
+    "composition",
+    "architecture"
+  ],
+  "author": "Outfitter Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/outfitter-dev/grapple",
+    "directory": "packages/registry"
+  },
+  "dependencies": {
+    "@carabiner/execution": "workspace:*",
+    "@carabiner/types": "workspace:*",
+    "@carabiner/schemas": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "bun-types": "^1.0.25",
+    "typescript": "^5.9.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
