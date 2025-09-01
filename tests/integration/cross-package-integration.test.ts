@@ -275,7 +275,7 @@ export default async function(context) {
     test('should execute complete hook workflow with metrics', async () => {
       // Test the complete flow from configuration loading to hook execution
       const { ConfigManager } = await import('@carabiner/hooks-config');
-      const { globalMetrics, clearExecutionMetrics, getExecutionStats } =
+      const { clearExecutionMetrics, getExecutionStats } =
         await import('@carabiner/execution');
 
       // Clear any existing metrics
@@ -471,7 +471,7 @@ export default async function(context) {
 
   describe('Performance Integration', () => {
     test('should track performance across package boundaries', async () => {
-      const { globalMetrics, clearExecutionMetrics } = await import(
+      const { clearExecutionMetrics } = await import(
         '@carabiner/execution'
       );
 

@@ -17,6 +17,7 @@ import type {
   HookHandler,
   HookOutputMode,
   HookResult,
+  ParsedStdinError,
   StdinParseResult,
   ToolInput,
   ToolInputMap,
@@ -479,7 +480,10 @@ export async function runClaudeHook(
     const parseResult = await parseStdinInput();
 
     if (!parseResult.success) {
-      throw new HookInputError(parseResult.error, parseResult.rawInput);
+      throw new HookInputError(
+        (parseResult as ParsedStdinError).error,
+        (parseResult as ParsedStdinError).rawInput
+      );
     }
 
     // Create context from Claude input
