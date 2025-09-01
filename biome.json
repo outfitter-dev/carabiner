@@ -21,15 +21,35 @@
     "rules": {
       "style": {
         "noMagicNumbers": "off",
-        "noEnum": "off"
+        "noEnum": "off",
+        "noNonNullAssertion": "off",
+        "noParameterProperties": "off",
+        "noNestedTernary": "off",
+        "useConsistentMemberAccessibility": "off",
+        "useCollapsedIf": "off"
       },
       "complexity": {
         "noVoid": "off",
         "noExcessiveCognitiveComplexity": "off",
-        "noExcessiveLinesPerFunction": "off"
+        "noExcessiveLinesPerFunction": "off",
+        "noForEach": "off"
       },
       "performance": {
-        "useTopLevelRegex": "off"
+        "useTopLevelRegex": "off",
+        "noNamespaceImport": "off"
+      },
+      "suspicious": {
+        "useAwait": "off",
+        "noExplicitAny": "off",
+        "noConsole": "off",
+        "noBitwiseOperators": "off",
+        "noEvolvingTypes": "off",
+        "noEmptyBlockStatements": "off"
+      },
+      "nursery": {
+        "useMaxParams": "off",
+        "noUnnecessaryConditions": "off",
+        "noShadow": "off"
       }
     }
   }
