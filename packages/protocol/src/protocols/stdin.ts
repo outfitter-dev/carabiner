@@ -122,7 +122,9 @@ export class StdinProtocol implements HookProtocol {
         };
 
         const cleanup = (isTimeout = false) => {
-          if (isCleanedUp) return;
+          if (isCleanedUp) {
+            return;
+          }
           isCleanedUp = true;
 
           // Clear the timeout

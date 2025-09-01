@@ -254,20 +254,23 @@ export class HookExecutor {
     handler: HookHandler,
     context: HookContext
   ): Promise<Result<HookResult, Error>> {
-    // Create timeout promise
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(
-          new TimeoutError(this.options.timeout, {
-            event: context.event,
-            toolName: 'toolName' in context ? context.toolName : undefined,
-          })
-        );
-      }, this.options.timeout);
-    });
+    // Create timeout promise with proper cleanup
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    // Race handler execution against timeout
+    // Wrap in try-finally to ensure cleanup in all cases
     try {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(
+            new TimeoutError(this.options.timeout, {
+              event: context.event,
+              toolName: 'toolName' in context ? context.toolName : undefined,
+            })
+          );
+        }, this.options.timeout);
+      });
+
+      // Race handler execution against timeout
       const result = await Promise.race([
         this.runHandler(handler, context),
         timeoutPromise,
@@ -276,6 +279,12 @@ export class HookExecutor {
       return success(result);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error(String(error)));
+    } finally {
+      // Always cleanup timeout, even if an error occurs before the race
+      // This ensures no memory leaks or dangling timers
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 
@@ -362,39 +371,29 @@ export class HookExecutor {
   /**
    * Read input from protocol with error handling
    */
-  private async readInput(): Promise<Result<unknown, Error>> {
-    return tryAsyncResult(async () => {
-      return await this.protocol.readInput();
-    });
+  private readInput(): Promise<Result<unknown, Error>> {
+    return tryAsyncResult(() => this.protocol.readInput());
   }
 
   /**
    * Parse context from raw input with error handling
    */
-  private async parseContext(
-    input: unknown
-  ): Promise<Result<HookContext, Error>> {
-    return tryAsyncResult(async () => {
-      return await this.protocol.parseContext(input);
-    });
+  private parseContext(input: unknown): Promise<Result<HookContext, Error>> {
+    return tryAsyncResult(() => this.protocol.parseContext(input));
   }
 
   /**
    * Write output through protocol with error handling
    */
-  private async writeOutput(result: HookResult): Promise<Result<void, Error>> {
-    return tryAsyncResult(async () => {
-      await this.protocol.writeOutput(result);
-    });
+  private writeOutput(result: HookResult): Promise<Result<void, Error>> {
+    return tryAsyncResult(() => this.protocol.writeOutput(result));
   }
 
   /**
    * Write error through protocol with error handling
    */
-  private async writeError(error: Error): Promise<Result<void, Error>> {
-    return tryAsyncResult(async () => {
-      await this.protocol.writeError(error);
-    });
+  private writeError(error: Error): Promise<Result<void, Error>> {
+    return tryAsyncResult(() => this.protocol.writeError(error));
   }
 
   /**
@@ -445,7 +444,9 @@ export class HookExecutor {
    * Create execution context for logging
    */
   private createExecutionContext(context: HookContext): HookExecutionContext {
-    const env = (globalThis as any).Bun?.env ?? process.env;
+    const env =
+      (globalThis as { Bun?: { env: NodeJS.ProcessEnv } }).Bun?.env ??
+      process.env;
     return {
       event: context.event,
       toolName: 'toolName' in context ? context.toolName : undefined,
