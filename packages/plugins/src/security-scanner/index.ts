@@ -850,7 +850,7 @@ export const securityScannerPlugin: HookPlugin = {
       const result = await scanForSecurityIssues(
         context,
         scannerConfig,
-        allRules,
+        allRules as SecurityRule[],
         this.name,
         this.version
       );

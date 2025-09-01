@@ -429,7 +429,12 @@ export const gitSafetyPlugin: HookPlugin = {
     // Check custom rules first (they take priority over built-in patterns)
     const customRuleResult = checkCustomRules(
       command,
-      safetyConfig.customRules,
+      safetyConfig.customRules as Array<{
+        name: string;
+        pattern: string;
+        message: string;
+        severity: 'warn' | 'block';
+      }>,
       this.name,
       this.version
     );

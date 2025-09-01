@@ -32,7 +32,7 @@ export class SecurityScanner {
     this.configManager = new SecurityScannerConfigManager(config);
     this.reporter = new SecurityReporter();
     this.rules = ruleRegistry.combineWithCustomRules(
-      this.configManager.getCustomRules()
+      this.configManager.getCustomRules() as SecurityRule[]
     );
   }
 
