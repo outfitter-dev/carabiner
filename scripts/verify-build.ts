@@ -172,7 +172,6 @@ async function runPublintValidation(): Promise<void> {
 
   // Log successful validation
   if (publintResult.stdout?.trim()) {
-    // biome-ignore lint/suspicious/noConsole: Build verification logging requires console output
     console.log('✅ Publint validation passed');
   }
 }
