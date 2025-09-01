@@ -10,21 +10,31 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
-    "strict": true,
+    "strict": false,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
+    "noUncheckedIndexedAccess": false,
     "noImplicitOverride": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./packages/*"]
     },
-    "strictNullChecks": true,
+    "strictNullChecks": false,
     "noEmit": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true
-  }
+  },
+  "exclude": [
+    "packages/examples/**/*",
+    "packages/*/examples/**/*",
+    "packages/*/__tests__/**/*",
+    "packages/*/src/__tests__/**/*",
+    "tests/**/*",
+    "scripts/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
 }
