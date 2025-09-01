@@ -490,7 +490,6 @@ const { test, expect } = require('bun:test');
         }
       }
 
-      // biome-ignore lint/nursery/noUnnecessaryConditions: hasChanges can be set to true in the loop above
       if (hasChanges) {
         packageJson.scripts = scripts;
         await writeFile(packagePath, JSON.stringify(packageJson, null, 2));
