@@ -10,7 +10,7 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
-    "strict": false,
+    "strict": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": false,
@@ -22,7 +22,7 @@
     "paths": {
       "@/*": ["./packages/*"]
     },
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "noEmit": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true
