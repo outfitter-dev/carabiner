@@ -157,7 +157,6 @@ export class ClaudeHooksCli {
     }
 
     if (values.version) {
-      // biome-ignore lint/suspicious/noConsole: CLI version output requires console.log
       console.log(this.config.version);
       process.exit(0);
     }
@@ -283,33 +282,21 @@ export class ClaudeHooksCli {
       await this.registerCommands();
     }
 
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('Claude Code Hooks CLI');
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('Usage: claude-hooks <command> [options]');
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('');
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('Available commands:');
 
     for (const command of this.commands.values()) {
-      // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
       console.log(`  ${command.name.padEnd(12)} ${command.description}`);
     }
 
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('');
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('Global options:');
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('  --help       Show this help message');
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('  --version    Show version information');
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('  --verbose    Enable verbose logging');
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('  --debug      Enable debug logging');
-    // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
     console.log('  --workspace  Set workspace directory');
   }
 
@@ -317,10 +304,8 @@ export class ClaudeHooksCli {
    * Show available commands
    */
   private showAvailableCommands(): void {
-    // biome-ignore lint/suspicious/noConsole: CLI output requires console.log
     console.log('Available commands:');
     for (const command of this.commands.values()) {
-      // biome-ignore lint/suspicious/noConsole: CLI output requires console.log
       console.log(`  ${command.name} - ${command.description}`);
     }
   }
@@ -329,7 +314,6 @@ export class ClaudeHooksCli {
    * Log message (user-facing output)
    */
   log(message: string): void {
-    // biome-ignore lint/suspicious/noConsole: CLI logging requires console.log
     console.log(message);
   }
 
