@@ -215,7 +215,7 @@ export async function createPluginSystem(
       const pluginConfig = config.plugins.find(
         (p: PluginConfig) => p.name === plugin.name
       );
-      registryInstance.register(plugin, pluginConfig);
+      registryInstance.register(plugin, pluginConfig as PluginConfig | undefined);
     }
 
     // Register plugins from configuration that weren't discovered
@@ -234,7 +234,7 @@ export async function createPluginSystem(
             const pluginConfig = config.plugins.find(
               (p: PluginConfig) => p.name === event.plugin?.name
             );
-            registryInstance.register(event.plugin, pluginConfig);
+            registryInstance.register(event.plugin, pluginConfig as PluginConfig | undefined);
           }
         } else if (event.type === 'removed') {
           const pluginName =

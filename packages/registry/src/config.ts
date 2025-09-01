@@ -725,7 +725,7 @@ export function createDefaultConfig(): HookConfig {
  * Validate plugin configuration
  */
 export function validatePluginConfig(config: unknown): PluginConfig {
-  return PluginConfigSchema.parse(config);
+  return PluginConfigSchema.parse(config) as PluginConfig;
 }
 
 /**
