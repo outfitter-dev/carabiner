@@ -353,6 +353,7 @@ describe('Production Scenario Validation', () => {
 
   describe('Binary Distribution and Execution', () => {
     test('should create and execute binary-like scenarios', async () => {
+      await Promise.resolve(); // Ensure async function has await
       // Create a simple executable script that simulates binary behavior
       const scriptContent = `#!/usr/bin/env bun
 // Simulated binary execution
@@ -424,6 +425,7 @@ console.log(JSON.stringify({
     });
 
     test('should handle cross-platform compatibility', async () => {
+      await Promise.resolve(); // Ensure async function has await
       const platformTests = [
         {
           platform: 'linux',
@@ -505,6 +507,7 @@ console.log(JSON.stringify({
     });
 
     test('should handle log rotation and file management', async () => {
+      await Promise.resolve(); // Ensure async function has await
       const logDir = join(prodEnv.tempDir, 'logs');
       const logFile = join(logDir, 'hooks.log');
 
@@ -607,6 +610,7 @@ console.log(JSON.stringify({
 
   describe('Real-world Configuration Scenarios', () => {
     test('should handle enterprise configuration patterns', async () => {
+      await Promise.resolve(); // Ensure async function has await
       const enterpriseConfig = {
         version: '1.0.0',
         hooks: {
@@ -667,6 +671,7 @@ console.log(JSON.stringify({
     });
 
     test('should handle multi-environment configurations', async () => {
+      await Promise.resolve(); // Ensure async function has await
       const environments = ['development', 'staging', 'production'];
 
       for (const env of environments) {
@@ -796,7 +801,9 @@ console.log(JSON.stringify({
 type SecurityInput = { handler?: string; command?: string };
 
 function isSecurityInput(v: unknown): v is SecurityInput {
-  if (typeof v !== 'object' || v === null) return false;
+  if (typeof v !== 'object' || v === null) {
+    return false;
+  }
   const r = v as Record<string, unknown>;
   return typeof r.handler === 'string' || typeof r.command === 'string';
 }

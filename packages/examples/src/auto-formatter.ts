@@ -282,12 +282,13 @@ function formatFile(filePath: string): { success: boolean; message: string } {
  */
 const autoFormatterHook: HookHandler = (context): HookResult => {
   // Support both camelCase and snake_case for backward compatibility
-  const toolName = (context as any).toolName ?? (context as any).tool_name;
-  const toolInput = (context as any).toolInput ?? (context as any).tool_input;
-  
+  const contextRecord = context as Record<string, unknown>;
+  const toolName = contextRecord.toolName ?? contextRecord.tool_name;
+  const toolInput = contextRecord.toolInput ?? contextRecord.tool_input;
+
   // Only process file modification tools
   const fileTools = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'];
-  if (!toolName || !fileTools.includes(toolName)) {
+  if (!(toolName && fileTools.includes(toolName))) {
     return {
       success: true,
       action: 'continue',
