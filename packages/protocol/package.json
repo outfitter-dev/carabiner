@@ -1,55 +1,55 @@
 {
-  "name": "@carabiner/protocol",
-  "version": "0.1.0",
-  "description": "Protocol abstraction layer for Carabiner hooks I/O",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc --project tsconfig.build.json",
-    "dev": "tsc -b --watch",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist *.tsbuildinfo"
-  },
-  "dependencies": {
-    "@carabiner/types": "workspace:*",
-    "@carabiner/schemas": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^5.9.2"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/outfitter-dev/grapple.git",
-    "directory": "packages/protocol"
-  },
-  "bugs": {
-    "url": "https://github.com/outfitter-dev/grapple/issues"
-  },
-  "homepage": "https://github.com/outfitter-dev/grapple/tree/main/packages/protocol#readme",
-  "keywords": [
-    "carabiner",
-    "hooks",
-    "protocol",
-    "io",
-    "abstraction"
-  ],
-  "author": "Outfitter",
-  "license": "MIT"
+    "name": "@carabiner/protocol",
+    "version": "0.1.0",
+    "description": "Protocol abstraction layer for Carabiner hooks I/O",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc --project tsconfig.build.json",
+        "dev": "tsc -b --watch",
+        "test": "bun test",
+        "test:watch": "bun test --watch",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist *.tsbuildinfo"
+    },
+    "dependencies": {
+        "@carabiner/types": "workspace:*",
+        "@carabiner/schemas": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.9.2"
+    },
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/outfitter-dev/grapple.git",
+        "directory": "packages/protocol"
+    },
+    "bugs": {
+        "url": "https://github.com/outfitter-dev/grapple/issues"
+    },
+    "homepage": "https://github.com/outfitter-dev/grapple/tree/main/packages/protocol#readme",
+    "keywords": [
+        "carabiner",
+        "hooks",
+        "protocol",
+        "io",
+        "abstraction"
+    ],
+    "author": "Outfitter",
+    "license": "MIT"
 }

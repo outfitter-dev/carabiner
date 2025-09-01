@@ -219,7 +219,11 @@ test('sanitizer handles arrays correctly', () => {
     { name: 'item2', token: 'secret2' },
   ];
 
-  const sanitized = sanitizeForLogging(arrayData) as Array<{ name: string; password?: string; token?: string }>;
+  const sanitized = sanitizeForLogging(arrayData) as Array<{
+    name: string;
+    password?: string;
+    token?: string;
+  }>;
 
   expect(Array.isArray(sanitized)).toBe(true);
   expect(sanitized[0].name).toBe('item1');

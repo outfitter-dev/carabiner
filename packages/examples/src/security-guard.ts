@@ -158,7 +158,7 @@ function validateFileOperation(
     '..//',
     '..\\//',
   ];
-  
+
   const lowerPath = filePath.toLowerCase();
   for (const pattern of traversalPatterns) {
     if (lowerPath.includes(pattern.toLowerCase())) {
@@ -168,13 +168,13 @@ function validateFileOperation(
       };
     }
   }
-  
+
   // Also check normalized path doesn't escape working directory
   const normalizedPath = normalize(filePath);
   const resolvedPath = resolve(filePath);
   const cwd = process.cwd();
-  
-  if (!resolvedPath.startsWith(cwd) && !filePath.startsWith('/')) {
+
+  if (!(resolvedPath.startsWith(cwd) || filePath.startsWith('/'))) {
     // Allow absolute paths that don't try to escape via traversal
     if (normalizedPath.includes('..')) {
       return {

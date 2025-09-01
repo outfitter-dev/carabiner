@@ -1,51 +1,51 @@
 {
-  "name": "@carabiner/hooks-cli",
-  "version": "0.1.0",
-  "description": "CLI tools for Carabiner hooks development",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "bin": {
-    "carabiner": "./dist/cli.js"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "name": "@carabiner/hooks-cli",
+    "version": "0.1.0",
+    "description": "CLI tools for Carabiner hooks development",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "bin": {
+        "carabiner": "./dist/cli.js"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "templates",
+        "README.md"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "build": "bun run build:clean && bun run build:tsc",
+        "build:clean": "rm -rf dist",
+        "build:tsc": "tsc --project tsconfig.build.json",
+        "dev": "tsc --watch --project tsconfig.build.json",
+        "test": "bun test",
+        "typecheck": "tsc --noEmit",
+        "prepublishOnly": "bun run build"
+    },
+    "keywords": [
+        "carabiner",
+        "hooks",
+        "cli",
+        "development-tools"
+    ],
+    "author": "Matt Galligan <matt.galligan@gmail.com>",
+    "license": "MIT",
+    "dependencies": {
+        "@carabiner/hooks-config": "workspace:*",
+        "@carabiner/hooks-core": "workspace:*",
+        "@carabiner/hooks-validators": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/bun": "*",
+        "typescript": "^5.9.2"
     }
-  },
-  "files": [
-    "dist",
-    "templates",
-    "README.md"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build": "bun run build:clean && bun run build:tsc",
-    "build:clean": "rm -rf dist",
-    "build:tsc": "tsc --project tsconfig.build.json",
-    "dev": "tsc --watch --project tsconfig.build.json",
-    "test": "bun test",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build"
-  },
-  "keywords": [
-    "carabiner",
-    "hooks",
-    "cli",
-    "development-tools"
-  ],
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
-  "license": "MIT",
-  "dependencies": {
-    "@carabiner/hooks-config": "workspace:*",
-    "@carabiner/hooks-core": "workspace:*",
-    "@carabiner/hooks-validators": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "*",
-    "typescript": "^5.9.2"
-  }
 }

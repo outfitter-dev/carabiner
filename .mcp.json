@@ -2,10 +2,14 @@
   "mcpServers": {
     "ultracite": {
       "command": "npx",
-      "args": ["-y", "mcp-remote@^1.0.0", "https://www.ultracite.ai/api/mcp/mcp"]
+      "args": [
+        "-y",
+        "mcp-remote@^1.0.0",
+        "https://www.ultracite.ai/api/mcp/mcp"
+      ]
     },
     "context7": {
-      "command": "npx", 
+      "command": "npx",
       "args": ["-y", "@upstash/context7-mcp@^1.0.0"]
     },
     "sequential-thinking": {
