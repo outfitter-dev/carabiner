@@ -27,7 +27,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@carabiner/executor": "workspace:*",
+    "@carabiner/execution": "workspace:*",
     "@carabiner/protocol": "workspace:*",
     "@carabiner/schemas": "workspace:*",
     "@carabiner/types": "workspace:*",
@@ -62,7 +62,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/outfitter-dev/grapple.git",
+    "url": "https://github.com/outfitter-dev/carabiner.git",
     "directory": "packages/hooks-registry"
   }
 }
