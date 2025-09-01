@@ -197,7 +197,6 @@ function validateFileOperation(
     try {
       const stats = statSync(filePath);
       // Check if file is executable (Unix-like systems)
-      // biome-ignore lint/suspicious/noBitwiseOperators: Checking file permissions requires bitwise operations
       if (stats.mode && stats.mode & 0o111) {
         return {
           safe: false,
