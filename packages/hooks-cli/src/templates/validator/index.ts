@@ -2,7 +2,7 @@
  * Validator template
  */
 
-import { pascalCase } from '../../utils/case-conversion.js';
+import { pascalCase } from "../../utils/case-conversion.js";
 
 export const validatorTypeScript = (name: string): string => `/**
  * Custom validator: ${name}

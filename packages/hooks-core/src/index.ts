@@ -5,66 +5,66 @@
 
 // Export builder pattern
 export {
-  createHook,
-  type DeclarativeHookConfig,
-  defineHook,
-  HookBuilder,
-  hook,
-  middleware,
-} from './builder';
+	createHook,
+	type DeclarativeHookConfig,
+	defineHook,
+	HookBuilder,
+	hook,
+	middleware,
+} from "./builder";
 // Export production logging system
-export * from './logging';
+export * from "./logging";
 // Export registry
 export {
-  createHookRegistry,
-  executeHooks,
-  executeHooksAndCombine,
-  getHookStats,
-  globalRegistry,
-  HookRegistry,
-  hasHooksForEvent,
-  registerHook,
-  registerHooks,
-} from './registry';
+	createHookRegistry,
+	executeHooks,
+	executeHooksAndCombine,
+	getHookStats,
+	globalRegistry,
+	HookRegistry,
+	hasHooksForEvent,
+	registerHook,
+	registerHooks,
+} from "./registry";
 // Export runtime utilities
 export {
-  createBashContext,
-  createFileContext,
-  createHookContext,
-  executeHook,
-  getSessionInfo,
-  HookLogger,
-  HookResults,
-  // Type guards
-  isBashToolInput,
-  isClaudeCodeEnvironment,
-  isEditToolInput,
-  isGlobToolInput,
-  isGrepToolInput,
-  isLSToolInput,
-  isMultiEditToolInput,
-  isNotebookEditToolInput,
-  isReadToolInput,
-  isTodoWriteToolInput,
-  isWebFetchToolInput,
-  isWebSearchToolInput,
-  isWriteToolInput,
-  outputHookResult,
-  // Updated runtime utilities
-  parseHookEnvironment,
-  // New stdin-based runtime
-  parseStdinInput,
-  parseToolInput,
-  runClaudeHook,
-  safeHookExecution,
-  validateHookContext,
-} from './runtime';
+	createBashContext,
+	createFileContext,
+	createHookContext,
+	executeHook,
+	getSessionInfo,
+	HookLogger,
+	HookResults,
+	// Type guards
+	isBashToolInput,
+	isClaudeCodeEnvironment,
+	isEditToolInput,
+	isGlobToolInput,
+	isGrepToolInput,
+	isLSToolInput,
+	isMultiEditToolInput,
+	isNotebookEditToolInput,
+	isReadToolInput,
+	isTodoWriteToolInput,
+	isWebFetchToolInput,
+	isWebSearchToolInput,
+	isWriteToolInput,
+	outputHookResult,
+	// Updated runtime utilities
+	parseHookEnvironment,
+	// New stdin-based runtime
+	parseStdinInput,
+	parseToolInput,
+	runClaudeHook,
+	safeHookExecution,
+	validateHookContext,
+} from "./runtime";
 // Export all types
-export type * from './types';
+export type * from "./types";
 
 // Version export (derived from package.json)
-import type { PackageJson } from 'type-fest';
-import pkgJson from '../package.json' with { type: 'json' };
+import type { PackageJson } from "type-fest";
+import pkgJson from "../package.json" with { type: "json" };
 
 const pkg = pkgJson as PackageJson;
-export const VERSION = pkg.version || '0.0.0';
+export const VERSION = pkg.version || "0.0.0";

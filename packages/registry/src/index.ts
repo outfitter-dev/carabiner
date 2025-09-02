@@ -64,80 +64,80 @@
 
 // Configuration system
 export type {
-  ConfigChangeEvent,
-  ConfigChangeListener,
-  ConfigLoaderOptions,
-  ConfigLoadResult,
-  EnvironmentConfig,
-  HookConfig,
-  HookConfigLoader,
-  HookConfigSettings,
-} from './config';
+	ConfigChangeEvent,
+	ConfigChangeListener,
+	ConfigLoaderOptions,
+	ConfigLoadResult,
+	EnvironmentConfig,
+	HookConfig,
+	HookConfigLoader,
+	HookConfigSettings,
+} from "./config";
 export {
-  ConfigLoader,
-  createDefaultConfig,
-  validateHookConfig,
-  validatePluginConfig,
-} from './config';
+	ConfigLoader,
+	createDefaultConfig,
+	validateHookConfig,
+	validatePluginConfig,
+} from "./config";
 // Plugin loader and discovery
 export type {
-  HotReloadEvent,
-  HotReloadListener,
-  LoaderOptions,
-  PluginLoadResult,
-} from './loader';
-export { PluginLoader } from './loader';
+	HotReloadEvent,
+	HotReloadListener,
+	LoaderOptions,
+	PluginLoadResult,
+} from "./loader";
+export { PluginLoader } from "./loader";
 // Plugin interface and types
 export type {
-  HookPlugin,
-  PluginCondition,
-  PluginConfig,
-  PluginDiscovery,
-  PluginExecutionContext,
-  PluginExecutionOptions,
-  PluginFactory,
-  PluginMetadata,
-  PluginModule,
-  PluginResult,
-} from './plugin';
+	HookPlugin,
+	PluginCondition,
+	PluginConfig,
+	PluginDiscovery,
+	PluginExecutionContext,
+	PluginExecutionOptions,
+	PluginFactory,
+	PluginMetadata,
+	PluginModule,
+	PluginResult,
+} from "./plugin";
 export {
-  createPluginResult,
-  isHookPlugin,
-  isPluginResult,
-  PluginConfigurationError,
-  PluginExecutionError,
-  PluginValidationError,
-} from './plugin';
+	createPluginResult,
+	isHookPlugin,
+	isPluginResult,
+	PluginConfigurationError,
+	PluginExecutionError,
+	PluginValidationError,
+} from "./plugin";
 // Plugin registry
 export type {
-  RegistryEvent,
-  RegistryEventListener,
-  RegistryOptions,
-  RegistryStats,
-} from './registry';
-export { PluginRegistry } from './registry';
+	RegistryEvent,
+	RegistryEventListener,
+	RegistryOptions,
+	RegistryStats,
+} from "./registry";
+export { PluginRegistry } from "./registry";
 
-import type { ConfigChangeEvent } from './config';
+import type { ConfigChangeEvent } from "./config";
 // Import classes and types for internal use in createPluginSystem
-import { ConfigLoader } from './config';
-import type { HotReloadEvent } from './loader';
-import { PluginLoader } from './loader';
-import type { HookPlugin, PluginConfig } from './plugin';
-import { PluginRegistry } from './registry';
+import { ConfigLoader } from "./config";
+import type { HotReloadEvent } from "./loader";
+import { PluginLoader } from "./loader";
+import type { HookPlugin, PluginConfig } from "./plugin";
+import { PluginRegistry } from "./registry";
 
 /**
  * Package version
  */
-export const VERSION = '1.0.0';
+export const VERSION = "1.0.0";
 
 /**
  * Package metadata
  */
 export const PACKAGE_INFO = {
-  name: '@carabiner/registry',
-  version: VERSION,
-  description: 'Plugin registry system for Claude Code hooks',
-  repository: 'https://github.com/outfitter-dev/grapple',
+	name: "@carabiner/registry",
+	version: VERSION,
+	description: "Plugin registry system for Claude Code hooks",
+	repository: "https://github.com/outfitter-dev/grapple",
 } as const;
 
 /**
@@ -162,120 +162,120 @@ export const PACKAGE_INFO = {
  * ```
  */
 export async function createPluginSystem(
-  configPath?: string,
-  options: {
-    autoLoad?: boolean;
-    enableHotReload?: boolean;
-    environment?: string;
-  } = {}
+	configPath?: string,
+	options: {
+		autoLoad?: boolean;
+		enableHotReload?: boolean;
+		environment?: string;
+	} = {},
 ) {
-  const { autoLoad = true, enableHotReload = false, environment } = options;
+	const { autoLoad = true, enableHotReload = false, environment } = options;
 
-  // Load configuration
-  const configLoaderInstance = new ConfigLoader({
-    enableHotReload,
-    environment,
-  });
+	// Load configuration
+	const configLoaderInstance = new ConfigLoader({
+		enableHotReload,
+		environment,
+	});
 
-  const { config } = await configLoaderInstance.load(configPath);
+	const { config } = await configLoaderInstance.load(configPath);
 
-  // Create registry with settings
-  const registryInstance = new PluginRegistry({
-    defaultTimeout: config.settings.defaultTimeout,
-    collectMetrics: config.settings.collectMetrics,
-    continueOnFailure: config.settings.continueOnFailure,
-    maxConcurrency: config.settings.maxConcurrency,
-    enableHotReload: config.settings.enableHotReload,
-    logLevel: config.settings.logLevel,
-  });
+	// Create registry with settings
+	const registryInstance = new PluginRegistry({
+		defaultTimeout: config.settings.defaultTimeout,
+		collectMetrics: config.settings.collectMetrics,
+		continueOnFailure: config.settings.continueOnFailure,
+		maxConcurrency: config.settings.maxConcurrency,
+		enableHotReload: config.settings.enableHotReload,
+		logLevel: config.settings.logLevel,
+	});
 
-  let loaderInstance: PluginLoader | undefined;
+	let loaderInstance: PluginLoader | undefined;
 
-  if (autoLoad) {
-    // Create loader
-    loaderInstance = new PluginLoader({
-      searchPaths: config.loader.searchPaths,
-      includePatterns: config.loader.includePatterns,
-      excludePatterns: config.loader.excludePatterns,
-      recursive: config.loader.recursive,
-      maxDepth: config.loader.maxDepth,
-      enableCache: config.loader.enableCache,
-      validateOnLoad: config.loader.validateOnLoad,
-      enableHotReload,
-    });
+	if (autoLoad) {
+		// Create loader
+		loaderInstance = new PluginLoader({
+			searchPaths: config.loader.searchPaths,
+			includePatterns: config.loader.includePatterns,
+			excludePatterns: config.loader.excludePatterns,
+			recursive: config.loader.recursive,
+			maxDepth: config.loader.maxDepth,
+			enableCache: config.loader.enableCache,
+			validateOnLoad: config.loader.validateOnLoad,
+			enableHotReload,
+		});
 
-    // Load plugins
-    const { plugins, errors } = await loaderInstance.loadPlugins();
+		// Load plugins
+		const { plugins, errors } = await loaderInstance.loadPlugins();
 
-    if (errors.length > 0) {
-    }
+		if (errors.length > 0) {
+		}
 
-    // Register discovered plugins
-    for (const plugin of plugins) {
-      const pluginConfig = config.plugins.find(
-        (p: PluginConfig) => p.name === plugin.name
-      );
-      registryInstance.register(plugin, pluginConfig);
-    }
+		// Register discovered plugins
+		for (const plugin of plugins) {
+			const pluginConfig = config.plugins.find(
+				(p: PluginConfig) => p.name === plugin.name,
+			);
+			registryInstance.register(plugin, pluginConfig);
+		}
 
-    // Register plugins from configuration that weren't discovered
-    for (const pluginConfig of config.plugins) {
-      if (!plugins.find((p: HookPlugin) => p.name === pluginConfig.name)) {
-      }
-    }
+		// Register plugins from configuration that weren't discovered
+		for (const pluginConfig of config.plugins) {
+			if (!plugins.find((p: HookPlugin) => p.name === pluginConfig.name)) {
+			}
+		}
 
-    // Set up hot reload
-    if (enableHotReload) {
-      loaderInstance.onHotReload(async (event: HotReloadEvent) => {
-        if (event.type === 'changed' || event.type === 'added') {
-          if (event.plugin) {
-            registryInstance.unregister(event.plugin.name);
+		// Set up hot reload
+		if (enableHotReload) {
+			loaderInstance.onHotReload(async (event: HotReloadEvent) => {
+				if (event.type === "changed" || event.type === "added") {
+					if (event.plugin) {
+						registryInstance.unregister(event.plugin.name);
 
-            const pluginConfig = config.plugins.find(
-              (p: PluginConfig) => p.name === event.plugin?.name
-            );
-            registryInstance.register(event.plugin, pluginConfig);
-          }
-        } else if (event.type === 'removed') {
-          const pluginName =
-            event.path
-              .split('/')
-              .pop()
-              ?.replace(/\.(plugin|hook)\.(js|ts|mjs)$/, '') || 'unknown';
-          registryInstance.unregister(pluginName);
-        }
-      });
+						const pluginConfig = config.plugins.find(
+							(p: PluginConfig) => p.name === event.plugin?.name,
+						);
+						registryInstance.register(event.plugin, pluginConfig);
+					}
+				} else if (event.type === "removed") {
+					const pluginName =
+						event.path
+							.split("/")
+							.pop()
+							?.replace(/\.(plugin|hook)\.(js|ts|mjs)$/, "") || "unknown";
+					registryInstance.unregister(pluginName);
+				}
+			});
 
-      await loaderInstance.startWatching();
-    }
-  }
+			await loaderInstance.startWatching();
+		}
+	}
 
-  // Set up configuration hot reload
-  if (enableHotReload) {
-    configLoaderInstance.onChange(async (event: ConfigChangeEvent) => {
-      if (event.type === 'changed' && event.config) {
-      }
-    });
-  }
+	// Set up configuration hot reload
+	if (enableHotReload) {
+		configLoaderInstance.onChange(async (event: ConfigChangeEvent) => {
+			if (event.type === "changed" && event.config) {
+			}
+		});
+	}
 
-  // Initialize registry
-  await registryInstance.initialize();
+	// Initialize registry
+	await registryInstance.initialize();
 
-  return {
-    registry: registryInstance,
-    loader: loaderInstance,
-    configLoader: configLoaderInstance,
-    config,
+	return {
+		registry: registryInstance,
+		loader: loaderInstance,
+		configLoader: configLoaderInstance,
+		config,
 
-    /**
-     * Cleanup all resources
-     */
-    async cleanup() {
-      await registryInstance.shutdown();
-      if (loaderInstance) {
-        await loaderInstance.cleanup();
-      }
-      await configLoaderInstance.cleanup();
-    },
-  };
+		/**
+		 * Cleanup all resources
+		 */
+		async cleanup() {
+			await registryInstance.shutdown();
+			if (loaderInstance) {
+				await loaderInstance.cleanup();
+			}
+			await configLoaderInstance.cleanup();
+		},
+	};
 }
