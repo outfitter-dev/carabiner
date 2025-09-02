@@ -25,6 +25,9 @@ yarn-error.log*
 bun-debug.log*
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
+# Agent/conductor artifacts (exclude from linting/formatting)
+.conductor/
+
 # Environment files
 .env
 .env.*
