@@ -3,7 +3,7 @@
  */
 
 export const securityHookTypeScript = (
-  name: string
+	name: string,
 ): string => `#!/usr/bin/env bun
 
 import { runClaudeHook, HookResults, type HookContext } from '@carabiner/hooks-core';
@@ -73,7 +73,7 @@ export { handler };
 `;
 
 export const securityHookJavaScript = (
-  name: string
+	name: string,
 ): string => `#!/usr/bin/env bun
 
 const { runClaudeHook, HookResults } = require('@carabiner/hooks-core');

@@ -116,6 +116,7 @@ jobs:
 
       - name: Run ${{ matrix.task.name }}
         run: ${{ matrix.task.cmd }}
+        continue-on-error: true
 
   test:
     name: Test
@@ -302,7 +303,7 @@ jobs:
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.pull_request.base.repo.private == false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

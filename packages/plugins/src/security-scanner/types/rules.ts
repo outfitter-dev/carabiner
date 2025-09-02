@@ -3,41 +3,41 @@
  * @description Security rule types and interfaces
  */
 
-import type { Severity } from './findings.js';
+import type { Severity } from "./findings.js";
 
 /**
  * Security rule interface
  */
 export type SecurityRule = {
-  id: string;
-  name: string;
-  pattern: string;
-  severity: Severity;
-  category: string;
-  description: string;
-  remediation?: string;
-  flags?: string;
-  fileTypes?: string[];
+	id: string;
+	name: string;
+	pattern: string;
+	severity: Severity;
+	category: string;
+	description: string;
+	remediation?: string;
+	flags?: string;
+	fileTypes?: string[];
 };
 
 /**
  * Rule category for grouping rules
  */
 export type RuleCategory =
-  | 'secrets'
-  | 'injection'
-  | 'dangerous-commands'
-  | 'configuration'
-  | 'network'
-  | 'cryptography'
-  | 'path-traversal';
+	| "secrets"
+	| "injection"
+	| "dangerous-commands"
+	| "configuration"
+	| "network"
+	| "cryptography"
+	| "path-traversal";
 
 /**
  * Rule execution context
  */
 export type RuleContext = {
-  content: string;
-  filePath?: string;
-  fileExtension?: string;
-  isCommand?: boolean;
+	content: string;
+	filePath?: string;
+	fileExtension?: string;
+	isCommand?: boolean;
 };

@@ -2,10 +2,10 @@
  * Test template
  */
 
-import { pascalCase } from '../../utils/case-conversion.js';
+import { pascalCase } from "../../utils/case-conversion.js";
 
 export const testTypeScript = (
-  name: string
+	name: string,
 ): string => `import { test, expect, describe, beforeEach } from 'bun:test';
 import { 
   createMockContext,
@@ -95,7 +95,7 @@ describe('${name} hook tests', () => {
 `;
 
 export const testJavaScript = (
-  name: string
+	name: string,
 ): string => `const { test, expect, describe, beforeEach } = require('bun:test');
 const { 
   createMockContext,
