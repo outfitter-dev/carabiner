@@ -363,12 +363,12 @@ export class ValidateCommand extends BaseCommand {
 
 			// On Unix systems, check if file is executable
 			if (process.platform !== "win32") {
-				// biome-ignore lint/suspicious/noBitwiseOperators: file permission checking requires bitwise operations
+				// File permission check requires bitwise operations
 				const isExecutable = Boolean(stats.mode & 0o111);
 				if (!isExecutable) {
 					if (autoFix) {
 						const { chmod } = await import("node:fs/promises");
-						// biome-ignore lint/suspicious/noBitwiseOperators: file permission setting requires bitwise operations
+						// File permission setting requires bitwise operations
 						await chmod(filePath, stats.mode | 0o755);
 					} else {
 						errors++;
