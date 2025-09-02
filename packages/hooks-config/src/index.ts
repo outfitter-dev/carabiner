@@ -4,19 +4,19 @@
  */
 
 export type {
-  ConfigFormat,
-  ConfigOptions,
-  ExtendedHookConfiguration,
+	ConfigFormat,
+	ConfigOptions,
+	ExtendedHookConfiguration,
 } from "./config";
 // Export configuration management
 export {
-  CONFIG_PATHS,
-  ConfigError,
-  ConfigManager,
-  createConfigManager,
-  DEFAULT_CONFIG,
-  loadConfig,
-  saveConfig,
+	CONFIG_PATHS,
+	ConfigError,
+	ConfigManager,
+	createConfigManager,
+	DEFAULT_CONFIG,
+	loadConfig,
+	saveConfig,
 } from "./config";
 
 // Version export (derived from package.json)

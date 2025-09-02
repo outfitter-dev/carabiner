@@ -46,7 +46,7 @@ carabiner init --template security
 carabiner build --output .claude/settings.json
 
 # Validate configuration
-carabiner validate --config
+carabiner validate --config .claude/settings.json
 ```
 
 ## Claude Code Settings
@@ -812,12 +812,12 @@ export default defineConfig({
 ```bash
 # Build configurations for all environments
 carabiner build --environment development --output .claude/settings.json
-carabiner build --environment production --output .claude/settings.prod.json
+carabiner build --environment production --output .claude/settings.production.json
 carabiner build --environment staging --output .claude/settings.staging.json
 carabiner build --environment test --output .claude/settings.test.json
 
 # Validate all configurations
-carabiner validate --config
+carabiner validate --config .claude/settings.json
 ```
 
 ### Package.json Scripts
@@ -826,10 +826,10 @@ carabiner validate --config
 {
   "scripts": {
     "hooks:build": "carabiner build",
-    "hooks:build:prod": "carabiner build --environment production --output .claude/settings.prod.json",
+    "hooks:build:prod": "carabiner build --environment production --output .claude/settings.production.json",
     "hooks:build:staging": "carabiner build --environment staging --output .claude/settings.staging.json",
     "hooks:build:all": "npm run hooks:build && npm run hooks:build:prod && npm run hooks:build:staging",
-    "hooks:validate": "carabiner validate --config",
+    "hooks:validate": "carabiner validate --config .claude/settings.json",
     "hooks:test": "carabiner test",
     "hooks:dev": "carabiner dev --watch"
   }

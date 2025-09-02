@@ -15,12 +15,7 @@
     "allowImportingTsExtensions": false
   },
   "include": ["src/**/*"],
-  "exclude": [
-    "src/**/*.test.ts",
-    "src/**/__tests__/**",
-    "dist",
-    "node_modules"
-  ],
+  "exclude": ["src/**/*.test.ts", "src/**/__tests__/**", "dist", "node_modules"],
   "references": [
     {
       "path": "../hooks-core/tsconfig.build.json"

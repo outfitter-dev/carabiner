@@ -33,10 +33,10 @@ For TypeScript development and custom hooks:
 
 ```bash
 # Install core library
-npm install @outfitter/hooks-core
+npm install @carabiner/hooks-core
 
 # Install additional packages as needed
-npm install @outfitter/hooks-validators @outfitter/hooks-testing @outfitter/hooks-cli
+npm install @carabiner/hooks-validators @carabiner/hooks-testing @carabiner/hooks-cli
 ```
 
 ### 🛠️ Development Setup

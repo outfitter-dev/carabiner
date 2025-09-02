@@ -15,11 +15,11 @@
 // Export types and errors directly
 export type { HookProtocol, HookProtocolFactory } from "./interface";
 export {
-  isProtocolError,
-  ProtocolError,
-  ProtocolInputError,
-  ProtocolOutputError,
-  ProtocolParseError,
+	isProtocolError,
+	ProtocolError,
+	ProtocolInputError,
+	ProtocolOutputError,
+	ProtocolParseError,
 } from "./interface";
 
 // Import types and factories for internal use
@@ -38,11 +38,11 @@ export type { StdinProtocolOptions } from "./protocols/stdin";
 export { StdinProtocol, StdinProtocolFactory } from "./protocols/stdin";
 export type { TestProtocolOptions } from "./protocols/test";
 export {
-  createNotificationInput,
-  createToolHookInput,
-  createUserPromptInput,
-  TestProtocol,
-  TestProtocolFactory,
+	createNotificationInput,
+	createToolHookInput,
+	createUserPromptInput,
+	TestProtocol,
+	TestProtocolFactory,
 } from "./protocols/test";
 
 // Note: Types and implementations are exported directly above
@@ -51,9 +51,9 @@ export {
  * Registry of available protocol factories
  */
 export const ProtocolFactories = {
-  stdin: new StdinProtocolFactory(),
-  http: new HttpProtocolFactory(),
-  test: new TestProtocolFactory(),
+	stdin: new StdinProtocolFactory(),
+	http: new HttpProtocolFactory(),
+	test: new TestProtocolFactory(),
 } as const;
 
 /**
@@ -76,32 +76,32 @@ export const ProtocolFactories = {
  * ```
  */
 export function createProtocol(
-  type: "stdin",
-  options?: StdinProtocolOptions
+	type: "stdin",
+	options?: StdinProtocolOptions,
 ): StdinProtocol;
 export function createProtocol(
-  type: "http",
-  options: { request: Request; options?: HttpProtocolOptions }
+	type: "http",
+	options: { request: Request; options?: HttpProtocolOptions },
 ): HttpProtocol;
 export function createProtocol(
-  type: "test",
-  options: { input: unknown; options?: TestProtocolOptions }
+	type: "test",
+	options: { input: unknown; options?: TestProtocolOptions },
 ): TestProtocol;
 export function createProtocol(type: string, options?: unknown): HookProtocol {
-  switch (type) {
-    case "stdin":
-      return ProtocolFactories.stdin.create(options as StdinProtocolOptions);
-    case "http":
-      return ProtocolFactories.http.create(
-        options as { request: Request; options?: HttpProtocolOptions }
-      );
-    case "test":
-      return ProtocolFactories.test.create(
-        options as { input: unknown; options?: TestProtocolOptions }
-      );
-    default:
-      throw new Error(`Unknown protocol type: ${String(type)}`);
-  }
+	switch (type) {
+		case "stdin":
+			return ProtocolFactories.stdin.create(options as StdinProtocolOptions);
+		case "http":
+			return ProtocolFactories.http.create(
+				options as { request: Request; options?: HttpProtocolOptions },
+			);
+		case "test":
+			return ProtocolFactories.test.create(
+				options as { input: unknown; options?: TestProtocolOptions },
+			);
+		default:
+			throw new Error(`Unknown protocol type: ${String(type)}`);
+	}
 }
 
 /**

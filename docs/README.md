@@ -222,7 +222,7 @@ This documentation follows these principles:
 
 ### Migration from v1.x
 
-See the [Migration Guide](./migration-guide.md) for detailed information on upgrading from previous versions.
+See the [Migration Guide](./migration-guides.md) for detailed information on upgrading from previous versions.
 
 ## 🌟 Key Features
 
