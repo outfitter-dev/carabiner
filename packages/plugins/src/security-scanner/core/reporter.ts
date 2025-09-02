@@ -3,111 +3,111 @@
  * @description Security finding reporting and formatting
  */
 
-import type { SecurityFinding } from '../types/index.js';
+import type { SecurityFinding } from "../types/index.js";
 
 /**
  * Security finding reporter
  */
 export class SecurityReporter {
-  /**
-   * Format findings summary for display
-   */
-  formatFindings(findings: SecurityFinding[]): string {
-    if (findings.length === 0) {
-      return 'No security issues found';
-    }
+	/**
+	 * Format findings summary for display
+	 */
+	formatFindings(findings: SecurityFinding[]): string {
+		if (findings.length === 0) {
+			return "No security issues found";
+		}
 
-    const critical = findings.filter((f) => f.severity === 'critical').length;
-    const high = findings.filter((f) => f.severity === 'high').length;
-    const medium = findings.filter((f) => f.severity === 'medium').length;
+		const critical = findings.filter((f) => f.severity === "critical").length;
+		const high = findings.filter((f) => f.severity === "high").length;
+		const medium = findings.filter((f) => f.severity === "medium").length;
 
-    let summary = `Found ${findings.length} security issue(s)`;
-    if (critical > 0) {
-      summary += `, ${critical} critical`;
-    }
-    if (high > 0) {
-      summary += `, ${high} high`;
-    }
-    if (medium > 0) {
-      summary += `, ${medium} medium`;
-    }
+		let summary = `Found ${findings.length} security issue(s)`;
+		if (critical > 0) {
+			summary += `, ${critical} critical`;
+		}
+		if (high > 0) {
+			summary += `, ${high} high`;
+		}
+		if (medium > 0) {
+			summary += `, ${medium} medium`;
+		}
 
-    return summary;
-  }
+		return summary;
+	}
 
-  /**
-   * Log findings to console
-   */
-  logFindings(findings: SecurityFinding[]): void {
-    if (findings.length === 0) {
-      return;
-    }
+	/**
+	 * Log findings to console
+	 */
+	logFindings(findings: SecurityFinding[]): void {
+		if (findings.length === 0) {
+			return;
+		}
 
-    for (const finding of findings) {
-      this.logSingleFinding(finding);
-    }
-  }
+		for (const finding of findings) {
+			this.logSingleFinding(finding);
+		}
+	}
 
-  /**
-   * Log a single finding to console
-   */
-  private logSingleFinding(finding: SecurityFinding): void {
-    if (finding.line) {
-    }
+	/**
+	 * Log a single finding to console
+	 */
+	private logSingleFinding(finding: SecurityFinding): void {
+		if (finding.line) {
+		}
 
-    if (finding.remediation) {
-    }
-  }
+		if (finding.remediation) {
+		}
+	}
 
-  /**
-   * Check if operation should be blocked based on findings
-   */
-  shouldBlock(
-    findings: SecurityFinding[],
-    blockOnCritical: boolean,
-    blockOnHigh: boolean
-  ): boolean {
-    const criticalFindings = findings.filter((f) => f.severity === 'critical');
-    const highFindings = findings.filter((f) => f.severity === 'high');
+	/**
+	 * Check if operation should be blocked based on findings
+	 */
+	shouldBlock(
+		findings: SecurityFinding[],
+		blockOnCritical: boolean,
+		blockOnHigh: boolean,
+	): boolean {
+		const criticalFindings = findings.filter((f) => f.severity === "critical");
+		const highFindings = findings.filter((f) => f.severity === "high");
 
-    return (
-      (blockOnCritical && criticalFindings.length > 0) ||
-      (blockOnHigh && highFindings.length > 0)
-    );
-  }
+		return (
+			(blockOnCritical && criticalFindings.length > 0) ||
+			(blockOnHigh && highFindings.length > 0)
+		);
+	}
 
-  /**
-   * Generate metadata for findings
-   */
-  generateMetadata(findings: SecurityFinding[], blocked: boolean) {
-    const criticalFindings = findings.filter((f) => f.severity === 'critical');
-    const highFindings = findings.filter((f) => f.severity === 'high');
+	/**
+	 * Generate metadata for findings
+	 */
+	generateMetadata(findings: SecurityFinding[], blocked: boolean) {
+		const criticalFindings = findings.filter((f) => f.severity === "critical");
+		const highFindings = findings.filter((f) => f.severity === "high");
 
-    return {
-      findings: findings.map((f) => ({
-        id: f.id,
-        severity: f.severity,
-        title: f.title,
-        category: f.category,
-        line: f.line,
-        column: f.column,
-      })),
-      totalFindings: findings.length,
-      criticalFindings: criticalFindings.length,
-      highFindings: highFindings.length,
-      blocked,
-    };
-  }
+		return {
+			findings: findings.map((f) => ({
+				id: f.id,
+				severity: f.severity,
+				title: f.title,
+				category: f.category,
+				line: f.line,
+				column: f.column,
+			})),
+			totalFindings: findings.length,
+			criticalFindings: criticalFindings.length,
+			highFindings: highFindings.length,
+			blocked,
+		};
+	}
 
-  /**
-   * Generate result message
-   */
-  generateMessage(findings: SecurityFinding[], blocked: boolean): string {
-    const summary = this.formatFindings(findings);
+	/**
+	 * Generate result message
+	 */
+	generateMessage(findings: SecurityFinding[], blocked: boolean): string {
+		const summary = this.formatFindings(findings);
 
-    if (blocked) {
-      return `🔒 Security issues found - operation blocked: ${summary}`;
-    }
-    return `⚠️  Security issues found: ${summary}`;
-  }
+		if (blocked) {
+			return `🔒 Security issues found - operation blocked: ${summary}`;
+		}
+		return `⚠️  Security issues found: ${summary}`;
+	}
 }
