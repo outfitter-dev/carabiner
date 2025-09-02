@@ -83,7 +83,7 @@
     "type-fest": "^4.41.0",
     "typedoc": "^0.28.10",
     "typescript": "^5.9.2",
-    "ultracite": "^5.1.5"
+    "ultracite": "latest"
   },
   "license": "MIT",
   "repository": {
