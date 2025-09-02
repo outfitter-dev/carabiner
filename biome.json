@@ -12,7 +12,10 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**/*.{js,ts,jsx,tsx,json,jsonc}"]
+    "includes": ["**/*.{js,ts,jsx,tsx,json,jsonc}"],
+    "ignore": [
+      "**/.conductor/**"
+    ]
   },
   "vcs": {
     "useIgnoreFile": true
