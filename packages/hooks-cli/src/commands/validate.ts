@@ -358,18 +358,24 @@ export class ValidateCommand extends BaseCommand {
       }
 
       // Check file permissions (executable)
-      const { stat } = await import("node:fs/promises");
-      const stats = await stat(filePath);
+      // Stat not required when using access(X_OK)
 
       // On Unix systems, check if file is executable
       if (process.platform !== "win32") {
-        // biome-ignore lint/suspicious/noBitwiseOperators: file permission checking requires bitwise operations
-        const isExecutable = Boolean(stats.mode & 0o111);
+        const { access } = await import("node:fs/promises");
+        const { constants } = await import("node:fs");
+        let isExecutable = true;
+        try {
+          await access(filePath, constants.X_OK);
+        } catch {
+          isExecutable = false;
+        }
+
         if (!isExecutable) {
           if (autoFix) {
             const { chmod } = await import("node:fs/promises");
-            // biome-ignore lint/suspicious/noBitwiseOperators: file permission setting requires bitwise operations
-            await chmod(filePath, stats.mode | 0o755);
+            // Set to standard executable permissions
+            await chmod(filePath, 0o755);
           } else {
             errors++;
           }

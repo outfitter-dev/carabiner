@@ -282,11 +282,8 @@ class MetricsStore {
       this.alerts.push(alert);
 
       if (this.config.logAlerts) {
-        const logFunction =
-          alert.severity === "critical" ? console.error : console.warn;
-        logFunction(
-          `[PerformanceMonitor] ${alert.severity.toUpperCase()}: ${alert.message}`
-        );
+        const line = `[PerformanceMonitor] ${alert.severity.toUpperCase()}: ${alert.message}`;
+        process.stderr.write(`${line}\n`);
       }
     }
 

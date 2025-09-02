@@ -206,6 +206,9 @@ const FORMATTERS: Record<
 function isFormatterAvailable(checkCommand: string): boolean {
   try {
     const [command, ...args] = checkCommand.split(" ");
+    if (!command) {
+      return false;
+    }
     execFileSync(command, args, { stdio: "ignore" });
     return true;
   } catch {
@@ -281,19 +284,16 @@ function formatFile(filePath: string): { success: boolean; message: string } {
  * Main auto-formatter hook
  */
 const autoFormatterHook: HookHandler = (context): HookResult => {
-  // Support both camelCase and snake_case for backward compatibility
-  const contextWithFallback = context as Record<string, unknown>;
-  const toolName =
-    contextWithFallback.toolName ?? contextWithFallback.tool_name;
-  const toolInput =
-    contextWithFallback.toolInput ?? contextWithFallback.tool_input;
+  const toolName = (context as any).toolName as string | undefined;
+  const toolInput = (context as any).toolInput as
+    | Record<string, unknown>
+    | undefined;
 
   // Only process file modification tools
   const fileTools = ["Edit", "Write", "MultiEdit", "NotebookEdit"];
   if (!(toolName && fileTools.includes(toolName))) {
     return {
       success: true,
-      action: "continue",
     };
   }
 
@@ -319,7 +319,6 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
   if (!filePath) {
     return {
       success: true,
-      action: "continue",
     };
   }
 
@@ -340,7 +339,6 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
 
   return {
     success: true,
-    action: "continue",
   };
 };
 

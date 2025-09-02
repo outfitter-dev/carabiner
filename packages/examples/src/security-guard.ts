@@ -15,6 +15,7 @@
  */
 
 import { existsSync, statSync } from "node:fs";
+import * as path from "node:path";
 import { normalize, resolve } from "node:path";
 import { HookExecutor } from "@carabiner/execution";
 import { StdinProtocol } from "@carabiner/protocol";
@@ -85,6 +86,9 @@ const PROTECTED_PATHS = [
  */
 function isSensitivePath(filePath: string): boolean {
   const normalizedPath = normalize(filePath);
+  void normalizedPath;
+  void normalizedPath;
+  void normalizedPath;
 
   // Check against sensitive file patterns
   for (const pattern of SENSITIVE_FILES) {
@@ -170,18 +174,17 @@ function validateFileOperation(
   }
 
   // Also check normalized path doesn't escape working directory
-  const normalizedPath = normalize(filePath);
   const resolvedPath = resolve(filePath);
   const cwd = process.cwd();
 
-  if (!(resolvedPath.startsWith(cwd) || filePath.startsWith("/"))) {
-    // Allow absolute paths that don't try to escape via traversal
-    if (normalizedPath.includes("..")) {
-      return {
-        safe: false,
-        issue: "Path traversal detected in normalized path",
-      };
-    }
+  // Use path.relative for robust path traversal detection
+  const relativePath = path.relative(cwd, resolvedPath);
+  // Outside workspace if relativePath starts with ".." or is absolute
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    return {
+      safe: false,
+      issue: "Path traversal detected (outside workspace)",
+    };
   }
 
   // Check if path is sensitive
@@ -196,13 +199,19 @@ function validateFileOperation(
   if ((toolName === "Write" || toolName === "Edit") && existsSync(filePath)) {
     try {
       const stats = statSync(filePath);
-      // Check if file is executable (Unix-like systems)
-      if (stats.mode && stats.mode & 0o111) {
-        // File permission check requires bitwise
-        return {
-          safe: false,
-          issue: `Attempting to modify executable file: ${filePath}`,
-        };
+      // Check if file is executable (Unix-like systems) without bitwise ops
+      if (stats.mode) {
+        const permOct = (stats.mode % 0o1000).toString(8).padStart(3, "0");
+        const hasExec =
+          Number(permOct[0]) % 2 === 1 ||
+          Number(permOct[1]) % 2 === 1 ||
+          Number(permOct[2]) % 2 === 1;
+        if (hasExec) {
+          return {
+            safe: false,
+            issue: `Attempting to modify executable file: ${filePath}`,
+          };
+        }
       }
     } catch {
       // If we can't stat the file, proceed with caution
@@ -217,15 +226,21 @@ function validateFileOperation(
  */
 const securityGuardHook: HookHandler = (context): HookResult => {
   // Support both camelCase and snake_case for backward compatibility
-  const contextWithFallback = context as Record<string, unknown>;
-  const toolName =
-    contextWithFallback.toolName ?? contextWithFallback.tool_name;
-  const toolInput =
-    contextWithFallback.toolInput ?? contextWithFallback.tool_input;
+  const toolName = (
+    "toolName" in context
+      ? context.toolName
+      : (context as unknown as Record<string, unknown>).tool_name
+  ) as string;
+  const toolInput = (
+    "toolInput" in context
+      ? context.toolInput
+      : (context as unknown as Record<string, unknown>).tool_input
+  ) as unknown;
 
   // Handle Bash commands
   if (toolName === "Bash") {
-    const command = toolInput?.command as string | undefined;
+    const command = (toolInput as Record<string, unknown> | undefined)
+      ?.command as string | undefined;
     if (command) {
       const validation = validateBashCommand(command);
       if (!validation.safe) {
@@ -245,7 +260,8 @@ const securityGuardHook: HookHandler = (context): HookResult => {
 
   // Handle file operations
   if (["Edit", "Write", "MultiEdit", "Read"].includes(toolName)) {
-    const filePath = toolInput?.file_path as string | undefined;
+    const filePath = (toolInput as Record<string, unknown> | undefined)
+      ?.file_path as string | undefined;
     const validation = validateFileOperation(toolName, filePath);
 
     if (!validation.safe) {
@@ -259,7 +275,8 @@ const securityGuardHook: HookHandler = (context): HookResult => {
 
   // Handle NotebookEdit
   if (toolName === "NotebookEdit") {
-    const notebookPath = toolInput?.notebook_path as string | undefined;
+    const notebookPath = (toolInput as Record<string, unknown> | undefined)
+      ?.notebook_path as string | undefined;
     const validation = validateFileOperation(toolName, notebookPath);
 
     if (!validation.safe) {

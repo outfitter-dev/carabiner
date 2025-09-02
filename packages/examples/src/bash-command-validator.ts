@@ -36,6 +36,7 @@
 import { HookExecutor } from "@carabiner/execution";
 import { StdinProtocol } from "@carabiner/protocol";
 import type { HookHandler } from "@carabiner/types";
+import { isBashToolInput } from "@carabiner/types";
 
 // Define validation rules as an array of [regex pattern, message] tuples
 export const VALIDATION_RULES: [RegExp, string][] = [
@@ -95,7 +96,9 @@ export const bashCommandValidatorHook: HookHandler = (context) => {
     };
   }
 
-  const command = context.toolInput?.command as string | undefined;
+  const command = isBashToolInput(context.toolInput)
+    ? context.toolInput.command
+    : undefined;
 
   // If no command provided, continue without validation
   if (!command) {

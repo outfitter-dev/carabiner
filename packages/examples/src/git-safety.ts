@@ -18,6 +18,7 @@ import { execSync } from "node:child_process";
 import { HookExecutor } from "@carabiner/execution";
 import { StdinProtocol } from "@carabiner/protocol";
 import type { HookHandler, HookResult } from "@carabiner/types";
+import { isBashToolInput } from "@carabiner/types";
 
 // Protected branch names
 const PROTECTED_BRANCHES = [
@@ -171,11 +172,16 @@ function validateGitCommand(command: string): {
  */
 const gitSafetyHook: HookHandler = (context): HookResult => {
   // Support both camelCase and snake_case for backward compatibility
-  const contextWithFallback = context as Record<string, unknown>;
-  const toolName =
-    contextWithFallback.toolName ?? contextWithFallback.tool_name;
-  const toolInput =
-    contextWithFallback.toolInput ?? contextWithFallback.tool_input;
+  const toolName = (
+    "toolName" in context
+      ? context.toolName
+      : (context as unknown as Record<string, unknown>).tool_name
+  ) as string;
+  const toolInput = (
+    "toolInput" in context
+      ? context.toolInput
+      : (context as unknown as Record<string, unknown>).tool_input
+  ) as unknown;
 
   // Only process Bash commands
   if (toolName !== "Bash") {
@@ -184,7 +190,7 @@ const gitSafetyHook: HookHandler = (context): HookResult => {
     };
   }
 
-  const command = toolInput?.command as string | undefined;
+  const command = isBashToolInput(toolInput) ? toolInput.command : undefined;
   if (!command?.includes("git")) {
     return {
       success: true,
@@ -210,14 +216,15 @@ const gitSafetyHook: HookHandler = (context): HookResult => {
 
     return {
       success: false,
-      action: "block",
-      error: `Git safety violation:\n${validation.blocked.map((i) => `• ${i}`).join("\n")}\n\nCurrent branch: ${getCurrentBranch() || "unknown"}`,
+      block: true,
+      message: `Git safety violation:\n${validation.blocked
+        .map((i) => `• ${i}`)
+        .join("\n")}\n\nCurrent branch: ${getCurrentBranch() || "unknown"}`,
     };
   }
 
   return {
     success: true,
-    action: "continue",
   };
 };
 

@@ -132,8 +132,7 @@ export class WorkspaceValidator {
     }
 
     // Remove null bytes and control characters
-    // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires control char detection
-    const sanitized = path.replace(/[\x00-\x1f\x7f-\x9f]/g, "");
+    const sanitized = path.replace(/\p{Cc}/gu, "");
 
     if (sanitized !== path) {
       throw new SecurityValidationError(
@@ -234,8 +233,7 @@ export class WorkspaceValidator {
     }
 
     // Remove null bytes and control characters
-    // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires control char detection
-    const sanitized = filePath.replace(/[\x00-\x1f\x7f-\x9f]/g, "");
+    const sanitized = filePath.replace(/\p{Cc}/gu, "");
 
     if (sanitized !== filePath) {
       throw new SecurityValidationError(
@@ -464,8 +462,7 @@ export class WorkspaceValidator {
       }
 
       // Remove null bytes and control characters
-      // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires checking for control characters
-      const sanitized = segment.replace(/[\x00-\x1f\x7f-\x9f]/g, "");
+      const sanitized = segment.replace(/\p{Cc}/gu, "");
       if (sanitized !== segment) {
         throw new SecurityValidationError(
           `Path segment contains invalid characters: ${segment}`,
@@ -571,13 +568,10 @@ export function sanitizeUserPath(userPath: string): string {
   }
 
   // Remove null bytes, control characters, and normalize path separators
-  return (
-    userPath
-      // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires checking for control characters
-      .replace(/[\x00-\x1f\x7f-\x9f]/g, "") // Remove control characters
-      .replace(/[\\]+/g, "/") // Normalize path separators
-      .replace(/\/+/g, "/") // Remove duplicate slashes
-      .replace(/\/\./g, "/") // Remove single dots
-      .trim()
-  );
+  return userPath
+    .replace(/\p{Cc}/gu, "") // Remove control characters
+    .replace(/[\\]+/g, "/") // Normalize path separators
+    .replace(/\/+/g, "/") // Remove duplicate slashes
+    .replace(/\/\./g, "/") // Remove single dots
+    .trim();
 }

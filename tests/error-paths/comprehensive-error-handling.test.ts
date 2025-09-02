@@ -6,12 +6,9 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import type {
-  HookConfiguration,
-  HookContext,
-  HookHandler,
-  HookResult,
-} from "@carabiner/types";
+import type { HookResult } from "@carabiner/types";
+
+type HookHandler = (context: any) => Promise<HookResult> | HookResult;
 
 /**
  * Error simulation utilities
@@ -21,7 +18,7 @@ class ErrorSimulator {
    * Create a handler that throws after a delay
    */
   static createTimeoutHandler(delayMs: number, timeoutMs: number): HookHandler {
-    return async (_context: HookContext): Promise<HookResult> => {
+    return async (_context: any): Promise<HookResult> => {
       return new Promise((resolve, reject) => {
         let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
         const workTimer = setTimeout(() => {
@@ -46,7 +43,7 @@ class ErrorSimulator {
    * Create a handler that fails randomly
    */
   static createUnreliableHandler(failureRate: number): HookHandler {
-    return async (_context: HookContext): Promise<HookResult> => {
+    return async (_context: any): Promise<HookResult> => {
       if (Math.random() < failureRate) {
         throw new Error(`Random failure (rate: ${failureRate})`);
       }
@@ -64,7 +61,7 @@ class ErrorSimulator {
   static createMemoryLeakHandler(): HookHandler {
     const leakedMemory: any[] = [];
 
-    return async (_context: HookContext): Promise<HookResult> => {
+    return async (_context: any): Promise<HookResult> => {
       // Intentionally leak memory
       for (let i = 0; i < 10_000; i++) {
         leakedMemory.push(new Array(1000).fill(`leaked_data_${i}`));
@@ -101,16 +98,16 @@ describe("Comprehensive Error Handling", () => {
         "",
         {},
         { event: null },
-        { event: "pre-tool-use", tool: null },
-        { event: "pre-tool-use", tool: "Bash", input: null },
+        { event: "PreToolUse", toolName: null },
+        { event: "PreToolUse", toolName: "Bash", toolInput: null },
       ];
 
       for (const invalidInput of invalidInputs) {
         try {
           // Simulate hook execution with invalid input
-          const handler: HookHandler = async (context: HookContext) => {
+          const handler: HookHandler = async (context: any) => {
             // This should validate the input
-            if (!(context?.event && context.tool)) {
+            if (!(context?.event && (context.toolName || context.tool))) {
               throw new Error("Invalid hook context provided");
             }
 
@@ -138,7 +135,7 @@ describe("Comprehensive Error Handling", () => {
         '{ key: "value" }', // Unquoted key
         '{ "key": "value" "another": "value" }', // Missing comma
         JSON.stringify({ event: "invalid-event" }), // Invalid event
-        JSON.stringify({ event: "pre-tool-use", tool: "InvalidTool" }), // Invalid tool
+        JSON.stringify({ event: "PreToolUse", toolName: "InvalidTool" }), // Invalid tool
       ];
 
       for (const malformedJson of malformedJsonInputs) {
@@ -148,7 +145,7 @@ describe("Comprehensive Error Handling", () => {
           // If JSON parsing succeeded, validate the structure
           if (
             parsed.event &&
-            !["pre-tool-use", "post-tool-use"].includes(parsed.event)
+            !["PreToolUse", "PostToolUse"].includes(parsed.event)
           ) {
             throw new Error(`Invalid event: ${parsed.event}`);
           }
@@ -164,23 +161,23 @@ describe("Comprehensive Error Handling", () => {
       // Create oversized inputs
       const oversizedInputs = [
         {
-          event: "pre-tool-use",
-          tool: "Bash",
-          input: {
+          event: "PreToolUse",
+          toolName: "Bash",
+          toolInput: {
             command: "x".repeat(1024 * 1024), // 1MB command
           },
         },
         {
-          event: "pre-tool-use",
-          tool: "Bash",
-          input: {
+          event: "PreToolUse",
+          toolName: "Bash",
+          toolInput: {
             largeArray: new Array(100_000).fill("x".repeat(1000)), // 100MB array
           },
         },
         {
-          event: "pre-tool-use",
-          tool: "Bash",
-          input: {
+          event: "PreToolUse",
+          toolName: "Bash",
+          toolInput: {
             deepNesting: new Array(10_000)
               .fill(null)
               .reduce((acc, _, i) => ({ [i]: acc }), {}),
@@ -189,7 +186,7 @@ describe("Comprehensive Error Handling", () => {
       ];
 
       for (const oversizedInput of oversizedInputs) {
-        const handler: HookHandler = async (context: HookContext) => {
+        const handler: HookHandler = async (context: any) => {
           // Simulate size checking
           const jsonSize = JSON.stringify(context).length;
 
@@ -271,7 +268,7 @@ describe("Comprehensive Error Handling", () => {
 
       for (const [_index, scenario] of rejectionScenarios.entries()) {
         try {
-          const handler: HookHandler = async (_context: HookContext) => {
+          const handler: HookHandler = async (_context: any) => {
             await scenario();
             return { success: true, message: "Should not reach here" };
           };
@@ -337,7 +334,7 @@ describe("Comprehensive Error Handling", () => {
 
       for (const size of memorySizes) {
         try {
-          const handler: HookHandler = async (_context: HookContext) => {
+          const handler: HookHandler = async (_context: any) => {
             // Allocate memory
             const data = new Array(size).fill(null).map((_, i) => ({
               id: i,
@@ -386,7 +383,7 @@ describe("Comprehensive Error Handling", () => {
       ];
 
       for (const fsError of fileSystemErrors) {
-        const handler: HookHandler = async (_context: HookContext) => {
+        const handler: HookHandler = async (_context: any) => {
           // Simulate file system error
           const error = new Error(fsError.description) as any;
           error.code = fsError.error;
@@ -419,7 +416,7 @@ describe("Comprehensive Error Handling", () => {
       ];
 
       for (const netError of networkErrors) {
-        const handler: HookHandler = async (_context: HookContext) => {
+        const handler: HookHandler = async (_context: any) => {
           // Simulate network failure
           await new Promise((resolve) => setTimeout(resolve, 10)); // Simulate network delay
 
@@ -458,7 +455,7 @@ describe("Comprehensive Error Handling", () => {
       for (const config of corruptedConfigs) {
         try {
           // Simulate configuration validation
-          const validateConfig = (cfg: any): HookConfiguration => {
+          const validateConfig = (cfg: any): any => {
             if (!cfg.version || typeof cfg.version !== "string") {
               throw new Error("Invalid or missing version");
             }
@@ -485,7 +482,7 @@ describe("Comprehensive Error Handling", () => {
               }
             }
 
-            return cfg as HookConfiguration;
+            return cfg as any;
           };
 
           validateConfig(config);
@@ -565,9 +562,9 @@ describe("Comprehensive Error Handling", () => {
       ];
 
       for (const violation of securityViolations) {
-        const handler: HookHandler = async (context: HookContext) => {
+        const handler: HookHandler = async (context: any) => {
           // Simulate security validation
-          const input = context.input as any;
+          const input = context.toolInput || context.input || {};
 
           if (input.handler?.includes("..")) {
             throw new Error("Security violation: path traversal detected");
@@ -586,9 +583,9 @@ describe("Comprehensive Error Handling", () => {
 
         try {
           await handler({
-            event: "pre-tool-use",
-            tool: "Bash",
-            input: violation.input,
+            event: "PreToolUse",
+            toolName: "Bash",
+            toolInput: violation.input,
           });
 
           // Should have thrown for security violations
@@ -608,8 +605,8 @@ describe("Comprehensive Error Handling", () => {
       ];
 
       for (const attempt of privilegeAttempts) {
-        const handler: HookHandler = async (context: HookContext) => {
-          const input = context.input as any;
+        const handler: HookHandler = async (context: any) => {
+          const input = context.toolInput || context.input || {};
 
           // Simulate privilege checking
           if (input.user === "root") {
@@ -625,9 +622,9 @@ describe("Comprehensive Error Handling", () => {
 
         try {
           await handler({
-            event: "pre-tool-use",
-            tool: "Bash",
-            input: attempt,
+            event: "PreToolUse",
+            toolName: "Bash",
+            toolInput: attempt,
           });
 
           // Some combinations should pass, others should fail
@@ -650,7 +647,7 @@ describe("Comprehensive Error Handling", () => {
       const resources: any[] = [];
 
       try {
-        const handler: HookHandler = async (_context: HookContext) => {
+        const handler: HookHandler = async (_context: any) => {
           // Allocate resources
           for (let i = 0; i < 10; i++) {
             const resource = {
@@ -669,9 +666,9 @@ describe("Comprehensive Error Handling", () => {
         };
 
         await handler({
-          event: "pre-tool-use",
-          tool: "Bash",
-          input: { test: true },
+          event: "PreToolUse",
+          toolName: "Bash",
+          toolInput: { test: true },
         });
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
@@ -690,7 +687,7 @@ describe("Comprehensive Error Handling", () => {
     });
 
     test("should attempt graceful degradation on partial failures", async () => {
-      const handler: HookHandler = async (_context: HookContext) => {
+      const handler: HookHandler = async (_context: any) => {
         const operations = [
           { name: "critical", required: true },
           { name: "optional1", required: false },
@@ -729,9 +726,9 @@ describe("Comprehensive Error Handling", () => {
       };
 
       const result = await handler({
-        event: "pre-tool-use",
-        tool: "Bash",
-        input: { test: true },
+        event: "PreToolUse",
+        toolName: "Bash",
+        toolInput: { test: true },
       });
 
       expect(result.success).toBe(true);

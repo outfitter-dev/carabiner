@@ -1,76 +1,77 @@
 {
   "name": "@carabiner/plugins",
-  "version": "1.0.0",
   "description": "Example plugin collection for Carabiner hooks - demonstrates plugin architecture patterns",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "version": "0.1.0-alpha",
+  "author": "Outfitter Team",
+  "dependencies": {
+    "@carabiner/execution": "0.1.0-alpha",
+    "@carabiner/hooks-core": "0.1.0-alpha",
+    "@carabiner/registry": "0.1.0-alpha",
+    "@carabiner/types": "0.1.0-alpha",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "bun-types": "^1.0.25",
+    "typescript": "^5.9.2"
+  },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./git-safety": {
-      "import": "./dist/git-safety/index.js",
-      "types": "./dist/git-safety/index.d.ts"
+      "types": "./dist/git-safety/index.d.ts",
+      "import": "./dist/git-safety/index.js"
     },
     "./file-backup": {
-      "import": "./dist/file-backup/index.js",
-      "types": "./dist/file-backup/index.d.ts"
+      "types": "./dist/file-backup/index.d.ts",
+      "import": "./dist/file-backup/index.js"
     },
     "./security-scanner": {
-      "import": "./dist/security-scanner/index.js",
-      "types": "./dist/security-scanner/index.d.ts"
+      "types": "./dist/security-scanner/index.d.ts",
+      "import": "./dist/security-scanner/index.js"
     },
     "./performance-monitor": {
-      "import": "./dist/performance-monitor/index.js",
-      "types": "./dist/performance-monitor/index.d.ts"
+      "types": "./dist/performance-monitor/index.d.ts",
+      "import": "./dist/performance-monitor/index.js"
     },
     "./audit-logger": {
-      "import": "./dist/audit-logger/index.js",
-      "types": "./dist/audit-logger/index.d.ts"
+      "types": "./dist/audit-logger/index.d.ts",
+      "import": "./dist/audit-logger/index.js"
     }
   },
-  "scripts": {
-    "build": "bun run build:clean && bun run build:tsc",
-    "build:clean": "rm -rf dist",
-    "build:tsc": "tsc --project tsconfig.build.json",
-    "dev": "tsc --project tsconfig.build.json --watch",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist tsconfig.build.tsbuildinfo"
-  },
   "keywords": [
+    "audit",
     "carabiner",
-    "hooks",
-    "plugins",
     "examples",
-    "git-safety",
     "file-backup",
-    "security",
+    "git-safety",
+    "hooks",
     "performance",
-    "audit"
+    "plugins",
+    "security"
   ],
-  "author": "Outfitter Team",
   "license": "MIT",
+  "main": "./dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/outfitter-dev/carabiner",
     "directory": "packages/plugins"
   },
-  "dependencies": {
-    "@carabiner/registry": "workspace:*",
-    "@carabiner/types": "workspace:*",
-    "@carabiner/execution": "workspace:*",
-    "zod": "^3.24.1"
+  "scripts": {
+    "build": "bun run build:clean && bun run build:tsc",
+    "build:clean": "rm -rf dist",
+    "build:tsc": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.build.tsbuildinfo",
+    "dev": "tsc --project tsconfig.build.json --watch",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit"
   },
-  "devDependencies": {
-    "@types/node": "^24.2.1",
-    "bun-types": "^1.0.25",
-    "typescript": "^5.9.2"
-  },
-  "publishConfig": {
-    "access": "public"
-  }
+  "type": "module",
+  "types": "./dist/index.d.ts"
 }

@@ -193,8 +193,8 @@ const testingHooks: DeclarativeHookConfig[] = [
   {
     event: "PostToolUse",
     handler: (context) => {
-      // Capture test execution data
-      const _testData = {
+      // Capture test execution data (omitted)
+      const testData = {
         toolName: context.toolName,
         success: true,
         timestamp: new Date().toISOString(),
@@ -211,6 +211,7 @@ const testingHooks: DeclarativeHookConfig[] = [
           return JSON.stringify(response).length;
         })(),
       };
+      void testData;
 
       return HookResults.success("Test data captured");
     },
@@ -242,7 +243,7 @@ const universalHooks: DeclarativeHookConfig[] = [
       }
 
       if (validation.warnings && validation.warnings.length > 0) {
-        const _warnings = validation.warnings.map((w) => w.message).join(", ");
+        // warnings available for use if needed
       }
 
       return HookResults.success("Input validation passed", {
@@ -261,7 +262,7 @@ const universalHooks: DeclarativeHookConfig[] = [
     tool: "Bash", // This hook ONLY runs for Bash commands
     handler: (context) => {
       const command = (context.toolInput as Record<string, unknown>)?.command;
-      if (command) {
+      if (typeof command === "string") {
         // Monitor command patterns
         const suspiciousPatterns = [
           { pattern: /rm\s+-rf\s+\//, description: "Root deletion attempt" },
@@ -358,13 +359,12 @@ function initializeHooks(): void {
     },
     {} as Record<string, number>
   );
-  for (const [_event, _count] of Object.entries(eventCounts)) {
+  for (const _ of Object.entries(eventCounts)) {
     // Hook event counts logged during initialization
   }
 
-  // Log tool scoping info
-  const _toolSpecificCount = hooks.filter((h) => h.tool).length;
-  const _universalCount = hooks.filter((h) => !h.tool).length;
+  // Log tool scoping info (counts available if needed)
+  void hooks;
 }
 
 /**
@@ -390,7 +390,7 @@ async function runDeclarativeHooks(context: HookContext): Promise<HookResult> {
       results.push({
         type: hookConfig.tool ? `${hookConfig.tool}-specific` : "universal",
         success: result.success,
-        message: result.message,
+        message: result.message ?? "",
       });
 
       // If any hook blocks, stop execution
@@ -404,7 +404,7 @@ async function runDeclarativeHooks(context: HookContext): Promise<HookResult> {
       results.push({
         type: hookConfig.tool ? `${hookConfig.tool}-specific` : "universal",
         success: false,
-        message: errorResult.message,
+        message: errorResult.message ?? "",
       });
     }
   }
@@ -463,12 +463,7 @@ async function displayDevInfo(cwd: string): Promise<void> {
   const packagePath = join(cwd, "package.json");
   if (existsSync(packagePath)) {
     try {
-      const packageContent = await readFile(packagePath, "utf-8");
-      const packageJson = JSON.parse(packageContent);
-
-      if (packageJson.scripts) {
-        const _scripts = Object.keys(packageJson.scripts);
-      }
+      await readFile(packagePath, "utf-8");
     } catch (_error) {
       // Error reading package.json - continue without project info
     }
@@ -505,7 +500,7 @@ function performProductionChecks(context: HookContext): void {
   // Check for production-specific restrictions
   if (context.toolName === "Bash") {
     const command = (context.toolInput as Record<string, unknown>)?.command;
-    if (command) {
+    if (typeof command === "string") {
       const productionBlockedPatterns = [
         /rm\s+-rf/,
         /sudo/,
@@ -529,7 +524,10 @@ function performProductionChecks(context: HookContext): void {
   const restrictedPaths = ["node_modules", ".git", "dist", "build"];
   if (context.toolName === "Write" || context.toolName === "Edit") {
     const filePath = (context.toolInput as Record<string, unknown>)?.file_path;
-    if (filePath && restrictedPaths.some((path) => filePath.includes(path))) {
+    if (
+      typeof filePath === "string" &&
+      restrictedPaths.some((p) => filePath.includes(p))
+    ) {
       throw new ValidationError(
         `Production write access denied to: ${filePath}`
       );

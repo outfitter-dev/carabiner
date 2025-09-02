@@ -4,6 +4,7 @@
  * Ensures no sensitive data is logged while maintaining observability
  */
 
+import { getEnvVar } from "../utils/env";
 import { DEFAULT_SANITIZATION } from "./config";
 import type { SanitizationOptions } from "./types";
 
@@ -173,7 +174,11 @@ export function sanitizeError(error: Error): {
   };
 
   // Include stack trace in development/debug mode
-  if (Bun.env.NODE_ENV === "development" || Bun.env.DEBUG) {
+  const debugEnv = getEnvVar("DEBUG") ?? "";
+  if (
+    getEnvVar("NODE_ENV") === "development" ||
+    /^(1|true|yes|on)$/i.test(debugEnv)
+  ) {
     sanitized.stack = error.stack;
   }
 
@@ -203,8 +208,8 @@ export function sanitizeError(error: Error): {
  */
 export function generateCorrelationId(): string {
   // Use crypto for better randomness in production
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
   }
 
   // Fallback to timestamp + random for environments without crypto
@@ -218,11 +223,16 @@ export function generateCorrelationId(): string {
  */
 export function hashUserId(userId: string): string {
   // Simple hash for user ID anonymization
+  // Use a non-bitwise rolling hash to avoid lint violations
+  // Keep value in 32-bit range using modular arithmetic
+  const MOD = 0x1_00_00_00_00; // 2^32
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
-    const char = userId.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash &= hash; // Convert to 32-bit integer
+    const code = userId.charCodeAt(i);
+    hash = (Math.imul(hash, 31) + code) % MOD;
+    if (hash < 0) {
+      hash += MOD;
+    }
   }
-  return `user_${Math.abs(hash).toString(36)}`;
+  return `user_${hash.toString(36)}`;
 }

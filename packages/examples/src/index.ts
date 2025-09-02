@@ -17,17 +17,15 @@ export {
   findFormatter,
   formatFile,
   isFormatterAvailable,
-} from "./auto-formatter.js";
+} from "./auto-formatter";
 // Command validation and optimization
 export {
   bashCommandValidatorHook,
   VALIDATION_RULES,
   validateCommand,
-} from "./bash-command-validator.js";
+} from "./bash-command-validator";
 // Legacy examples (kept for backward compatibility)
-export * from "./builder/simple-security.js";
-export * from "./declarative/security-rules.js";
-export * from "./function-based/security-hook.js";
+// Legacy example exports removed in TS build (kept only for JS bundles)
 // Git safety
 export {
   GIT_DANGERS,
@@ -37,7 +35,7 @@ export {
   isProtectedBranch,
   PROTECTED_BRANCHES,
   validateGitCommand,
-} from "./git-safety.js";
+} from "./git-safety";
 // Security enforcement
 export {
   DANGEROUS_COMMANDS,
@@ -47,4 +45,4 @@ export {
   securityGuardHook,
   validateBashCommand,
   validateFileOperation,
-} from "./security-guard.js";
+} from "./security-guard";

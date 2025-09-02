@@ -1,11 +1,22 @@
 {
   "name": "@carabiner/hooks-registry",
-  "version": "0.1.0",
   "description": "Official registry of Claude Code hooks",
-  "type": "module",
-  "sideEffects": false,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "version": "0.1.0-alpha",
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "dependencies": {
+    "@carabiner/execution": "0.1.0-alpha",
+    "@carabiner/protocol": "0.1.0-alpha",
+    "@carabiner/schemas": "0.1.0-alpha",
+    "@carabiner/types": "0.1.0-alpha",
+    "picomatch": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/bun": "*",
+    "@types/node": "^24.3.1",
+    "@types/picomatch": "^4.0.2",
+    "type-fest": "^4.41.0",
+    "typescript": "^5.9.2"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -20,29 +31,18 @@
     "dist",
     "README.md"
   ],
-  "scripts": {
-    "build": "tsc",
-    "test": "bun test",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
-  },
-  "dependencies": {
-    "@carabiner/execution": "workspace:*",
-    "@carabiner/protocol": "workspace:*",
-    "@carabiner/schemas": "workspace:*",
-    "@carabiner/types": "workspace:*",
-    "picomatch": "^4.0.2"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/node": "catalog:",
-    "@types/picomatch": "^4.0.2",
-    "type-fest": "catalog:",
-    "typescript": "catalog:"
-  },
+  "keywords": [
+    "claude-code",
+    "formatters",
+    "hooks",
+    "linters",
+    "registry"
+  ],
+  "license": "MIT",
+  "main": "./dist/index.js",
   "peerDependencies": {
-    "markdownlint-cli2": "^0.18.0",
-    "prettier": "^3.0.0"
+    "markdownlint-cli2": "^0.18.1",
+    "prettier": "^3.6.2"
   },
   "peerDependenciesMeta": {
     "markdownlint-cli2": {
@@ -52,18 +52,18 @@
       "optional": true
     }
   },
-  "keywords": [
-    "claude-code",
-    "hooks",
-    "registry",
-    "formatters",
-    "linters"
-  ],
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/outfitter-dev/carabiner.git",
     "directory": "packages/hooks-registry"
-  }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "sideEffects": false,
+  "type": "module",
+  "types": "./dist/index.d.ts"
 }

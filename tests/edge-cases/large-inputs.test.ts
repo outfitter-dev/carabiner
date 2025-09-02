@@ -312,7 +312,12 @@ describe("Large Input Edge Cases", () => {
       // Performance should scale reasonably (not exponentially)
       // Each 10x increase should be less than 20x slower
       for (let i = 1; i < timings.length; i++) {
-        const ratio = timings[i] / timings[i - 1];
+        const prev = timings[i - 1];
+        const curr = timings[i];
+        if (prev === undefined || curr === undefined) {
+          continue;
+        }
+        const ratio = curr / prev;
         const sizeRatio = sizes[i] / sizes[i - 1];
 
         // Allow some slack for performance variance
@@ -343,12 +348,17 @@ describe("Large Input Edge Cases", () => {
         })
       );
 
-      expect(results[0].status).toBe("fulfilled");
-      expect(results[1].status).toBe("rejected");
-      expect(results[2].status).toBe("fulfilled");
+      const r0 = results[0]!;
+      const r1 = results[1]!;
+      const r2 = results[2]!;
+      expect(r0.status).toBe("fulfilled");
+      expect(r1.status).toBe("rejected");
+      expect(r2.status).toBe("fulfilled");
 
-      if (results[1].status === "rejected") {
-        expect(results[1].reason.message).toContain("timed out");
+      if (r1.status === "rejected") {
+        expect((r1 as PromiseRejectedResult).reason.message).toContain(
+          "timed out"
+        );
       }
     });
   });

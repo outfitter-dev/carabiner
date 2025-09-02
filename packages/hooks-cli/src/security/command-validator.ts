@@ -254,8 +254,8 @@ export class CommandValidator {
     // Remove null bytes and dangerous control characters
     return (
       command
-        // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires checking for control characters
-        .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "") // Remove control chars except \t, \n, \r
+        // Remove control characters except for tab, newline, carriage return
+        .replace(/(?![\t\n\r])\p{Cc}/gu, "")
         .trim()
     );
   }

@@ -351,7 +351,7 @@ class ComprehensiveTestRunner {
     // Parse coverage if present
     let coverage;
     if (stdout.includes("Coverage")) {
-      coverage = this.parseCoverageOutput(stdout);
+      coverage = this.parseCoverageOutput(stdout) || undefined;
     }
 
     return {
@@ -409,7 +409,7 @@ class ComprehensiveTestRunner {
         totalLines: 0,
         totalFunctions: 0,
         totalBranches: 0,
-        uncoveredFiles: [],
+        uncoveredFiles: [] as string[],
       };
     }
 
@@ -437,7 +437,7 @@ class ComprehensiveTestRunner {
         totalLines: 0,
         totalFunctions: 0,
         totalBranches: 0,
-        uncoveredFiles: [],
+        uncoveredFiles: [] as string[],
       }
     );
   }
@@ -510,7 +510,7 @@ class ComprehensiveTestRunner {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Grapple Test Results</title>
+    <title>Carabiner Test Results</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { background: #f5f5f5; padding: 20px; border-radius: 5px; }
@@ -524,7 +524,7 @@ class ComprehensiveTestRunner {
 </head>
 <body>
     <div class="header">
-        <h1>🧪 Grapple Test Results</h1>
+        <h1>🧪 Carabiner Test Results</h1>
         <p>Environment: ${result.environment}</p>
         <p>Duration: ${result.totalDuration}ms</p>
         <p>Status: ${result.overallSuccess ? "✅ PASSED" : "❌ FAILED"}</p>
@@ -616,7 +616,7 @@ class ComprehensiveTestRunner {
     );
 
     return `<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="Grapple Tests" tests="${totalTests}" failures="${totalFailures}" time="${result.totalDuration / 1000}">
+<testsuites name="Carabiner Tests" tests="${totalTests}" failures="${totalFailures}" time="${result.totalDuration / 1000}">
   ${result.phases
     .map(
       (phase) => `
@@ -633,16 +633,22 @@ class ComprehensiveTestRunner {
    * Print execution summary
    */
   private printSummary(result: TestSuiteResult): void {
-    result.phases.forEach((phase) => {
-      const _status = phase.success ? "✅" : "❌";
-    });
+    // Extract key metrics
+    let totalTests = 0;
+    let totalPassed = 0;
+    let totalFailed = 0;
+    let totalSkipped = 0;
 
-    if (result.coverageSummary) {
+    for (const phase of result.phases) {
+      totalTests += phase.testsRun;
+      totalPassed += phase.testsRun - phase.testsFailed;
+      totalFailed += phase.testsFailed;
+      totalSkipped += phase.testsSkipped || 0;
     }
 
-    if (result.performanceMetrics?.slowestTests.length) {
-      result.performanceMetrics.slowestTests.slice(0, 5).forEach((_test) => {});
-    }
+    // Print concise summary
+    const summary = `Tests: ${totalTests} total, ${totalPassed} passed, ${totalFailed} failed, ${totalSkipped} skipped — duration: ${result.totalDuration}ms`;
+    console.error(summary);
   }
 
   /**
@@ -706,7 +712,10 @@ async function main() {
 
 // Run if called directly
 if (import.meta.main) {
-  main().catch(console.error);
+  main().catch((err) => {
+    process.stderr.write(`${String(err)}\n`);
+    process.exit(1);
+  });
 }
 
 export { ComprehensiveTestRunner, type TestExecutionOptions };

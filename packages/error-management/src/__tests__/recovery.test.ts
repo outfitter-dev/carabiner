@@ -107,7 +107,7 @@ describe("RetryManager", () => {
     });
 
     const result = await retryManager.execute(operation, "test-operation");
-    expect(result).toBe(fallbackResult);
+    expect(result as unknown as string).toBe(fallbackResult);
   });
 
   test("should throw last error when no fallback and all retries fail", async () => {

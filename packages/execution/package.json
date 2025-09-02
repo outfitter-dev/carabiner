@@ -1,15 +1,23 @@
 {
   "name": "@carabiner/execution",
-  "version": "1.0.0",
   "description": "Simplified execution engine for Carabiner hooks",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "version": "0.1.0-alpha",
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "dependencies": {
+    "@carabiner/hooks-core": "0.1.0-alpha",
+    "@carabiner/protocol": "0.1.0-alpha",
+    "@carabiner/types": "0.1.0-alpha",
+    "type-fest": "^4.41.0"
+  },
+  "devDependencies": {
+    "@types/bun": "*",
+    "typescript": "^5.9.2",
+    "ultracite": "^5.3.4"
+  },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "files": [
@@ -18,12 +26,16 @@
   ],
   "keywords": [
     "carabiner",
-    "hooks",
     "execution",
+    "hooks",
     "typescript"
   ],
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
   "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/outfitter-dev/grapple.git",
@@ -31,26 +43,14 @@
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf dist/",
     "dev": "tsc -p tsconfig.build.json --watch",
+    "format": "bun x ultracite@latest format src/",
+    "lint": "bun x ultracite@latest lint src/",
     "test": "bun test",
     "test:watch": "bun test --watch",
-    "typecheck": "tsc --noEmit",
-    "lint": "bun x ultracite@latest lint src/",
-    "format": "bun x ultracite@latest format src/",
-    "clean": "rm -rf dist/"
+    "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@carabiner/hooks-core": "workspace:*",
-    "@carabiner/protocol": "workspace:*",
-    "@carabiner/types": "workspace:*",
-    "type-fest": "^4.41.0"
-  },
-  "devDependencies": {
-    "@types/bun": "*",
-    "typescript": "^5.9.2",
-    "ultracite": "^5.1.5"
-  },
-  "publishConfig": {
-    "access": "public"
-  }
+  "type": "module",
+  "types": "./dist/index.d.ts"
 }

@@ -267,8 +267,6 @@ export class TestOrchestrator {
    * Generate test execution plan
    */
   generateExecutionPlan(): TestExecutionPlan {
-    const _patterns = this.getTestPatterns();
-
     return {
       phases: [
         {
