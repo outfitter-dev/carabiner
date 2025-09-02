@@ -1,6 +1,6 @@
 {
   "name": "@carabiner/plugins",
-  "version": "1.0.0",
+  "version": "0.1.0-alpha",
   "description": "Example plugin collection for Carabiner hooks - demonstrates plugin architecture patterns",
   "type": "module",
   "main": "./dist/index.js",
