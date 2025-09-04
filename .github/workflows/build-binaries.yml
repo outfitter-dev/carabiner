@@ -84,6 +84,7 @@ jobs:
           test -f "src/cli.ts" || (echo "❌ CLI entry point missing" && exit 1)
           test -f "package.json" || (echo "❌ package.json missing" && exit 1)
           echo "✅ CLI dependencies verified"
+        shell: bash
 
       - name: Build binary with enhanced options
         id: build
