@@ -74,7 +74,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build CLI dependencies only
-        run: bun run build --filter=@carabiner/hooks-cli...
+        run: bun run build --filter=@outfitter/hooks-cli...
 
       - name: Verify CLI dependencies
         run: |
