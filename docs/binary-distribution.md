@@ -1,6 +1,6 @@
 # Binary Distribution System
 
-This document outlines the comprehensive CI/CD pipeline for binary distribution of the Grapple monorepo's `claude-hooks` CLI tool.
+This document outlines the comprehensive CI/CD pipeline for binary distribution of the Grapple monorepo's `carabiner` CLI tool.
 
 ## Overview
 
@@ -8,12 +8,12 @@ The binary distribution system provides production-ready, standalone executables
 
 ## Supported Platforms
 
-| Platform | Architecture | Binary Name                | Runner           |
-| -------- | ------------ | -------------------------- | ---------------- |
-| Linux    | x64          | `claude-hooks-linux`       | `ubuntu-latest`  |
-| macOS    | ARM64 (M1+)  | `claude-hooks-macos-arm64` | `macos-latest`   |
-| macOS    | x64 (Intel)  | `claude-hooks-macos-x64`   | `macos-13`       |
-| Windows  | x64          | `claude-hooks-windows.exe` | `windows-latest` |
+| Platform | Architecture | Binary Name             | Runner           |
+| -------- | ------------ | ----------------------- | ---------------- |
+| Linux    | x64          | `carabiner-linux`       | `ubuntu-latest`  |
+| macOS    | ARM64 (M1+)  | `carabiner-macos-arm64` | `macos-latest`   |
+| macOS    | x64 (Intel)  | `carabiner-macos-x64`   | `macos-13`       |
+| Windows  | x64          | `carabiner-windows.exe` | `windows-latest` |
 
 ## Workflows
 
@@ -199,27 +199,27 @@ bun run clean && bun run build:binary
 
 ```bash
 # Download from GitHub Releases
-curl -L -o claude-hooks https://github.com/outfitter-dev/carabiner/releases/latest/download/claude-hooks-linux
-chmod +x claude-hooks
+curl -L -o carabiner https://github.com/outfitter-dev/carabiner/releases/latest/download/carabiner-linux
+chmod +x carabiner
 
 # Test installation
-./claude-hooks --version
+./carabiner --version
 ```
 
 ### Basic Usage
 
 ```bash
 # Show help
-./claude-hooks --help
+./carabiner --help
 
 # Initialize hooks
-./claude-hooks init
+./carabiner init
 
 # Validate configuration
-./claude-hooks validate
+./carabiner validate
 
 # Configure settings
-./claude-hooks config set workspace /path/to/project
+./carabiner config set workspace /path/to/project
 ```
 
 ## Performance Metrics

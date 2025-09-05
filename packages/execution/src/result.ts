@@ -6,22 +6,22 @@
  * error handling predictability throughout the execution engine.
  */
 
-import type { HookResult } from '@carabiner/types';
+import type { HookResult } from "@carabiner/types";
 
 /**
  * Success result containing a value
  */
 export type SuccessResult<T> = {
-  readonly success: true;
-  readonly value: T;
+	readonly success: true;
+	readonly value: T;
 };
 
 /**
  * Failure result containing an error
  */
 export type FailureResult<E = Error> = {
-  readonly success: false;
-  readonly error: E;
+	readonly success: false;
+	readonly error: E;
 };
 
 /**
@@ -36,10 +36,10 @@ export type Result<T, E = Error> = SuccessResult<T> | FailureResult<E>;
  * @returns Success result containing the value
  */
 export function success<T>(value: T): SuccessResult<T> {
-  return {
-    success: true,
-    value,
-  } as const;
+	return {
+		success: true,
+		value,
+	} as const;
 }
 
 /**
@@ -49,28 +49,28 @@ export function success<T>(value: T): SuccessResult<T> {
  * @returns Failure result containing the error
  */
 export function failure<E = Error>(error: E): FailureResult<E> {
-  return {
-    success: false,
-    error,
-  } as const;
+	return {
+		success: false,
+		error,
+	} as const;
 }
 
 /**
  * Type guard to check if result is successful
  */
 export function isSuccess<T, E>(
-  result: Result<T, E>
+	result: Result<T, E>,
 ): result is SuccessResult<T> {
-  return result.success === true;
+	return result.success === true;
 }
 
 /**
  * Type guard to check if result is a failure
  */
 export function isFailure<T, E>(
-  result: Result<T, E>
+	result: Result<T, E>,
 ): result is FailureResult<E> {
-  return result.success === false;
+	return result.success === false;
 }
 
 /**
@@ -81,13 +81,13 @@ export function isFailure<T, E>(
  * @returns New result with mapped value or original failure
  */
 export function mapResult<T, U, E>(
-  result: Result<T, E>,
-  fn: (value: T) => U
+	result: Result<T, E>,
+	fn: (value: T) => U,
 ): Result<U, E> {
-  if (isSuccess(result)) {
-    return success(fn(result.value));
-  }
-  return result;
+	if (isSuccess(result)) {
+		return success(fn(result.value));
+	}
+	return result;
 }
 
 /**
@@ -98,13 +98,13 @@ export function mapResult<T, U, E>(
  * @returns New result or propagated failure
  */
 export function chainResult<T, U, E>(
-  result: Result<T, E>,
-  fn: (value: T) => Result<U, E>
+	result: Result<T, E>,
+	fn: (value: T) => Result<U, E>,
 ): Result<U, E> {
-  if (isSuccess(result)) {
-    return fn(result.value);
-  }
-  return result;
+	if (isSuccess(result)) {
+		return fn(result.value);
+	}
+	return result;
 }
 
 /**
@@ -114,11 +114,11 @@ export function chainResult<T, U, E>(
  * @returns Result with value or captured error
  */
 export function tryResult<T>(fn: () => T): Result<T, Error> {
-  try {
-    return success(fn());
-  } catch (error) {
-    return failure(error instanceof Error ? error : new Error(String(error)));
-  }
+	try {
+		return success(fn());
+	} catch (error) {
+		return failure(error instanceof Error ? error : new Error(String(error)));
+	}
 }
 
 /**
@@ -128,14 +128,14 @@ export function tryResult<T>(fn: () => T): Result<T, Error> {
  * @returns Promise of Result with value or captured error
  */
 export async function tryAsyncResult<T>(
-  fn: () => Promise<T>
+	fn: () => Promise<T>,
 ): Promise<Result<T, Error>> {
-  try {
-    const value = await fn();
-    return success(value);
-  } catch (error) {
-    return failure(error instanceof Error ? error : new Error(String(error)));
-  }
+	try {
+		const value = await fn();
+		return success(value);
+	} catch (error) {
+		return failure(error instanceof Error ? error : new Error(String(error)));
+	}
 }
 
 /**
@@ -148,10 +148,10 @@ export async function tryAsyncResult<T>(
  * @throws The error if result is a failure
  */
 export function unwrapResult<T, E extends Error>(result: Result<T, E>): T {
-  if (isSuccess(result)) {
-    return result.value;
-  }
-  throw result.error;
+	if (isSuccess(result)) {
+		return result.value;
+	}
+	throw result.error;
 }
 
 /**
@@ -162,10 +162,10 @@ export function unwrapResult<T, E extends Error>(result: Result<T, E>): T {
  * @returns The successful value or default
  */
 export function unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {
-  if (isSuccess(result)) {
-    return result.value;
-  }
-  return defaultValue;
+	if (isSuccess(result)) {
+		return result.value;
+	}
+	return defaultValue;
 }
 
 /**
@@ -175,12 +175,12 @@ export function unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {
  * @returns Result representing the hook outcome
  */
 export function fromHookResult(
-  hookResult: HookResult
+	hookResult: HookResult,
 ): Result<HookResult, Error> {
-  if (hookResult.success) {
-    return success(hookResult);
-  }
-  return failure(new Error(hookResult.message || 'Hook execution failed'));
+	if (hookResult.success) {
+		return success(hookResult);
+	}
+	return failure(new Error(hookResult.message || "Hook execution failed"));
 }
 
 /**
@@ -190,70 +190,70 @@ export function fromHookResult(
  * @returns HookResult representing the outcome
  */
 export function toHookResult<T>(result: Result<T, Error>): HookResult {
-  if (isSuccess(result)) {
-    return {
-      success: true,
-      message: 'Execution completed successfully',
-    };
-  }
+	if (isSuccess(result)) {
+		return {
+			success: true,
+			message: "Execution completed successfully",
+		};
+	}
 
-  return {
-    success: false,
-    message: result.error.message,
-    block: true, // By default, execution failures should block
-  };
+	return {
+		success: false,
+		message: result.error.message,
+		block: true, // By default, execution failures should block
+	};
 }
 
 /**
  * Execution-specific error types
  */
 export class ExecutionError extends Error {
-  override name = 'ExecutionError';
-  readonly code: string;
-  readonly context?: Record<string, unknown>;
+	override name = "ExecutionError";
+	readonly code: string;
+	readonly context?: Record<string, unknown>;
 
-  constructor(
-    message: string,
-    code: string,
-    context?: Record<string, unknown>
-  ) {
-    super(message);
-    this.code = code;
-    this.context = context;
-  }
+	constructor(
+		message: string,
+		code: string,
+		context?: Record<string, unknown>,
+	) {
+		super(message);
+		this.code = code;
+		this.context = context;
+	}
 }
 
 export class TimeoutError extends ExecutionError {
-  override name = 'TimeoutError';
+	override name = "TimeoutError";
 
-  constructor(timeout: number, context?: Record<string, unknown>) {
-    super(
-      `Execution timed out after ${timeout}ms`,
-      'EXECUTION_TIMEOUT',
-      context
-    );
-  }
+	constructor(timeout: number, context?: Record<string, unknown>) {
+		super(
+			`Execution timed out after ${timeout}ms`,
+			"EXECUTION_TIMEOUT",
+			context,
+		);
+	}
 }
 
 export class ValidationError extends ExecutionError {
-  override name = 'ValidationError';
+	override name = "ValidationError";
 
-  constructor(message: string, context?: Record<string, unknown>) {
-    super(message, 'VALIDATION_ERROR', context);
-  }
+	constructor(message: string, context?: Record<string, unknown>) {
+		super(message, "VALIDATION_ERROR", context);
+	}
 }
 
 /**
  * Type guards for execution errors
  */
 export function isExecutionError(error: unknown): error is ExecutionError {
-  return error instanceof ExecutionError;
+	return error instanceof ExecutionError;
 }
 
 export function isTimeoutError(error: unknown): error is TimeoutError {
-  return error instanceof TimeoutError;
+	return error instanceof TimeoutError;
 }
 
 export function isValidationError(error: unknown): error is ValidationError {
-  return error instanceof ValidationError;
+	return error instanceof ValidationError;
 }

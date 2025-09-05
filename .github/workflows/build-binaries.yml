@@ -38,16 +38,16 @@ jobs:
         include:
           - os: ubuntu-latest
             target: linux-x64
-            binary-name: claude-hooks-linux
+            binary-name: carabiner-linux
           - os: macos-latest # ARM64
             target: macos-arm64
-            binary-name: claude-hooks-macos-arm64
+            binary-name: carabiner-macos-arm64
           - os: macos-13 # Intel x64
             target: macos-x64
-            binary-name: claude-hooks-macos-x64
+            binary-name: carabiner-macos-x64
           - os: windows-latest
             target: windows-x64
-            binary-name: claude-hooks-windows.exe
+            binary-name: carabiner-windows.exe
 
     steps:
       - name: Checkout code
@@ -74,7 +74,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build CLI dependencies only
-        run: bun run build --filter=@outfitter/hooks-cli...
+        run: bun run build --filter=@carabiner/hooks-cli^...
 
       - name: Verify CLI dependencies
         run: |
@@ -84,6 +84,7 @@ jobs:
           test -f "src/cli.ts" || (echo "❌ CLI entry point missing" && exit 1)
           test -f "package.json" || (echo "❌ package.json missing" && exit 1)
           echo "✅ CLI dependencies verified"
+        shell: bash
 
       - name: Build binary with enhanced options
         id: build
@@ -219,10 +220,10 @@ jobs:
           echo "Verifying all built binaries..."
 
           expected_binaries=(
-            "claude-hooks-linux"
-            "claude-hooks-macos-arm64"
-            "claude-hooks-macos-x64"
-            "claude-hooks-windows.exe"
+            "carabiner-linux"
+            "carabiner-macos-arm64"
+            "carabiner-macos-x64"
+            "carabiner-windows.exe"
           )
           missing_binaries=()
 
@@ -248,10 +249,10 @@ jobs:
           set -euo pipefail
           echo "## Binary Build Summary 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Linux x64**: claude-hooks-linux" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **macOS ARM64**: claude-hooks-macos-arm64" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **macOS x64**: claude-hooks-macos-x64" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Windows x64**: claude-hooks-windows.exe" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Linux x64**: carabiner-linux" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **macOS ARM64**: carabiner-macos-arm64" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **macOS x64**: carabiner-macos-x64" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Windows x64**: carabiner-windows.exe" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "All binaries passed smoke tests:" >> $GITHUB_STEP_SUMMARY
           echo "- Version command" >> $GITHUB_STEP_SUMMARY

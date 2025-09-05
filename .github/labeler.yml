@@ -1,6 +1,6 @@
 # Configuration for auto-labeling PRs based on changed files (v5 format)
 
-changed-files:
+labels:
   # Package-specific labels
   "package: hooks-core":
     - packages/hooks-core/**/*
@@ -43,6 +43,7 @@ changed-files:
     - package.json
     - packages/*/package.json
     - apps/*/package.json
+    - bun.lock
     - bun.lockb
 
   config:

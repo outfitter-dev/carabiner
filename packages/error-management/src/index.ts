@@ -42,170 +42,175 @@
  * ```
  */
 
+// ESM require compatibility for dynamic imports
+import { createRequire } from "node:module";
+
+const nodeRequire = createRequire(import.meta.url);
+
 // Error Boundaries
 export type {
-  ErrorBoundaryConfig,
-  ErrorBoundaryContext,
-} from './boundaries.js';
+	ErrorBoundaryConfig,
+	ErrorBoundaryContext,
+} from "./boundaries.js";
 export {
-  ErrorBoundary,
-  ErrorBoundaryRegistry,
-  ErrorBoundaryState,
-  executeWithBoundary,
-  withErrorBoundary,
-} from './boundaries.js';
+	ErrorBoundary,
+	ErrorBoundaryRegistry,
+	ErrorBoundaryState,
+	executeWithBoundary,
+	withErrorBoundary,
+} from "./boundaries.js";
 
 // Core Error Classes
 export {
-  AuthError,
-  ConfigurationError,
-  FileSystemError,
-  fromError,
-  fromMessage,
-  fromSystemError,
-  GrappleError,
-  NetworkError,
-  ResourceError,
-  RuntimeError,
-  SecurityError,
-  TimeoutError,
-  UserInputError,
-  ValidationError,
-} from './errors.js';
+	AuthError,
+	ConfigurationError,
+	FileSystemError,
+	fromError,
+	fromMessage,
+	fromSystemError,
+	GrappleError,
+	NetworkError,
+	ResourceError,
+	RuntimeError,
+	SecurityError,
+	TimeoutError,
+	UserInputError,
+	ValidationError,
+} from "./errors.js";
 
 // Recovery Mechanisms
 export {
-  CircuitBreaker,
-  ErrorRecoveryManager,
-  RetryManager,
-  withCleanup,
-  withFallback,
-  withPriorityFallback,
-} from './recovery.js';
+	CircuitBreaker,
+	ErrorRecoveryManager,
+	RetryManager,
+	withCleanup,
+	withFallback,
+	withPriorityFallback,
+} from "./recovery.js";
 // Reporting and Logging
 export {
-  configureGlobalReporter,
-  ErrorAggregator,
-  ErrorReporter,
-  getGlobalReporter,
-  reportError,
-  StructuredLogger,
-  sanitizeError,
-  sanitizeText,
-} from './reporting.js';
+	configureGlobalReporter,
+	ErrorAggregator,
+	ErrorReporter,
+	getGlobalReporter,
+	reportError,
+	StructuredLogger,
+	sanitizeError,
+	sanitizeText,
+} from "./reporting.js";
 // Core Types
 export type {
-  CircuitBreakerConfig,
-  ErrorContext,
-  ErrorReport,
-  ErrorReportingConfig,
-  HealthStatus,
-  IGrappleError,
-  RecoveryStrategy,
-} from './types.js';
+	CircuitBreakerConfig,
+	ErrorContext,
+	ErrorReport,
+	ErrorReportingConfig,
+	HealthStatus,
+	IGrappleError,
+	RecoveryStrategy,
+} from "./types.js";
 // Export enums and constants
 export {
-  CircuitState,
-  ErrorCategory,
-  ErrorCode,
-  ErrorSeverity,
-} from './types.js';
+	CircuitState,
+	ErrorCategory,
+	ErrorCode,
+	ErrorSeverity,
+} from "./types.js";
 
 // Utility Functions
 export {
-  createHealthChecker,
-  createStandardError,
-  safeAsync,
-  withTimeout,
-  wrapWithErrorHandling,
-} from './utils.js';
+	createHealthChecker,
+	createStandardError,
+	safeAsync,
+	withTimeout,
+	wrapWithErrorHandling,
+} from "./utils.js";
 
 /**
  * Quick setup function for common error handling patterns
  */
 export function setupErrorHandling(
-  config: {
-    reporting?: unknown;
-    recovery?: {
-      retry?: unknown;
-      circuitBreaker?: unknown;
-    };
-    boundaries?: {
-      [key: string]: unknown;
-    };
-  } = {}
+	config: {
+		reporting?: unknown;
+		recovery?: {
+			retry?: unknown;
+			circuitBreaker?: unknown;
+		};
+		boundaries?: {
+			[key: string]: unknown;
+		};
+	} = {},
 ) {
-  // Configure global reporter
-  if (config.reporting) {
-    const { configureGlobalReporter } = require('./reporting.js');
-    configureGlobalReporter(config.reporting);
-  }
+	// Configure global reporter
+	if (config.reporting) {
+		const { configureGlobalReporter } = nodeRequire("./reporting.js");
+		configureGlobalReporter(config.reporting);
+	}
 
-  // Setup common error boundaries
-  if (config.boundaries) {
-    const { ErrorBoundaryRegistry } = require('./boundaries.js');
-    const registry = ErrorBoundaryRegistry.getInstance();
+	// Setup common error boundaries
+	if (config.boundaries) {
+		const { ErrorBoundaryRegistry } = nodeRequire("./boundaries.js");
+		const registry = ErrorBoundaryRegistry.getInstance();
 
-    for (const [name, boundaryConfig] of Object.entries(config.boundaries)) {
-      registry.createBoundary(name, boundaryConfig);
-    }
-  }
+		for (const [name, boundaryConfig] of Object.entries(config.boundaries)) {
+			registry.createBoundary(name, boundaryConfig);
+		}
+	}
 
-  // Create recovery manager with config
-  if (config.recovery) {
-    const { ErrorRecoveryManager } = require('./recovery.js');
-    return new ErrorRecoveryManager(
-      config.recovery.retry,
-      config.recovery.circuitBreaker
-    );
-  }
+	// Create recovery manager with config
+	if (config.recovery) {
+		const { ErrorRecoveryManager } = nodeRequire("./recovery.js");
+		return new ErrorRecoveryManager(
+			config.recovery.retry,
+			config.recovery.circuitBreaker,
+		);
+	}
 
-  return;
+	return;
 }
 
 /**
  * Default error handling setup for production
  */
 export function setupProductionErrorHandling() {
-  return setupErrorHandling({
-    reporting: {
-      enabled: true,
-      minSeverity: 'warning' as const,
-      includeStackTrace: true,
-      includeEnvironment: true,
-    },
-    recovery: {
-      retry: {
-        maxRetries: 3,
-        retryDelay: 1000,
-        backoffMultiplier: 2,
-        useJitter: true,
-      },
-      circuitBreaker: {
-        failureThreshold: 5,
-        timeout: 60_000,
-        successThreshold: 2,
-        monitoringPeriod: 300_000,
-        expectedFailureRate: 0.5,
-        minimumRequestVolume: 10,
-      },
-    },
-    boundaries: {
-      'config-operations': {
-        errorThreshold: 3,
-        timeWindow: 300_000,
-        autoRecover: true,
-      },
-      'hook-execution': {
-        errorThreshold: 5,
-        timeWindow: 300_000,
-        autoRecover: true,
-      },
-      'file-operations': {
-        errorThreshold: 10,
-        timeWindow: 300_000,
-        autoRecover: true,
-      },
-    },
-  });
+	return setupErrorHandling({
+		reporting: {
+			enabled: true,
+			minSeverity: "warning" as const,
+			includeStackTrace: true,
+			includeEnvironment: true,
+		},
+		recovery: {
+			retry: {
+				maxRetries: 3,
+				retryDelay: 1000,
+				backoffMultiplier: 2,
+				useJitter: true,
+			},
+			circuitBreaker: {
+				failureThreshold: 5,
+				timeout: 60_000,
+				successThreshold: 2,
+				monitoringPeriod: 300_000,
+				expectedFailureRate: 0.5,
+				minimumRequestVolume: 10,
+			},
+		},
+		boundaries: {
+			"config-operations": {
+				errorThreshold: 3,
+				timeWindow: 300_000,
+				autoRecover: true,
+			},
+			"hook-execution": {
+				errorThreshold: 5,
+				timeWindow: 300_000,
+				autoRecover: true,
+			},
+			"file-operations": {
+				errorThreshold: 10,
+				timeWindow: 300_000,
+				autoRecover: true,
+			},
+		},
+	});
 }
