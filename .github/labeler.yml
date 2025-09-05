@@ -1,72 +1,86 @@
-# Configuration for auto-labeling PRs based on changed files (v5 format)
+# Configuration for actions/labeler@v5 (list format)
 
-changed-files:
+labels:
   # Package-specific labels
-  "package: hooks-core":
-    - packages/hooks-core/**/*
+  - label: "package: hooks-core"
+    files:
+      - packages/hooks-core/**/*
 
-  "package: hooks-cli":
-    - packages/hooks-cli/**/*
+  - label: "package: hooks-cli"
+    files:
+      - packages/hooks-cli/**/*
 
-  "package: hooks-config":
-    - packages/hooks-config/**/*
+  - label: "package: hooks-config"
+    files:
+      - packages/hooks-config/**/*
 
-  "package: hooks-validators":
-    - packages/hooks-validators/**/*
+  - label: "package: hooks-validators"
+    files:
+      - packages/hooks-validators/**/*
 
-  "package: hooks-testing":
-    - packages/hooks-testing/**/*
+  - label: "package: hooks-testing"
+    files:
+      - packages/hooks-testing/**/*
 
-  "package: examples":
-    - packages/examples/**/*
+  - label: "package: examples"
+    files:
+      - packages/examples/**/*
 
   # Type labels
-  documentation:
-    - "**/*.md"
-    - docs/**/*
-    - .agent/**/*.md
+  - label: documentation
+    files:
+      - "**/*.md"
+      - docs/**/*
+      - .agent/**/*.md
 
-  tests:
-    - "**/*.test.ts"
-    - "**/*.test.tsx"
-    - "**/*.spec.ts"
-    - "**/*.spec.tsx"
-    - "**/test/**"
-    - "**/__tests__/**"
+  - label: tests
+    files:
+      - "**/*.test.ts"
+      - "**/*.test.tsx"
+      - "**/*.spec.ts"
+      - "**/*.spec.tsx"
+      - "**/test/**"
+      - "**/__tests__/**"
 
-  ci/cd:
-    - .github/workflows/**/*
-    - .github/**/*
-    - lefthook.yml
+  - label: ci/cd
+    files:
+      - .github/workflows/**/*
+      - .github/**/*
+      - lefthook.yml
 
-  dependencies:
-    - package.json
-    - packages/*/package.json
-    - apps/*/package.json
-    - bun.lockb
+  - label: dependencies
+    files:
+      - package.json
+      - packages/*/package.json
+      - apps/*/package.json
+      - bun.lock
 
-  config:
-    - tsconfig.json
-    - packages/*/tsconfig.json
-    - apps/*/tsconfig.json
-    - turbo.json
-    - biome.json
-    - .prettierrc
+  - label: config
+    files:
+      - tsconfig.json
+      - packages/*/tsconfig.json
+      - apps/*/tsconfig.json
+      - turbo.json
+      - biome.json
+      - .prettierrc*
 
-  security:
-    - "**/*auth*"
-    - "**/*security*"
-    - "**/*permission*"
-    - "**/*validate*"
-    - "**/*sanitize*"
+  - label: security
+    files:
+      - "**/*auth*"
+      - "**/*security*"
+      - "**/*permission*"
+      - "**/*validate*"
+      - "**/*sanitize*"
 
-  performance:
-    - "**/*perf*"
-    - "**/*optimize*"
-    - "**/*cache*"
-    - "**/*worker*"
+  - label: performance
+    files:
+      - "**/*perf*"
+      - "**/*optimize*"
+      - "**/*cache*"
+      - "**/*worker*"
 
-  breaking-change:
-    - packages/*/src/types.ts
-    - packages/*/src/index.ts
-    - "**/*breaking*"
+  - label: breaking-change
+    files:
+      - packages/*/src/types.ts
+      - packages/*/src/index.ts
+      - "**/*breaking*"
