@@ -32,14 +32,14 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             });
-            
+
             const labels = pr.labels.map(l => l.name);
-            
+
             // Check for explicit position labels
             let position = 'middle';
             let should_run_full = 'false';
             let should_skip_optional = 'true';
-            
+
             if (labels.includes('stack-bottom')) {
               position = 'bottom';
               should_run_full = 'true';
@@ -55,7 +55,7 @@ jobs:
             } else if (labels.includes('skip-checks')) {
               should_skip_optional = 'true';
             }
-            
+
             // Auto-detect based on PR number patterns (heuristic)
             // Usually lower PR numbers are bottom of stack
             if (!labels.some(l => l.startsWith('stack-'))) {
@@ -77,7 +77,7 @@ jobs:
                 should_skip_optional = 'false';
               }
             }
-            
+
             console.log(`PR #${context.issue.number} detected as: ${position}`);
             core.setOutput('position', position);
             core.setOutput('should_run_full', should_run_full);
@@ -94,29 +94,29 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-          
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
-        
+
       - name: Run Type Check
         run: bun run typecheck
-        
+
       - name: Run Tests (if bottom/top)
         if: needs.detect-position.outputs.should_run_full == 'true'
         run: bun test
-        
+
       - name: Run Minimal Tests (if middle)
         if: needs.detect-position.outputs.should_run_full == 'false'
         run: |
           echo "✅ Skipping full test suite for middle stack PR"
           echo "Running minimal smoke tests only..."
           bun test --bail 5 packages/*/src/index.test.ts || true
-          
+
       - name: Set result status
         id: result
         run: echo "status=success" >> "$GITHUB_OUTPUT"
@@ -134,17 +134,17 @@ jobs:
           echo "✅ Bundle size check skipped for stack position: ${{ needs.detect-position.outputs.position }}"
           echo "This is intentional for middle-stack PRs to avoid CI noise"
           exit 0
-          
+
       - name: Checkout code (if running full)
         if: needs.detect-position.outputs.should_skip_optional == 'false'
         uses: actions/checkout@v4
-        
+
       - name: Setup Bun (if running full)
         if: needs.detect-position.outputs.should_skip_optional == 'false'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-          
+
       - name: Run Bundle Analysis (if running full)
         if: needs.detect-position.outputs.should_skip_optional == 'false'
         run: |
@@ -164,7 +164,7 @@ jobs:
           echo "Stack Position: ${{ needs.detect-position.outputs.position }}"
           echo "Required Checks: ${{ needs.required-checks.result }}"
           echo "Optional Checks: ${{ needs.optional-checks.result }}"
-          
+
           if [[ "${{ needs.required-checks.result }}" == "success" ]]; then
             echo "✅ All required checks passed!"
             if [[ "${{ needs.detect-position.outputs.position }}" == "middle" ]]; then
