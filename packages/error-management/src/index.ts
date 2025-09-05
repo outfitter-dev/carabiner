@@ -44,6 +44,7 @@
 
 // ESM require compatibility for dynamic imports
 import { createRequire } from "node:module";
+
 const nodeRequire = createRequire(import.meta.url);
 
 // Error Boundaries

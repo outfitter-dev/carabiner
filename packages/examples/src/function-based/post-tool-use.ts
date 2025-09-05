@@ -390,11 +390,7 @@ async function runLinter(
 	actions: string[],
 ): Promise<void> {
 	try {
-		await runCommand(
-			"bunx",
-			["@biomejs/biome", "lint", filePath],
-			cwd,
-		);
+		await runCommand("bunx", ["@biomejs/biome", "lint", filePath], cwd);
 		actions.push("linted");
 	} catch (_error) {
 		actions.push("lint-warnings");

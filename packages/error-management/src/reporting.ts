@@ -381,7 +381,10 @@ export class ErrorReporter {
 				}
 
 				// Skip reports that aren't ready for retry yet
-				if (report.retryMetadata?.nextAttempt && Date.now() < report.retryMetadata.nextAttempt) {
+				if (
+					report.retryMetadata?.nextAttempt &&
+					Date.now() < report.retryMetadata.nextAttempt
+				) {
 					// Re-queue for later processing
 					this.reportQueue.push(report);
 					continue;
@@ -394,13 +397,13 @@ export class ErrorReporter {
 					const reportAge = Date.now() - report.reportedAt.getTime();
 					const maxRetries = 5;
 					const currentRetryCount = (report.retryMetadata?.retryCount ?? 0) + 1;
-					
+
 					if (reportAge < 300_000 && currentRetryCount <= maxRetries) {
 						// Calculate exponential backoff with jitter
 						const baseDelay = 1000; // 1 second
 						const backoffDelay = Math.min(
-							baseDelay * Math.pow(2, currentRetryCount - 1),
-							60_000 // Max 60 seconds
+							baseDelay * 2 ** (currentRetryCount - 1),
+							60_000, // Max 60 seconds
 						);
 						const jitter = Math.random() * 0.1 * backoffDelay; // 10% jitter
 						const delay = Math.floor(backoffDelay + jitter);
