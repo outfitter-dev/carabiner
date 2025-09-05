@@ -35,14 +35,14 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "catalog:",
+    "@types/node": "^24.2.1",
     "@types/picomatch": "^4.0.2",
-    "type-fest": "catalog:",
-    "typescript": "catalog:"
+    "type-fest": "^4.41.0",
+    "typescript": "^5.9.2"
   },
   "peerDependencies": {
-    "markdownlint-cli2": "^0.18.0",
-    "prettier": "^3.0.0"
+    "markdownlint-cli2": "^0.18.1",
+    "prettier": "^3.6.2"
   },
   "peerDependenciesMeta": {
     "markdownlint-cli2": {
