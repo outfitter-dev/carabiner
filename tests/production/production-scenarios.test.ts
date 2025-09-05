@@ -319,7 +319,6 @@ function generateAuditId(): string {
 	 */
 	cleanup(): void {
 		// Kill all spawned processes
-		// biome-ignore lint/complexity/noForEach: Process cleanup requires immediate execution
 		this.processes.forEach((proc) => {
 			if (!proc.killed) {
 				proc.kill("SIGTERM");
@@ -466,7 +465,6 @@ console.log(JSON.stringify({
 
 				const stats = statSync(expectedPath);
 				if (platformTest.platform !== "win32") {
-					// biome-ignore lint/suspicious/noBitwiseOperators: Bitmask check for POSIX file mode is intentional
 					expect(stats.mode & 0o755).toBe(0o755);
 				}
 			}
@@ -741,7 +739,6 @@ console.log(JSON.stringify({
 			expect(totalTime).toBeLessThan(5000); // Should complete within 5 seconds
 
 			// Check individual execution times
-			// biome-ignore lint/complexity/noForEach: Immediate validation of results required
 			results.forEach((result) => {
 				expect(result.success).toBe(true);
 				expect(result.executionTime).toBeLessThan(1000); // Each execution < 1s
