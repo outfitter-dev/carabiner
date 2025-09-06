@@ -83,9 +83,9 @@ jobs:
       fail-fast: false
       matrix:
         task:
-          - { name: "Lint", cmd: "bun x ultracite@latest lint" }
+          - { name: "Format Check", cmd: "bun x ultracite@latest check" }
           - { name: "Type Check", cmd: "bun run typecheck" }
-          - { name: "Format Check", cmd: "bun run format:check" }
+          - { name: "Format Check (script)", cmd: "bun run format:check" }
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

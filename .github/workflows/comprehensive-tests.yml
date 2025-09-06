@@ -30,7 +30,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Format check
-        run: bun run format
+        run: bun run format:check
 
       - name: Lint check
         run: bun run lint
