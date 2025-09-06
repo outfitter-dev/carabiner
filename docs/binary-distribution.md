@@ -8,8 +8,8 @@ The binary distribution system provides production-ready, standalone executables
 
 ## Supported Platforms
 
-| Platform | Architecture | Binary Name             | Runner           |
-| -------- | ------------ | ----------------------- | ---------------- |
+| Platform | Architecture | Binary Name                | Runner           |
+| -------- | ------------ | -------------------------- | ---------------- |
 | Linux    | x64          | `carabiner-linux`       | `ubuntu-latest`  |
 | macOS    | ARM64 (M1+)  | `carabiner-macos-arm64` | `macos-latest`   |
 | macOS    | x64 (Intel)  | `carabiner-macos-x64`   | `macos-13`       |
