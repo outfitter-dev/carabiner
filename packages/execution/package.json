@@ -35,8 +35,8 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "bun x ultracite@latest lint src/",
-    "format": "bun x ultracite@latest format src/",
+    "lint": "npx ultracite lint src/",
+    "format": "npx ultracite format src/",
     "clean": "rm -rf dist/"
   },
   "dependencies": {
@@ -48,7 +48,7 @@
   "devDependencies": {
     "@types/bun": "*",
     "typescript": "^5.9.2",
-    "ultracite": "^5.1.5"
+    "ultracite": "^5.3.3"
   },
   "publishConfig": {
     "access": "public"

@@ -2,6 +2,12 @@
 
 labels:
   # Package-specific labels
+  "package: error-management":
+    - packages/error-management/**/*
+
+  "package: execution":
+    - packages/execution/**/*
+
   "package: hooks-core":
     - packages/hooks-core/**/*
 
@@ -11,6 +17,9 @@ labels:
   "package: hooks-config":
     - packages/hooks-config/**/*
 
+  "package: hooks-registry":
+    - packages/hooks-registry/**/*
+
   "package: hooks-validators":
     - packages/hooks-validators/**/*
 
@@ -19,6 +28,21 @@ labels:
 
   "package: examples":
     - packages/examples/**/*
+
+  "package: plugins":
+    - packages/plugins/**/*
+
+  "package: protocol":
+    - packages/protocol/**/*
+
+  "package: registry":
+    - packages/registry/**/*
+
+  "package: schemas":
+    - packages/schemas/**/*
+
+  "package: types":
+    - packages/types/**/*
 
   # Type labels
   documentation:
@@ -34,7 +58,7 @@ labels:
     - "**/test/**"
     - "**/__tests__/**"
 
-  ci/cd:
+  "ci/cd":
     - .github/workflows/**/*
     - .github/**/*
     - lefthook.yml
@@ -67,7 +91,7 @@ labels:
     - "**/*cache*"
     - "**/*worker*"
 
-  breaking-change:
+  "breaking-change":
     - packages/*/src/types.ts
     - packages/*/src/index.ts
     - "**/*breaking*"
