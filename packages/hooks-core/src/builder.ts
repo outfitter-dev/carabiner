@@ -20,16 +20,16 @@ import type {
 export class HookBuilder<TEvent extends HookEvent = HookEvent>
 	implements IHookBuilder<TEvent>
 {
-	// biome-ignore lint/style/useReadonlyClassProperties: Mutated in forEvent method
+	// Mutated in forEvent method
 	private _event?: TEvent;
 	private _toolName?: ToolName;
-	// biome-ignore lint/style/useReadonlyClassProperties: Mutated in withHandler method
+	// Mutated in withHandler method
 	private _handler?: HookHandler<TEvent>;
 	private _timeout?: number;
 	private _condition?: (context: HookContext<TEvent>) => boolean;
 	private _priority = 0;
 	private _enabled = true;
-	// biome-ignore lint/style/useReadonlyClassProperties: Mutated in forEvent and withMiddleware methods
+	// Mutated in forEvent and withMiddleware methods
 	private _middleware: HookMiddleware<HookContext<TEvent>>[] = [];
 
 	/**
