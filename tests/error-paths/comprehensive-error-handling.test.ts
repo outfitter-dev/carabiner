@@ -5,13 +5,13 @@
  * and edge cases to ensure robust error handling in production.
  */
 
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import type {
   HookConfiguration,
   HookContext,
   HookHandler,
   HookResult,
-} from '@carabiner/types';
+} from "@carabiner/types";
 
 /**
  * Error simulation utilities
@@ -53,7 +53,7 @@ class ErrorSimulator {
 
       return {
         success: true,
-        message: 'Unreliable handler succeeded',
+        message: "Unreliable handler succeeded",
       };
     };
   }
@@ -78,7 +78,7 @@ class ErrorSimulator {
   }
 }
 
-describe('Comprehensive Error Handling', () => {
+describe("Comprehensive Error Handling", () => {
   beforeEach(() => {
     // Reset any global state
     if (global.gc) {
@@ -93,16 +93,16 @@ describe('Comprehensive Error Handling', () => {
     }
   });
 
-  describe('Input Validation Errors', () => {
-    test('should handle null and undefined inputs gracefully', async () => {
+  describe("Input Validation Errors", () => {
+    test("should handle null and undefined inputs gracefully", async () => {
       const invalidInputs = [
         null,
         undefined,
-        '',
+        "",
         {},
         { event: null },
-        { event: 'pre-tool-use', tool: null },
-        { event: 'pre-tool-use', tool: 'Bash', input: null },
+        { event: "pre-tool-use", tool: null },
+        { event: "pre-tool-use", tool: "Bash", input: null },
       ];
 
       for (const invalidInput of invalidInputs) {
@@ -111,10 +111,10 @@ describe('Comprehensive Error Handling', () => {
           const handler: HookHandler = async (context: HookContext) => {
             // This should validate the input
             if (!(context?.event && context.tool)) {
-              throw new Error('Invalid hook context provided');
+              throw new Error("Invalid hook context provided");
             }
 
-            return { success: true, message: 'Valid input processed' };
+            return { success: true, message: "Valid input processed" };
           };
 
           await handler(invalidInput as any);
@@ -125,20 +125,20 @@ describe('Comprehensive Error Handling', () => {
           }
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
-          expect((error as Error).message).toContain('Invalid');
+          expect((error as Error).message).toContain("Invalid");
         }
       }
     });
 
-    test('should handle malformed JSON inputs', async () => {
+    test("should handle malformed JSON inputs", async () => {
       const malformedJsonInputs = [
-        '{ invalid json',
+        "{ invalid json",
         '{ "key": }',
         '{ "key": "value", }', // Trailing comma
         '{ key: "value" }', // Unquoted key
         '{ "key": "value" "another": "value" }', // Missing comma
-        JSON.stringify({ event: 'invalid-event' }), // Invalid event
-        JSON.stringify({ event: 'pre-tool-use', tool: 'InvalidTool' }), // Invalid tool
+        JSON.stringify({ event: "invalid-event" }), // Invalid event
+        JSON.stringify({ event: "pre-tool-use", tool: "InvalidTool" }), // Invalid tool
       ];
 
       for (const malformedJson of malformedJsonInputs) {
@@ -148,7 +148,7 @@ describe('Comprehensive Error Handling', () => {
           // If JSON parsing succeeded, validate the structure
           if (
             parsed.event &&
-            !['pre-tool-use', 'post-tool-use'].includes(parsed.event)
+            !["pre-tool-use", "post-tool-use"].includes(parsed.event)
           ) {
             throw new Error(`Invalid event: ${parsed.event}`);
           }
@@ -160,26 +160,26 @@ describe('Comprehensive Error Handling', () => {
       }
     });
 
-    test('should handle oversized inputs appropriately', async () => {
+    test("should handle oversized inputs appropriately", async () => {
       // Create oversized inputs
       const oversizedInputs = [
         {
-          event: 'pre-tool-use',
-          tool: 'Bash',
+          event: "pre-tool-use",
+          tool: "Bash",
           input: {
-            command: 'x'.repeat(1024 * 1024), // 1MB command
+            command: "x".repeat(1024 * 1024), // 1MB command
           },
         },
         {
-          event: 'pre-tool-use',
-          tool: 'Bash',
+          event: "pre-tool-use",
+          tool: "Bash",
           input: {
-            largeArray: new Array(100_000).fill('x'.repeat(1000)), // 100MB array
+            largeArray: new Array(100_000).fill("x".repeat(1000)), // 100MB array
           },
         },
         {
-          event: 'pre-tool-use',
-          tool: 'Bash',
+          event: "pre-tool-use",
+          tool: "Bash",
           input: {
             deepNesting: new Array(10_000)
               .fill(null)
@@ -198,7 +198,7 @@ describe('Comprehensive Error Handling', () => {
             throw new Error(`Input too large: ${jsonSize} bytes`);
           }
 
-          return { success: true, message: 'Input size acceptable' };
+          return { success: true, message: "Input size acceptable" };
         };
 
         try {
@@ -211,14 +211,14 @@ describe('Comprehensive Error Handling', () => {
           }
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
-          expect((error as Error).message).toContain('too large');
+          expect((error as Error).message).toContain("too large");
         }
       }
     });
   });
 
-  describe('Timeout and Async Errors', () => {
-    test('should handle various timeout scenarios', async () => {
+  describe("Timeout and Async Errors", () => {
+    test("should handle various timeout scenarios", async () => {
       const scenarios = [
         { work: 50, timeout: 10, shouldTimeout: true },
         { work: 10, timeout: 50, shouldTimeout: false },
@@ -234,9 +234,9 @@ describe('Comprehensive Error Handling', () => {
 
         try {
           const result = await handler({
-            event: 'pre-tool-use',
-            tool: 'Bash',
-            input: { command: 'test' },
+            event: "pre-tool-use",
+            tool: "Bash",
+            input: { command: "test" },
           });
 
           if (scenario.shouldTimeout) {
@@ -248,7 +248,7 @@ describe('Comprehensive Error Handling', () => {
         } catch (error) {
           if (scenario.shouldTimeout) {
             expect(error).toBeInstanceOf(Error);
-            expect((error as Error).message).toContain('timed out');
+            expect((error as Error).message).toContain("timed out");
           } else {
             // Unexpected error
             throw error;
@@ -257,15 +257,15 @@ describe('Comprehensive Error Handling', () => {
       }
     });
 
-    test('should handle promise rejections gracefully', async () => {
+    test("should handle promise rejections gracefully", async () => {
       const rejectionScenarios = [
-        () => Promise.reject(new Error('Explicit rejection')),
-        () => Promise.reject('String rejection'),
+        () => Promise.reject(new Error("Explicit rejection")),
+        () => Promise.reject("String rejection"),
         () => Promise.reject(null),
-        () => Promise.reject({ error: 'Object rejection' }),
+        () => Promise.reject({ error: "Object rejection" }),
         () =>
           Promise.resolve().then(() => {
-            throw new Error('Delayed rejection');
+            throw new Error("Delayed rejection");
           }),
       ];
 
@@ -273,13 +273,13 @@ describe('Comprehensive Error Handling', () => {
         try {
           const handler: HookHandler = async (_context: HookContext) => {
             await scenario();
-            return { success: true, message: 'Should not reach here' };
+            return { success: true, message: "Should not reach here" };
           };
 
           await handler({
-            event: 'pre-tool-use',
-            tool: 'Bash',
-            input: { command: 'test' },
+            event: "pre-tool-use",
+            tool: "Bash",
+            input: { command: "test" },
           });
 
           // Should not reach here
@@ -291,7 +291,7 @@ describe('Comprehensive Error Handling', () => {
       }
     });
 
-    test('should handle concurrent failures appropriately', async () => {
+    test("should handle concurrent failures appropriately", async () => {
       const concurrentFailures = [];
 
       // Create multiple failing operations
@@ -317,12 +317,12 @@ describe('Comprehensive Error Handling', () => {
       let failureCount = 0;
 
       results.forEach((result, _index) => {
-        if (result.status === 'fulfilled') {
+        if (result.status === "fulfilled") {
           successCount++;
-          expect(result.value).toContain('Success');
+          expect(result.value).toContain("Success");
         } else {
           failureCount++;
-          expect(result.reason.message).toContain('Concurrent failure');
+          expect(result.reason.message).toContain("Concurrent failure");
         }
       });
 
@@ -332,8 +332,8 @@ describe('Comprehensive Error Handling', () => {
     });
   });
 
-  describe('Resource Exhaustion Scenarios', () => {
-    test('should handle memory pressure gracefully', async () => {
+  describe("Resource Exhaustion Scenarios", () => {
+    test("should handle memory pressure gracefully", async () => {
       // Test with progressively more memory allocation
       const memorySizes = [1000, 10_000, 100_000];
 
@@ -361,8 +361,8 @@ describe('Comprehensive Error Handling', () => {
           };
 
           const result = await handler({
-            event: 'pre-tool-use',
-            tool: 'Bash',
+            event: "pre-tool-use",
+            tool: "Bash",
             input: { size },
           });
 
@@ -379,12 +379,12 @@ describe('Comprehensive Error Handling', () => {
       }
     });
 
-    test('should handle file system errors', async () => {
+    test("should handle file system errors", async () => {
       const fileSystemErrors = [
-        { error: 'ENOENT', description: 'File not found' },
-        { error: 'EACCES', description: 'Permission denied' },
-        { error: 'EMFILE', description: 'Too many open files' },
-        { error: 'ENOSPC', description: 'No space left on device' },
+        { error: "ENOENT", description: "File not found" },
+        { error: "EACCES", description: "Permission denied" },
+        { error: "EMFILE", description: "Too many open files" },
+        { error: "ENOSPC", description: "No space left on device" },
       ];
 
       for (const fsError of fileSystemErrors) {
@@ -398,9 +398,9 @@ describe('Comprehensive Error Handling', () => {
 
         try {
           await handler({
-            event: 'pre-tool-use',
-            tool: 'Bash',
-            input: { operation: 'file_operation' },
+            event: "pre-tool-use",
+            tool: "Bash",
+            input: { operation: "file_operation" },
           });
 
           // Should not reach here
@@ -412,12 +412,12 @@ describe('Comprehensive Error Handling', () => {
       }
     });
 
-    test('should handle network-like failures', async () => {
+    test("should handle network-like failures", async () => {
       const networkErrors = [
-        { code: 'ECONNREFUSED', message: 'Connection refused' },
-        { code: 'ETIMEDOUT', message: 'Connection timed out' },
-        { code: 'ENOTFOUND', message: 'Host not found' },
-        { code: 'ECONNRESET', message: 'Connection reset' },
+        { code: "ECONNREFUSED", message: "Connection refused" },
+        { code: "ETIMEDOUT", message: "Connection timed out" },
+        { code: "ENOTFOUND", message: "Host not found" },
+        { code: "ECONNRESET", message: "Connection reset" },
       ];
 
       for (const netError of networkErrors) {
@@ -432,9 +432,9 @@ describe('Comprehensive Error Handling', () => {
 
         try {
           await handler({
-            event: 'pre-tool-use',
-            tool: 'WebFetch',
-            input: { url: 'https://example.com' },
+            event: "pre-tool-use",
+            tool: "WebFetch",
+            input: { url: "https://example.com" },
           });
 
           expect(false).toBe(true); // Should have thrown
@@ -446,42 +446,42 @@ describe('Comprehensive Error Handling', () => {
     });
   });
 
-  describe('Data Corruption and Invalid State', () => {
-    test('should handle corrupted configuration data', async () => {
+  describe("Data Corruption and Invalid State", () => {
+    test("should handle corrupted configuration data", async () => {
       const corruptedConfigs = [
         { version: null }, // Missing version
-        { version: '1.0.0', hooks: null }, // Missing hooks
-        { version: '1.0.0', hooks: { 'invalid-event': {} } }, // Invalid event
-        { version: '1.0.0', hooks: { 'pre-tool-use': { handler: null } } }, // Missing handler
-        { version: '1.0.0', hooks: { 'pre-tool-use': { timeout: -1 } } }, // Invalid timeout
-        { version: '1.0.0', hooks: { 'pre-tool-use': { timeout: 'invalid' } } }, // Wrong type
+        { version: "1.0.0", hooks: null }, // Missing hooks
+        { version: "1.0.0", hooks: { "invalid-event": {} } }, // Invalid event
+        { version: "1.0.0", hooks: { "pre-tool-use": { handler: null } } }, // Missing handler
+        { version: "1.0.0", hooks: { "pre-tool-use": { timeout: -1 } } }, // Invalid timeout
+        { version: "1.0.0", hooks: { "pre-tool-use": { timeout: "invalid" } } }, // Wrong type
       ];
 
       for (const config of corruptedConfigs) {
         try {
           // Simulate configuration validation
           const validateConfig = (cfg: any): HookConfiguration => {
-            if (!cfg.version || typeof cfg.version !== 'string') {
-              throw new Error('Invalid or missing version');
+            if (!cfg.version || typeof cfg.version !== "string") {
+              throw new Error("Invalid or missing version");
             }
 
-            if (!cfg.hooks || typeof cfg.hooks !== 'object') {
-              throw new Error('Invalid or missing hooks');
+            if (!cfg.hooks || typeof cfg.hooks !== "object") {
+              throw new Error("Invalid or missing hooks");
             }
 
             for (const [event, hookConfig] of Object.entries(cfg.hooks)) {
-              if (!['pre-tool-use', 'post-tool-use'].includes(event)) {
+              if (!["pre-tool-use", "post-tool-use"].includes(event)) {
                 throw new Error(`Invalid hook event: ${event}`);
               }
 
               const hook = hookConfig as any;
-              if (!hook.handler || typeof hook.handler !== 'string') {
+              if (!hook.handler || typeof hook.handler !== "string") {
                 throw new Error(`Invalid handler for event: ${event}`);
               }
 
               if (
                 hook.timeout !== undefined &&
-                (typeof hook.timeout !== 'number' || hook.timeout < 0)
+                (typeof hook.timeout !== "number" || hook.timeout < 0)
               ) {
                 throw new Error(`Invalid timeout for event: ${event}`);
               }
@@ -496,35 +496,35 @@ describe('Comprehensive Error Handling', () => {
           // (e.g., some fields are optional)
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
-          expect((error as Error).message).toContain('Invalid');
+          expect((error as Error).message).toContain("Invalid");
         }
       }
     });
 
-    test('should handle inconsistent internal state', async () => {
+    test("should handle inconsistent internal state", async () => {
       // Simulate various inconsistent states
       const stateScenarios = [
         {
-          name: 'mismatched_execution_id',
-          setup: () => ({ executionId: 'id1', contextId: 'id2' }),
+          name: "mismatched_execution_id",
+          setup: () => ({ executionId: "id1", contextId: "id2" }),
           validate: (state: any) => state.executionId === state.contextId,
         },
         {
-          name: 'negative_timestamp',
+          name: "negative_timestamp",
           setup: () => ({ timestamp: -1 }),
           validate: (state: any) => state.timestamp > 0,
         },
         {
-          name: 'invalid_event_sequence',
+          name: "invalid_event_sequence",
           setup: () => ({
-            lastEvent: 'post-tool-use',
-            currentEvent: 'pre-tool-use',
+            lastEvent: "post-tool-use",
+            currentEvent: "pre-tool-use",
           }),
           validate: (state: any) => {
             // Pre-tool-use should come before post-tool-use
             return !(
-              state.lastEvent === 'post-tool-use' &&
-              state.currentEvent === 'pre-tool-use'
+              state.lastEvent === "post-tool-use" &&
+              state.currentEvent === "pre-tool-use"
             );
           },
         },
@@ -539,30 +539,30 @@ describe('Comprehensive Error Handling', () => {
             throw new Error(`Inconsistent state detected: ${scenario.name}`);
           } catch (error) {
             expect(error).toBeInstanceOf(Error);
-            expect((error as Error).message).toContain('Inconsistent state');
+            expect((error as Error).message).toContain("Inconsistent state");
           }
         }
       }
     });
   });
 
-  describe('Security and Validation Failures', () => {
-    test('should handle potential security violations', async () => {
+  describe("Security and Validation Failures", () => {
+    test("should handle potential security violations", async () => {
       const securityViolations = [
         {
-          name: 'path_traversal',
-          input: { handler: '../../../etc/passwd' },
-          expectedError: 'path traversal',
+          name: "path_traversal",
+          input: { handler: "../../../etc/passwd" },
+          expectedError: "path traversal",
         },
         {
-          name: 'command_injection',
+          name: "command_injection",
           input: { command: 'rm -rf / ; echo "hacked"' },
-          expectedError: 'unsafe command',
+          expectedError: "unsafe command",
         },
         {
-          name: 'script_injection',
+          name: "script_injection",
           input: { script: '<script>alert("xss")</script>' },
-          expectedError: 'script injection',
+          expectedError: "script injection",
         },
       ];
 
@@ -571,25 +571,25 @@ describe('Comprehensive Error Handling', () => {
           // Simulate security validation
           const input = context.input as any;
 
-          if (input.handler?.includes('..')) {
-            throw new Error('Security violation: path traversal detected');
+          if (input.handler?.includes("..")) {
+            throw new Error("Security violation: path traversal detected");
           }
 
           if (input.command && /[;&|`$()]/g.test(input.command)) {
-            throw new Error('Security violation: unsafe command detected');
+            throw new Error("Security violation: unsafe command detected");
           }
 
           if (input.script && /<script/i.test(input.script)) {
-            throw new Error('Security violation: script injection detected');
+            throw new Error("Security violation: script injection detected");
           }
 
-          return { success: true, message: 'Security check passed' };
+          return { success: true, message: "Security check passed" };
         };
 
         try {
           await handler({
-            event: 'pre-tool-use',
-            tool: 'Bash',
+            event: "pre-tool-use",
+            tool: "Bash",
             input: violation.input,
           });
 
@@ -597,16 +597,16 @@ describe('Comprehensive Error Handling', () => {
           expect(false).toBe(true);
         } catch (error) {
           expect(error).toBeInstanceOf(Error);
-          expect((error as Error).message).toContain('Security violation');
+          expect((error as Error).message).toContain("Security violation");
         }
       }
     });
 
-    test('should handle privilege escalation attempts', async () => {
+    test("should handle privilege escalation attempts", async () => {
       const privilegeAttempts = [
-        { user: 'root', operation: 'system_access' },
-        { user: 'admin', operation: 'config_modification' },
-        { user: 'guest', operation: 'user_creation' },
+        { user: "root", operation: "system_access" },
+        { user: "admin", operation: "config_modification" },
+        { user: "guest", operation: "user_creation" },
       ];
 
       for (const attempt of privilegeAttempts) {
@@ -614,28 +614,28 @@ describe('Comprehensive Error Handling', () => {
           const input = context.input as any;
 
           // Simulate privilege checking
-          if (input.user === 'root') {
-            throw new Error('Privilege escalation: root access denied');
+          if (input.user === "root") {
+            throw new Error("Privilege escalation: root access denied");
           }
 
-          if (input.operation === 'system_access' && input.user !== 'admin') {
-            throw new Error('Insufficient privileges for system access');
+          if (input.operation === "system_access" && input.user !== "admin") {
+            throw new Error("Insufficient privileges for system access");
           }
 
-          return { success: true, message: 'Privilege check passed' };
+          return { success: true, message: "Privilege check passed" };
         };
 
         try {
           await handler({
-            event: 'pre-tool-use',
-            tool: 'Bash',
+            event: "pre-tool-use",
+            tool: "Bash",
             input: attempt,
           });
 
           // Some combinations should pass, others should fail
           if (
-            attempt.user === 'root' ||
-            (attempt.operation === 'system_access' && attempt.user !== 'admin')
+            attempt.user === "root" ||
+            (attempt.operation === "system_access" && attempt.user !== "admin")
           ) {
             expect(false).toBe(true); // Should have thrown
           }
@@ -647,8 +647,8 @@ describe('Comprehensive Error Handling', () => {
     });
   });
 
-  describe('Recovery and Cleanup', () => {
-    test('should clean up resources after failures', async () => {
+  describe("Recovery and Cleanup", () => {
+    test("should clean up resources after failures", async () => {
       const resources: any[] = [];
 
       try {
@@ -667,12 +667,12 @@ describe('Comprehensive Error Handling', () => {
           }
 
           // Simulate failure after resource allocation
-          throw new Error('Simulated failure after resource allocation');
+          throw new Error("Simulated failure after resource allocation");
         };
 
         await handler({
-          event: 'pre-tool-use',
-          tool: 'Bash',
+          event: "pre-tool-use",
+          tool: "Bash",
           input: { test: true },
         });
       } catch (error) {
@@ -691,13 +691,13 @@ describe('Comprehensive Error Handling', () => {
       expect(resources).toHaveLength(0); // Cleanup successful
     });
 
-    test('should attempt graceful degradation on partial failures', async () => {
+    test("should attempt graceful degradation on partial failures", async () => {
       const handler: HookHandler = async (_context: HookContext) => {
         const operations = [
-          { name: 'critical', required: true },
-          { name: 'optional1', required: false },
-          { name: 'optional2', required: false },
-          { name: 'important', required: true },
+          { name: "critical", required: true },
+          { name: "optional1", required: false },
+          { name: "optional2", required: false },
+          { name: "important", required: true },
         ];
 
         const results: any[] = [];
@@ -706,8 +706,8 @@ describe('Comprehensive Error Handling', () => {
         for (const op of operations) {
           try {
             // Simulate operation that might fail
-            if (op.name === 'optional1') {
-              throw new Error('Optional operation failed');
+            if (op.name === "optional1") {
+              throw new Error("Optional operation failed");
             }
 
             results.push({ name: op.name, success: true });
@@ -722,7 +722,7 @@ describe('Comprehensive Error Handling', () => {
 
         return {
           success: true,
-          message: 'Graceful degradation successful',
+          message: "Graceful degradation successful",
           data: {
             successful: results,
             failed: errors,
@@ -731,8 +731,8 @@ describe('Comprehensive Error Handling', () => {
       };
 
       const result = await handler({
-        event: 'pre-tool-use',
-        tool: 'Bash',
+        event: "pre-tool-use",
+        tool: "Bash",
         input: { test: true },
       });
 

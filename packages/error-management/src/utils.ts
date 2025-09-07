@@ -4,15 +4,15 @@
  * Helper functions for common error handling patterns
  */
 
-import { fromError, GrappleError, TimeoutError } from './errors.js';
-import { reportError } from './reporting.js';
+import { fromError, GrappleError, TimeoutError } from "./errors.js";
+import { reportError } from "./reporting.js";
 import {
   type ErrorCategory,
   ErrorCode,
   ErrorSeverity,
   type HealthStatus,
   type IGrappleError,
-} from './types.js';
+} from "./types.js";
 
 /**
  * Create a standardized error with consistent formatting
@@ -179,7 +179,7 @@ export function createHealthChecker(
   const defaultTimeout = options.timeout || 5000;
 
   return async (): Promise<HealthStatus> => {
-    const components: HealthStatus['components'] = {};
+    const components: HealthStatus["components"] = {};
     const checkPromises: Promise<void>[] = [];
 
     const executeCheck = async (checkConfig: (typeof checks)[0]) => {
@@ -195,7 +195,7 @@ export function createHealthChecker(
         components[checkConfig.name] = {
           healthy: result,
           lastCheck: new Date(),
-          error: result ? undefined : 'Health check returned false',
+          error: result ? undefined : "Health check returned false",
         };
       } catch (error) {
         components[checkConfig.name] = {
@@ -225,8 +225,8 @@ export function createHealthChecker(
       healthy: overallHealthy,
       components,
       message: overallHealthy
-        ? 'All health checks passed'
-        : 'Some health checks failed',
+        ? "All health checks passed"
+        : "Some health checks failed",
       timestamp: new Date(),
     };
   };
@@ -364,9 +364,9 @@ export function validateSchema<T>(
 ): T {
   if (!validator(object)) {
     throw createStandardError(
-      `Schema validation failed${context ? ` for ${context}` : ''}`,
+      `Schema validation failed${context ? ` for ${context}` : ""}`,
       1201, // SCHEMA_VALIDATION_FAILED
-      'validation' as ErrorCategory,
+      "validation" as ErrorCategory,
       {
         severity: ErrorSeverity.WARNING,
         operation: context,
@@ -381,7 +381,7 @@ export function validateSchema<T>(
  * Deep clone object safely
  */
 export function deepClone<T>(object: T): T {
-  if (object === null || typeof object !== 'object') {
+  if (object === null || typeof object !== "object") {
     return object;
   }
 
@@ -393,7 +393,7 @@ export function deepClone<T>(object: T): T {
     return object.map((item) => deepClone(item)) as unknown as T;
   }
 
-  if (typeof object === 'object') {
+  if (typeof object === "object") {
     const cloned = {} as T;
     for (const key in object) {
       if (Object.hasOwn(object, key)) {
@@ -415,15 +415,15 @@ export function isRetryableError(error: unknown): boolean {
   }
 
   // Check Node.js error codes
-  if (error && typeof error === 'object' && 'code' in error) {
+  if (error && typeof error === "object" && "code" in error) {
     const code = (error as { code: string }).code;
     const retryableCodes = [
-      'ETIMEDOUT',
-      'ECONNREFUSED',
-      'ECONNRESET',
-      'ENOTFOUND',
-      'ENETUNREACH',
-      'ECONNABORTED',
+      "ETIMEDOUT",
+      "ECONNREFUSED",
+      "ECONNRESET",
+      "ENOTFOUND",
+      "ENETUNREACH",
+      "ECONNABORTED",
     ];
     return retryableCodes.includes(code);
   }
@@ -439,19 +439,19 @@ export function extractErrorMessage(error: unknown): string {
     return error.message;
   }
 
-  if (typeof error === 'string') {
+  if (typeof error === "string") {
     return error;
   }
 
-  if (error && typeof error === 'object') {
-    if ('message' in error && typeof error.message === 'string') {
+  if (error && typeof error === "object") {
+    if ("message" in error && typeof error.message === "string") {
       return error.message;
     }
 
-    if ('error' in error && typeof error.error === 'string') {
+    if ("error" in error && typeof error.error === "string") {
       return error.error;
     }
   }
 
-  return 'Unknown error';
+  return "Unknown error";
 }

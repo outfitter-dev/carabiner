@@ -6,18 +6,18 @@
  * making it easy to create hooks with minimal boilerplate.
  */
 
-import { createProtocol } from '@carabiner/protocol';
-import type { HookHandler, HookResult } from '@carabiner/types';
+import { createProtocol } from "@carabiner/protocol";
+import type { HookHandler, HookResult } from "@carabiner/types";
 
-import { type ExecutionOptions, HookExecutor } from './executor';
-import { globalMetrics } from './metrics';
+import { type ExecutionOptions, HookExecutor } from "./executor";
+import { globalMetrics } from "./metrics";
 
 /**
  * Runner configuration options
  */
 export interface RunnerOptions extends ExecutionOptions {
   /** Protocol type to use (default: 'stdin') */
-  readonly protocol?: 'stdin' | 'test';
+  readonly protocol?: "stdin" | "test";
 
   /** Test input data (required when protocol is 'test') */
   readonly testInput?: unknown;
@@ -41,7 +41,7 @@ export class HookRunner {
 
   constructor(options: RunnerOptions = {}) {
     this.options = {
-      protocol: 'stdin',
+      protocol: "stdin",
       ...options,
     };
   }
@@ -79,16 +79,16 @@ export class HookRunner {
    */
   private createProtocol() {
     switch (this.options.protocol) {
-      case 'test':
+      case "test":
         if (this.options.testInput === undefined) {
-          throw new Error('testInput is required when using test protocol');
+          throw new Error("testInput is required when using test protocol");
         }
-        return createProtocol('test', {
+        return createProtocol("test", {
           input: this.options.testInput,
           options: this.options.testOptions,
         });
       default:
-        return createProtocol('stdin');
+        return createProtocol("stdin");
     }
   }
 }
@@ -129,7 +129,7 @@ export async function runHook(
   handler: HookHandler,
   options: ExecutionOptions = {}
 ): Promise<never | undefined> {
-  const runner = new HookRunner({ ...options, protocol: 'stdin' });
+  const runner = new HookRunner({ ...options, protocol: "stdin" });
   return await runner.run(handler);
 }
 
@@ -164,11 +164,11 @@ export async function runHook(
 export async function runTestHook(
   handler: HookHandler,
   testInput: unknown,
-  options: Omit<ExecutionOptions, 'exitProcess'> = {}
+  options: Omit<ExecutionOptions, "exitProcess"> = {}
 ): Promise<void> {
   const runner = new HookRunner({
     ...options,
-    protocol: 'test',
+    protocol: "test",
     testInput,
     exitProcess: false, // Never exit in test mode
   });
@@ -239,7 +239,7 @@ export function createRunner(
  */
 export function createTestRunner(
   handler: HookHandler,
-  options: Omit<ExecutionOptions, 'exitProcess'> = {}
+  options: Omit<ExecutionOptions, "exitProcess"> = {}
 ): (testInput: unknown) => Promise<void> {
   return async (testInput: unknown) => {
     return await runTestHook(handler, testInput, options);
@@ -273,7 +273,7 @@ export function createTestRunner(
 export async function runTestHooks(
   handlers: HookHandler[],
   testInput: unknown,
-  options: Omit<ExecutionOptions, 'exitProcess'> = {}
+  options: Omit<ExecutionOptions, "exitProcess"> = {}
 ): Promise<{ handler: HookHandler; result: HookResult; error?: Error }[]> {
   const results: { handler: HookHandler; result: HookResult; error?: Error }[] =
     [];
@@ -281,7 +281,7 @@ export async function runTestHooks(
   for (const handler of handlers) {
     try {
       // Create a test protocol for each handler
-      const protocol = createProtocol('test', {
+      const protocol = createProtocol("test", {
         input: testInput,
         options: options.additionalContext,
       });
@@ -307,7 +307,7 @@ export async function runTestHooks(
         result: {
           success: false,
           message:
-            error instanceof Error ? error.message : 'Handler execution failed',
+            error instanceof Error ? error.message : "Handler execution failed",
           block: true,
         },
         error: error instanceof Error ? error : new Error(String(error)),
@@ -326,18 +326,18 @@ function normalizeTestResult(result: unknown): HookResult {
     return { success: true };
   }
 
-  if (typeof result === 'boolean') {
+  if (typeof result === "boolean") {
     return {
       success: result,
-      message: result ? 'Handler completed' : 'Handler returned false',
+      message: result ? "Handler completed" : "Handler returned false",
     };
   }
 
-  if (typeof result === 'string') {
+  if (typeof result === "string") {
     return { success: true, message: result };
   }
 
-  if (typeof result === 'object' && result !== null) {
+  if (typeof result === "object" && result !== null) {
     const obj = result as Partial<HookResult>;
     return {
       success: obj.success ?? true,

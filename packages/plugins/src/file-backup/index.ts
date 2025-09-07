@@ -14,11 +14,11 @@ import {
   stat,
   unlink,
   writeFile,
-} from 'node:fs/promises';
-import { basename, dirname, extname, join } from 'node:path';
-import type { HookPlugin, PluginResult } from '@carabiner/registry';
-import type { HookContext } from '@carabiner/types';
-import { z } from 'zod';
+} from "node:fs/promises";
+import { basename, dirname, extname, join } from "node:path";
+import type { HookPlugin, PluginResult } from "@carabiner/registry";
+import type { HookContext } from "@carabiner/types";
+import { z } from "zod";
 
 /**
  * File backup plugin configuration schema
@@ -26,7 +26,7 @@ import { z } from 'zod';
 const FileBackupConfigSchema = z
   .object({
     /** Directory to store backups (relative to file location or absolute) */
-    backupDir: z.string().default('.backups'),
+    backupDir: z.string().default(".backups"),
 
     /** Whether to use absolute path for backup directory */
     absoluteBackupDir: z.boolean().default(false),
@@ -36,8 +36,8 @@ const FileBackupConfigSchema = z
 
     /** Backup file naming strategy */
     namingStrategy: z
-      .enum(['timestamp', 'numbered', 'date'])
-      .default('timestamp'),
+      .enum(["timestamp", "numbered", "date"])
+      .default("timestamp"),
 
     /** File patterns to include (empty = all files) */
     includePatterns: z.array(z.string()).default([]),
@@ -46,13 +46,13 @@ const FileBackupConfigSchema = z
     excludePatterns: z
       .array(z.string())
       .default([
-        '*.tmp',
-        '*.log',
-        '*.backup',
-        '**/node_modules/**',
-        '**/.git/**',
-        '**/dist/**',
-        '**/build/**',
+        "*.tmp",
+        "*.log",
+        "*.backup",
+        "**/node_modules/**",
+        "**/.git/**",
+        "**/dist/**",
+        "**/build/**",
       ]),
 
     /** Minimum file size to backup (bytes) */
@@ -96,8 +96,8 @@ function matchesPatterns(filePath: string, patterns: string[]): boolean {
 
   return patterns.some((pattern) => {
     const regex = new RegExp(
-      pattern.replace(/\*/g, '.*').replace(/\?/g, '.'),
-      'i'
+      pattern.replace(/\*/g, ".*").replace(/\?/g, "."),
+      "i"
     );
     return regex.test(filePath);
   });
@@ -113,22 +113,22 @@ function generateBackupFilename(
 ): string {
   const base = basename(originalPath);
   const ext = extname(originalPath);
-  const name = base.replace(ext, '');
+  const name = base.replace(ext, "");
 
   switch (strategy) {
-    case 'timestamp': {
+    case "timestamp": {
       const timestamp = Date.now();
       return `${name}.${timestamp}${ext}`;
     }
-    case 'numbered': {
+    case "numbered": {
       const num = counter || 1;
-      return `${name}.backup.${num.toString().padStart(3, '0')}${ext}`;
+      return `${name}.backup.${num.toString().padStart(3, "0")}${ext}`;
     }
-    case 'date': {
-      const date = new Date().toISOString().split('T')[0];
+    case "date": {
+      const date = new Date().toISOString().split("T")[0];
       const time = (
-        new Date().toTimeString().split(' ')[0] || '00-00-00'
-      ).replace(/:/g, '-');
+        new Date().toTimeString().split(" ")[0] || "00-00-00"
+      ).replace(/:/g, "-");
       return `${name}.${date}_${time}${ext}`;
     }
     default:
@@ -148,7 +148,7 @@ async function getExistingBackups(
     const files = await readdir(backupDir);
     const base = basename(filePath);
     const ext = extname(filePath);
-    const name = base.replace(ext, '');
+    const name = base.replace(ext, "");
 
     const backupFiles: Array<{ path: string; created: Date }> = [];
 
@@ -156,16 +156,16 @@ async function getExistingBackups(
       let isBackup = false;
 
       switch (strategy) {
-        case 'timestamp':
+        case "timestamp":
           isBackup =
             file.startsWith(`${name}.`) &&
             file.endsWith(ext) &&
             /\.\d+\./.test(file);
           break;
-        case 'numbered':
+        case "numbered":
           isBackup = file.startsWith(`${name}.backup.`) && file.endsWith(ext);
           break;
-        case 'date':
+        case "date":
           isBackup =
             file.startsWith(`${name}.`) &&
             file.endsWith(ext) &&
@@ -227,7 +227,7 @@ async function removeBackupsByCount(
   const toRemove = existing.slice(maxBackups);
 
   for (const backup of toRemove) {
-    await removeBackupFile(backup.path, 'Removed old backup', config);
+    await removeBackupFile(backup.path, "Removed old backup", config);
   }
 }
 
@@ -247,7 +247,7 @@ async function removeBackupsByAge(
 
   for (const backup of existing) {
     if (backup.created < cutoff) {
-      await removeBackupFile(backup.path, 'Removed expired backup', config);
+      await removeBackupFile(backup.path, "Removed expired backup", config);
     }
   }
 }
@@ -275,7 +275,7 @@ async function cleanupOldBackups(
  */
 function validateFileForBackup(
   _filePath: string,
-  fileStats: import('node:fs').Stats,
+  fileStats: import("node:fs").Stats,
   config: FileBackupConfig
 ): { valid: boolean; error?: string } {
   if (fileStats.size < config.minFileSize) {
@@ -306,11 +306,11 @@ function shouldSkipFileBackup(
     config.includePatterns.length > 0 &&
     !matchesPatterns(filePath, config.includePatterns)
   ) {
-    return { skip: true, reason: 'File not in include patterns' };
+    return { skip: true, reason: "File not in include patterns" };
   }
 
   if (matchesPatterns(filePath, config.excludePatterns)) {
-    return { skip: true, reason: 'File matches exclude pattern' };
+    return { skip: true, reason: "File matches exclude pattern" };
   }
 
   return { skip: false };
@@ -354,7 +354,7 @@ async function performBackupOperation(
     } catch (error) {
       return {
         success: false,
-        error: `Failed to create backup directory: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error: `Failed to create backup directory: ${error instanceof Error ? error.message : "Unknown error"}`,
       };
     }
   }
@@ -381,7 +381,7 @@ async function performBackupOperation(
     if (isIdentical) {
       return {
         success: true,
-        error: 'Content identical to latest backup',
+        error: "Content identical to latest backup",
       };
     }
   }
@@ -404,7 +404,7 @@ async function createBackup(
 ): Promise<{ success: boolean; backupPath?: string; error?: string }> {
   try {
     // Check if file exists
-    let fileStats: import('node:fs').Stats;
+    let fileStats: import("node:fs").Stats;
     try {
       fileStats = await stat(filePath);
     } catch (_error) {
@@ -416,7 +416,7 @@ async function createBackup(
     const validation = validateFileForBackup(filePath, fileStats, config);
     if (!validation.valid) {
       return {
-        success: !validation.error?.includes('too large'),
+        success: !validation.error?.includes("too large"),
         error: validation.error,
       };
     }
@@ -437,7 +437,7 @@ async function createBackup(
   } catch (error) {
     return {
       success: false,
-      error: `Backup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      error: `Backup failed: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
   }
 }
@@ -446,32 +446,32 @@ async function createBackup(
  * Check if tool should be processed for backup
  */
 function shouldProcessTool(context: HookContext): boolean {
-  if (context.event !== 'PreToolUse' || !('toolName' in context)) {
+  if (context.event !== "PreToolUse" || !("toolName" in context)) {
     return false;
   }
 
   const toolName = context.toolName;
-  return ['Write', 'Edit', 'MultiEdit'].includes(toolName);
+  return ["Write", "Edit", "MultiEdit"].includes(toolName);
 }
 
 /**
  * Extract file paths from tool context
  */
 function extractFilePathsFromTool(context: HookContext): string[] {
-  if (!('toolName' in context)) {
+  if (!("toolName" in context)) {
     return [];
   }
 
-  const toolName = 'toolName' in context ? context.toolName : undefined;
-  const toolInput = 'toolInput' in context ? context.toolInput : {};
+  const toolName = "toolName" in context ? context.toolName : undefined;
+  const toolInput = "toolInput" in context ? context.toolInput : {};
   const filePaths: string[] = [];
 
   if (
-    (toolName === 'Write' || toolName === 'Edit' || toolName === 'MultiEdit') &&
-    typeof toolInput === 'object' &&
+    (toolName === "Write" || toolName === "Edit" || toolName === "MultiEdit") &&
+    typeof toolInput === "object" &&
     toolInput !== null &&
-    'file_path' in toolInput &&
-    typeof toolInput.file_path === 'string'
+    "file_path" in toolInput &&
+    typeof toolInput.file_path === "string"
   ) {
     filePaths.push(toolInput.file_path);
   }
@@ -597,13 +597,13 @@ async function processFileBackups(
  * ```
  */
 export const fileBackupPlugin: HookPlugin = {
-  name: 'file-backup',
-  version: '1.0.0',
-  description: 'Creates automatic backups of files before modification',
-  author: 'Outfitter Team',
+  name: "file-backup",
+  version: "1.0.0",
+  description: "Creates automatic backups of files before modification",
+  author: "Outfitter Team",
 
-  events: ['PreToolUse'],
-  tools: ['Write', 'Edit', 'MultiEdit'],
+  events: ["PreToolUse"],
+  tools: ["Write", "Edit", "MultiEdit"],
   priority: 80, // High priority to backup before modifications
 
   configSchema: FileBackupConfigSchema as z.ZodType<Record<string, unknown>>,
@@ -621,7 +621,7 @@ export const fileBackupPlugin: HookPlugin = {
     const backupConfig = FileBackupConfigSchema.parse(config);
 
     if (!backupConfig.backupExisting) {
-      return createSkippedResult(this.name, this.version, 'Backup disabled');
+      return createSkippedResult(this.name, this.version, "Backup disabled");
     }
 
     const filePaths = extractFilePathsFromTool(context);
@@ -629,7 +629,7 @@ export const fileBackupPlugin: HookPlugin = {
       return createSkippedResult(
         this.name,
         this.version,
-        'No file paths found'
+        "No file paths found"
       );
     }
 
@@ -655,12 +655,12 @@ export const fileBackupPlugin: HookPlugin = {
   },
 
   metadata: {
-    name: 'file-backup',
-    version: '1.0.0',
-    description: 'Creates automatic backups of files before modification',
-    author: 'Outfitter Team',
-    keywords: ['backup', 'files', 'safety', 'version-control'],
-    license: 'MIT',
+    name: "file-backup",
+    version: "1.0.0",
+    description: "Creates automatic backups of files before modification",
+    author: "Outfitter Team",
+    keywords: ["backup", "files", "safety", "version-control"],
+    license: "MIT",
   },
 };
 

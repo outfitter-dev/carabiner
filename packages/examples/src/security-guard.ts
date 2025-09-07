@@ -14,40 +14,40 @@
  * - Logs security events for audit purposes
  */
 
-import { existsSync, statSync } from 'node:fs';
-import { normalize, resolve } from 'node:path';
-import { HookExecutor } from '@carabiner/execution';
-import { StdinProtocol } from '@carabiner/protocol';
-import type { HookHandler, HookResult } from '@carabiner/types';
+import { existsSync, statSync } from "node:fs";
+import { normalize, resolve } from "node:path";
+import { HookExecutor } from "@carabiner/execution";
+import { StdinProtocol } from "@carabiner/protocol";
+import type { HookHandler, HookResult } from "@carabiner/types";
 
 // Dangerous bash command patterns
 const DANGEROUS_COMMANDS = [
-  { pattern: /rm\s+-rf\s+\/(?:\s|$)/, description: 'Removing root directory' },
-  { pattern: /rm\s+-rf\s+~\/(?:\s|$)/, description: 'Removing home directory' },
+  { pattern: /rm\s+-rf\s+\/(?:\s|$)/, description: "Removing root directory" },
+  { pattern: /rm\s+-rf\s+~\/(?:\s|$)/, description: "Removing home directory" },
   {
     pattern: /chmod\s+777\b/,
-    description: 'Setting overly permissive permissions',
+    description: "Setting overly permissive permissions",
   },
   {
     pattern: /curl.*\|\s*sh\b/,
-    description: 'Piping curl output directly to shell',
+    description: "Piping curl output directly to shell",
   },
   {
     pattern: /wget.*\|\s*bash\b/,
-    description: 'Piping wget output directly to bash',
+    description: "Piping wget output directly to bash",
   },
   {
     pattern: />+\s*\/dev\/s[dr][a-z]\d*(?:\s|$)/,
-    description: 'Writing directly to disk device',
+    description: "Writing directly to disk device",
   },
   {
     pattern: /dd\s+.*of=\/dev\/s[dr][a-z]/,
-    description: 'Using dd on disk device',
+    description: "Using dd on disk device",
   },
-  { pattern: /mkfs\.\w+\s+\/dev/, description: 'Formatting disk device' },
+  { pattern: /mkfs\.\w+\s+\/dev/, description: "Formatting disk device" },
   {
     pattern: /:\(\)\s*\{\s*:\|\s*:\s*&\s*\}/,
-    description: 'Fork bomb detected',
+    description: "Fork bomb detected",
   },
 ];
 
@@ -69,15 +69,15 @@ const SENSITIVE_FILES = [
 
 // Protected directories
 const PROTECTED_PATHS = [
-  '/etc',
-  '/sys',
-  '/proc',
-  '/dev',
-  '/boot',
-  '/usr/bin',
-  '/usr/sbin',
-  '/bin',
-  '/sbin',
+  "/etc",
+  "/sys",
+  "/proc",
+  "/dev",
+  "/boot",
+  "/usr/bin",
+  "/usr/sbin",
+  "/bin",
+  "/sbin",
 ];
 
 /**
@@ -122,7 +122,7 @@ function validateBashCommand(command: string): {
   // Check for sudo without specific command
   if (/^\s*sudo\s+-i\s*$/.test(command) || /^\s*sudo\s+su\s*$/.test(command)) {
     issues.push(
-      'Interactive sudo session detected - specify exact command instead'
+      "Interactive sudo session detected - specify exact command instead"
     );
   }
 
@@ -146,40 +146,40 @@ function validateFileOperation(
   // Check for directory traversal attempts
   // Check for various forms of directory traversal
   const traversalPatterns = [
-    '../',
-    '..\\',
-    '..%2f',
-    '..%2F',
-    '..%5c',
-    '..%5C',
-    '%2e%2e/',
-    '%2e%2e\\',
-    '..\\\\',
-    '..//',
-    '..\\//',
+    "../",
+    "..\\",
+    "..%2f",
+    "..%2F",
+    "..%5c",
+    "..%5C",
+    "%2e%2e/",
+    "%2e%2e\\",
+    "..\\\\",
+    "..//",
+    "..\\//",
   ];
-  
+
   const lowerPath = filePath.toLowerCase();
   for (const pattern of traversalPatterns) {
     if (lowerPath.includes(pattern.toLowerCase())) {
       return {
         safe: false,
-        issue: 'Directory traversal attempt detected',
+        issue: "Directory traversal attempt detected",
       };
     }
   }
-  
+
   // Also check normalized path doesn't escape working directory
   const normalizedPath = normalize(filePath);
   const resolvedPath = resolve(filePath);
   const cwd = process.cwd();
-  
-  if (!resolvedPath.startsWith(cwd) && !filePath.startsWith('/')) {
+
+  if (!(resolvedPath.startsWith(cwd) || filePath.startsWith("/"))) {
     // Allow absolute paths that don't try to escape via traversal
-    if (normalizedPath.includes('..')) {
+    if (normalizedPath.includes("..")) {
       return {
         safe: false,
-        issue: 'Path traversal detected in normalized path',
+        issue: "Path traversal detected in normalized path",
       };
     }
   }
@@ -193,7 +193,7 @@ function validateFileOperation(
   }
 
   // Additional check for Write/Edit operations on executable files
-  if ((toolName === 'Write' || toolName === 'Edit') && existsSync(filePath)) {
+  if ((toolName === "Write" || toolName === "Edit") && existsSync(filePath)) {
     try {
       const stats = statSync(filePath);
       // Check if file is executable (Unix-like systems)
@@ -221,7 +221,7 @@ const securityGuardHook: HookHandler = (context): HookResult => {
   const toolInput = (context as any).toolInput ?? (context as any).tool_input;
 
   // Handle Bash commands
-  if (toolName === 'Bash') {
+  if (toolName === "Bash") {
     const command = toolInput?.command as string | undefined;
     if (command) {
       const validation = validateBashCommand(command);
@@ -234,14 +234,14 @@ const securityGuardHook: HookHandler = (context): HookResult => {
         return {
           success: false,
           block: true,
-          message: `Security violation:\n${validation.issues.map((i) => `• ${i}`).join('\n')}`,
+          message: `Security violation:\n${validation.issues.map((i) => `• ${i}`).join("\n")}`,
         };
       }
     }
   }
 
   // Handle file operations
-  if (['Edit', 'Write', 'MultiEdit', 'Read'].includes(toolName)) {
+  if (["Edit", "Write", "MultiEdit", "Read"].includes(toolName)) {
     const filePath = toolInput?.file_path as string | undefined;
     const validation = validateFileOperation(toolName, filePath);
 
@@ -255,7 +255,7 @@ const securityGuardHook: HookHandler = (context): HookResult => {
   }
 
   // Handle NotebookEdit
-  if (toolName === 'NotebookEdit') {
+  if (toolName === "NotebookEdit") {
     const notebookPath = toolInput?.notebook_path as string | undefined;
     const validation = validateFileOperation(toolName, notebookPath);
 

@@ -3,15 +3,15 @@
  * @description Configuration management for security scanner
  */
 
-import { matchesPatterns } from '../matchers/pattern-matcher.js';
-import type { SecurityScannerConfig } from '../types/index.js';
-import { SecurityScannerConfigSchema } from '../types/index.js';
+import { matchesPatterns } from "../matchers/pattern-matcher.js";
+import type { SecurityScannerConfig } from "../types/index.js";
+import { SecurityScannerConfigSchema } from "../types/index.js";
 
 function deepFreeze<T>(obj: T): Readonly<T> {
-  if (obj && typeof obj === 'object') {
+  if (obj && typeof obj === "object") {
     Object.freeze(obj);
     for (const value of Object.values(obj as Record<string, unknown>)) {
-      if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+      if (value && typeof value === "object" && !Object.isFrozen(value)) {
         deepFreeze(value as Record<string, unknown>);
       }
     }
@@ -50,7 +50,7 @@ export class SecurityScannerConfigManager {
     ) {
       return {
         shouldScan: false,
-        reason: 'File not in include patterns',
+        reason: "File not in include patterns",
       };
     }
 
@@ -58,7 +58,7 @@ export class SecurityScannerConfigManager {
     if (matchesPatterns(filePath, this.config.excludePatterns)) {
       return {
         shouldScan: false,
-        reason: 'File matches exclude pattern',
+        reason: "File matches exclude pattern",
       };
     }
 

@@ -14,12 +14,12 @@
  * - Respects project configuration files
  */
 
-import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { dirname, extname } from 'node:path';
-import { HookExecutor } from '@carabiner/execution';
-import { StdinProtocol } from '@carabiner/protocol';
-import type { HookHandler, HookResult } from '@carabiner/types';
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { dirname, extname } from "node:path";
+import { HookExecutor } from "@carabiner/execution";
+import { StdinProtocol } from "@carabiner/protocol";
+import type { HookHandler, HookResult } from "@carabiner/types";
 
 // Formatter configurations by file extension
 const FORMATTERS: Record<
@@ -31,171 +31,171 @@ const FORMATTERS: Record<
   }>
 > = {
   // JavaScript/TypeScript
-  '.js': [
+  ".js": [
     {
-      command: 'biome',
-      args: (f) => ['check', '--write', f],
-      checkCommand: 'biome --version',
+      command: "biome",
+      args: (f) => ["check", "--write", f],
+      checkCommand: "biome --version",
     },
     {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
     },
     {
-      command: 'eslint',
-      args: (f) => ['--fix', f],
-      checkCommand: 'eslint --version',
-    },
-  ],
-  '.jsx': [
-    {
-      command: 'biome',
-      args: (f) => ['check', '--write', f],
-      checkCommand: 'biome --version',
-    },
-    {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
+      command: "eslint",
+      args: (f) => ["--fix", f],
+      checkCommand: "eslint --version",
     },
   ],
-  '.ts': [
+  ".jsx": [
     {
-      command: 'biome',
-      args: (f) => ['check', '--write', f],
-      checkCommand: 'biome --version',
+      command: "biome",
+      args: (f) => ["check", "--write", f],
+      checkCommand: "biome --version",
     },
     {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
-    },
-    {
-      command: 'eslint',
-      args: (f) => ['--fix', f],
-      checkCommand: 'eslint --version',
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
     },
   ],
-  '.tsx': [
+  ".ts": [
     {
-      command: 'biome',
-      args: (f) => ['check', '--write', f],
-      checkCommand: 'biome --version',
+      command: "biome",
+      args: (f) => ["check", "--write", f],
+      checkCommand: "biome --version",
     },
     {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
+    },
+    {
+      command: "eslint",
+      args: (f) => ["--fix", f],
+      checkCommand: "eslint --version",
+    },
+  ],
+  ".tsx": [
+    {
+      command: "biome",
+      args: (f) => ["check", "--write", f],
+      checkCommand: "biome --version",
+    },
+    {
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
     },
   ],
 
   // Python
-  '.py': [
+  ".py": [
     {
-      command: 'ruff',
-      args: (f) => ['format', f],
-      checkCommand: 'ruff --version',
+      command: "ruff",
+      args: (f) => ["format", f],
+      checkCommand: "ruff --version",
     },
-    { command: 'black', args: (f) => [f], checkCommand: 'black --version' },
+    { command: "black", args: (f) => [f], checkCommand: "black --version" },
     {
-      command: 'autopep8',
-      args: (f) => ['--in-place', f],
-      checkCommand: 'autopep8 --version',
+      command: "autopep8",
+      args: (f) => ["--in-place", f],
+      checkCommand: "autopep8 --version",
     },
   ],
 
   // Rust
-  '.rs': [
-    { command: 'rustfmt', args: (f) => [f], checkCommand: 'rustfmt --version' },
+  ".rs": [
+    { command: "rustfmt", args: (f) => [f], checkCommand: "rustfmt --version" },
   ],
 
   // Go
-  '.go': [
-    { command: 'gofmt', args: (f) => ['-w', f], checkCommand: 'gofmt -?' },
+  ".go": [
+    { command: "gofmt", args: (f) => ["-w", f], checkCommand: "gofmt -?" },
     {
-      command: 'goimports',
-      args: (f) => ['-w', f],
-      checkCommand: 'goimports -?',
+      command: "goimports",
+      args: (f) => ["-w", f],
+      checkCommand: "goimports -?",
     },
   ],
 
   // JSON
-  '.json': [
+  ".json": [
     {
-      command: 'biome',
-      args: (f) => ['check', '--write', f],
-      checkCommand: 'biome --version',
+      command: "biome",
+      args: (f) => ["check", "--write", f],
+      checkCommand: "biome --version",
     },
     {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
     },
   ],
 
   // Markdown
-  '.md': [
+  ".md": [
     {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
     },
     {
-      command: 'markdownlint-cli2',
-      args: (f) => ['--fix', f],
-      checkCommand: 'markdownlint-cli2 --version',
+      command: "markdownlint-cli2",
+      args: (f) => ["--fix", f],
+      checkCommand: "markdownlint-cli2 --version",
     },
   ],
 
   // CSS/SCSS
-  '.css': [
+  ".css": [
     {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
     },
     {
-      command: 'stylelint',
-      args: (f) => ['--fix', f],
-      checkCommand: 'stylelint --version',
+      command: "stylelint",
+      args: (f) => ["--fix", f],
+      checkCommand: "stylelint --version",
     },
   ],
-  '.scss': [
+  ".scss": [
     {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
     },
     {
-      command: 'stylelint',
-      args: (f) => ['--fix', f],
-      checkCommand: 'stylelint --version',
+      command: "stylelint",
+      args: (f) => ["--fix", f],
+      checkCommand: "stylelint --version",
     },
   ],
 
   // HTML
-  '.html': [
+  ".html": [
     {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
     },
   ],
 
   // YAML
-  '.yml': [
+  ".yml": [
     {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
     },
   ],
-  '.yaml': [
+  ".yaml": [
     {
-      command: 'prettier',
-      args: (f) => ['--write', f],
-      checkCommand: 'prettier --version',
+      command: "prettier",
+      args: (f) => ["--write", f],
+      checkCommand: "prettier --version",
     },
   ],
 };
@@ -205,8 +205,8 @@ const FORMATTERS: Record<
  */
 function isFormatterAvailable(checkCommand: string): boolean {
   try {
-    const [command, ...args] = checkCommand.split(' ');
-    execFileSync(command, args, { stdio: 'ignore' });
+    const [command, ...args] = checkCommand.split(" ");
+    execFileSync(command, args, { stdio: "ignore" });
     return true;
   } catch {
     return false;
@@ -246,14 +246,14 @@ function findFormatter(filePath: string): {
 function formatFile(filePath: string): { success: boolean; message: string } {
   // Skip if file doesn't exist (might be deleted)
   if (!existsSync(filePath)) {
-    return { success: true, message: 'File does not exist, skipping' };
+    return { success: true, message: "File does not exist, skipping" };
   }
 
   const formatter = findFormatter(filePath);
   if (!formatter) {
     return {
       success: true,
-      message: 'No formatter available for this file type',
+      message: "No formatter available for this file type",
     };
   }
 
@@ -262,7 +262,7 @@ function formatFile(filePath: string): { success: boolean; message: string } {
     const cwd = dirname(filePath);
     execFileSync(formatter.command, formatter.args, {
       cwd,
-      stdio: 'pipe',
+      stdio: "pipe",
     });
 
     return {
@@ -284,13 +284,13 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
   // Support both camelCase and snake_case for backward compatibility
   const toolName = (context as any).toolName ?? (context as any).tool_name;
   const toolInput = (context as any).toolInput ?? (context as any).tool_input;
-  
+
   // Only process file modification tools
-  const fileTools = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'];
-  if (!toolName || !fileTools.includes(toolName)) {
+  const fileTools = ["Edit", "Write", "MultiEdit", "NotebookEdit"];
+  if (!(toolName && fileTools.includes(toolName))) {
     return {
       success: true,
-      action: 'continue',
+      action: "continue",
     };
   }
 
@@ -298,14 +298,14 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
   let filePath: string | undefined;
 
   switch (toolName) {
-    case 'Edit':
-    case 'Write':
+    case "Edit":
+    case "Write":
       filePath = toolInput?.file_path as string;
       break;
-    case 'MultiEdit':
+    case "MultiEdit":
       filePath = toolInput?.file_path as string;
       break;
-    case 'NotebookEdit':
+    case "NotebookEdit":
       filePath = toolInput?.notebook_path as string;
       break;
     default:
@@ -316,7 +316,7 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
   if (!filePath) {
     return {
       success: true,
-      action: 'continue',
+      action: "continue",
     };
   }
 
@@ -326,8 +326,8 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
 
   if (result.success) {
     if (
-      result.message !== 'File does not exist, skipping' &&
-      result.message !== 'No formatter available for this file type'
+      result.message !== "File does not exist, skipping" &&
+      result.message !== "No formatter available for this file type"
     ) {
       // Log successful formatting if needed
     }
@@ -337,7 +337,7 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
 
   return {
     success: true,
-    action: 'continue',
+    action: "continue",
   };
 };
 

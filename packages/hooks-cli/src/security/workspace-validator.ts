@@ -3,9 +3,9 @@
  * Provides comprehensive workspace boundary enforcement and path validation
  */
 
-import { existsSync, lstatSync } from 'node:fs';
-import { isAbsolute, join, relative, resolve } from 'node:path';
-import { SecurityValidationError } from '@carabiner/hooks-validators';
+import { existsSync, lstatSync } from "node:fs";
+import { isAbsolute, join, relative, resolve } from "node:path";
+import { SecurityValidationError } from "@carabiner/hooks-validators";
 
 /**
  * Workspace security configuration
@@ -31,19 +31,19 @@ export type WorkspaceSecurityConfig = {
 export const DEFAULT_WORKSPACE_CONFIG: WorkspaceSecurityConfig = {
   maxDepth: 10,
   allowedExtensions: new Set([
-    '.ts',
-    '.tsx',
-    '.js',
-    '.jsx',
-    '.json',
-    '.md',
-    '.txt',
-    '.yml',
-    '.yaml',
-    '.toml',
-    '.env.example',
-    '.gitignore',
-    '.editorconfig',
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".json",
+    ".md",
+    ".txt",
+    ".yml",
+    ".yaml",
+    ".toml",
+    ".env.example",
+    ".gitignore",
+    ".editorconfig",
   ]),
   blockedPatterns: [
     // System files
@@ -83,18 +83,18 @@ export const DEFAULT_WORKSPACE_CONFIG: WorkspaceSecurityConfig = {
     /\/\.(bash_history|zsh_history|viminfo|ssh|config|profile|bashrc|zshrc)($|\/)/,
   ],
   allowedDirectories: new Set([
-    '.claude',
-    'hooks',
-    'src',
-    'lib',
-    'scripts',
-    'docs',
-    'examples',
-    'test',
-    'tests',
-    '__tests__',
-    'spec',
-    '__spec__',
+    ".claude",
+    "hooks",
+    "src",
+    "lib",
+    "scripts",
+    "docs",
+    "examples",
+    "test",
+    "tests",
+    "__tests__",
+    "spec",
+    "__spec__",
   ]),
   maxFileSize: 10_485_760, // 10MB
   strictMode: true,
@@ -123,23 +123,23 @@ export class WorkspaceValidator {
    * Validate and sanitize workspace path
    */
   private validateWorkspacePath(path: string): string {
-    if (!path || typeof path !== 'string') {
+    if (!path || typeof path !== "string") {
       throw new SecurityValidationError(
-        'Workspace path must be a non-empty string',
-        'workspaceValidation',
-        'critical'
+        "Workspace path must be a non-empty string",
+        "workspaceValidation",
+        "critical"
       );
     }
 
     // Remove null bytes and control characters
     // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires control char detection
-    const sanitized = path.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
+    const sanitized = path.replace(/[\x00-\x1f\x7f-\x9f]/g, "");
 
     if (sanitized !== path) {
       throw new SecurityValidationError(
-        'Workspace path contains invalid characters',
-        'workspaceValidation',
-        'critical'
+        "Workspace path contains invalid characters",
+        "workspaceValidation",
+        "critical"
       );
     }
 
@@ -147,47 +147,47 @@ export class WorkspaceValidator {
     const resolved = resolve(sanitized);
 
     // Prevent access to system directories, but allow temp directories for testing
-    const systemPaths = ['/etc', '/bin', '/usr', '/root'];
+    const systemPaths = ["/etc", "/bin", "/usr", "/root"];
 
     if (systemPaths.some((sysPath) => resolved.startsWith(sysPath))) {
       throw new SecurityValidationError(
         `Access to system directory blocked: ${resolved}`,
-        'workspaceValidation',
-        'critical'
+        "workspaceValidation",
+        "critical"
       );
     }
 
     // Block /var root and specific /var paths but allow temp directories
-    if (resolved === '/var') {
+    if (resolved === "/var") {
       throw new SecurityValidationError(
         `Access to system directory blocked: ${resolved}`,
-        'workspaceValidation',
-        'critical'
+        "workspaceValidation",
+        "critical"
       );
     }
 
     const blockedVarPaths = [
-      '/var/log',
-      '/var/lib',
-      '/var/cache',
-      '/var/run',
-      '/var/spool',
+      "/var/log",
+      "/var/lib",
+      "/var/cache",
+      "/var/run",
+      "/var/spool",
     ];
 
     if (blockedVarPaths.some((varPath) => resolved.startsWith(varPath))) {
       throw new SecurityValidationError(
         `Access to system directory blocked: ${resolved}`,
-        'workspaceValidation',
-        'critical'
+        "workspaceValidation",
+        "critical"
       );
     }
 
     // Special handling for /tmp - allow subdirectories but not /tmp itself
-    if (resolved === '/tmp') {
+    if (resolved === "/tmp") {
       throw new SecurityValidationError(
-        'Direct access to /tmp not allowed, use subdirectory instead',
-        'workspaceValidation',
-        'high'
+        "Direct access to /tmp not allowed, use subdirectory instead",
+        "workspaceValidation",
+        "high"
       );
     }
 
@@ -195,8 +195,8 @@ export class WorkspaceValidator {
     if (!existsSync(resolved)) {
       throw new SecurityValidationError(
         `Workspace directory does not exist: ${resolved}`,
-        'workspaceValidation',
-        'high'
+        "workspaceValidation",
+        "high"
       );
     }
 
@@ -204,17 +204,17 @@ export class WorkspaceValidator {
     if (!stats.isDirectory()) {
       throw new SecurityValidationError(
         `Workspace path is not a directory: ${resolved}`,
-        'workspaceValidation',
-        'high'
+        "workspaceValidation",
+        "high"
       );
     }
 
     // Check for symbolic links in strict mode
     if (this.config.strictMode && stats.isSymbolicLink()) {
       throw new SecurityValidationError(
-        'Symbolic links not allowed in strict mode',
-        'workspaceValidation',
-        'high'
+        "Symbolic links not allowed in strict mode",
+        "workspaceValidation",
+        "high"
       );
     }
 
@@ -225,23 +225,23 @@ export class WorkspaceValidator {
    * Validate file path within workspace boundaries
    */
   validateFilePath(filePath: string): string {
-    if (!filePath || typeof filePath !== 'string') {
+    if (!filePath || typeof filePath !== "string") {
       throw new SecurityValidationError(
-        'File path must be a non-empty string',
-        'pathValidation',
-        'critical'
+        "File path must be a non-empty string",
+        "pathValidation",
+        "critical"
       );
     }
 
     // Remove null bytes and control characters
     // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires control char detection
-    const sanitized = filePath.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
+    const sanitized = filePath.replace(/[\x00-\x1f\x7f-\x9f]/g, "");
 
     if (sanitized !== filePath) {
       throw new SecurityValidationError(
-        'File path contains invalid characters',
-        'pathValidation',
-        'critical'
+        "File path contains invalid characters",
+        "pathValidation",
+        "critical"
       );
     }
 
@@ -256,8 +256,8 @@ export class WorkspaceValidator {
       if (pattern.test(filePath)) {
         throw new SecurityValidationError(
           `File path contains dangerous characters: ${filePath}`,
-          'pathValidation',
-          'critical'
+          "pathValidation",
+          "critical"
         );
       }
     }
@@ -274,8 +274,8 @@ export class WorkspaceValidator {
       if (pattern.test(filePath)) {
         throw new SecurityValidationError(
           `Directory traversal attempt detected: ${filePath}`,
-          'pathValidation',
-          'critical'
+          "pathValidation",
+          "critical"
         );
       }
     }
@@ -291,8 +291,8 @@ export class WorkspaceValidator {
       if (pattern.test(filePath)) {
         throw new SecurityValidationError(
           `Unicode encoding attack detected: ${filePath}`,
-          'pathValidation',
-          'critical'
+          "pathValidation",
+          "critical"
         );
       }
     }
@@ -302,25 +302,25 @@ export class WorkspaceValidator {
 
     // Critical security check: ensure path is within workspace
     const rel = relative(this.normalizedRoot, resolved);
-    if (rel.startsWith('..') || isAbsolute(rel)) {
+    if (rel.startsWith("..") || isAbsolute(rel)) {
       throw new SecurityValidationError(
         `Path traversal attempt detected: ${filePath} resolves to ${resolved}`,
-        'pathValidation',
-        'critical'
+        "pathValidation",
+        "critical"
       );
     }
 
     // Check against blocked patterns
     const relativePath = relative(this.normalizedRoot, resolved);
-    const relNorm = relativePath.replace(/\\/g, '/');
+    const relNorm = relativePath.replace(/\\/g, "/");
 
     for (const pattern of this.config.blockedPatterns) {
       // Detect absolute patterns (POSIX root "^/", Windows drive "^[A-Z]:\", UNC "^\\")
       const src = pattern.source;
       const isAbsolutePattern =
-        src.startsWith('^\\/') ||
+        src.startsWith("^\\/") ||
         /^\^[A-Za-z]:\\\\/.test(src) ||
-        src.startsWith('^\\\\\\\\');
+        src.startsWith("^\\\\\\\\");
 
       if (isAbsolutePattern) {
         // Skip absolute pattern checks for paths within the workspace
@@ -332,20 +332,20 @@ export class WorkspaceValidator {
         if (pattern.test(resolved)) {
           throw new SecurityValidationError(
             `Access to blocked path: ${filePath}`,
-            'pathValidation',
-            'high'
+            "pathValidation",
+            "high"
           );
         }
       } else if (pattern.test(relNorm)) {
         // For relative patterns, check against the normalized relative path within workspace
         // Allow .claude directory and its contents
-        if (relNorm === '.claude' || relNorm.startsWith('.claude/')) {
+        if (relNorm === ".claude" || relNorm.startsWith(".claude/")) {
           continue;
         }
         throw new SecurityValidationError(
           `Access to blocked path: ${filePath}`,
-          'pathValidation',
-          'high'
+          "pathValidation",
+          "high"
         );
       }
     }
@@ -355,8 +355,8 @@ export class WorkspaceValidator {
     if (depth > this.config.maxDepth) {
       throw new SecurityValidationError(
         `Path exceeds maximum depth (${this.config.maxDepth}): ${filePath}`,
-        'pathValidation',
-        'medium'
+        "pathValidation",
+        "medium"
       );
     }
 
@@ -368,8 +368,8 @@ export class WorkspaceValidator {
       if (stats.isFile() && stats.size > this.config.maxFileSize) {
         throw new SecurityValidationError(
           `File exceeds maximum size (${this.config.maxFileSize} bytes): ${filePath}`,
-          'pathValidation',
-          'medium'
+          "pathValidation",
+          "medium"
         );
       }
 
@@ -383,15 +383,15 @@ export class WorkspaceValidator {
             }
           }
           // Standard extension extraction
-          const lastDot = resolved.lastIndexOf('.');
-          return lastDot >= 0 ? resolved.slice(lastDot) : '';
+          const lastDot = resolved.lastIndexOf(".");
+          return lastDot >= 0 ? resolved.slice(lastDot) : "";
         })();
 
         if (extension && !this.config.allowedExtensions.has(extension)) {
           throw new SecurityValidationError(
             `File extension not allowed: ${extension} (file: ${filePath})`,
-            'pathValidation',
-            'medium'
+            "pathValidation",
+            "medium"
           );
         }
       }
@@ -400,8 +400,8 @@ export class WorkspaceValidator {
       if (this.config.strictMode && stats.isSymbolicLink()) {
         throw new SecurityValidationError(
           `Symbolic links not allowed in strict mode: ${filePath}`,
-          'pathValidation',
-          'high'
+          "pathValidation",
+          "high"
         );
       }
     }
@@ -418,14 +418,14 @@ export class WorkspaceValidator {
     // Check if directory is in allowed list for strict mode
     if (this.config.strictMode) {
       const relativeRaw = relative(this.normalizedRoot, resolved);
-      const relativePath = relativeRaw.replace(/\\/g, '/');
-      const topLevelDir = relativePath.split('/')[0] || '';
+      const relativePath = relativeRaw.replace(/\\/g, "/");
+      const topLevelDir = relativePath.split("/")[0] || "";
 
       if (topLevelDir && !this.config.allowedDirectories.has(topLevelDir)) {
         throw new SecurityValidationError(
           `Directory not in allowed list: ${dirPath}`,
-          'pathValidation',
-          'medium'
+          "pathValidation",
+          "medium"
         );
       }
     }
@@ -439,38 +439,38 @@ export class WorkspaceValidator {
   createSecurePath(pathSegments: string[]): string {
     // Validate each segment
     for (const segment of pathSegments) {
-      if (!segment || typeof segment !== 'string') {
+      if (!segment || typeof segment !== "string") {
         throw new SecurityValidationError(
-          'All path segments must be non-empty strings',
-          'pathValidation',
-          'critical'
+          "All path segments must be non-empty strings",
+          "pathValidation",
+          "critical"
         );
       }
 
       // Check for directory traversal attempts (but allow double dots in filenames like file..txt)
       if (
-        segment === '..' ||
-        segment === '.' ||
-        segment.includes('/') ||
-        segment.includes('\\') ||
-        segment.startsWith('../') ||
-        segment.endsWith('/..')
+        segment === ".." ||
+        segment === "." ||
+        segment.includes("/") ||
+        segment.includes("\\") ||
+        segment.startsWith("../") ||
+        segment.endsWith("/..")
       ) {
         throw new SecurityValidationError(
           `Invalid path segment: ${segment}`,
-          'pathValidation',
-          'critical'
+          "pathValidation",
+          "critical"
         );
       }
 
       // Remove null bytes and control characters
       // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires checking for control characters
-      const sanitized = segment.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
+      const sanitized = segment.replace(/[\x00-\x1f\x7f-\x9f]/g, "");
       if (sanitized !== segment) {
         throw new SecurityValidationError(
           `Path segment contains invalid characters: ${segment}`,
-          'pathValidation',
-          'critical'
+          "pathValidation",
+          "critical"
         );
       }
     }
@@ -562,11 +562,11 @@ export function validateWorkspacePath(
  * Utility to sanitize user input paths
  */
 export function sanitizeUserPath(userPath: string): string {
-  if (!userPath || typeof userPath !== 'string') {
+  if (!userPath || typeof userPath !== "string") {
     throw new SecurityValidationError(
-      'Path must be a non-empty string',
-      'pathSanitization',
-      'critical'
+      "Path must be a non-empty string",
+      "pathSanitization",
+      "critical"
     );
   }
 
@@ -574,10 +574,10 @@ export function sanitizeUserPath(userPath: string): string {
   return (
     userPath
       // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires checking for control characters
-      .replace(/[\x00-\x1f\x7f-\x9f]/g, '') // Remove control characters
-      .replace(/[\\]+/g, '/') // Normalize path separators
-      .replace(/\/+/g, '/') // Remove duplicate slashes
-      .replace(/\/\./g, '/') // Remove single dots
+      .replace(/[\x00-\x1f\x7f-\x9f]/g, "") // Remove control characters
+      .replace(/[\\]+/g, "/") // Normalize path separators
+      .replace(/\/+/g, "/") // Remove duplicate slashes
+      .replace(/\/\./g, "/") // Remove single dots
       .trim()
   );
 }

@@ -8,7 +8,7 @@
 import {
   parseClaudeHookInput,
   validateAndCreateBrandedInput,
-} from '@carabiner/schemas';
+} from "@carabiner/schemas";
 import type {
   DirectoryPath,
   HookContext,
@@ -18,18 +18,18 @@ import type {
   ToolHookEvent,
   ToolInput,
   TranscriptPath,
-} from '@carabiner/types';
+} from "@carabiner/types";
 import {
   createNotificationContext,
   createToolHookContext,
   createUserPromptContext,
-} from '@carabiner/types';
-import type { HookProtocol } from '../interface';
+} from "@carabiner/types";
+import type { HookProtocol } from "../interface";
 import {
   ProtocolInputError,
   ProtocolOutputError,
   ProtocolParseError,
-} from '../interface';
+} from "../interface";
 
 /**
  * Configuration options for StdinProtocol
@@ -83,8 +83,8 @@ export class StdinProtocol implements HookProtocol {
     // Check if protocol has been destroyed
     if (this.isDestroyed) {
       throw new ProtocolInputError(
-        'Cannot read from destroyed protocol',
-        new Error('StdinProtocol has been destroyed')
+        "Cannot read from destroyed protocol",
+        new Error("StdinProtocol has been destroyed")
       );
     }
 
@@ -110,7 +110,7 @@ export class StdinProtocol implements HookProtocol {
         const onEnd = () => {
           if (!(isCleanedUp || this.isDestroyed)) {
             cleanup(false);
-            resolve(Buffer.concat(chunks).toString('utf-8'));
+            resolve(Buffer.concat(chunks).toString("utf-8"));
           }
         };
 
@@ -135,9 +135,9 @@ export class StdinProtocol implements HookProtocol {
 
           // Remove all listeners
           if (this.activeStream) {
-            this.activeStream.removeListener('data', onData);
-            this.activeStream.removeListener('end', onEnd);
-            this.activeStream.removeListener('error', onError);
+            this.activeStream.removeListener("data", onData);
+            this.activeStream.removeListener("end", onEnd);
+            this.activeStream.removeListener("error", onError);
 
             // On timeout, forcefully destroy the stream
             if (isTimeout && !this.isDestroyed) {
@@ -148,7 +148,7 @@ export class StdinProtocol implements HookProtocol {
 
               // Destroy the stream with an error
               const timeoutError = new Error(
-                'Stdin read timed out - stream destroyed'
+                "Stdin read timed out - stream destroyed"
               );
               this.activeStream.destroy(timeoutError);
 
@@ -167,11 +167,11 @@ export class StdinProtocol implements HookProtocol {
           cleanup(true);
           reject(
             new ProtocolInputError(
-              'Stdin read timed out - hard timeout reached',
+              "Stdin read timed out - hard timeout reached",
               new Error(
-                'Hard timeout: stream forcibly destroyed after ' +
+                "Hard timeout: stream forcibly destroyed after " +
                   timeout +
-                  'ms'
+                  "ms"
               )
             )
           );
@@ -179,9 +179,9 @@ export class StdinProtocol implements HookProtocol {
 
         // Attach listeners
         if (this.activeStream) {
-          this.activeStream.on('data', onData);
-          this.activeStream.once('end', onEnd);
-          this.activeStream.once('error', onError);
+          this.activeStream.on("data", onData);
+          this.activeStream.once("end", onEnd);
+          this.activeStream.once("error", onError);
 
           // Resume the stream if it was paused
           if (this.activeStream.isPaused?.()) {
@@ -189,21 +189,21 @@ export class StdinProtocol implements HookProtocol {
           }
         } else {
           cleanup(false);
-          reject(new ProtocolInputError('No stdin stream available'));
+          reject(new ProtocolInputError("No stdin stream available"));
         }
       });
 
       const trimmedInput = input.trim();
 
       if (!trimmedInput) {
-        throw new ProtocolInputError('No input received from stdin');
+        throw new ProtocolInputError("No input received from stdin");
       }
 
       try {
         return JSON.parse(trimmedInput);
       } catch (parseError) {
         throw new ProtocolInputError(
-          'Failed to parse JSON from stdin',
+          "Failed to parse JSON from stdin",
           parseError
         );
       }
@@ -211,7 +211,7 @@ export class StdinProtocol implements HookProtocol {
       if (error instanceof ProtocolInputError) {
         throw error;
       }
-      throw new ProtocolInputError('Failed to read input from stdin', error);
+      throw new ProtocolInputError("Failed to read input from stdin", error);
     } finally {
       // Clean up stream reference and pending reject
       this.activeStream = null;
@@ -238,7 +238,7 @@ export class StdinProtocol implements HookProtocol {
           error
         );
       }
-      throw new ProtocolParseError('Failed to parse hook context');
+      throw new ProtocolParseError("Failed to parse hook context");
     }
   }
 
@@ -255,7 +255,7 @@ export class StdinProtocol implements HookProtocol {
 
       // Ensure output is flushed
       await new Promise<void>((resolve, reject) => {
-        process.stdout.write('', (error) => {
+        process.stdout.write("", (error) => {
           if (error) {
             reject(error);
           } else {
@@ -264,7 +264,7 @@ export class StdinProtocol implements HookProtocol {
         });
       });
     } catch (error) {
-      throw new ProtocolOutputError('Failed to write output to stdout', error);
+      throw new ProtocolOutputError("Failed to write output to stdout", error);
     }
   }
 
@@ -287,7 +287,7 @@ export class StdinProtocol implements HookProtocol {
 
       // Ensure error output is flushed
       await new Promise<void>((resolve, reject) => {
-        process.stderr.write('', (writeError) => {
+        process.stderr.write("", (writeError) => {
           if (writeError) {
             reject(writeError);
           } else {
@@ -297,7 +297,7 @@ export class StdinProtocol implements HookProtocol {
       });
     } catch (writeError) {
       throw new ProtocolOutputError(
-        'Failed to write error to stderr',
+        "Failed to write error to stderr",
         writeError
       );
     }
@@ -318,8 +318,8 @@ export class StdinProtocol implements HookProtocol {
     // Reject any pending read operation
     if (this.pendingReadReject) {
       const error = new ProtocolInputError(
-        'Protocol destroyed while reading',
-        new Error('StdinProtocol.destroy() called during active read')
+        "Protocol destroyed while reading",
+        new Error("StdinProtocol.destroy() called during active read")
       );
       this.pendingReadReject(error);
       this.pendingReadReject = null;
@@ -337,7 +337,7 @@ export class StdinProtocol implements HookProtocol {
 
       // Destroy the stream
       this.activeStream.destroy(
-        new Error('Protocol destroyed - cleaning up active streams')
+        new Error("Protocol destroyed - cleaning up active streams")
       );
 
       // Clear buffered data
@@ -353,7 +353,7 @@ export class StdinProtocol implements HookProtocol {
    * Create typed context from validated Claude input
    */
   private createTypedContext(input: Record<string, unknown>): HookContext {
-    if ('tool_name' in input) {
+    if ("tool_name" in input) {
       // Tool hook context (PreToolUse/PostToolUse)
       return createToolHookContext(
         input.hook_event_name as ToolHookEvent,
@@ -370,7 +370,7 @@ export class StdinProtocol implements HookProtocol {
       );
     }
 
-    if ('prompt' in input) {
+    if ("prompt" in input) {
       // User prompt context
       return createUserPromptContext(input.prompt as string, {
         sessionId: input.sessionId as SessionId,
@@ -381,7 +381,7 @@ export class StdinProtocol implements HookProtocol {
       });
     }
 
-    if ('notification' in input) {
+    if ("notification" in input) {
       // Notification context
       return createNotificationContext(
         input.hook_event_name as NotificationEvent,
@@ -406,7 +406,7 @@ export class StdinProtocol implements HookProtocol {
  * Factory for creating StdinProtocol instances
  */
 export class StdinProtocolFactory {
-  readonly type = 'stdin';
+  readonly type = "stdin";
 
   create(options?: StdinProtocolOptions): HookProtocol {
     return new StdinProtocol(options);

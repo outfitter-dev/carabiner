@@ -3,8 +3,8 @@
  * Validates the JSON input structure from Claude Code
  */
 
-import { HOOK_EVENTS, type ToolName } from '@carabiner/types';
-import { z } from 'zod';
+import { HOOK_EVENTS, type ToolName } from "@carabiner/types";
+import { z } from "zod";
 
 /**
  * Hook event validation
@@ -38,7 +38,7 @@ export const baseClaudeHookInputSchema = z.object({
  * Tool hook input schema (PreToolUse, PostToolUse)
  */
 export const claudeToolHookInputSchema = baseClaudeHookInputSchema.extend({
-  hook_event_name: z.enum(['PreToolUse', 'PostToolUse']),
+  hook_event_name: z.enum(["PreToolUse", "PostToolUse"]),
   tool_name: toolNameSchema,
   tool_input: z.record(z.string(), z.unknown()),
   tool_response: z.record(z.string(), z.unknown()).optional(),
@@ -48,7 +48,7 @@ export const claudeToolHookInputSchema = baseClaudeHookInputSchema.extend({
  * User prompt input schema
  */
 export const claudeUserPromptInputSchema = baseClaudeHookInputSchema.extend({
-  hook_event_name: z.literal('UserPromptSubmit'),
+  hook_event_name: z.literal("UserPromptSubmit"),
   prompt: z.string().min(1),
 });
 
@@ -56,14 +56,14 @@ export const claudeUserPromptInputSchema = baseClaudeHookInputSchema.extend({
  * Notification input schema
  */
 export const claudeNotificationInputSchema = baseClaudeHookInputSchema.extend({
-  hook_event_name: z.enum(['SessionStart', 'Stop', 'SubagentStop']),
+  hook_event_name: z.enum(["SessionStart", "Stop", "SubagentStop"]),
   message: z.string().optional(),
 });
 
 /**
  * Union of all possible Claude hook inputs
  */
-export const claudeHookInputSchema = z.discriminatedUnion('hook_event_name', [
+export const claudeHookInputSchema = z.discriminatedUnion("hook_event_name", [
   claudeToolHookInputSchema,
   claudeUserPromptInputSchema,
   claudeNotificationInputSchema,
@@ -97,7 +97,7 @@ export const hookResultSchema = z.object({
  * Claude hook output schema
  */
 export const claudeHookOutputSchema = z.object({
-  action: z.enum(['continue', 'block']),
+  action: z.enum(["continue", "block"]),
   message: z.string().optional(),
   data: z.record(z.string(), z.unknown()).optional(),
 });
@@ -109,8 +109,8 @@ export const hookExecutionOptionsSchema = z.object({
   timeout: z.number().positive().optional(),
   throwOnError: z.boolean().optional(),
   captureOutput: z.boolean().optional(),
-  logLevel: z.enum(['debug', 'info', 'warn', 'error']).optional(),
-  outputMode: z.enum(['exit-code', 'json']).optional(),
+  logLevel: z.enum(["debug", "info", "warn", "error"]).optional(),
+  outputMode: z.enum(["exit-code", "json"]).optional(),
 });
 
 /**
@@ -187,7 +187,7 @@ export async function validateAndCreateBrandedInput(input: unknown) {
 
   // Import brands dynamically to avoid circular dependency
   const { createSessionId, createTranscriptPath, createDirectoryPath } =
-    await import('@carabiner/types');
+    await import("@carabiner/types");
 
   return {
     ...parsed,

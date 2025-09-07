@@ -3,7 +3,7 @@
  * @description Security scanner configuration types
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Security scanner plugin configuration schema
@@ -26,46 +26,46 @@ export const SecurityScannerConfigSchema = z
     includePatterns: z
       .array(z.string())
       .default([
-        '*.js',
-        '*.ts',
-        '*.jsx',
-        '*.tsx',
-        '*.py',
-        '*.java',
-        '*.go',
-        '*.php',
-        '*.rb',
-        '*.rs',
-        '*.c',
-        '*.cpp',
-        '*.h',
-        '*.cs',
-        '*.json',
-        '*.yaml',
-        '*.yml',
-        '*.xml',
-        '*.env',
-        '*.config',
-        '*.conf',
+        "*.js",
+        "*.ts",
+        "*.jsx",
+        "*.tsx",
+        "*.py",
+        "*.java",
+        "*.go",
+        "*.php",
+        "*.rb",
+        "*.rs",
+        "*.c",
+        "*.cpp",
+        "*.h",
+        "*.cs",
+        "*.json",
+        "*.yaml",
+        "*.yml",
+        "*.xml",
+        "*.env",
+        "*.config",
+        "*.conf",
       ]),
 
     /** File patterns to exclude from scanning */
     excludePatterns: z
       .array(z.string())
       .default([
-        '**/node_modules/**',
-        '**/vendor/**',
-        '**/.git/**',
-        '**/dist/**',
-        '**/build/**',
-        '*.min.*',
-        '*.bundle.*',
+        "**/node_modules/**",
+        "**/vendor/**",
+        "**/.git/**",
+        "**/dist/**",
+        "**/build/**",
+        "*.min.*",
+        "*.bundle.*",
       ]),
 
     /** Minimum severity level to report */
     minSeverity: z
-      .enum(['critical', 'high', 'medium', 'low', 'info'])
-      .default('medium'),
+      .enum(["critical", "high", "medium", "low", "info"])
+      .default("medium"),
 
     /** Whether to block on critical/high severity findings */
     blockOnCritical: z.boolean().default(true),
@@ -80,7 +80,7 @@ export const SecurityScannerConfigSchema = z
           id: z.string(),
           name: z.string(),
           pattern: z.string(),
-          severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+          severity: z.enum(["critical", "high", "medium", "low", "info"]),
           category: z.string(),
           description: z.string(),
           remediation: z.string().optional(),

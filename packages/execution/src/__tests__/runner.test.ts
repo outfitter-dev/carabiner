@@ -2,9 +2,9 @@
  * @outfitter/execution - Runner utilities tests
  */
 
-import { beforeEach, describe, expect, test } from 'bun:test';
-import type { HookHandler } from '@carabiner/types';
-import { isToolHookContext } from '@carabiner/types';
+import { beforeEach, describe, expect, test } from "bun:test";
+import type { HookHandler } from "@carabiner/types";
+import { isToolHookContext } from "@carabiner/types";
 
 import {
   clearExecutionMetrics,
@@ -16,22 +16,22 @@ import {
   HookRunner,
   type RunnerOptions,
   runTestHook,
-} from '../runner';
+} from "../runner";
 
-describe('HookRunner', () => {
+describe("HookRunner", () => {
   beforeEach(() => {
     clearExecutionMetrics();
   });
 
-  describe('constructor', () => {
-    test('should create runner with default options', () => {
+  describe("constructor", () => {
+    test("should create runner with default options", () => {
       const runner = new HookRunner();
       expect(runner).toBeInstanceOf(HookRunner);
     });
 
-    test('should create runner with custom options', () => {
+    test("should create runner with custom options", () => {
       const options: RunnerOptions = {
-        protocol: 'test',
+        protocol: "test",
         timeout: 5000,
         collectMetrics: false,
       };
@@ -41,28 +41,28 @@ describe('HookRunner', () => {
     });
   });
 
-  describe('run', () => {
-    test('should run hook with test protocol', async () => {
+  describe("run", () => {
+    test("should run hook with test protocol", async () => {
       const mockInput = {
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Bash',
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
         tool_input: { command: 'echo "test"' },
-        session_id: 'test-123',
-        cwd: '/tmp',
-        transcript_path: '/tmp/transcript.md',
+        session_id: "test-123",
+        cwd: "/tmp",
+        transcript_path: "/tmp/transcript.md",
         environment: {},
       };
 
       const handler: HookHandler = async (context) => {
-        expect(context.event).toBe('PreToolUse');
+        expect(context.event).toBe("PreToolUse");
         if (isToolHookContext(context)) {
-          expect(context.toolName).toBe('Bash');
+          expect(context.toolName).toBe("Bash");
         }
-        return { success: true, message: 'Hook executed' };
+        return { success: true, message: "Hook executed" };
       };
 
       const runner = new HookRunner({
-        protocol: 'test',
+        protocol: "test",
         testInput: mockInput,
         exitProcess: false,
       });
@@ -70,46 +70,46 @@ describe('HookRunner', () => {
       await runner.run(handler);
     });
 
-    test('should throw when test protocol missing testInput', async () => {
+    test("should throw when test protocol missing testInput", async () => {
       const runner = new HookRunner({
-        protocol: 'test',
+        protocol: "test",
         // Missing testInput
       });
 
       const handler: HookHandler = async () => ({ success: true });
 
       await expect(runner.run(handler)).rejects.toThrow(
-        'testInput is required when using test protocol'
+        "testInput is required when using test protocol"
       );
     });
   });
 });
 
-describe('runTestHook', () => {
+describe("runTestHook", () => {
   beforeEach(() => {
     clearExecutionMetrics();
   });
 
-  test('should execute handler with test input', async () => {
+  test("should execute handler with test input", async () => {
     const mockInput = {
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Write',
-      tool_input: { file_path: '/tmp/test.txt', content: 'Hello world' },
-      session_id: 'test-456',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      hook_event_name: "PreToolUse",
+      tool_name: "Write",
+      tool_input: { file_path: "/tmp/test.txt", content: "Hello world" },
+      session_id: "test-456",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
     const handler: HookHandler = async (context) => {
-      expect(context.event).toBe('PreToolUse');
+      expect(context.event).toBe("PreToolUse");
       if (isToolHookContext(context)) {
-        expect(context.toolName).toBe('Write');
-        if ('file_path' in context.toolInput) {
-          expect(context.toolInput.file_path).toBe('/tmp/test.txt');
+        expect(context.toolName).toBe("Write");
+        if ("file_path" in context.toolInput) {
+          expect(context.toolInput.file_path).toBe("/tmp/test.txt");
         }
       }
-      return { success: true, message: 'File operation validated' };
+      return { success: true, message: "File operation validated" };
     };
 
     await runTestHook(handler, mockInput, {
@@ -120,42 +120,42 @@ describe('runTestHook', () => {
     // Should not have thrown
   });
 
-  test('should handle handler errors gracefully', async () => {
+  test("should handle handler errors gracefully", async () => {
     const mockInput = {
-      hook_event_name: 'PreToolUse',
-      session_id: 'error-test',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      hook_event_name: "PreToolUse",
+      session_id: "error-test",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
     const handler: HookHandler = async () => {
-      throw new Error('Test error');
+      throw new Error("Test error");
     };
 
     // Should not throw - errors are captured
     await runTestHook(handler, mockInput);
   });
 
-  test('should collect metrics when enabled', async () => {
+  test("should collect metrics when enabled", async () => {
     const mockInput = {
-      hook_event_name: 'PostToolUse',
-      tool_name: 'Bash',
-      tool_input: { command: 'ls' },
+      hook_event_name: "PostToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "ls" },
       tool_response: {
-        stdout: 'file1.txt\nfile2.txt\n',
-        stderr: '',
+        stdout: "file1.txt\nfile2.txt\n",
+        stderr: "",
         exitCode: 0,
       },
-      session_id: 'metrics-test',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      session_id: "metrics-test",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
     const handler: HookHandler = async () => ({
       success: true,
-      message: 'Command completed',
+      message: "Command completed",
     });
 
     await runTestHook(handler, mockInput, { collectMetrics: true });
@@ -165,20 +165,20 @@ describe('runTestHook', () => {
 
     const lastMetric = getLastExecution();
     expect(lastMetric).toBeDefined();
-    expect(lastMetric?.event).toBe('PostToolUse');
+    expect(lastMetric?.event).toBe("PostToolUse");
     expect(lastMetric?.success).toBe(true);
   });
 });
 
-describe('createRunner', () => {
-  test('should create a runner function', () => {
+describe("createRunner", () => {
+  test("should create a runner function", () => {
     const handler: HookHandler = async () => ({ success: true });
     const runner = createRunner(handler, { exitProcess: false });
 
-    expect(typeof runner).toBe('function');
+    expect(typeof runner).toBe("function");
   });
 
-  test('should execute handler via createTestRunner when invoked', async () => {
+  test("should execute handler via createTestRunner when invoked", async () => {
     let executed = false;
     const handler: HookHandler = async () => {
       executed = true;
@@ -186,32 +186,32 @@ describe('createRunner', () => {
     };
     const testRunner = createTestRunner(handler, { collectMetrics: false });
     await testRunner({
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
       tool_input: { command: 'echo "test"' },
-      session_id: 'exec-test',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      session_id: "exec-test",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     });
     expect(executed).toBe(true);
   });
 });
 
-describe('createTestRunner', () => {
-  test('should create a test runner function', () => {
+describe("createTestRunner", () => {
+  test("should create a test runner function", () => {
     const handler: HookHandler = async () => ({ success: true });
     const testRunner = createTestRunner(handler, { timeout: 5000 });
 
-    expect(typeof testRunner).toBe('function');
+    expect(typeof testRunner).toBe("function");
   });
 
-  test('should execute handler with provided test input', async () => {
+  test("should execute handler with provided test input", async () => {
     let handlerCalled = false;
 
     const handler: HookHandler = async () => {
       handlerCalled = true;
-      return { success: true, message: 'Test runner executed' };
+      return { success: true, message: "Test runner executed" };
     };
 
     const testRunner = createTestRunner(handler, {
@@ -219,13 +219,13 @@ describe('createTestRunner', () => {
     });
 
     const testInput = {
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
       tool_input: { command: 'echo "test"' },
-      session_id: 'test-789',
-      cwd: '/home/user',
-      transcript_path: '/tmp/transcript.md',
-      environment: { USER: 'testuser' },
+      session_id: "test-789",
+      cwd: "/home/user",
+      transcript_path: "/tmp/transcript.md",
+      environment: { USER: "testuser" },
     };
 
     await testRunner(testInput);
@@ -234,19 +234,19 @@ describe('createTestRunner', () => {
   });
 });
 
-describe('Metrics utilities', () => {
+describe("Metrics utilities", () => {
   beforeEach(() => {
     clearExecutionMetrics();
   });
 
-  test('getExecutionMetrics should return collected metrics', async () => {
+  test("getExecutionMetrics should return collected metrics", async () => {
     const mockInput = {
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
       tool_input: { command: 'echo "test"' },
-      session_id: 'metrics-test-1',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      session_id: "metrics-test-1",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
@@ -263,14 +263,14 @@ describe('Metrics utilities', () => {
     expect(metrics.length).toBeGreaterThan(0);
   });
 
-  test('getExecutionMetrics should filter by time range', async () => {
+  test("getExecutionMetrics should filter by time range", async () => {
     const mockInput = {
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
       tool_input: { command: 'echo "test"' },
-      session_id: 'metrics-test-2',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      session_id: "metrics-test-2",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
@@ -301,21 +301,21 @@ describe('Metrics utilities', () => {
     expect(outsideRangeMetrics.length).toBe(0);
   });
 
-  test('getExecutionStats should return aggregate metrics', async () => {
+  test("getExecutionStats should return aggregate metrics", async () => {
     const mockInput = {
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
       tool_input: { command: 'echo "test"' },
-      session_id: 'stats-test',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      session_id: "stats-test",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
     const successHandler: HookHandler = async () => ({ success: true });
     const failureHandler: HookHandler = async () => ({
       success: false,
-      message: 'TIMEOUT_ERROR: Too slow',
+      message: "TIMEOUT_ERROR: Too slow",
     });
 
     // Clear any previous metrics
@@ -338,17 +338,17 @@ describe('Metrics utilities', () => {
     expect(stats.failedExecutions).toBe(1);
     expect(stats.successRate).toBeCloseTo((2 / 3) * 100);
     expect(stats.topErrors.length).toBeGreaterThan(0);
-    expect(stats.topErrors[0]?.code).toBe('TIMEOUT_ERROR');
+    expect(stats.topErrors[0]?.code).toBe("TIMEOUT_ERROR");
   });
 
-  test('clearExecutionMetrics should remove all metrics', async () => {
+  test("clearExecutionMetrics should remove all metrics", async () => {
     const mockInput = {
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
       tool_input: { command: 'echo "test"' },
-      session_id: 'clear-test',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      session_id: "clear-test",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
@@ -368,7 +368,7 @@ describe('Metrics utilities', () => {
     expect(getExecutionMetrics().length).toBe(0);
   });
 
-  test('should detect recent failures via metrics filter', async () => {
+  test("should detect recent failures via metrics filter", async () => {
     // Clear any previous metrics
     clearExecutionMetrics();
 
@@ -379,18 +379,18 @@ describe('Metrics utilities', () => {
     expect(recentMetrics.filter((m) => !m.success).length).toBe(0);
 
     const mockInput = {
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
       tool_input: { command: 'echo "test"' },
-      session_id: 'failure-test',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      session_id: "failure-test",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
     const failureHandler: HookHandler = async () => ({
       success: false,
-      message: 'Test failure',
+      message: "Test failure",
     });
 
     await runTestHook(failureHandler, mockInput, {
@@ -404,7 +404,7 @@ describe('Metrics utilities', () => {
     expect(recentFailures.filter((m) => !m.success).length).toBeGreaterThan(0);
   });
 
-  test('getLastExecution should return most recent execution', async () => {
+  test("getLastExecution should return most recent execution", async () => {
     // Clear any previous metrics
     clearExecutionMetrics();
 
@@ -412,23 +412,23 @@ describe('Metrics utilities', () => {
     expect(initialMetrics.length).toBe(0);
 
     const mockInput1 = {
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
       tool_input: { command: 'echo "test"' },
-      session_id: 'last-test-1',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      session_id: "last-test-1",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
     const mockInput2 = {
-      hook_event_name: 'PostToolUse',
-      tool_name: 'Bash',
+      hook_event_name: "PostToolUse",
+      tool_name: "Bash",
       tool_input: { command: 'echo "test"' },
-      tool_output: 'test',
-      session_id: 'last-test-2',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      tool_output: "test",
+      session_id: "last-test-2",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
@@ -444,18 +444,18 @@ describe('Metrics utilities', () => {
     const lastExecution = getLastExecution();
     expect(lastExecution).toBeDefined();
     if (lastExecution) {
-      expect(lastExecution.event).toBe('PostToolUse');
+      expect(lastExecution.event).toBe("PostToolUse");
       expect(lastExecution.success).toBe(true);
     }
   });
 });
 
-describe('Edge cases and error handling', () => {
+describe("Edge cases and error handling", () => {
   beforeEach(() => {
     clearExecutionMetrics();
   });
 
-  test('should handle handler returning various result types', async () => {
+  test("should handle handler returning various result types", async () => {
     const testCases = [
       { handler: async () => null, expectedSuccess: true },
       {
@@ -466,22 +466,22 @@ describe('Edge cases and error handling', () => {
       },
       { handler: async () => true, expectedSuccess: true },
       { handler: async () => false, expectedSuccess: false },
-      { handler: async () => 'success message', expectedSuccess: true },
+      { handler: async () => "success message", expectedSuccess: true },
       {
-        handler: async () => ({ success: true, message: 'explicit success' }),
+        handler: async () => ({ success: true, message: "explicit success" }),
         expectedSuccess: true,
       },
       {
-        handler: async () => ({ success: false, message: 'explicit failure' }),
+        handler: async () => ({ success: false, message: "explicit failure" }),
         expectedSuccess: false,
       },
     ];
 
     const mockInput = {
-      hook_event_name: 'PreToolUse',
-      session_id: 'type-test',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      hook_event_name: "PreToolUse",
+      session_id: "type-test",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
@@ -501,12 +501,12 @@ describe('Edge cases and error handling', () => {
     }
   });
 
-  test('should handle handler timeout gracefully', async () => {
+  test("should handle handler timeout gracefully", async () => {
     const mockInput = {
-      hook_event_name: 'PreToolUse',
-      session_id: 'timeout-test',
-      cwd: '/tmp',
-      transcript_path: '/tmp/transcript.md',
+      hook_event_name: "PreToolUse",
+      session_id: "timeout-test",
+      cwd: "/tmp",
+      transcript_path: "/tmp/transcript.md",
       environment: {},
     };
 
@@ -521,7 +521,7 @@ describe('Edge cases and error handling', () => {
     ).resolves.toBeUndefined();
   });
 
-  test('should handle malformed input deterministically', async () => {
+  test("should handle malformed input deterministically", async () => {
     const handler: HookHandler = async () => ({ success: true });
 
     // Helper to avoid repeated double-casts in tests
@@ -536,10 +536,10 @@ describe('Edge cases and error handling', () => {
     // All other inputs are handled gracefully by the executor's error handling
     const toleratedInputs = [
       null,
-      'not an object',
+      "not an object",
       {},
-      { hook_event_name: 'InvalidEvent' },
-      { hook_event_name: 'PreToolUse', tool_name: 123 as unknown }, // Wrong type, but runner should not throw
+      { hook_event_name: "InvalidEvent" },
+      { hook_event_name: "PreToolUse", tool_name: 123 as unknown }, // Wrong type, but runner should not throw
     ];
     for (const input of toleratedInputs) {
       await expect(

@@ -3,7 +3,7 @@
  * Concrete types instead of complex generic mappings
  */
 
-import type { CommandString, FilePath } from './brands.js';
+import type { CommandString, FilePath } from "./brands.js";
 
 /**
  * Tool input types with strict definitions
@@ -50,7 +50,7 @@ export type GrepToolInput = {
   readonly pattern: string;
   readonly path?: string;
   readonly glob?: string;
-  readonly output_mode?: 'content' | 'files_with_matches' | 'count';
+  readonly output_mode?: "content" | "files_with_matches" | "count";
   readonly head_limit?: number;
   readonly multiline?: boolean;
 };
@@ -63,7 +63,7 @@ export type LSToolInput = {
 export type TodoWriteToolInput = {
   readonly todos: readonly {
     readonly content: string;
-    readonly status: 'pending' | 'in_progress' | 'completed';
+    readonly status: "pending" | "in_progress" | "completed";
     readonly id: string;
   }[];
 };
@@ -83,8 +83,8 @@ export type NotebookEditToolInput = {
   readonly notebook_path: string;
   readonly new_source: string;
   readonly cell_id?: string;
-  readonly cell_type?: 'code' | 'markdown';
-  readonly edit_mode?: 'replace' | 'insert' | 'delete';
+  readonly cell_type?: "code" | "markdown";
+  readonly edit_mode?: "replace" | "insert" | "delete";
 };
 
 /**
@@ -143,81 +143,81 @@ export type BrandedFileToolInput = {
  */
 export function isBashToolInput(input: unknown): input is BashToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'command' in input &&
-    typeof (input as BashToolInput).command === 'string'
+    "command" in input &&
+    typeof (input as BashToolInput).command === "string"
   );
 }
 
 export function isWriteToolInput(input: unknown): input is WriteToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'file_path' in input &&
-    'content' in input &&
-    typeof (input as WriteToolInput).file_path === 'string' &&
-    typeof (input as WriteToolInput).content === 'string'
+    "file_path" in input &&
+    "content" in input &&
+    typeof (input as WriteToolInput).file_path === "string" &&
+    typeof (input as WriteToolInput).content === "string"
   );
 }
 
 export function isEditToolInput(input: unknown): input is EditToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'file_path' in input &&
-    'old_string' in input &&
-    'new_string' in input &&
-    typeof (input as EditToolInput).file_path === 'string' &&
-    typeof (input as EditToolInput).old_string === 'string' &&
-    typeof (input as EditToolInput).new_string === 'string'
+    "file_path" in input &&
+    "old_string" in input &&
+    "new_string" in input &&
+    typeof (input as EditToolInput).file_path === "string" &&
+    typeof (input as EditToolInput).old_string === "string" &&
+    typeof (input as EditToolInput).new_string === "string"
   );
 }
 
 export function isReadToolInput(input: unknown): input is ReadToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'file_path' in input &&
-    typeof (input as ReadToolInput).file_path === 'string'
+    "file_path" in input &&
+    typeof (input as ReadToolInput).file_path === "string"
   );
 }
 
 export function isMultiEditToolInput(input: unknown): input is MultiEditInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'file_path' in input &&
-    'edits' in input &&
-    typeof (input as MultiEditInput).file_path === 'string' &&
+    "file_path" in input &&
+    "edits" in input &&
+    typeof (input as MultiEditInput).file_path === "string" &&
     Array.isArray((input as MultiEditInput).edits)
   );
 }
 
 export function isGlobToolInput(input: unknown): input is GlobToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'pattern' in input &&
-    typeof (input as GlobToolInput).pattern === 'string'
+    "pattern" in input &&
+    typeof (input as GlobToolInput).pattern === "string"
   );
 }
 
 export function isGrepToolInput(input: unknown): input is GrepToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'pattern' in input &&
-    typeof (input as GrepToolInput).pattern === 'string'
+    "pattern" in input &&
+    typeof (input as GrepToolInput).pattern === "string"
   );
 }
 
 export function isLSToolInput(input: unknown): input is LSToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'path' in input &&
-    typeof (input as LSToolInput).path === 'string'
+    "path" in input &&
+    typeof (input as LSToolInput).path === "string"
   );
 }
 
@@ -225,9 +225,9 @@ export function isTodoWriteToolInput(
   input: unknown
 ): input is TodoWriteToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'todos' in input &&
+    "todos" in input &&
     Array.isArray((input as TodoWriteToolInput).todos)
   );
 }
@@ -236,12 +236,12 @@ export function isWebFetchToolInput(
   input: unknown
 ): input is WebFetchToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'url' in input &&
-    'prompt' in input &&
-    typeof (input as WebFetchToolInput).url === 'string' &&
-    typeof (input as WebFetchToolInput).prompt === 'string'
+    "url" in input &&
+    "prompt" in input &&
+    typeof (input as WebFetchToolInput).url === "string" &&
+    typeof (input as WebFetchToolInput).prompt === "string"
   );
 }
 
@@ -249,10 +249,10 @@ export function isWebSearchToolInput(
   input: unknown
 ): input is WebSearchToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'query' in input &&
-    typeof (input as WebSearchToolInput).query === 'string'
+    "query" in input &&
+    typeof (input as WebSearchToolInput).query === "string"
   );
 }
 
@@ -260,11 +260,11 @@ export function isNotebookEditToolInput(
   input: unknown
 ): input is NotebookEditToolInput {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'notebook_path' in input &&
-    'new_source' in input &&
-    typeof (input as NotebookEditToolInput).notebook_path === 'string' &&
-    typeof (input as NotebookEditToolInput).new_source === 'string'
+    "notebook_path" in input &&
+    "new_source" in input &&
+    typeof (input as NotebookEditToolInput).notebook_path === "string" &&
+    typeof (input as NotebookEditToolInput).new_source === "string"
   );
 }

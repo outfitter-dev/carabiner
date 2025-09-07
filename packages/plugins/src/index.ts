@@ -78,12 +78,12 @@
  * ```
  */
 
-export { default as auditLoggerPlugin } from './audit-logger/index';
-export { default as fileBackupPlugin } from './file-backup/index';
+export { default as auditLoggerPlugin } from "./audit-logger/index";
+export { default as fileBackupPlugin } from "./file-backup/index";
 // Individual plugin exports
-export { default as gitSafetyPlugin } from './git-safety/index';
-export { default as performanceMonitorPlugin } from './performance-monitor/index';
-export { default as securityScannerPlugin } from './security-scanner/index';
+export { default as gitSafetyPlugin } from "./git-safety/index";
+export { default as performanceMonitorPlugin } from "./performance-monitor/index";
+export { default as securityScannerPlugin } from "./security-scanner/index";
 
 // Plugin collection configuration interface
 export type PluginCollectionConfig = {
@@ -109,12 +109,12 @@ export function createPluginCollection(config: PluginCollectionConfig = {}) {
 
   if (config.gitSafety !== false) {
     const gitSafetyConfig =
-      typeof config.gitSafety === 'object' ? config.gitSafety : {};
+      typeof config.gitSafety === "object" ? config.gitSafety : {};
     plugins.push({
       plugin: {
-        name: 'git-safety',
-        version: '1.0.0',
-        description: 'Git safety plugin placeholder',
+        name: "git-safety",
+        version: "1.0.0",
+        description: "Git safety plugin placeholder",
       },
       config: gitSafetyConfig,
     });
@@ -122,12 +122,12 @@ export function createPluginCollection(config: PluginCollectionConfig = {}) {
 
   if (config.fileBackup !== false) {
     const fileBackupConfig =
-      typeof config.fileBackup === 'object' ? config.fileBackup : {};
+      typeof config.fileBackup === "object" ? config.fileBackup : {};
     plugins.push({
       plugin: {
-        name: 'file-backup',
-        version: '1.0.0',
-        description: 'File backup plugin placeholder',
+        name: "file-backup",
+        version: "1.0.0",
+        description: "File backup plugin placeholder",
       },
       config: fileBackupConfig,
     });
@@ -135,12 +135,12 @@ export function createPluginCollection(config: PluginCollectionConfig = {}) {
 
   if (config.securityScanner !== false) {
     const securityScannerConfig =
-      typeof config.securityScanner === 'object' ? config.securityScanner : {};
+      typeof config.securityScanner === "object" ? config.securityScanner : {};
     plugins.push({
       plugin: {
-        name: 'security-scanner',
-        version: '1.0.0',
-        description: 'Security scanner plugin placeholder',
+        name: "security-scanner",
+        version: "1.0.0",
+        description: "Security scanner plugin placeholder",
       },
       config: securityScannerConfig,
     });
@@ -148,14 +148,14 @@ export function createPluginCollection(config: PluginCollectionConfig = {}) {
 
   if (config.performanceMonitor !== false) {
     const performanceMonitorConfig =
-      typeof config.performanceMonitor === 'object'
+      typeof config.performanceMonitor === "object"
         ? config.performanceMonitor
         : {};
     plugins.push({
       plugin: {
-        name: 'performance-monitor',
-        version: '1.0.0',
-        description: 'Performance monitor plugin placeholder',
+        name: "performance-monitor",
+        version: "1.0.0",
+        description: "Performance monitor plugin placeholder",
       },
       config: performanceMonitorConfig,
     });
@@ -163,12 +163,12 @@ export function createPluginCollection(config: PluginCollectionConfig = {}) {
 
   if (config.auditLogger !== false) {
     const auditLoggerConfig =
-      typeof config.auditLogger === 'object' ? config.auditLogger : {};
+      typeof config.auditLogger === "object" ? config.auditLogger : {};
     plugins.push({
       plugin: {
-        name: 'audit-logger',
-        version: '1.0.0',
-        description: 'Audit logger plugin placeholder',
+        name: "audit-logger",
+        version: "1.0.0",
+        description: "Audit logger plugin placeholder",
       },
       config: auditLoggerConfig,
     });
@@ -184,29 +184,29 @@ export function getAllPlugins() {
   // TODO: Replace with actual plugin implementations
   return [
     {
-      name: 'git-safety',
-      version: '1.0.0',
-      description: 'Git safety plugin placeholder',
+      name: "git-safety",
+      version: "1.0.0",
+      description: "Git safety plugin placeholder",
     },
     {
-      name: 'file-backup',
-      version: '1.0.0',
-      description: 'File backup plugin placeholder',
+      name: "file-backup",
+      version: "1.0.0",
+      description: "File backup plugin placeholder",
     },
     {
-      name: 'security-scanner',
-      version: '1.0.0',
-      description: 'Security scanner plugin placeholder',
+      name: "security-scanner",
+      version: "1.0.0",
+      description: "Security scanner plugin placeholder",
     },
     {
-      name: 'performance-monitor',
-      version: '1.0.0',
-      description: 'Performance monitor plugin placeholder',
+      name: "performance-monitor",
+      version: "1.0.0",
+      description: "Performance monitor plugin placeholder",
     },
     {
-      name: 'audit-logger',
-      version: '1.0.0',
-      description: 'Audit logger plugin placeholder',
+      name: "audit-logger",
+      version: "1.0.0",
+      description: "Audit logger plugin placeholder",
     },
   ];
 }
@@ -217,30 +217,30 @@ export function getAllPlugins() {
 export function getPluginByName(name: string) {
   // TODO: Replace with actual plugin implementations
   const plugins = {
-    'git-safety': {
-      name: 'git-safety',
-      version: '1.0.0',
-      description: 'Git safety plugin placeholder',
+    "git-safety": {
+      name: "git-safety",
+      version: "1.0.0",
+      description: "Git safety plugin placeholder",
     },
-    'file-backup': {
-      name: 'file-backup',
-      version: '1.0.0',
-      description: 'File backup plugin placeholder',
+    "file-backup": {
+      name: "file-backup",
+      version: "1.0.0",
+      description: "File backup plugin placeholder",
     },
-    'security-scanner': {
-      name: 'security-scanner',
-      version: '1.0.0',
-      description: 'Security scanner plugin placeholder',
+    "security-scanner": {
+      name: "security-scanner",
+      version: "1.0.0",
+      description: "Security scanner plugin placeholder",
     },
-    'performance-monitor': {
-      name: 'performance-monitor',
-      version: '1.0.0',
-      description: 'Performance monitor plugin placeholder',
+    "performance-monitor": {
+      name: "performance-monitor",
+      version: "1.0.0",
+      description: "Performance monitor plugin placeholder",
     },
-    'audit-logger': {
-      name: 'audit-logger',
-      version: '1.0.0',
-      description: 'Audit logger plugin placeholder',
+    "audit-logger": {
+      name: "audit-logger",
+      version: "1.0.0",
+      description: "Audit logger plugin placeholder",
     },
   };
 
@@ -254,30 +254,30 @@ export function createDefaultConfiguration(): PluginCollectionConfig {
   return {
     gitSafety: {
       blockPatterns: [
-        'push.*--force',
-        'push.*-f(?:\\s|$)',
-        'reset.*--hard',
-        'clean.*-f.*-d',
+        "push.*--force",
+        "push.*-f(?:\\s|$)",
+        "reset.*--hard",
+        "clean.*-f.*-d",
       ],
       allowList: [
-        'git status',
-        'git log',
-        'git diff',
-        'git branch',
-        'git show',
+        "git status",
+        "git log",
+        "git diff",
+        "git branch",
+        "git show",
       ],
       logBlocked: true,
     },
     fileBackup: {
-      backupDir: '.backups',
+      backupDir: ".backups",
       maxBackups: 5,
-      namingStrategy: 'timestamp',
-      excludePatterns: ['*.tmp', '*.log', '**/node_modules/**', '**/.git/**'],
+      namingStrategy: "timestamp",
+      excludePatterns: ["*.tmp", "*.log", "**/node_modules/**", "**/.git/**"],
     },
     securityScanner: {
       scanCommands: true,
       scanFiles: true,
-      minSeverity: 'medium',
+      minSeverity: "medium",
       blockOnCritical: true,
       logFindings: true,
     },
@@ -290,9 +290,9 @@ export function createDefaultConfiguration(): PluginCollectionConfig {
     },
     auditLogger: {
       enabled: true,
-      format: 'json',
-      level: 'all',
-      logFile: 'claude-audit.log',
+      format: "json",
+      level: "all",
+      logFile: "claude-audit.log",
       logToConsole: false,
       includeSensitive: false,
     },
@@ -306,37 +306,37 @@ export function createSecurityConfiguration(): PluginCollectionConfig {
   return {
     gitSafety: {
       blockPatterns: [
-        'push.*--force',
-        'push.*-f(?:\\s|$)',
-        'reset.*--hard',
-        'clean.*-f.*-d',
-        'branch.*-D',
-        'tag.*-d',
+        "push.*--force",
+        "push.*-f(?:\\s|$)",
+        "reset.*--hard",
+        "clean.*-f.*-d",
+        "branch.*-D",
+        "tag.*-d",
       ],
       allowWithConfirmation: false,
       logBlocked: true,
     },
     fileBackup: {
-      backupDir: '.security-backups',
+      backupDir: ".security-backups",
       maxBackups: 10,
-      namingStrategy: 'timestamp',
+      namingStrategy: "timestamp",
       backupIdentical: false,
     },
     securityScanner: {
       scanCommands: true,
       scanFiles: true,
-      minSeverity: 'low',
+      minSeverity: "low",
       blockOnCritical: true,
       blockOnHigh: true,
       logFindings: true,
       customRules: [
         {
-          id: 'sudo-usage',
-          name: 'Sudo Command',
-          pattern: '\\bsudo\\b',
-          severity: 'high' as const,
-          category: 'privilege-escalation',
-          description: 'Sudo command detected - requires elevated privileges',
+          id: "sudo-usage",
+          name: "Sudo Command",
+          pattern: "\\bsudo\\b",
+          severity: "high" as const,
+          category: "privilege-escalation",
+          description: "Sudo command detected - requires elevated privileges",
         },
       ],
     },
@@ -349,9 +349,9 @@ export function createSecurityConfiguration(): PluginCollectionConfig {
     },
     auditLogger: {
       enabled: true,
-      format: 'json',
-      level: 'all',
-      logFile: 'security-audit.log',
+      format: "json",
+      level: "all",
+      logFile: "security-audit.log",
       logToConsole: true,
       includeSensitive: false,
       anonymizePaths: true,
@@ -366,19 +366,19 @@ export function createSecurityConfiguration(): PluginCollectionConfig {
 export function createDevelopmentConfiguration(): PluginCollectionConfig {
   return {
     gitSafety: {
-      blockPatterns: ['reset.*--hard'],
+      blockPatterns: ["reset.*--hard"],
       allowWithConfirmation: true,
       logBlocked: false,
     },
     fileBackup: {
-      backupDir: '.dev-backups',
+      backupDir: ".dev-backups",
       maxBackups: 3,
-      namingStrategy: 'numbered',
+      namingStrategy: "numbered",
       maxFileSize: 1024 * 1024, // 1MB
     },
     securityScanner: {
       scanFiles: true,
-      minSeverity: 'high',
+      minSeverity: "high",
       blockOnCritical: false,
       logFindings: false,
     },
@@ -392,9 +392,9 @@ export function createDevelopmentConfiguration(): PluginCollectionConfig {
     },
     auditLogger: {
       enabled: true,
-      format: 'text',
-      level: 'operations',
-      logFile: 'dev-audit.log',
+      format: "text",
+      level: "operations",
+      logFile: "dev-audit.log",
       logToConsole: true,
       bufferWrites: false,
     },
@@ -404,14 +404,14 @@ export function createDevelopmentConfiguration(): PluginCollectionConfig {
 /**
  * Package version
  */
-export const VERSION = '1.0.0';
+export const VERSION = "1.0.0";
 
 /**
  * Package metadata
  */
 export const PACKAGE_INFO = {
-  name: '@carabiner/plugins',
+  name: "@carabiner/plugins",
   version: VERSION,
-  description: 'Example plugin collection for Claude Code hooks',
-  repository: 'https://github.com/outfitter-dev/carabiner',
+  description: "Example plugin collection for Claude Code hooks",
+  repository: "https://github.com/outfitter-dev/carabiner",
 } as const;

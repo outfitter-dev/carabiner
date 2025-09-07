@@ -33,9 +33,9 @@
  * }
  */
 
-import { HookExecutor } from '@carabiner/execution';
-import { StdinProtocol } from '@carabiner/protocol';
-import type { HookHandler } from '@carabiner/types';
+import { HookExecutor } from "@carabiner/execution";
+import { StdinProtocol } from "@carabiner/protocol";
+import type { HookHandler } from "@carabiner/types";
 
 // Define validation rules as an array of [regex pattern, message] tuples
 export const VALIDATION_RULES: [RegExp, string][] = [
@@ -89,7 +89,7 @@ export function validateCommand(command: string): string[] {
  */
 export const bashCommandValidatorHook: HookHandler = (context) => {
   // Only process Bash tool events
-  if (!('toolName' in context) || context.toolName !== 'Bash') {
+  if (!("toolName" in context) || context.toolName !== "Bash") {
     return {
       success: true,
     };
@@ -109,7 +109,7 @@ export const bashCommandValidatorHook: HookHandler = (context) => {
 
   if (issues.length > 0) {
     // Format issues as bullet points
-    const errorMessage = issues.map((issue) => `• ${issue}`).join('\n');
+    const errorMessage = issues.map((issue) => `• ${issue}`).join("\n");
 
     return {
       success: false,

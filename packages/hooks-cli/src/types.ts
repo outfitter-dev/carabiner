@@ -1,7 +1,7 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-import type { ParseArgsConfig } from 'node:util';
-import { parseArgs } from 'node:util';
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import type { ParseArgsConfig } from "node:util";
+import { parseArgs } from "node:util";
 
 /**
  * CLI configuration
@@ -40,7 +40,7 @@ export abstract class BaseCommand implements Command {
    */
   protected parseArgs(
     args: string[],
-    options: ParseArgsConfig['options']
+    options: ParseArgsConfig["options"]
   ): {
     values: Record<string, string | boolean | undefined>;
     positionals: string[];
@@ -69,19 +69,19 @@ export abstract class BaseCommand implements Command {
     const lines: string[] = [];
     lines.push(`Usage: ${this.usage}`);
     if (this.description) {
-      lines.push('');
+      lines.push("");
       lines.push(this.description);
     }
     const entries = Object.entries(this.options);
     if (entries.length > 0) {
-      lines.push('');
-      lines.push('Options:');
+      lines.push("");
+      lines.push("Options:");
       for (const [option, desc] of entries) {
         lines.push(`  --${option}\t${desc}`);
       }
     }
     // Emit on stderr to avoid interfering with tools parsing stdout
-    process.stderr.write(`${lines.join('\n')}\n`);
+    process.stderr.write(`${lines.join("\n")}\n`);
   }
 
   /**
@@ -91,11 +91,11 @@ export abstract class BaseCommand implements Command {
     value: string | boolean | undefined,
     defaultValue = false
   ): boolean {
-    if (typeof value === 'boolean') {
+    if (typeof value === "boolean") {
       return value;
     }
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true';
+    if (typeof value === "string") {
+      return value.toLowerCase() === "true";
     }
     return defaultValue;
   }
@@ -105,12 +105,12 @@ export abstract class BaseCommand implements Command {
    */
   protected getStringValue(
     value: string | boolean | undefined,
-    defaultValue = ''
+    defaultValue = ""
   ): string {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       return value;
     }
-    if (typeof value === 'boolean') {
+    if (typeof value === "boolean") {
       return value.toString();
     }
     return defaultValue;
@@ -120,8 +120,8 @@ export abstract class BaseCommand implements Command {
    * Check if workspace is a Claude Code hooks project
    */
   protected isHooksProject(workspacePath: string): boolean {
-    const claudeDir = join(workspacePath, '.claude');
-    const hooksDir = join(workspacePath, 'hooks');
+    const claudeDir = join(workspacePath, ".claude");
+    const hooksDir = join(workspacePath, "hooks");
     return existsSync(claudeDir) || existsSync(hooksDir);
   }
 
@@ -129,24 +129,24 @@ export abstract class BaseCommand implements Command {
    * Get hooks directory path
    */
   protected getHooksDir(workspacePath: string): string {
-    return join(workspacePath, 'hooks');
+    return join(workspacePath, "hooks");
   }
 
   /**
    * Get Claude directory path
    */
   protected getClaudeDir(workspacePath: string): string {
-    return join(workspacePath, '.claude');
+    return join(workspacePath, ".claude");
   }
 
   protected parseOptions(args: string[]): Record<string, string | boolean> {
     const options: Record<string, string | boolean> = {};
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
-      if (arg?.startsWith('--')) {
+      if (arg?.startsWith("--")) {
         const key = arg.slice(2);
         const nextArg = args[i + 1];
-        if (nextArg && !nextArg.startsWith('--')) {
+        if (nextArg && !nextArg.startsWith("--")) {
           options[key] = nextArg;
           i++;
         } else {

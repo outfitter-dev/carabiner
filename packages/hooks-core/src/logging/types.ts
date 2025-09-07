@@ -2,17 +2,17 @@
  * Type definitions for the logging system
  */
 
-import type { HookEvent } from '../types';
+import type { HookEvent } from "../types";
 
 /**
  * Standard log levels following RFC 5424
  */
-export type LogLevel = 'error' | 'warn' | 'info' | 'debug' | 'trace';
+export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
 
 /**
  * Environment types that affect logging configuration
  */
-export type Environment = 'development' | 'test' | 'production';
+export type Environment = "development" | "test" | "production";
 
 /**
  * Base structured log entry
@@ -192,7 +192,7 @@ export interface HookLogger extends Logger {
   /** Log security event */
   logSecurityEvent(
     event: string,
-    severity: 'low' | 'medium' | 'high' | 'critical',
+    severity: "low" | "medium" | "high" | "critical",
     context: HookExecutionContext,
     details?: Record<string, unknown>
   ): void;

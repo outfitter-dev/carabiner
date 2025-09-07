@@ -2,9 +2,9 @@
  * Hook generator
  */
 
-import { getTemplate, type HookTemplateVariant } from '../templates/index.js';
-import { getFilePath, getHooksDir } from '../utils/path-resolution.js';
-import { BaseGenerator, type GeneratorOptions } from './base-generator.js';
+import { getTemplate, type HookTemplateVariant } from "../templates/index.js";
+import { getFilePath, getHooksDir } from "../utils/path-resolution.js";
+import { BaseGenerator, type GeneratorOptions } from "./base-generator.js";
 
 export interface HookGeneratorOptions extends GeneratorOptions {
   template: HookTemplateVariant;
@@ -20,7 +20,7 @@ export class HookGenerator extends BaseGenerator {
 
   async generate(): Promise<void> {
     const templateFunction = getTemplate(
-      'hook',
+      "hook",
       this.getLanguage(),
       this.template
     );

@@ -3,14 +3,14 @@
  * Replaces complex generics with simple, discoverable types
  */
 
-import type { DirectoryPath, SessionId, TranscriptPath } from './brands';
+import type { DirectoryPath, SessionId, TranscriptPath } from "./brands";
 import type {
   HookEvent,
   NotificationEvent,
   ToolHookEvent,
   ToolName,
-} from './events';
-import type { ToolInput, ToolInputMap } from './tools';
+} from "./events";
+import type { ToolInput, ToolInputMap } from "./tools";
 
 /**
  * Hook environment variables
@@ -46,25 +46,25 @@ export interface ToolHookContext extends BaseHookContext {
  */
 export interface BashHookContext extends BaseHookContext {
   readonly event: ToolHookEvent;
-  readonly toolName: 'Bash';
-  readonly toolInput: ToolInputMap['Bash'];
+  readonly toolName: "Bash";
+  readonly toolInput: ToolInputMap["Bash"];
   readonly toolResponse?: Record<string, unknown>;
 }
 
 export interface FileHookContext extends BaseHookContext {
   readonly event: ToolHookEvent;
-  readonly toolName: 'Write' | 'Edit' | 'Read';
+  readonly toolName: "Write" | "Edit" | "Read";
   readonly toolInput:
-    | ToolInputMap['Write']
-    | ToolInputMap['Edit']
-    | ToolInputMap['Read'];
+    | ToolInputMap["Write"]
+    | ToolInputMap["Edit"]
+    | ToolInputMap["Read"];
   readonly toolResponse?: Record<string, unknown>;
 }
 
 export interface SearchHookContext extends BaseHookContext {
   readonly event: ToolHookEvent;
-  readonly toolName: 'Glob' | 'Grep';
-  readonly toolInput: ToolInputMap['Glob'] | ToolInputMap['Grep'];
+  readonly toolName: "Glob" | "Grep";
+  readonly toolInput: ToolInputMap["Glob"] | ToolInputMap["Grep"];
   readonly toolResponse?: Record<string, unknown>;
 }
 
@@ -72,7 +72,7 @@ export interface SearchHookContext extends BaseHookContext {
  * User prompt hook context
  */
 export interface UserPromptHookContext extends BaseHookContext {
-  readonly event: 'UserPromptSubmit';
+  readonly event: "UserPromptSubmit";
   readonly userPrompt: string;
 }
 
@@ -99,18 +99,18 @@ export type HookContext =
  * Context discriminated by event type
  */
 export type PreToolUseContext = ToolHookContext & {
-  readonly event: 'PreToolUse';
+  readonly event: "PreToolUse";
 };
 export type PostToolUseContext = ToolHookContext & {
-  readonly event: 'PostToolUse';
+  readonly event: "PostToolUse";
   readonly toolResponse: Record<string, unknown>;
 };
 export type SessionStartContext = NotificationHookContext & {
-  readonly event: 'SessionStart';
+  readonly event: "SessionStart";
 };
-export type StopContext = NotificationHookContext & { readonly event: 'Stop' };
+export type StopContext = NotificationHookContext & { readonly event: "Stop" };
 export type SubagentStopContext = NotificationHookContext & {
-  readonly event: 'SubagentStop';
+  readonly event: "SubagentStop";
 };
 
 /**
@@ -118,7 +118,7 @@ export type SubagentStopContext = NotificationHookContext & {
  */
 export type HookHandler<TContext extends HookContext = HookContext> = (
   context: TContext
-) => Promise<import('./events').HookResult> | import('./events').HookResult;
+) => Promise<import("./events").HookResult> | import("./events").HookResult;
 
 export type ToolHookHandler = HookHandler<ToolHookContext>;
 export type BashHookHandler = HookHandler<BashHookContext>;
@@ -141,13 +141,13 @@ export type SubagentStopHandler = HookHandler<SubagentStopContext>;
 export function isToolHookContext(
   context: HookContext
 ): context is ToolHookContext {
-  return context.event === 'PreToolUse' || context.event === 'PostToolUse';
+  return context.event === "PreToolUse" || context.event === "PostToolUse";
 }
 
 export function isBashHookContext(
   context: HookContext
 ): context is BashHookContext {
-  return isToolHookContext(context) && context.toolName === 'Bash';
+  return isToolHookContext(context) && context.toolName === "Bash";
 }
 
 export function isFileHookContext(
@@ -155,7 +155,7 @@ export function isFileHookContext(
 ): context is FileHookContext {
   return (
     isToolHookContext(context) &&
-    ['Write', 'Edit', 'Read', 'MultiEdit'].includes(context.toolName)
+    ["Write", "Edit", "Read", "MultiEdit"].includes(context.toolName)
   );
 }
 
@@ -163,32 +163,32 @@ export function isSearchHookContext(
   context: HookContext
 ): context is SearchHookContext {
   return (
-    isToolHookContext(context) && ['Glob', 'Grep'].includes(context.toolName)
+    isToolHookContext(context) && ["Glob", "Grep"].includes(context.toolName)
   );
 }
 
 export function isUserPromptContext(
   context: HookContext
 ): context is UserPromptHookContext {
-  return context.event === 'UserPromptSubmit';
+  return context.event === "UserPromptSubmit";
 }
 
 export function isNotificationContext(
   context: HookContext
 ): context is NotificationHookContext {
-  return ['SessionStart', 'Stop', 'SubagentStop'].includes(context.event);
+  return ["SessionStart", "Stop", "SubagentStop"].includes(context.event);
 }
 
 export function isPreToolUseContext(
   context: HookContext
 ): context is PreToolUseContext {
-  return context.event === 'PreToolUse';
+  return context.event === "PreToolUse";
 }
 
 export function isPostToolUseContext(
   context: HookContext
 ): context is PostToolUseContext {
-  return context.event === 'PostToolUse';
+  return context.event === "PostToolUse";
 }
 
 /**
@@ -224,7 +224,7 @@ export function createUserPromptContext(
   options: CreateContextOptions
 ): UserPromptHookContext {
   return {
-    event: 'UserPromptSubmit',
+    event: "UserPromptSubmit",
     userPrompt,
     ...options,
     environment: options.environment || {},

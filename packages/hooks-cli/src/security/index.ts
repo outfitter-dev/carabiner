@@ -3,12 +3,12 @@
  * Provides comprehensive security validation and protection mechanisms
  */
 
-import { CommandValidator } from './command-validator';
+import { CommandValidator } from "./command-validator";
 // Local imports for use in this module's implementations
-import { createWorkspaceValidator } from './workspace-validator';
+import { createWorkspaceValidator } from "./workspace-validator";
 
 // Re-export security validation error for convenience
-export { SecurityValidationError } from '@carabiner/hooks-validators';
+export { SecurityValidationError } from "@carabiner/hooks-validators";
 
 // Command validation
 export {
@@ -18,7 +18,7 @@ export {
   DEFAULT_COMMAND_CONFIG,
   validateCommand,
   validateHookCommand,
-} from './command-validator';
+} from "./command-validator";
 // Workspace validation
 export {
   createWorkspaceValidator,
@@ -27,7 +27,7 @@ export {
   validateWorkspacePath,
   type WorkspaceSecurityConfig,
   WorkspaceValidator,
-} from './workspace-validator';
+} from "./workspace-validator";
 
 /**
  * Security utilities for common operations
@@ -48,7 +48,7 @@ export const Security = {
    * Create a secure command validator for production
    */
   createProductionCommandValidator() {
-    return CommandValidator.forEnvironment('production', true);
+    return CommandValidator.forEnvironment("production", true);
   },
 
   /**
@@ -88,34 +88,34 @@ export const Security = {
     const issues: Array<{ severity: string; rule: string; message: string }> =
       [];
 
-    if (typeof config === 'object' && config !== null) {
+    if (typeof config === "object" && config !== null) {
       // Check for dangerous patterns in configuration
       const configStr = JSON.stringify(config);
 
       // Check for eval patterns
       if (/\beval\s*\(/i.test(configStr)) {
         issues.push({
-          severity: 'critical',
-          rule: 'no-eval',
-          message: 'Configuration contains eval() calls',
+          severity: "critical",
+          rule: "no-eval",
+          message: "Configuration contains eval() calls",
         });
       }
 
       // Check for shell metacharacters
       if (/[;&|`$()]/.test(configStr)) {
         issues.push({
-          severity: 'high',
-          rule: 'no-shell-metacharacters',
-          message: 'Configuration contains shell metacharacters',
+          severity: "high",
+          rule: "no-shell-metacharacters",
+          message: "Configuration contains shell metacharacters",
         });
       }
 
       // Check for potential path traversal
       if (/\.\.[/\\]/.test(configStr)) {
         issues.push({
-          severity: 'high',
-          rule: 'no-path-traversal',
-          message: 'Configuration contains potential path traversal sequences',
+          severity: "high",
+          rule: "no-path-traversal",
+          message: "Configuration contains potential path traversal sequences",
         });
       }
     }
@@ -136,29 +136,29 @@ export const PRODUCTION_SECURITY_CONFIG = {
     maxDepth: 8,
     maxFileSize: 5 * 1024 * 1024, // 5MB
     allowedDirectories: new Set([
-      '.claude',
-      'hooks',
-      'src',
-      'lib',
-      'docs',
-      'test',
-      'tests',
-      '__tests__',
+      ".claude",
+      "hooks",
+      "src",
+      "lib",
+      "docs",
+      "test",
+      "tests",
+      "__tests__",
     ]),
   },
   command: {
     strictMode: true,
-    environmentMode: 'production' as const,
+    environmentMode: "production" as const,
     maxLength: 1024,
     allowedExecutables: new Set([
-      'bun',
-      'node',
-      'npm',
-      'git',
-      'echo',
-      'cat',
-      'ls',
-      'grep',
+      "bun",
+      "node",
+      "npm",
+      "git",
+      "echo",
+      "cat",
+      "ls",
+      "grep",
     ]),
   },
 };
@@ -168,35 +168,35 @@ export const PRODUCTION_SECURITY_CONFIG = {
  */
 export const SECURITY_BEST_PRACTICES = {
   workspace: [
-    'Always validate file paths before operations',
-    'Use absolute paths internally after validation',
-    'Implement workspace boundary enforcement',
-    'Limit file access to approved directories only',
-    'Set reasonable file size limits',
-    'Block access to sensitive file patterns',
+    "Always validate file paths before operations",
+    "Use absolute paths internally after validation",
+    "Implement workspace boundary enforcement",
+    "Limit file access to approved directories only",
+    "Set reasonable file size limits",
+    "Block access to sensitive file patterns",
   ],
   commands: [
-    'Whitelist allowed executables',
-    'Block dangerous command patterns',
-    'Implement command length limits',
-    'Prevent shell metacharacter injection',
-    'Use environment-specific restrictions',
-    'Log security violations for monitoring',
+    "Whitelist allowed executables",
+    "Block dangerous command patterns",
+    "Implement command length limits",
+    "Prevent shell metacharacter injection",
+    "Use environment-specific restrictions",
+    "Log security violations for monitoring",
   ],
   configuration: [
-    'Validate all configuration sources',
-    'Sanitize dynamic configuration loading',
-    'Implement configuration schema validation',
-    'Block code injection in config files',
-    'Use secure defaults for all options',
-    'Audit configurations regularly',
+    "Validate all configuration sources",
+    "Sanitize dynamic configuration loading",
+    "Implement configuration schema validation",
+    "Block code injection in config files",
+    "Use secure defaults for all options",
+    "Audit configurations regularly",
   ],
   runtime: [
-    'Validate all input from external sources',
-    'Implement timeout limits for operations',
-    'Use secure environment variable handling',
-    'Implement proper error boundaries',
-    'Log security events for monitoring',
-    'Follow principle of least privilege',
+    "Validate all input from external sources",
+    "Implement timeout limits for operations",
+    "Use secure environment variable handling",
+    "Implement proper error boundaries",
+    "Log security events for monitoring",
+    "Follow principle of least privilege",
   ],
 } as const;

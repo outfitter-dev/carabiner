@@ -2,36 +2,36 @@
  * @outfitter/execution - Hook executor tests
  */
 
-import { beforeEach, describe, expect, test } from 'bun:test';
-import { createProtocol, type TestProtocol } from '@carabiner/protocol';
-import type { HookHandler } from '@carabiner/types';
-import { isToolHookContext } from '@carabiner/types';
-import { HookExecutor } from '../executor';
-import { MetricsCollector } from '../metrics';
+import { beforeEach, describe, expect, test } from "bun:test";
+import { createProtocol, type TestProtocol } from "@carabiner/protocol";
+import type { HookHandler } from "@carabiner/types";
+import { isToolHookContext } from "@carabiner/types";
+import { HookExecutor } from "../executor";
+import { MetricsCollector } from "../metrics";
 
-describe('HookExecutor', () => {
+describe("HookExecutor", () => {
   let mockProtocol: TestProtocol;
 
   beforeEach(() => {
     const mockInput = {
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
-      tool_input: { command: 'ls -la' },
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/tmp',
-      environment: { PATH: '/usr/bin' },
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "ls -la" },
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/tmp",
+      environment: { PATH: "/usr/bin" },
     };
-    mockProtocol = createProtocol('test', { input: mockInput }) as TestProtocol;
+    mockProtocol = createProtocol("test", { input: mockInput }) as TestProtocol;
   });
 
-  test('should execute hook handler', async () => {
+  test("should execute hook handler", async () => {
     const handler: HookHandler = (context) => {
-      expect(context.event).toBe('PreToolUse');
+      expect(context.event).toBe("PreToolUse");
       if (isToolHookContext(context)) {
-        expect(context.toolName).toBe('Bash');
+        expect(context.toolName).toBe("Bash");
       }
-      return { success: true, message: 'Hook executed successfully' };
+      return { success: true, message: "Hook executed successfully" };
     };
 
     const executor = new HookExecutor(mockProtocol, {
@@ -45,7 +45,7 @@ describe('HookExecutor', () => {
     expect(mockProtocol.output?.success).toBe(true);
   });
 
-  test('should collect metrics', async () => {
+  test("should collect metrics", async () => {
     const metricsCollector = new MetricsCollector();
     const handler: HookHandler = async () => ({ success: true });
 
@@ -62,14 +62,14 @@ describe('HookExecutor', () => {
 
     const metric = metrics[0];
     if (metric) {
-      expect(metric.event).toBe('PreToolUse');
-      expect(metric.toolName).toBe('Bash');
+      expect(metric.event).toBe("PreToolUse");
+      expect(metric.toolName).toBe("Bash");
       expect(metric.success).toBe(true);
       expect(metric.timing.duration).toBeGreaterThan(0);
     }
   });
 
-  test('should handle timeout and cleanup timer', async () => {
+  test("should handle timeout and cleanup timer", async () => {
     // Track if setTimeout and clearTimeout are called properly
     const originalSetTimeout = global.setTimeout;
     const originalClearTimeout = global.clearTimeout;
@@ -97,7 +97,7 @@ describe('HookExecutor', () => {
       const handler: HookHandler = async () => {
         // Simulate work that completes before timeout
         await new Promise((resolve) => originalSetTimeout(resolve, 50));
-        return { success: true, message: 'Completed' };
+        return { success: true, message: "Completed" };
       };
 
       const executor = new HookExecutor(mockProtocol, {
@@ -116,7 +116,7 @@ describe('HookExecutor', () => {
 
       // Verify the handler succeeded
       expect(mockProtocol.output?.success).toBe(true);
-      expect(mockProtocol.output?.message).toBe('Completed');
+      expect(mockProtocol.output?.message).toBe("Completed");
     } finally {
       // Restore original functions
       global.setTimeout = originalSetTimeout;
@@ -124,7 +124,7 @@ describe('HookExecutor', () => {
     }
   });
 
-  test('should cleanup timer even when handler fails', async () => {
+  test("should cleanup timer even when handler fails", async () => {
     const originalSetTimeout = global.setTimeout;
     const originalClearTimeout = global.clearTimeout;
 
@@ -145,7 +145,7 @@ describe('HookExecutor', () => {
 
     try {
       const handler: HookHandler = () => {
-        throw new Error('Handler failed');
+        throw new Error("Handler failed");
       };
 
       const executor = new HookExecutor(mockProtocol, {

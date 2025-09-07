@@ -7,10 +7,10 @@ import type {
   HookContext,
   HookHandler,
   HookResult,
-} from '@carabiner/hooks-core';
-import { executeHook } from '@carabiner/hooks-core';
-import type { MockEnvironmentConfig } from './mock';
-import { mockEnv } from './mock';
+} from "@carabiner/hooks-core";
+import { executeHook } from "@carabiner/hooks-core";
+import type { MockEnvironmentConfig } from "./mock";
+import { mockEnv } from "./mock";
 
 /**
  * Test suite configuration
@@ -100,7 +100,7 @@ export class HookTestRunner {
    */
   test(handler: HookHandler, testConfig: HookTestConfig): void {
     if (!this.currentSuite) {
-      throw new Error('test() must be called within a suite()');
+      throw new Error("test() must be called within a suite()");
     }
 
     this.currentSuite.addTest(handler, testConfig);
@@ -340,7 +340,7 @@ export class HookTest {
           obj: unknown,
           prop: K
         ): obj is Record<K, unknown> {
-          return typeof obj === 'object' && obj !== null && prop in obj;
+          return typeof obj === "object" && obj !== null && prop in obj;
         }
 
         if (!hasProperty(result, key)) {
@@ -378,15 +378,15 @@ export const testBuilders = {
     expectedBlocked = true
   ): HookTestConfig {
     return {
-      name: `should ${expectedBlocked ? 'block' : 'allow'} security validation`,
+      name: `should ${expectedBlocked ? "block" : "allow"} security validation`,
       context: maliciousContext,
       expectedResult: {
         success: !expectedBlocked,
         block: expectedBlocked,
       },
       customAssertions: (result: HookResult) => {
-        if (expectedBlocked && !result.message?.includes('blocked')) {
-          throw new Error('Expected blocking message in result');
+        if (expectedBlocked && !result.message?.includes("blocked")) {
+          throw new Error("Expected blocking message in result");
         }
       },
     };
@@ -422,14 +422,14 @@ export const testBuilders = {
     faultyContext: HookContext
   ): HookTestConfig {
     return {
-      name: 'should handle errors gracefully',
+      name: "should handle errors gracefully",
       context: faultyContext,
       expectedResult: {
         success: false,
       },
       customAssertions: (result: HookResult) => {
         if (!result.message) {
-          throw new Error('Expected error message in result');
+          throw new Error("Expected error message in result");
         }
       },
     };
@@ -444,7 +444,7 @@ export const testBuilders = {
     expectedMessage?: string
   ): HookTestConfig {
     return {
-      name: 'should succeed with valid input',
+      name: "should succeed with valid input",
       context,
       expectedResult: {
         success: true,

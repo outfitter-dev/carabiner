@@ -12,7 +12,7 @@ import type {
   HookResult,
   HookBuilder as IHookBuilder,
   ToolName,
-} from './types.ts';
+} from "./types.ts";
 
 /**
  * Hook builder implementation with fluent interface
@@ -114,11 +114,11 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
    */
   build(): HookRegistryEntry<TEvent> {
     if (!this._event) {
-      throw new Error('Hook event is required');
+      throw new Error("Hook event is required");
     }
 
     if (!this._handler) {
-      throw new Error('Hook handler is required');
+      throw new Error("Hook handler is required");
     }
 
     let finalHandler = this._handler;
@@ -131,7 +131,7 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
       finalHandler = async (context: HookContext<TEvent>) => {
         const shouldExecute = await Promise.resolve(condition(context));
         if (!shouldExecute) {
-          return { success: true, message: 'Hook skipped due to condition' };
+          return { success: true, message: "Hook skipped due to condition" };
         }
         return await Promise.resolve(originalHandler(context));
       };
@@ -161,20 +161,20 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
   /**
    * Static factory methods for common patterns
    */
-  static forPreToolUse(): HookBuilder<'PreToolUse'> {
-    return new HookBuilder<'PreToolUse'>().forEvent('PreToolUse');
+  static forPreToolUse(): HookBuilder<"PreToolUse"> {
+    return new HookBuilder<"PreToolUse">().forEvent("PreToolUse");
   }
 
-  static forPostToolUse(): HookBuilder<'PostToolUse'> {
-    return new HookBuilder<'PostToolUse'>().forEvent('PostToolUse');
+  static forPostToolUse(): HookBuilder<"PostToolUse"> {
+    return new HookBuilder<"PostToolUse">().forEvent("PostToolUse");
   }
 
-  static forSessionStart(): HookBuilder<'SessionStart'> {
-    return new HookBuilder<'SessionStart'>().forEvent('SessionStart');
+  static forSessionStart(): HookBuilder<"SessionStart"> {
+    return new HookBuilder<"SessionStart">().forEvent("SessionStart");
   }
 
-  static forUserPrompt(): HookBuilder<'UserPromptSubmit'> {
-    return new HookBuilder<'UserPromptSubmit'>().forEvent('UserPromptSubmit');
+  static forUserPrompt(): HookBuilder<"UserPromptSubmit"> {
+    return new HookBuilder<"UserPromptSubmit">().forEvent("UserPromptSubmit");
   }
 }
 
@@ -186,13 +186,13 @@ export const createHook = {
    * Create a PreToolUse hook - supports both universal and tool-specific
    */
   preToolUse<T extends ToolName>(
-    toolOrHandler: T | HookHandler<'PreToolUse'>,
-    handler?: HookHandler<'PreToolUse'>
-  ): HookRegistryEntry<'PreToolUse'> {
-    if (typeof toolOrHandler === 'function') {
+    toolOrHandler: T | HookHandler<"PreToolUse">,
+    handler?: HookHandler<"PreToolUse">
+  ): HookRegistryEntry<"PreToolUse"> {
+    if (typeof toolOrHandler === "function") {
       // Universal hook: createHook.preToolUse(handler)
       return {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         handler: toolOrHandler,
         priority: 0,
         enabled: true,
@@ -201,10 +201,10 @@ export const createHook = {
     }
     // Tool-specific hook: createHook.preToolUse('Bash', handler)
     if (!handler) {
-      throw new Error('Handler is required when tool is specified');
+      throw new Error("Handler is required when tool is specified");
     }
     return {
-      event: 'PreToolUse',
+      event: "PreToolUse",
       handler,
       priority: 0,
       enabled: true,
@@ -216,13 +216,13 @@ export const createHook = {
    * Create a PostToolUse hook - supports both universal and tool-specific
    */
   postToolUse<T extends ToolName>(
-    toolOrHandler: T | HookHandler<'PostToolUse'>,
-    handler?: HookHandler<'PostToolUse'>
-  ): HookRegistryEntry<'PostToolUse'> {
-    if (typeof toolOrHandler === 'function') {
+    toolOrHandler: T | HookHandler<"PostToolUse">,
+    handler?: HookHandler<"PostToolUse">
+  ): HookRegistryEntry<"PostToolUse"> {
+    if (typeof toolOrHandler === "function") {
       // Universal hook: createHook.postToolUse(handler)
       return {
-        event: 'PostToolUse',
+        event: "PostToolUse",
         handler: toolOrHandler,
         priority: 0,
         enabled: true,
@@ -231,10 +231,10 @@ export const createHook = {
     }
     // Tool-specific hook: createHook.postToolUse('Bash', handler)
     if (!handler) {
-      throw new Error('Handler is required when tool is specified');
+      throw new Error("Handler is required when tool is specified");
     }
     return {
-      event: 'PostToolUse',
+      event: "PostToolUse",
       handler,
       priority: 0,
       enabled: true,
@@ -246,8 +246,8 @@ export const createHook = {
    * Create a SessionStart hook
    */
   sessionStart(
-    handler: HookHandler<'SessionStart'>
-  ): HookRegistryEntry<'SessionStart'> {
+    handler: HookHandler<"SessionStart">
+  ): HookRegistryEntry<"SessionStart"> {
     return HookBuilder.forSessionStart().withHandler(handler).build();
   },
 
@@ -255,8 +255,8 @@ export const createHook = {
    * Create a UserPromptSubmit hook
    */
   userPromptSubmit(
-    handler: HookHandler<'UserPromptSubmit'>
-  ): HookRegistryEntry<'UserPromptSubmit'> {
+    handler: HookHandler<"UserPromptSubmit">
+  ): HookRegistryEntry<"UserPromptSubmit"> {
     return HookBuilder.forUserPrompt().withHandler(handler).build();
   },
 
@@ -337,13 +337,13 @@ export const middleware = {
    * Logging middleware
    */
   logging<T extends HookContext>(
-    logLevel: 'debug' | 'info' | 'warn' | 'error' = 'info'
+    logLevel: "debug" | "info" | "warn" | "error" = "info"
   ): HookMiddleware<T> {
     return async (context, next) => {
       // Timing captured but not used - reserved for future logging
       Date.now();
 
-      if (logLevel === 'debug' || logLevel === 'info') {
+      if (logLevel === "debug" || logLevel === "info") {
         // Logging handled by pino logger in hook execution
       }
 
@@ -351,7 +351,7 @@ export const middleware = {
         const result = await next(context);
         // Duration tracking reserved for future logging
 
-        if (logLevel === 'debug' || logLevel === 'info') {
+        if (logLevel === "debug" || logLevel === "info") {
           // Success logging handled by pino logger
         }
 
@@ -359,7 +359,7 @@ export const middleware = {
       } catch (error) {
         // Duration tracking reserved for future logging
 
-        if (logLevel !== 'error') {
+        if (logLevel !== "error") {
           // Error logging handled by pino logger
         }
 
@@ -403,8 +403,8 @@ export const middleware = {
 
         return {
           success: false,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          block: context.event === 'PreToolUse',
+          message: error instanceof Error ? error.message : "Unknown error",
+          block: context.event === "PreToolUse",
         };
       }
     };
@@ -415,7 +415,7 @@ export const middleware = {
    */
   validation<T extends HookContext>(
     validator: (context: T) => boolean | Promise<boolean>,
-    errorMessage = 'Hook validation failed'
+    errorMessage = "Hook validation failed"
   ): HookMiddleware<T> {
     return async (context, next) => {
       const isValid = await Promise.resolve(validator(context));
@@ -424,7 +424,7 @@ export const middleware = {
         return {
           success: false,
           message: errorMessage,
-          block: context.event === 'PreToolUse',
+          block: context.event === "PreToolUse",
         };
       }
 

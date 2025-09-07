@@ -2,8 +2,8 @@
  * Tests for error recovery mechanisms
  */
 
-import { beforeEach, describe, expect, test } from 'bun:test';
-import { GrappleError, NetworkError, TimeoutError } from '../errors.js';
+import { beforeEach, describe, expect, test } from "bun:test";
+import { GrappleError, NetworkError, TimeoutError } from "../errors.js";
 import {
   CircuitBreaker,
   ErrorRecoveryManager,
@@ -11,36 +11,36 @@ import {
   withCleanup,
   withFallback,
   withPriorityFallback,
-} from '../recovery.js';
-import { CircuitState, ErrorCategory, ErrorCode } from '../types.js';
+} from "../recovery.js";
+import { CircuitState, ErrorCategory, ErrorCode } from "../types.js";
 
-describe('RetryManager', () => {
-  test('should retry failed operations', async () => {
+describe("RetryManager", () => {
+  test("should retry failed operations", async () => {
     let attemptCount = 0;
     const operation = () => {
       attemptCount++;
       if (attemptCount < 3) {
         throw new NetworkError(
-          'Connection failed',
+          "Connection failed",
           ErrorCode.CONNECTION_REFUSED
         );
       }
-      return 'success';
+      return "success";
     };
 
     const retryManager = new RetryManager({ maxRetries: 3, retryDelay: 10 });
-    const result = await retryManager.execute(operation, 'test-operation');
+    const result = await retryManager.execute(operation, "test-operation");
 
-    expect(result).toBe('success');
+    expect(result).toBe("success");
     expect(attemptCount).toBe(3);
   });
 
-  test('should not retry non-retryable errors', async () => {
+  test("should not retry non-retryable errors", async () => {
     let attemptCount = 0;
     const operation = () => {
       attemptCount++;
       throw new GrappleError({
-        message: 'Validation error',
+        message: "Validation error",
         code: ErrorCode.INVALID_INPUT,
         category: ErrorCategory.VALIDATION,
         isRecoverable: false,
@@ -50,14 +50,14 @@ describe('RetryManager', () => {
     const retryManager = new RetryManager({ maxRetries: 3 });
 
     try {
-      await retryManager.execute(operation, 'test-operation');
+      await retryManager.execute(operation, "test-operation");
       expect(false).toBe(true); // Should have thrown
     } catch (_error) {
       expect(attemptCount).toBe(1); // Should not retry
     }
   });
 
-  test('should apply exponential backoff', async () => {
+  test("should apply exponential backoff", async () => {
     const delays: number[] = [];
     const originalSetTimeout = setTimeout;
 
@@ -71,9 +71,9 @@ describe('RetryManager', () => {
     const operation = () => {
       attemptCount++;
       if (attemptCount < 4) {
-        throw new NetworkError('Connection failed');
+        throw new NetworkError("Connection failed");
       }
-      return 'success';
+      return "success";
     };
 
     const retryManager = new RetryManager({
@@ -83,7 +83,7 @@ describe('RetryManager', () => {
       useJitter: false,
     });
 
-    await retryManager.execute(operation, 'test-operation');
+    await retryManager.execute(operation, "test-operation");
 
     // Restore original setTimeout
     global.setTimeout = originalSetTimeout;
@@ -94,43 +94,43 @@ describe('RetryManager', () => {
     expect(delays[2]).toBe(400); // Third retry: 100 * 2^2 = 400ms
   });
 
-  test('should execute fallback when all retries fail', async () => {
+  test("should execute fallback when all retries fail", async () => {
     const operation = () => {
-      throw new NetworkError('Always fails');
+      throw new NetworkError("Always fails");
     };
 
-    const fallbackResult = 'fallback-result';
+    const fallbackResult = "fallback-result";
     const retryManager = new RetryManager({
       maxRetries: 2,
       retryDelay: 1,
       fallback: () => fallbackResult,
     });
 
-    const result = await retryManager.execute(operation, 'test-operation');
+    const result = await retryManager.execute(operation, "test-operation");
     expect(result).toBe(fallbackResult);
   });
 
-  test('should throw last error when no fallback and all retries fail', async () => {
+  test("should throw last error when no fallback and all retries fail", async () => {
     const operation = () => {
-      throw new NetworkError('Always fails');
+      throw new NetworkError("Always fails");
     };
 
     const retryManager = new RetryManager({ maxRetries: 2, retryDelay: 1 });
 
     try {
-      await retryManager.execute(operation, 'test-operation');
+      await retryManager.execute(operation, "test-operation");
       expect(false).toBe(true); // Should have thrown
     } catch (error) {
       expect(error).toBeInstanceOf(NetworkError);
     }
   });
 
-  test('should create wrapped retryable functions', async () => {
+  test("should create wrapped retryable functions", async () => {
     let attemptCount = 0;
     const originalFunction = (value: string) => {
       attemptCount++;
       if (attemptCount < 3) {
-        throw new TimeoutError('Timeout');
+        throw new TimeoutError("Timeout");
       }
       return `processed: ${value}`;
     };
@@ -138,16 +138,16 @@ describe('RetryManager', () => {
     const retryManager = new RetryManager({ maxRetries: 3, retryDelay: 1 });
     const wrappedFunction = retryManager.wrap(
       originalFunction,
-      'test-function'
+      "test-function"
     );
 
-    const result = await wrappedFunction('test-input');
-    expect(result).toBe('processed: test-input');
+    const result = await wrappedFunction("test-input");
+    expect(result).toBe("processed: test-input");
     expect(attemptCount).toBe(3);
   });
 });
 
-describe('CircuitBreaker', () => {
+describe("CircuitBreaker", () => {
   let circuitBreaker: CircuitBreaker;
 
   beforeEach(() => {
@@ -160,21 +160,21 @@ describe('CircuitBreaker', () => {
     });
   });
 
-  test('should allow operations when circuit is closed', async () => {
-    const operation = () => 'success';
-    const result = await circuitBreaker.execute(operation, 'test-operation');
-    expect(result).toBe('success');
+  test("should allow operations when circuit is closed", async () => {
+    const operation = () => "success";
+    const result = await circuitBreaker.execute(operation, "test-operation");
+    expect(result).toBe("success");
   });
 
-  test('should open circuit after failure threshold', async () => {
+  test("should open circuit after failure threshold", async () => {
     const failingOperation = () => {
-      throw new NetworkError('Connection failed');
+      throw new NetworkError("Connection failed");
     };
 
     // Cause failures to open circuit
     for (let i = 0; i < 3; i++) {
       try {
-        await circuitBreaker.execute(failingOperation, 'test-operation');
+        await circuitBreaker.execute(failingOperation, "test-operation");
       } catch {
         // Expected failures
       }
@@ -185,25 +185,25 @@ describe('CircuitBreaker', () => {
 
     // Next operation should be blocked
     try {
-      await circuitBreaker.execute(() => 'success', 'test-operation');
+      await circuitBreaker.execute(() => "success", "test-operation");
       expect(false).toBe(true); // Should have thrown
     } catch (error) {
       expect(error).toBeInstanceOf(GrappleError);
       expect((error as GrappleError).message).toContain(
-        'Circuit breaker is OPEN'
+        "Circuit breaker is OPEN"
       );
     }
   });
 
-  test('should transition to half-open after timeout', async () => {
+  test("should transition to half-open after timeout", async () => {
     const failingOperation = () => {
-      throw new NetworkError('Connection failed');
+      throw new NetworkError("Connection failed");
     };
 
     // Open the circuit
     for (let i = 0; i < 3; i++) {
       try {
-        await circuitBreaker.execute(failingOperation, 'test-operation');
+        await circuitBreaker.execute(failingOperation, "test-operation");
       } catch {
         // Expected failures
       }
@@ -216,29 +216,29 @@ describe('CircuitBreaker', () => {
     expect(circuitBreaker.getStatus().state).toBe(CircuitState.HALF_OPEN);
   });
 
-  test('should close circuit after successful operations in half-open state', async () => {
+  test("should close circuit after successful operations in half-open state", async () => {
     // Force half-open state
     circuitBreaker.forceState(CircuitState.HALF_OPEN);
 
-    const successOperation = () => 'success';
+    const successOperation = () => "success";
 
     // Execute successful operations
-    await circuitBreaker.execute(successOperation, 'test-operation');
-    await circuitBreaker.execute(successOperation, 'test-operation');
+    await circuitBreaker.execute(successOperation, "test-operation");
+    await circuitBreaker.execute(successOperation, "test-operation");
 
     expect(circuitBreaker.getStatus().state).toBe(CircuitState.CLOSED);
   });
 
-  test('should return to open state if failure occurs in half-open state', async () => {
+  test("should return to open state if failure occurs in half-open state", async () => {
     // Force half-open state
     circuitBreaker.forceState(CircuitState.HALF_OPEN);
 
     const failingOperation = () => {
-      throw new NetworkError('Connection failed');
+      throw new NetworkError("Connection failed");
     };
 
     try {
-      await circuitBreaker.execute(failingOperation, 'test-operation');
+      await circuitBreaker.execute(failingOperation, "test-operation");
     } catch {
       // Expected failure
     }
@@ -246,17 +246,17 @@ describe('CircuitBreaker', () => {
     expect(circuitBreaker.getStatus().state).toBe(CircuitState.OPEN);
   });
 
-  test('should provide accurate status information', () => {
+  test("should provide accurate status information", () => {
     const status = circuitBreaker.getStatus();
 
     expect(status.state).toBeDefined();
     expect(status.failureCount).toBeDefined();
     expect(status.successCount).toBeDefined();
     expect(status.failureRate).toBeDefined();
-    expect(typeof status.failureRate).toBe('number');
+    expect(typeof status.failureRate).toBe("number");
   });
 
-  test('should reset circuit correctly', () => {
+  test("should reset circuit correctly", () => {
     // Force some state
     circuitBreaker.forceState(CircuitState.OPEN);
 
@@ -270,15 +270,15 @@ describe('CircuitBreaker', () => {
   });
 });
 
-describe('ErrorRecoveryManager', () => {
-  test('should combine retry and circuit breaker functionality', async () => {
+describe("ErrorRecoveryManager", () => {
+  test("should combine retry and circuit breaker functionality", async () => {
     let attemptCount = 0;
     const operation = () => {
       attemptCount++;
       if (attemptCount < 3) {
-        throw new NetworkError('Connection failed');
+        throw new NetworkError("Connection failed");
       }
-      return 'success';
+      return "success";
     };
 
     const recoveryManager = new ErrorRecoveryManager(
@@ -286,12 +286,12 @@ describe('ErrorRecoveryManager', () => {
       { failureThreshold: 5 }
     );
 
-    const result = await recoveryManager.execute(operation, 'test-operation');
-    expect(result).toBe('success');
+    const result = await recoveryManager.execute(operation, "test-operation");
+    expect(result).toBe("success");
     expect(attemptCount).toBe(3);
   });
 
-  test('should provide combined status', () => {
+  test("should provide combined status", () => {
     const recoveryManager = new ErrorRecoveryManager();
     const status = recoveryManager.getStatus();
 
@@ -299,7 +299,7 @@ describe('ErrorRecoveryManager', () => {
     expect(status.timestamp).toBeInstanceOf(Date);
   });
 
-  test('should reset all mechanisms', () => {
+  test("should reset all mechanisms", () => {
     const recoveryManager = new ErrorRecoveryManager();
 
     // This should not throw
@@ -310,91 +310,91 @@ describe('ErrorRecoveryManager', () => {
   });
 });
 
-describe('Graceful Degradation Functions', () => {
-  test('should use fallback when primary operation fails', async () => {
+describe("Graceful Degradation Functions", () => {
+  test("should use fallback when primary operation fails", async () => {
     const primaryOperation = () => {
-      throw new NetworkError('Primary failed');
+      throw new NetworkError("Primary failed");
     };
 
-    const fallbackOperation = () => 'fallback-result';
+    const fallbackOperation = () => "fallback-result";
 
     const result = await withFallback(
       primaryOperation,
       fallbackOperation,
-      'test-operation'
+      "test-operation"
     );
 
-    expect(result).toBe('fallback-result');
+    expect(result).toBe("fallback-result");
   });
 
-  test('should use primary operation when it succeeds', async () => {
-    const primaryOperation = () => 'primary-result';
-    const fallbackOperation = () => 'fallback-result';
+  test("should use primary operation when it succeeds", async () => {
+    const primaryOperation = () => "primary-result";
+    const fallbackOperation = () => "fallback-result";
 
     const result = await withFallback(
       primaryOperation,
       fallbackOperation,
-      'test-operation'
+      "test-operation"
     );
 
-    expect(result).toBe('primary-result');
+    expect(result).toBe("primary-result");
   });
 
-  test('should try operations in priority order', async () => {
+  test("should try operations in priority order", async () => {
     const operations = [
       {
         operation: () => {
-          throw new Error('First fails');
+          throw new Error("First fails");
         },
-        name: 'first',
+        name: "first",
       },
       {
         operation: () => {
-          throw new Error('Second fails');
+          throw new Error("Second fails");
         },
-        name: 'second',
+        name: "second",
       },
-      { operation: () => 'third-success', name: 'third' },
-      { operation: () => 'fourth', name: 'fourth' },
+      { operation: () => "third-success", name: "third" },
+      { operation: () => "fourth", name: "fourth" },
     ];
 
-    const result = await withPriorityFallback(operations, 'test-operation');
+    const result = await withPriorityFallback(operations, "test-operation");
 
-    expect(result).toBe('third-success');
+    expect(result).toBe("third-success");
   });
 
-  test('should throw error if all fallback operations fail', async () => {
+  test("should throw error if all fallback operations fail", async () => {
     const operations = [
       {
         operation: () => {
-          throw new Error('First fails');
+          throw new Error("First fails");
         },
-        name: 'first',
+        name: "first",
       },
       {
         operation: () => {
-          throw new Error('Second fails');
+          throw new Error("Second fails");
         },
-        name: 'second',
+        name: "second",
       },
     ];
 
     try {
-      await withPriorityFallback(operations, 'test-operation');
+      await withPriorityFallback(operations, "test-operation");
       expect(false).toBe(true); // Should have thrown
     } catch (error) {
       expect(error).toBeInstanceOf(GrappleError);
       expect((error as GrappleError).message).toContain(
-        'All fallback operations failed'
+        "All fallback operations failed"
       );
     }
   });
 
-  test('should perform cleanup even when operation fails', async () => {
+  test("should perform cleanup even when operation fails", async () => {
     let cleanupCalled = false;
 
     const failingOperation = () => {
-      throw new NetworkError('Operation failed');
+      throw new NetworkError("Operation failed");
     };
 
     const cleanup = () => {
@@ -402,7 +402,7 @@ describe('Graceful Degradation Functions', () => {
     };
 
     try {
-      await withCleanup(failingOperation, cleanup, 'test-operation');
+      await withCleanup(failingOperation, cleanup, "test-operation");
     } catch {
       // Expected failure
     }
@@ -410,10 +410,10 @@ describe('Graceful Degradation Functions', () => {
     expect(cleanupCalled).toBe(true);
   });
 
-  test('should not perform cleanup when operation succeeds', async () => {
+  test("should not perform cleanup when operation succeeds", async () => {
     let cleanupCalled = false;
 
-    const successOperation = () => 'success';
+    const successOperation = () => "success";
     const cleanup = () => {
       cleanupCalled = true;
     };
@@ -421,28 +421,28 @@ describe('Graceful Degradation Functions', () => {
     const result = await withCleanup(
       successOperation,
       cleanup,
-      'test-operation'
+      "test-operation"
     );
 
-    expect(result).toBe('success');
+    expect(result).toBe("success");
     expect(cleanupCalled).toBe(false);
   });
 
-  test('should handle cleanup failures gracefully', async () => {
+  test("should handle cleanup failures gracefully", async () => {
     const failingOperation = () => {
-      throw new NetworkError('Operation failed');
+      throw new NetworkError("Operation failed");
     };
 
     const failingCleanup = () => {
-      throw new Error('Cleanup failed');
+      throw new Error("Cleanup failed");
     };
 
     // This should not throw additional errors beyond the original operation error
     try {
-      await withCleanup(failingOperation, failingCleanup, 'test-operation');
+      await withCleanup(failingOperation, failingCleanup, "test-operation");
     } catch (error) {
       expect(error).toBeInstanceOf(NetworkError);
-      expect((error as NetworkError).message).toBe('Operation failed');
+      expect((error as NetworkError).message).toBe("Operation failed");
     }
   });
 });

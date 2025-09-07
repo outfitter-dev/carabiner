@@ -6,7 +6,7 @@
 export type {
   SecurityOptions,
   SecurityRuleConfig,
-} from './security';
+} from "./security";
 // Export security validation
 export {
   createSecurityValidator,
@@ -16,12 +16,12 @@ export {
   validateFileContent,
   validateFilePath,
   validateHookSecurity,
-} from './security';
+} from "./security";
 export type {
   ValidationResult,
   ValidationRule,
   ValidationSchema,
-} from './validation';
+} from "./validation";
 // Export general validation
 export {
   createToolValidator,
@@ -32,8 +32,8 @@ export {
   validateRule,
   validateSchema,
   validateToolInput,
-} from './validation';
+} from "./validation";
 
 // Version export (derived from package.json)
-import pkg from '../package.json' with { type: 'json' };
+import pkg from "../package.json" with { type: "json" };
 export const VERSION = pkg.version as string;

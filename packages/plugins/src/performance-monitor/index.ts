@@ -9,10 +9,10 @@
  * - Performance alerting and reporting
  */
 
-import { PerformanceObserver, performance } from 'node:perf_hooks';
-import type { HookPlugin, PluginResult } from '@carabiner/registry';
-import type { HookContext } from '@carabiner/types';
-import { z } from 'zod';
+import { PerformanceObserver, performance } from "node:perf_hooks";
+import type { HookPlugin, PluginResult } from "@carabiner/registry";
+import type { HookContext } from "@carabiner/types";
+import { z } from "zod";
 
 /**
  * Performance metric interface
@@ -38,7 +38,7 @@ type PerformanceStats = {
   minDuration: number;
   maxDuration: number;
   successRate: number;
-  memoryTrend: 'increasing' | 'decreasing' | 'stable';
+  memoryTrend: "increasing" | "decreasing" | "stable";
   operationCounts: Record<string, number>;
   toolUsage: Record<string, number>;
 };
@@ -47,8 +47,8 @@ type PerformanceStats = {
  * Performance alert interface
  */
 type PerformanceAlert = {
-  type: 'slow_operation' | 'memory_usage' | 'error_rate' | 'frequency';
-  severity: 'warning' | 'critical';
+  type: "slow_operation" | "memory_usage" | "error_rate" | "frequency";
+  severity: "warning" | "critical";
   message: string;
   metric: PerformanceMetric;
   threshold: number;
@@ -120,7 +120,7 @@ const preOpStartByTool = new Map<
 
 function getCorrelationKey(operation: string): string {
   // operation is e.g. "PreToolUse_Bash" or "PostToolUse_Bash"
-  const idx = operation.indexOf('_');
+  const idx = operation.indexOf("_");
   return idx > -1 ? operation.slice(idx + 1) : operation;
 }
 
@@ -141,12 +141,12 @@ class MetricsStore {
   private setupPerformanceObserver(): void {
     this.observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        if (entry.name.startsWith('claude-hook-')) {
+        if (entry.name.startsWith("claude-hook-")) {
         }
       }
     });
 
-    this.observer.observe({ entryTypes: ['measure'] });
+    this.observer.observe({ entryTypes: ["measure"] });
   }
 
   addMetric(metric: PerformanceMetric): void {
@@ -188,11 +188,11 @@ class MetricsStore {
     }
 
     alerts.push({
-      type: 'slow_operation',
+      type: "slow_operation",
       severity:
         metric.duration > this.config.slowOperationThreshold * 2
-          ? 'critical'
-          : 'warning',
+          ? "critical"
+          : "warning",
       message: `Slow operation detected: ${metric.operation} took ${metric.duration.toFixed(2)}ms`,
       metric,
       threshold: this.config.slowOperationThreshold,
@@ -212,11 +212,11 @@ class MetricsStore {
     }
 
     alerts.push({
-      type: 'memory_usage',
+      type: "memory_usage",
       severity:
         metric.memoryUsage.heapUsed > this.config.highMemoryThreshold * 1.5
-          ? 'critical'
-          : 'warning',
+          ? "critical"
+          : "warning",
       message: `High memory usage: ${Math.round(metric.memoryUsage.heapUsed / 1024 / 1024)}MB`,
       metric,
       threshold: this.config.highMemoryThreshold,
@@ -240,9 +240,9 @@ class MetricsStore {
     }
 
     alerts.push({
-      type: 'error_rate',
+      type: "error_rate",
       severity:
-        errorRate > this.config.errorRateThreshold * 2 ? 'critical' : 'warning',
+        errorRate > this.config.errorRateThreshold * 2 ? "critical" : "warning",
       message: `High error rate: ${(errorRate * 100).toFixed(1)}%`,
       metric,
       threshold: this.config.errorRateThreshold,
@@ -268,8 +268,8 @@ class MetricsStore {
     }
 
     alerts.push({
-      type: 'frequency',
-      severity: 'warning',
+      type: "frequency",
+      severity: "warning",
       message: `High operation frequency: ${recentOps.length} ${metric.operation} operations in the last minute`,
       metric,
       threshold: this.config.frequencyThreshold,
@@ -283,7 +283,7 @@ class MetricsStore {
 
       if (this.config.logAlerts) {
         const logFunction =
-          alert.severity === 'critical' ? console.error : console.warn;
+          alert.severity === "critical" ? console.error : console.warn;
         logFunction(
           `[PerformanceMonitor] ${alert.severity.toUpperCase()}: ${alert.message}`
         );
@@ -305,7 +305,7 @@ class MetricsStore {
         minDuration: 0,
         maxDuration: 0,
         successRate: 1,
-        memoryTrend: 'stable',
+        memoryTrend: "stable",
         operationCounts: {},
         toolUsage: {},
       };
@@ -318,7 +318,7 @@ class MetricsStore {
     // Calculate memory trend
     const recent = this.metrics.slice(-10);
     const older = this.metrics.slice(-20, -10);
-    let memoryTrend: 'increasing' | 'decreasing' | 'stable' = 'stable';
+    let memoryTrend: "increasing" | "decreasing" | "stable" = "stable";
 
     if (recent.length >= 5 && older.length >= 5) {
       const recentAvgMemory =
@@ -330,9 +330,9 @@ class MetricsStore {
       const change = (recentAvgMemory - olderAvgMemory) / olderAvgMemory;
 
       if (change > 0.1) {
-        memoryTrend = 'increasing';
+        memoryTrend = "increasing";
       } else if (change < -0.1) {
-        memoryTrend = 'decreasing';
+        memoryTrend = "decreasing";
       }
     }
 
@@ -392,12 +392,12 @@ function shouldSkipMonitoring(
     toolName &&
     !config.monitorTools.includes(toolName)
   ) {
-    return { skip: true, reason: 'Tool not monitored' };
+    return { skip: true, reason: "Tool not monitored" };
   }
 
   // Check if operation should be excluded
   if (config.excludeOperations.includes(operation)) {
-    return { skip: true, reason: 'Operation excluded' };
+    return { skip: true, reason: "Operation excluded" };
   }
 
   return null;
@@ -544,7 +544,7 @@ function handlePostToolUseMonitoring(
   const isPostToolUseContext = (
     ctx: HookContext
   ): ctx is HookContext & { toolResponse: Record<string, unknown> } => {
-    return 'toolResponse' in ctx && ctx.toolResponse != null;
+    return "toolResponse" in ctx && ctx.toolResponse != null;
   };
   const success = isPostToolUseContext(context)
     ? Boolean((context.toolResponse as any)?.success)
@@ -628,13 +628,13 @@ function handlePostToolUseMonitoring(
  * ```
  */
 export const performanceMonitorPlugin: HookPlugin = {
-  name: 'performance-monitor',
-  version: '1.0.0',
+  name: "performance-monitor",
+  version: "1.0.0",
   description:
-    'Monitors performance and resource usage of Claude Code operations',
-  author: 'Outfitter Team',
+    "Monitors performance and resource usage of Claude Code operations",
+  author: "Outfitter Team",
 
-  events: ['PreToolUse', 'PostToolUse'],
+  events: ["PreToolUse", "PostToolUse"],
   priority: 10, // Low priority to avoid affecting other plugins
 
   configSchema: PerformanceMonitorConfigSchema as z.ZodType<
@@ -653,8 +653,8 @@ export const performanceMonitorPlugin: HookPlugin = {
       globalMetricsStore = new MetricsStore(monitorConfig);
     }
 
-    const toolName = 'toolName' in context ? context.toolName : undefined;
-    const operation = `${context.event}${toolName ? `_${toolName}` : ''}`;
+    const toolName = "toolName" in context ? context.toolName : undefined;
+    const operation = `${context.event}${toolName ? `_${toolName}` : ""}`;
 
     // Check if monitoring should be skipped
     const skipResult = shouldSkipMonitoring(monitorConfig, toolName, operation);
@@ -662,12 +662,12 @@ export const performanceMonitorPlugin: HookPlugin = {
       return createSkippedMonitoringResult(
         this.name,
         this.version,
-        skipResult.reason || 'Monitoring skipped'
+        skipResult.reason || "Monitoring skipped"
       );
     }
 
     // Handle based on event type
-    if (context.event === 'PreToolUse') {
+    if (context.event === "PreToolUse") {
       return handlePreToolUseMonitoring(
         operation,
         monitorConfig,
@@ -676,7 +676,7 @@ export const performanceMonitorPlugin: HookPlugin = {
       );
     }
 
-    if (context.event === 'PostToolUse') {
+    if (context.event === "PostToolUse") {
       return handlePostToolUseMonitoring(
         context,
         operation,
@@ -719,13 +719,13 @@ export const performanceMonitorPlugin: HookPlugin = {
   },
 
   metadata: {
-    name: 'performance-monitor',
-    version: '1.0.0',
+    name: "performance-monitor",
+    version: "1.0.0",
     description:
-      'Monitors performance and resource usage of Claude Code operations',
-    author: 'Outfitter Team',
-    keywords: ['performance', 'monitoring', 'metrics', 'profiling', 'memory'],
-    license: 'MIT',
+      "Monitors performance and resource usage of Claude Code operations",
+    author: "Outfitter Team",
+    keywords: ["performance", "monitoring", "metrics", "profiling", "memory"],
+    license: "MIT",
   },
 };
 

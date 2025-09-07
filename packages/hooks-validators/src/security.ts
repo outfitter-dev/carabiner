@@ -3,13 +3,13 @@
  * Provides comprehensive security checks for various tool operations
  */
 
-import { extname, relative, resolve } from 'node:path';
-import type { HookContext } from '@carabiner/hooks-core';
+import { extname, relative, resolve } from "node:path";
+import type { HookContext } from "@carabiner/hooks-core";
 import {
   isBashToolInput,
   isEditToolInput,
   isWriteToolInput,
-} from '@carabiner/hooks-core';
+} from "@carabiner/hooks-core";
 
 // Regex patterns defined at module level for performance
 const DYNAMIC_REQUIRE_PATTERN = /require\s*\(\s*[^"'][^)]*[^"']\s*\)/;
@@ -21,10 +21,10 @@ export class SecurityValidationError extends Error {
   constructor(
     message: string,
     public readonly rule: string,
-    public readonly severity: 'low' | 'medium' | 'high' | 'critical' = 'high'
+    public readonly severity: "low" | "medium" | "high" | "critical" = "high"
   ) {
     super(message);
-    this.name = 'SecurityValidationError';
+    this.name = "SecurityValidationError";
   }
 }
 
@@ -33,7 +33,7 @@ export class SecurityValidationError extends Error {
  */
 export type SecurityRuleConfig = {
   enabled: boolean;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   blockOnViolation: boolean;
   customPatterns?: RegExp[];
   exemptions?: string[];
@@ -43,7 +43,7 @@ export type SecurityRuleConfig = {
  * Security validation options
  */
 export type SecurityOptions = {
-  env?: 'development' | 'production' | 'test';
+  env?: "development" | "production" | "test";
   strictMode?: boolean;
   allowOverrides?: boolean;
   customRules?: Record<string, SecurityRuleConfig>;
@@ -55,27 +55,27 @@ export type SecurityOptions = {
 const DEFAULT_SECURITY_RULES: Record<string, SecurityRuleConfig> = {
   dangerousCommands: {
     enabled: true,
-    severity: 'critical',
+    severity: "critical",
     blockOnViolation: true,
   },
   fileSystemAccess: {
     enabled: true,
-    severity: 'high',
+    severity: "high",
     blockOnViolation: true,
   },
   secretsInContent: {
     enabled: true,
-    severity: 'high',
+    severity: "high",
     blockOnViolation: true,
   },
   networkAccess: {
     enabled: true,
-    severity: 'medium',
+    severity: "medium",
     blockOnViolation: false,
   },
   productionSafety: {
     enabled: true,
-    severity: 'critical',
+    severity: "critical",
     blockOnViolation: true,
   },
 };
@@ -203,14 +203,14 @@ export function validateBashCommand(
     if (dangerousPattern) {
       throw new SecurityValidationError(
         `Blocked dangerous command pattern: ${dangerousPattern.source}`,
-        'dangerousCommands',
-        rules.dangerousCommands?.severity || 'critical'
+        "dangerousCommands",
+        rules.dangerousCommands?.severity || "critical"
       );
     }
   }
 
   // Check production safety
-  if (rules.productionSafety?.enabled && options.env === 'production') {
+  if (rules.productionSafety?.enabled && options.env === "production") {
     const productionPattern = PRODUCTION_BLOCKED_PATTERNS.find((pattern) =>
       pattern.test(command)
     );
@@ -218,8 +218,8 @@ export function validateBashCommand(
     if (productionPattern) {
       throw new SecurityValidationError(
         `Blocked production command: ${productionPattern.source}`,
-        'productionSafety',
-        rules.productionSafety?.severity || 'critical'
+        "productionSafety",
+        rules.productionSafety?.severity || "critical"
       );
     }
   }
@@ -229,18 +229,18 @@ export function validateBashCommand(
     // Block any sudo usage in strict mode
     if (/sudo\s+/.test(command)) {
       throw new SecurityValidationError(
-        'sudo commands blocked in strict mode',
-        'strictMode',
-        'high'
+        "sudo commands blocked in strict mode",
+        "strictMode",
+        "high"
       );
     }
 
     // Block network access in strict mode
     if (/curl|wget|nc|telnet|ssh|ftp|sftp/.test(command)) {
       throw new SecurityValidationError(
-        'Network commands blocked in strict mode',
-        'strictMode',
-        'medium'
+        "Network commands blocked in strict mode",
+        "strictMode",
+        "medium"
       );
     }
   }
@@ -265,13 +265,13 @@ export function validateFilePath(
 
   // Ensure file is within workspace (prevent directory traversal)
   const rel = relative(ws, resolved);
-  if (rel === '' || rel === '.' || rel === './') {
+  if (rel === "" || rel === "." || rel === "./") {
     // ok - same directory
-  } else if (rel.startsWith('..') || resolve(rel) === rel) {
+  } else if (rel.startsWith("..") || resolve(rel) === rel) {
     throw new SecurityValidationError(
       `File path outside workspace: ${filePath}`,
-      'fileSystemAccess',
-      'critical'
+      "fileSystemAccess",
+      "critical"
     );
   }
 
@@ -283,13 +283,13 @@ export function validateFilePath(
   if (sensitivePattern) {
     throw new SecurityValidationError(
       `Cannot access sensitive file: ${filePath}`,
-      'fileSystemAccess',
-      'high'
+      "fileSystemAccess",
+      "high"
     );
   }
 
   // Production environment checks
-  if (options.env === 'production') {
+  if (options.env === "production") {
     // Block access to development files in production
     const devPatterns = [
       /\.dev\./,
@@ -303,8 +303,8 @@ export function validateFilePath(
     if (devPattern) {
       throw new SecurityValidationError(
         `Development file access blocked in production: ${filePath}`,
-        'productionSafety',
-        'medium'
+        "productionSafety",
+        "medium"
       );
     }
   }
@@ -332,80 +332,80 @@ export function validateFileContent(
   );
   if (secretPattern) {
     throw new SecurityValidationError(
-      'Content contains potential secrets',
-      'secretsInContent',
-      'high'
+      "Content contains potential secrets",
+      "secretsInContent",
+      "high"
     );
   }
 
   // Language-specific validations
-  if (['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'].includes(ext)) {
+  if ([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"].includes(ext)) {
     // Check for dangerous JavaScript patterns
-    if (content.includes('eval(') || content.includes('Function(')) {
+    if (content.includes("eval(") || content.includes("Function(")) {
       throw new SecurityValidationError(
-        'Code contains potentially dangerous eval/Function calls',
-        'dangerousCode',
-        'high'
+        "Code contains potentially dangerous eval/Function calls",
+        "dangerousCode",
+        "high"
       );
     }
 
     // Check for dynamic requires with user input
     if (DYNAMIC_REQUIRE_PATTERN.test(content)) {
       throw new SecurityValidationError(
-        'Dynamic require() with potential user input detected',
-        'dangerousCode',
-        'medium'
+        "Dynamic require() with potential user input detected",
+        "dangerousCode",
+        "medium"
       );
     }
 
     // Check for process execution
     if (
-      content.includes('child_process') &&
-      (content.includes('exec(') || content.includes('spawn('))
+      content.includes("child_process") &&
+      (content.includes("exec(") || content.includes("spawn("))
     ) {
       throw new SecurityValidationError(
-        'Process execution detected in code',
-        'processExecution',
-        'medium'
+        "Process execution detected in code",
+        "processExecution",
+        "medium"
       );
     }
   }
 
   // Shell script validation
-  if (['.sh', '.bash', '.zsh'].includes(ext)) {
+  if ([".sh", ".bash", ".zsh"].includes(ext)) {
     validateBashCommand(content, options);
   }
 
   // YAML/JSON config validation
-  if (['.yml', '.yaml', '.json'].includes(ext)) {
+  if ([".yml", ".yaml", ".json"].includes(ext)) {
     try {
       const data =
-        ext === '.json' ? JSON.parse(content) : content.toLowerCase();
+        ext === ".json" ? JSON.parse(content) : content.toLowerCase();
 
-      const configStr = typeof data === 'string' ? data : JSON.stringify(data);
+      const configStr = typeof data === "string" ? data : JSON.stringify(data);
 
       // Look for credential-like keys
       const credentialKeys = [
-        'password',
-        'secret',
-        'key',
-        'token',
-        'credential',
-        'auth',
-        'apikey',
-        'access_key',
-        'private_key',
+        "password",
+        "secret",
+        "key",
+        "token",
+        "credential",
+        "auth",
+        "apikey",
+        "access_key",
+        "private_key",
       ];
 
       const hasCredentials = credentialKeys.some((key) =>
         configStr.includes(key.toLowerCase())
       );
 
-      if (hasCredentials && !filePath.includes('.example')) {
+      if (hasCredentials && !filePath.includes(".example")) {
         throw new SecurityValidationError(
-          'Configuration file may contain credentials',
-          'secretsInContent',
-          'medium'
+          "Configuration file may contain credentials",
+          "secretsInContent",
+          "medium"
         );
       }
     } catch {
@@ -467,17 +467,17 @@ function validateUnknownToolSecurity(
   context: HookContext,
   options: SecurityOptions
 ): void {
-  if (typeof context.toolInput === 'object' && context.toolInput !== null) {
+  if (typeof context.toolInput === "object" && context.toolInput !== null) {
     const input = context.toolInput as Record<string, unknown>;
 
-    if (input.file_path && typeof input.file_path === 'string') {
+    if (input.file_path && typeof input.file_path === "string") {
       validateFilePath(input.file_path, context.cwd, options);
     }
 
-    if (input.content && typeof input.content === 'string') {
+    if (input.content && typeof input.content === "string") {
       validateFileContent(
         input.content,
-        typeof input.file_path === 'string' ? input.file_path : 'unknown',
+        typeof input.file_path === "string" ? input.file_path : "unknown",
         options
       );
     }
@@ -493,13 +493,13 @@ export function validateHookSecurity(
 ): void {
   try {
     switch (context.toolName) {
-      case 'Bash':
+      case "Bash":
         validateBashToolSecurity(context, options);
         break;
-      case 'Write':
+      case "Write":
         validateWriteToolSecurity(context, options);
         break;
-      case 'Edit':
+      case "Edit":
         validateEditToolSecurity(context, options);
         break;
       default:
@@ -512,9 +512,9 @@ export function validateHookSecurity(
 
     // Re-throw as security error for consistency
     throw new SecurityValidationError(
-      `Security validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      'unknown',
-      'high'
+      `Security validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      "unknown",
+      "high"
     );
   }
 }
@@ -537,14 +537,14 @@ export const SecurityValidators = {
    */
   strict: createSecurityValidator({
     strictMode: true,
-    env: 'production',
+    env: "production",
   }),
 
   /**
    * Development security validator - more permissive but still safe
    */
   development: createSecurityValidator({
-    env: 'development',
+    env: "development",
     allowOverrides: true,
   }),
 
@@ -552,7 +552,7 @@ export const SecurityValidators = {
    * Production security validator - maximum security for production environments
    */
   production: createSecurityValidator({
-    env: 'production',
+    env: "production",
     strictMode: false, // Some tools may be needed in production
   }),
 
@@ -560,21 +560,21 @@ export const SecurityValidators = {
    * Test security validator - minimal restrictions for testing
    */
   test: createSecurityValidator({
-    env: 'test',
+    env: "test",
     customRules: {
       dangerousCommands: {
         enabled: false,
-        severity: 'low',
+        severity: "low",
         blockOnViolation: false,
       },
       fileSystemAccess: {
         enabled: true,
-        severity: 'medium',
+        severity: "medium",
         blockOnViolation: true,
       },
       secretsInContent: {
         enabled: true,
-        severity: 'high',
+        severity: "high",
         blockOnViolation: true,
       },
     },

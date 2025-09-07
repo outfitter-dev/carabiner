@@ -5,18 +5,18 @@
  * circuit breakers, and fallback mechanisms
  */
 
-import { GrappleError } from './errors.js';
+import { GrappleError } from "./errors.js";
 import type {
   CircuitBreakerConfig,
   CircuitState,
   IGrappleError,
   RecoveryStrategy,
-} from './types.js';
+} from "./types.js";
 import {
   ErrorCategory,
   ErrorSeverity,
   CircuitState as State,
-} from './types.js';
+} from "./types.js";
 
 /**
  * Default recovery strategy configuration

@@ -5,7 +5,7 @@
 import {
   type FileWriteOptions,
   writeFileWithChecks,
-} from '../utils/file-operations.js';
+} from "../utils/file-operations.js";
 
 export type GeneratorOptions = {
   workspacePath: string;
@@ -30,14 +30,14 @@ export abstract class BaseGenerator {
    * Get the file extension
    */
   protected getExtension(): string {
-    return this.options.useTypeScript ? 'ts' : 'js';
+    return this.options.useTypeScript ? "ts" : "js";
   }
 
   /**
    * Get the language key
    */
-  protected getLanguage(): 'typescript' | 'javascript' {
-    return this.options.useTypeScript ? 'typescript' : 'javascript';
+  protected getLanguage(): "typescript" | "javascript" {
+    return this.options.useTypeScript ? "typescript" : "javascript";
   }
 
   /**

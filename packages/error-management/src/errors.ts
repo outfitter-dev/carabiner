@@ -4,8 +4,8 @@
  * Production-ready error classes with comprehensive error handling features
  */
 
-import { nanoid } from 'nanoid';
-import type { JsonValue } from 'type-fest';
+import { nanoid } from "nanoid";
+import type { JsonValue } from "type-fest";
 import type {
   ErrorCategory,
   ErrorCode,
@@ -13,12 +13,12 @@ import type {
   ErrorReport,
   ErrorSeverity,
   IGrappleError,
-} from './types.js';
+} from "./types.js";
 import {
   ErrorCategory as Category,
   ErrorCode as Code,
   ErrorSeverity as Severity,
-} from './types.js';
+} from "./types.js";
 
 /**
  * Base error class for all Grapple errors
@@ -147,25 +147,25 @@ export class GrappleError extends Error implements IGrappleError {
     // Generate user-friendly messages based on category
     switch (this.category) {
       case Category.CONFIGURATION:
-        return 'Configuration error: Please check your settings and try again.';
+        return "Configuration error: Please check your settings and try again.";
       case Category.VALIDATION:
-        return 'Invalid input: Please verify your data and try again.';
+        return "Invalid input: Please verify your data and try again.";
       case Category.FILESYSTEM:
-        return 'File system error: Please check file permissions and disk space.';
+        return "File system error: Please check file permissions and disk space.";
       case Category.NETWORK:
-        return 'Network error: Please check your connection and try again.';
+        return "Network error: Please check your connection and try again.";
       case Category.SECURITY:
-        return 'Security error: Operation not permitted.';
+        return "Security error: Operation not permitted.";
       case Category.AUTH:
-        return 'Authentication error: Please verify your credentials.';
+        return "Authentication error: Please verify your credentials.";
       case Category.TIMEOUT:
-        return 'Operation timed out: Please try again later.';
+        return "Operation timed out: Please try again later.";
       case Category.RESOURCE:
-        return 'System resources unavailable: Please try again later.';
+        return "System resources unavailable: Please try again later.";
       case Category.USER_INPUT:
-        return 'Invalid command or input: Please check the documentation.';
+        return "Invalid command or input: Please check the documentation.";
       default:
-        return 'An unexpected error occurred: Please try again or contact support.';
+        return "An unexpected error occurred: Please try again or contact support.";
     }
   }
 
@@ -196,7 +196,7 @@ export class GrappleError extends Error implements IGrappleError {
       );
     }
 
-    return details.join(' | ');
+    return details.join(" | ");
   }
 
   /**
@@ -240,7 +240,7 @@ export class ConfigurationError extends GrappleError {
     code: ErrorCode = Code.CONFIG_INVALID,
     options: Omit<
       ConstructorParameters<typeof GrappleError>[0],
-      'message' | 'code' | 'category' | 'severity'
+      "message" | "code" | "category" | "severity"
     > = {}
   ) {
     super({
@@ -262,7 +262,7 @@ export class RuntimeError extends GrappleError {
     code: ErrorCode = Code.RUNTIME_EXCEPTION,
     options: Omit<
       ConstructorParameters<typeof GrappleError>[0],
-      'message' | 'code' | 'category' | 'severity'
+      "message" | "code" | "category" | "severity"
     > = {}
   ) {
     super({
@@ -284,7 +284,7 @@ export class ValidationError extends GrappleError {
     code: ErrorCode = Code.INVALID_INPUT,
     options: Omit<
       ConstructorParameters<typeof GrappleError>[0],
-      'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
+      "message" | "code" | "category" | "severity" | "isRecoverable"
     > = {}
   ) {
     super({
@@ -307,7 +307,7 @@ export class FileSystemError extends GrappleError {
     code: ErrorCode = Code.FILE_NOT_FOUND,
     options: Omit<
       ConstructorParameters<typeof GrappleError>[0],
-      'message' | 'code' | 'category' | 'severity'
+      "message" | "code" | "category" | "severity"
     > = {}
   ) {
     super({
@@ -329,7 +329,7 @@ export class NetworkError extends GrappleError {
     code: ErrorCode = Code.CONNECTION_REFUSED,
     options: Omit<
       ConstructorParameters<typeof GrappleError>[0],
-      'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
+      "message" | "code" | "category" | "severity" | "isRecoverable"
     > = {}
   ) {
     super({
@@ -352,12 +352,12 @@ export class SecurityError extends GrappleError {
     code: ErrorCode = Code.SECURITY_VIOLATION,
     options: Omit<
       ConstructorParameters<typeof GrappleError>[0],
-      | 'message'
-      | 'code'
-      | 'category'
-      | 'severity'
-      | 'isRecoverable'
-      | 'userMessage'
+      | "message"
+      | "code"
+      | "category"
+      | "severity"
+      | "isRecoverable"
+      | "userMessage"
     > = {}
   ) {
     super({
@@ -367,7 +367,7 @@ export class SecurityError extends GrappleError {
       severity: Severity.CRITICAL,
       ...options,
       isRecoverable: false, // Security errors are never recoverable
-      userMessage: 'Security violation detected. Operation denied.',
+      userMessage: "Security violation detected. Operation denied.",
     });
   }
 }
@@ -381,7 +381,7 @@ export class UserInputError extends GrappleError {
     code: ErrorCode = Code.INVALID_COMMAND,
     options: Omit<
       ConstructorParameters<typeof GrappleError>[0],
-      'message' | 'code' | 'category' | 'severity'
+      "message" | "code" | "category" | "severity"
     > = {}
   ) {
     super({
@@ -403,7 +403,7 @@ export class ResourceError extends GrappleError {
     code: ErrorCode = Code.RESOURCE_UNAVAILABLE,
     options: Omit<
       ConstructorParameters<typeof GrappleError>[0],
-      'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
+      "message" | "code" | "category" | "severity" | "isRecoverable"
     > = {}
   ) {
     super({
@@ -426,12 +426,12 @@ export class AuthError extends GrappleError {
     code: ErrorCode = Code.AUTHENTICATION_FAILED,
     options: Omit<
       ConstructorParameters<typeof GrappleError>[0],
-      | 'message'
-      | 'code'
-      | 'category'
-      | 'severity'
-      | 'isRecoverable'
-      | 'userMessage'
+      | "message"
+      | "code"
+      | "category"
+      | "severity"
+      | "isRecoverable"
+      | "userMessage"
     > = {}
   ) {
     super({
@@ -441,7 +441,7 @@ export class AuthError extends GrappleError {
       severity: Severity.ERROR,
       ...options,
       isRecoverable: false, // Auth errors require user intervention
-      userMessage: 'Authentication required. Please verify your credentials.',
+      userMessage: "Authentication required. Please verify your credentials.",
     });
   }
 }
@@ -455,7 +455,7 @@ export class TimeoutError extends GrappleError {
     code: ErrorCode = Code.OPERATION_TIMEOUT,
     options: Omit<
       ConstructorParameters<typeof GrappleError>[0],
-      'message' | 'code' | 'category' | 'severity' | 'isRecoverable'
+      "message" | "code" | "category" | "severity" | "isRecoverable"
     > = {}
   ) {
     super({
@@ -480,53 +480,53 @@ export function fromSystemError(
   let grappleError: GrappleError;
 
   switch (code) {
-    case 'ENOENT':
+    case "ENOENT":
       grappleError = new FileSystemError(error.message, Code.FILE_NOT_FOUND, {
         cause: error,
         operation,
       });
       break;
-    case 'EACCES':
-    case 'EPERM':
+    case "EACCES":
+    case "EPERM":
       grappleError = new FileSystemError(
         error.message,
         Code.PERMISSION_DENIED,
         { cause: error, operation }
       );
       break;
-    case 'ENOSPC':
+    case "ENOSPC":
       grappleError = new FileSystemError(error.message, Code.DISK_FULL, {
         cause: error,
         operation,
       });
       break;
-    case 'EMFILE':
-    case 'ENFILE':
+    case "EMFILE":
+    case "ENFILE":
       grappleError = new ResourceError(
         error.message,
         Code.TOO_MANY_OPEN_FILES,
         { cause: error, operation }
       );
       break;
-    case 'ECONNREFUSED':
+    case "ECONNREFUSED":
       grappleError = new NetworkError(error.message, Code.CONNECTION_REFUSED, {
         cause: error,
         operation,
       });
       break;
-    case 'ETIMEDOUT':
+    case "ETIMEDOUT":
       grappleError = new TimeoutError(error.message, Code.CONNECTION_TIMEOUT, {
         cause: error,
         operation,
       });
       break;
-    case 'ENOTFOUND':
+    case "ENOTFOUND":
       grappleError = new NetworkError(error.message, Code.HOST_NOT_FOUND, {
         cause: error,
         operation,
       });
       break;
-    case 'ECONNRESET':
+    case "ECONNRESET":
       grappleError = new NetworkError(error.message, Code.CONNECTION_RESET, {
         cause: error,
         operation,
@@ -552,7 +552,7 @@ export function fromError(error: Error, operation?: string): GrappleError {
   }
 
   // Check for Node.js system error
-  if ('code' in error) {
+  if ("code" in error) {
     return fromSystemError(error as NodeJS.ErrnoException, operation);
   }
 
@@ -569,40 +569,40 @@ export function fromError(error: Error, operation?: string): GrappleError {
 export function fromMessage(message: string, operation?: string): GrappleError {
   const lowerMessage = message.toLowerCase();
 
-  if (lowerMessage.includes('timeout') || lowerMessage.includes('timed out')) {
+  if (lowerMessage.includes("timeout") || lowerMessage.includes("timed out")) {
     return new TimeoutError(message, Code.OPERATION_TIMEOUT, { operation });
   }
 
   if (
-    lowerMessage.includes('permission') ||
-    lowerMessage.includes('access denied')
+    lowerMessage.includes("permission") ||
+    lowerMessage.includes("access denied")
   ) {
     return new FileSystemError(message, Code.PERMISSION_DENIED, {
       operation,
     });
   }
 
-  if (lowerMessage.includes('not found')) {
+  if (lowerMessage.includes("not found")) {
     return new FileSystemError(message, Code.FILE_NOT_FOUND, { operation });
   }
 
-  if (lowerMessage.includes('connection') || lowerMessage.includes('network')) {
+  if (lowerMessage.includes("connection") || lowerMessage.includes("network")) {
     return new NetworkError(message, Code.CONNECTION_REFUSED, { operation });
   }
 
-  if (lowerMessage.includes('validation') || lowerMessage.includes('invalid')) {
+  if (lowerMessage.includes("validation") || lowerMessage.includes("invalid")) {
     return new ValidationError(message, Code.INVALID_INPUT, { operation });
   }
 
-  if (lowerMessage.includes('config')) {
+  if (lowerMessage.includes("config")) {
     return new ConfigurationError(message, Code.CONFIG_INVALID, {
       operation,
     });
   }
 
   if (
-    lowerMessage.includes('unauthorized') ||
-    lowerMessage.includes('forbidden')
+    lowerMessage.includes("unauthorized") ||
+    lowerMessage.includes("forbidden")
   ) {
     return new SecurityError(message, Code.UNAUTHORIZED_ACCESS, {
       operation,

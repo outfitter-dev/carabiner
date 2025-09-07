@@ -2,15 +2,15 @@
  * Tests for StdinProtocol
  */
 
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   ProtocolInputError,
   ProtocolOutputError,
   ProtocolParseError,
-} from '../interface.js';
-import { StdinProtocol, StdinProtocolFactory } from '../protocols/stdin.js';
+} from "../interface.js";
+import { StdinProtocol, StdinProtocolFactory } from "../protocols/stdin.js";
 
-describe('StdinProtocol', () => {
+describe("StdinProtocol", () => {
   let originalStdin: typeof process.stdin;
   let originalStdout: typeof process.stdout;
   let originalStderr: typeof process.stderr;
@@ -27,9 +27,9 @@ describe('StdinProtocol', () => {
     process.stderr = originalStderr;
   });
 
-  describe('readInput', () => {
-    test('should read JSON from stdin successfully', async () => {
-      const testInput = { test: 'data' };
+  describe("readInput", () => {
+    test("should read JSON from stdin successfully", async () => {
+      const testInput = { test: "data" };
       const mockStdin = createMockReadableStream(JSON.stringify(testInput));
       process.stdin = mockStdin as any;
 
@@ -39,8 +39,8 @@ describe('StdinProtocol', () => {
       expect(result).toEqual(testInput);
     });
 
-    test('should throw ProtocolInputError on empty input', async () => {
-      const mockStdin = createMockReadableStream('');
+    test("should throw ProtocolInputError on empty input", async () => {
+      const mockStdin = createMockReadableStream("");
       process.stdin = mockStdin as any;
 
       const protocol = new StdinProtocol();
@@ -48,8 +48,8 @@ describe('StdinProtocol', () => {
       await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
     });
 
-    test('should throw ProtocolInputError on invalid JSON', async () => {
-      const mockStdin = createMockReadableStream('invalid json');
+    test("should throw ProtocolInputError on invalid JSON", async () => {
+      const mockStdin = createMockReadableStream("invalid json");
       process.stdin = mockStdin as any;
 
       const protocol = new StdinProtocol();
@@ -57,8 +57,8 @@ describe('StdinProtocol', () => {
       await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
     });
 
-    test('should timeout after configured time', async () => {
-      const mockStdin = createMockReadableStream('', { delay: 100 });
+    test("should timeout after configured time", async () => {
+      const mockStdin = createMockReadableStream("", { delay: 100 });
       process.stdin = mockStdin as any;
 
       const protocol = new StdinProtocol({ inputTimeout: 50 });
@@ -66,9 +66,9 @@ describe('StdinProtocol', () => {
       await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
     });
 
-    test('should destroy stream on hard timeout', async () => {
+    test("should destroy stream on hard timeout", async () => {
       let destroyCalled = false;
-      const mockStdin = createMockReadableStream('', {
+      const mockStdin = createMockReadableStream("", {
         delay: 100,
         onDestroy: () => {
           destroyCalled = true;
@@ -82,7 +82,7 @@ describe('StdinProtocol', () => {
         await protocol.readInput();
       } catch (error) {
         expect(error).toBeInstanceOf(ProtocolInputError);
-        expect((error as ProtocolInputError).message).toContain('hard timeout');
+        expect((error as ProtocolInputError).message).toContain("hard timeout");
       }
 
       // Give some time for destroy to be called
@@ -90,26 +90,26 @@ describe('StdinProtocol', () => {
       expect(destroyCalled).toBe(true);
     });
 
-    test('should handle multiple timeout scenarios gracefully', async () => {
+    test("should handle multiple timeout scenarios gracefully", async () => {
       const protocol = new StdinProtocol({ inputTimeout: 50 });
 
       // First timeout
-      const mockStdin1 = createMockReadableStream('', { delay: 100 });
+      const mockStdin1 = createMockReadableStream("", { delay: 100 });
       process.stdin = mockStdin1 as any;
       await expect(protocol.readInput()).rejects.toThrow(ProtocolInputError);
 
       // Second read should work with fresh stream
       const mockStdin2 = createMockReadableStream(
-        JSON.stringify({ test: 'data' })
+        JSON.stringify({ test: "data" })
       );
       process.stdin = mockStdin2 as any;
       const result = await protocol.readInput();
-      expect(result).toEqual({ test: 'data' });
+      expect(result).toEqual({ test: "data" });
     });
 
-    test('protocol destroy should clean up active streams', async () => {
+    test("protocol destroy should clean up active streams", async () => {
       let destroyCalled = false;
-      const mockStdin = createMockReadableStream('', {
+      const mockStdin = createMockReadableStream("", {
         delay: 1000,
         onDestroy: () => {
           destroyCalled = true;
@@ -130,13 +130,13 @@ describe('StdinProtocol', () => {
       // Wait for promise to reject promptly (well under the configured timeout)
       const error = await readPromise;
       expect(error).toBeInstanceOf(ProtocolInputError);
-      expect(error.message).toContain('Protocol destroyed while reading');
+      expect(error.message).toContain("Protocol destroyed while reading");
       expect(Date.now() - start).toBeLessThan(200);
 
       expect(destroyCalled).toBe(true);
     });
 
-    test('destroy should be idempotent', async () => {
+    test("destroy should be idempotent", async () => {
       const protocol = new StdinProtocol();
 
       // Should not throw when called multiple times
@@ -146,7 +146,7 @@ describe('StdinProtocol', () => {
 
       // Should still reject read operations after multiple destroy calls
       const mockStdin = createMockReadableStream(
-        JSON.stringify({ test: 'data' })
+        JSON.stringify({ test: "data" })
       );
       process.stdin = mockStdin as any;
 
@@ -154,43 +154,43 @@ describe('StdinProtocol', () => {
     });
   });
 
-  describe('parseContext', () => {
-    test('should parse valid tool hook input', async () => {
+  describe("parseContext", () => {
+    test("should parse valid tool hook input", async () => {
       const input = {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/test/dir',
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Bash',
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/test/dir",
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
         tool_input: { command: 'echo "test"' },
       };
 
       const protocol = new StdinProtocol();
       const context = await protocol.parseContext(input);
 
-      expect(context.event).toBe('PreToolUse');
+      expect(context.event).toBe("PreToolUse");
       expect(context.sessionId).toBeDefined();
       expect(context.transcriptPath).toBeDefined();
       expect(context.cwd).toBeDefined();
     });
 
-    test('should parse valid user prompt input', async () => {
+    test("should parse valid user prompt input", async () => {
       const input = {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/test/dir',
-        hook_event_name: 'UserPromptSubmit',
-        prompt: 'Test prompt',
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/test/dir",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "Test prompt",
       };
 
       const protocol = new StdinProtocol();
       const context = await protocol.parseContext(input);
 
-      expect(context.event).toBe('UserPromptSubmit');
+      expect(context.event).toBe("UserPromptSubmit");
     });
 
-    test('should throw ProtocolParseError on invalid input', async () => {
-      const input = { invalid: 'input' };
+    test("should throw ProtocolParseError on invalid input", async () => {
+      const input = { invalid: "input" };
 
       const protocol = new StdinProtocol();
 
@@ -200,37 +200,37 @@ describe('StdinProtocol', () => {
     });
   });
 
-  describe('writeOutput', () => {
-    test('should write result to stdout', async () => {
+  describe("writeOutput", () => {
+    test("should write result to stdout", async () => {
       const mockStdout = createMockWritableStream();
       process.stdout = mockStdout as any;
 
       const protocol = new StdinProtocol();
-      const result = { success: true, message: 'Test success' };
+      const result = { success: true, message: "Test success" };
 
       await protocol.writeOutput(result);
 
       expect(mockStdout.writtenData).toBe(JSON.stringify(result));
     });
 
-    test('should pretty print when configured', async () => {
+    test("should pretty print when configured", async () => {
       const mockStdout = createMockWritableStream();
       process.stdout = mockStdout as any;
 
       const protocol = new StdinProtocol({ prettyOutput: true });
-      const result = { success: true, message: 'Test success' };
+      const result = { success: true, message: "Test success" };
 
       await protocol.writeOutput(result);
 
       expect(mockStdout.writtenData).toBe(JSON.stringify(result, null, 2));
     });
 
-    test('should throw ProtocolOutputError on write failure', async () => {
+    test("should throw ProtocolOutputError on write failure", async () => {
       const mockStdout = createMockWritableStream({ shouldError: true });
       process.stdout = mockStdout as any;
 
       const protocol = new StdinProtocol();
-      const result = { success: true, message: 'Test' };
+      const result = { success: true, message: "Test" };
 
       await expect(protocol.writeOutput(result)).rejects.toThrow(
         ProtocolOutputError
@@ -238,30 +238,30 @@ describe('StdinProtocol', () => {
     });
   });
 
-  describe('writeError', () => {
-    test('should write error to stderr', async () => {
+  describe("writeError", () => {
+    test("should write error to stderr", async () => {
       const mockStderr = createMockWritableStream();
       process.stderr = mockStderr as any;
 
       const protocol = new StdinProtocol();
-      const error = new Error('Test error');
+      const error = new Error("Test error");
 
       await protocol.writeError(error);
 
       const written = JSON.parse(mockStderr.writtenData);
-      expect(written.error).toBe('Test error');
-      expect(written.type).toBe('Error');
+      expect(written.error).toBe("Test error");
+      expect(written.type).toBe("Error");
     });
 
-    test('should include stack trace by default', async () => {
+    test("should include stack trace by default", async () => {
       const mockStderr = createMockWritableStream();
       process.stderr = mockStderr as any;
 
       const protocol = new StdinProtocol();
-      const error = new Error('Test error');
+      const error = new Error("Test error");
       // Ensure stack trace exists
       if (error.stack === undefined) {
-        error.stack = 'Error: Test error\n    at test';
+        error.stack = "Error: Test error\n    at test";
       }
 
       await protocol.writeError(error);
@@ -270,12 +270,12 @@ describe('StdinProtocol', () => {
       expect(written.stack).toBeDefined();
     });
 
-    test('should exclude stack trace when configured', async () => {
+    test("should exclude stack trace when configured", async () => {
       const mockStderr = createMockWritableStream();
       process.stderr = mockStderr as any;
 
       const protocol = new StdinProtocol({ includeErrorStack: false });
-      const error = new Error('Test error');
+      const error = new Error("Test error");
 
       await protocol.writeError(error);
 
@@ -285,13 +285,13 @@ describe('StdinProtocol', () => {
   });
 });
 
-describe('StdinProtocolFactory', () => {
-  test('should create StdinProtocol instances', () => {
+describe("StdinProtocolFactory", () => {
+  test("should create StdinProtocol instances", () => {
     const factory = new StdinProtocolFactory();
     const protocol = factory.create({ inputTimeout: 5000 });
 
     expect(protocol).toBeInstanceOf(StdinProtocol);
-    expect(factory.type).toBe('stdin');
+    expect(factory.type).toBe("stdin");
   });
 });
 
@@ -325,14 +325,14 @@ function createMockReadableStream(
       listeners.get(event)?.push(listener);
 
       // Simulate data events
-      if (event === 'data' && data) {
+      if (event === "data" && data) {
         if (options.delay) {
           setTimeout(() => listener(Buffer.from(data)), options.delay);
         } else {
           process.nextTick(() => listener(Buffer.from(data)));
         }
       }
-      if (event === 'end') {
+      if (event === "end") {
         if (options.delay) {
           setTimeout(() => listener(), options.delay + 10);
         } else {
@@ -382,7 +382,7 @@ function createMockReadableStream(
           options.onDestroy();
         }
         if (error) {
-          const errorListeners = listeners.get('error');
+          const errorListeners = listeners.get("error");
           if (errorListeners) {
             errorListeners.forEach((listener) => listener(error));
           }
@@ -394,10 +394,10 @@ function createMockReadableStream(
 
 function createMockWritableStream(options: { shouldError?: boolean } = {}) {
   return {
-    writtenData: '' as string,
+    writtenData: "" as string,
     write(data: string, callback?: (error?: Error) => void) {
       if (options.shouldError) {
-        const error = new Error('Mock write error');
+        const error = new Error("Mock write error");
         if (callback) {
           callback(error);
         }

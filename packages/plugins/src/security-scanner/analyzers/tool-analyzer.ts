@@ -3,7 +3,7 @@
  * @description Tool-specific security analysis
  */
 
-import { readFile } from 'node:fs/promises';
+import { readFile } from "node:fs/promises";
 
 /**
  * Tool input interface for analysis
@@ -26,7 +26,7 @@ export type AnalyzerToolInput = {
  * Extract content from Write tool input
  */
 export function extractWriteContent(toolInput: AnalyzerToolInput): string {
-  return toolInput.content || '';
+  return toolInput.content || "";
 }
 
 /**
@@ -37,7 +37,7 @@ export async function extractEditContent(
   filePath: string
 ): Promise<string> {
   try {
-    const existingContent = await readFile(filePath, 'utf-8');
+    const existingContent = await readFile(filePath, "utf-8");
 
     const oldString = toolInput.old_string;
     const newString = toolInput.new_string;
@@ -53,7 +53,7 @@ export async function extractEditContent(
     return existingContent;
   } catch {
     // File doesn't exist or can't be read
-    return toolInput.content || '';
+    return toolInput.content || "";
   }
 }
 
@@ -65,10 +65,10 @@ export async function extractMultiEditContent(
   filePath: string
 ): Promise<string> {
   try {
-    const existingContent = await readFile(filePath, 'utf-8');
+    const existingContent = await readFile(filePath, "utf-8");
     return existingContent;
   } catch {
-    return toolInput.content || '';
+    return toolInput.content || "";
   }
 }
 
@@ -76,5 +76,5 @@ export async function extractMultiEditContent(
  * Extract command from Bash tool input
  */
 export function extractBashCommand(toolInput: AnalyzerToolInput): string {
-  return toolInput.command || '';
+  return toolInput.command || "";
 }

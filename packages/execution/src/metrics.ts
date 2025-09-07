@@ -6,7 +6,7 @@
  * minimal impact on execution performance.
  */
 
-import type { HookContext, HookEvent, HookResult } from '@carabiner/types';
+import type { HookContext, HookEvent, HookResult } from "@carabiner/types";
 
 /**
  * Execution timing information
@@ -156,10 +156,10 @@ export class ExecutionTimer {
       endTime,
       duration,
       phases: {
-        input: this.phases.get('input') || 0,
-        parsing: this.phases.get('parsing') || 0,
-        execution: this.phases.get('execution') || 0,
-        output: this.phases.get('output') || 0,
+        input: this.phases.get("input") || 0,
+        parsing: this.phases.get("parsing") || 0,
+        execution: this.phases.get("execution") || 0,
+        output: this.phases.get("output") || 0,
       },
     };
   }
@@ -259,7 +259,7 @@ export class MetricsCollector {
     const metrics: ExecutionMetrics = {
       id: this.generateId(),
       event: context.event,
-      toolName: 'toolName' in context ? context.toolName : undefined,
+      toolName: "toolName" in context ? context.toolName : undefined,
       success: result.success,
       errorCode: result.success
         ? undefined
@@ -411,7 +411,7 @@ export class MetricsCollector {
       }
     }
 
-    return 'UNKNOWN_ERROR';
+    return "UNKNOWN_ERROR";
   }
 
   private calculateAverageMemoryUsage(

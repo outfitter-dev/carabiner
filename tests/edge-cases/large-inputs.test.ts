@@ -5,9 +5,9 @@
  * and boundary conditions to ensure robustness in production.
  */
 
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-describe('Large Input Edge Cases', () => {
+describe("Large Input Edge Cases", () => {
   let memoryUsageBefore: NodeJS.MemoryUsage;
 
   beforeEach(() => {
@@ -21,8 +21,8 @@ describe('Large Input Edge Cases', () => {
     }
   });
 
-  describe('Large JSON Payloads', () => {
-    test('should handle 1MB JSON input without memory issues', async () => {
+  describe("Large JSON Payloads", () => {
+    test("should handle 1MB JSON input without memory issues", async () => {
       // Create a 1MB JSON payload
       const largeObject = {
         metadata: {
@@ -31,7 +31,7 @@ describe('Large Input Edge Cases', () => {
         },
         data: new Array(50_000).fill(null).map((_, i) => ({
           id: i,
-          name: `item_${i}_${'x'.repeat(20)}`, // Make each item substantial
+          name: `item_${i}_${"x".repeat(20)}`, // Make each item substantial
           description: `This is a test description for item ${i} `.repeat(5),
           tags: [`tag1_${i}`, `tag2_${i}`, `tag3_${i}`],
           nested: {
@@ -62,9 +62,9 @@ describe('Large Input Edge Cases', () => {
       expect(memoryIncrease).toBeLessThan(100 * 1024 * 1024); // < 100MB increase
     });
 
-    test('should handle deeply nested JSON structures', async () => {
+    test("should handle deeply nested JSON structures", async () => {
       // Create deeply nested structure
-      let deepObject: any = { value: 'deep' };
+      let deepObject: any = { value: "deep" };
 
       // Create 1000 levels of nesting
       for (let i = 0; i < 1000; i++) {
@@ -95,10 +95,10 @@ describe('Large Input Edge Cases', () => {
       }
 
       expect(depth).toBe(1000);
-      expect(current.value).toBe('deep');
+      expect(current.value).toBe("deep");
     });
 
-    test('should handle large arrays with mixed data types', async () => {
+    test("should handle large arrays with mixed data types", async () => {
       const largeArray = [];
 
       // Create array with 100k mixed items
@@ -137,7 +137,7 @@ describe('Large Input Edge Cases', () => {
 
       // Verify data integrity
       expect(parsed[0]).toBe(0);
-      expect(parsed[1]).toBe('string_value_1');
+      expect(parsed[1]).toBe("string_value_1");
       expect(parsed[2]).toBe(true);
       expect(parsed[3]).toEqual({ id: 3, value: 6 });
       expect(parsed[4]).toEqual([4, 5, 6]);
@@ -145,35 +145,35 @@ describe('Large Input Edge Cases', () => {
     });
   });
 
-  describe('String Encoding Edge Cases', () => {
-    test('should handle UTF-8 strings with emoji and special characters', async () => {
+  describe("String Encoding Edge Cases", () => {
+    test("should handle UTF-8 strings with emoji and special characters", async () => {
       const unicodeString = [
-        '🚀 Rocket emoji',
-        '你好世界', // Chinese
-        'Здравствуй мир', // Russian
-        '🎯🔥💯✨🌟', // Multiple emoji
-        'Iñtërnâtiônàlizætiøn', // Accented characters
-        '𝕌𝕟𝕚𝕔𝕠𝕕𝕖 𝔪𝔞𝔱𝔥', // Math symbols
-        '┌─┐\n│ │\n└─┘', // Box drawing
-        '\u0000\u0001\u0002\u001F', // Control characters
-        'a'.repeat(10_000), // Very long string
-      ].join('\n');
+        "🚀 Rocket emoji",
+        "你好世界", // Chinese
+        "Здравствуй мир", // Russian
+        "🎯🔥💯✨🌟", // Multiple emoji
+        "Iñtërnâtiônàlizætiøn", // Accented characters
+        "𝕌𝕟𝕚𝕔𝕠𝕕𝕖 𝔪𝔞𝔱𝔥", // Math symbols
+        "┌─┐\n│ │\n└─┘", // Box drawing
+        "\u0000\u0001\u0002\u001F", // Control characters
+        "a".repeat(10_000), // Very long string
+      ].join("\n");
 
       const encoded = JSON.stringify({ text: unicodeString });
       const decoded = JSON.parse(encoded);
 
       expect(decoded.text).toBe(unicodeString);
-      expect(decoded.text).toContain('🚀');
-      expect(decoded.text).toContain('你好世界');
-      expect(decoded.text).toContain('Здравствуй мир');
+      expect(decoded.text).toContain("🚀");
+      expect(decoded.text).toContain("你好世界");
+      expect(decoded.text).toContain("Здравствуй мир");
     });
 
-    test('should handle binary-like data in strings', async () => {
+    test("should handle binary-like data in strings", async () => {
       // Create string with binary data patterns
       const binaryLikeString = new Array(1000)
         .fill(0)
         .map((_, i) => String.fromCharCode(i % 256))
-        .join('');
+        .join("");
 
       const encoded = JSON.stringify({ binary: binaryLikeString });
       const decoded = JSON.parse(encoded);
@@ -182,8 +182,8 @@ describe('Large Input Edge Cases', () => {
       expect(decoded.binary.length).toBe(1000);
     });
 
-    test('should handle very long strings efficiently', async () => {
-      const veryLongString = 'x'.repeat(10 * 1024 * 1024); // 10MB string
+    test("should handle very long strings efficiently", async () => {
+      const veryLongString = "x".repeat(10 * 1024 * 1024); // 10MB string
 
       const startTime = performance.now();
       const encoded = JSON.stringify({ longString: veryLongString });
@@ -199,8 +199,8 @@ describe('Large Input Edge Cases', () => {
     });
   });
 
-  describe('Memory Pressure Tests', () => {
-    test('should handle multiple concurrent large operations', async () => {
+  describe("Memory Pressure Tests", () => {
+    test("should handle multiple concurrent large operations", async () => {
       const promises = [];
 
       // Create 10 concurrent operations with medium-sized data
@@ -210,7 +210,7 @@ describe('Large Input Edge Cases', () => {
           const data = new Array(10_000).fill(null).map((_, j) => ({
             operation: i,
             index: j,
-            data: `operation_${i}_item_${j}_${'x'.repeat(10)}`,
+            data: `operation_${i}_item_${j}_${"x".repeat(10)}`,
           }));
 
           setTimeout(() => {
@@ -239,7 +239,7 @@ describe('Large Input Edge Cases', () => {
       });
     });
 
-    test('should recover from near-memory-limit scenarios', async () => {
+    test("should recover from near-memory-limit scenarios", async () => {
       // This test attempts to use significant memory then recover
       const memoryBefore = process.memoryUsage().heapUsed;
 
@@ -253,7 +253,7 @@ describe('Large Input Edge Cases', () => {
           i < 100
         ) {
           const block = new Array(20_000).fill(
-            `large_string_${i}_${'x'.repeat(100)}`
+            `large_string_${i}_${"x".repeat(100)}`
           );
           largeArrays.push(block);
           i++;
@@ -286,8 +286,8 @@ describe('Large Input Edge Cases', () => {
     });
   });
 
-  describe('Performance Boundary Tests', () => {
-    test('should maintain performance with increasing payload sizes', async () => {
+  describe("Performance Boundary Tests", () => {
+    test("should maintain performance with increasing payload sizes", async () => {
       const sizes = [1000, 10_000, 50_000, 100_000];
       const timings: number[] = [];
 
@@ -320,7 +320,7 @@ describe('Large Input Edge Cases', () => {
       }
     });
 
-    test('should handle timeout scenarios gracefully', async () => {
+    test("should handle timeout scenarios gracefully", async () => {
       // Simulate operations that might timeout
       const operations = [
         { timeout: 10, work: 5 }, // Should complete
@@ -343,18 +343,18 @@ describe('Large Input Edge Cases', () => {
         })
       );
 
-      expect(results[0].status).toBe('fulfilled');
-      expect(results[1].status).toBe('rejected');
-      expect(results[2].status).toBe('fulfilled');
+      expect(results[0].status).toBe("fulfilled");
+      expect(results[1].status).toBe("rejected");
+      expect(results[2].status).toBe("fulfilled");
 
-      if (results[1].status === 'rejected') {
-        expect(results[1].reason.message).toContain('timed out');
+      if (results[1].status === "rejected") {
+        expect(results[1].reason.message).toContain("timed out");
       }
     });
   });
 
-  describe('Resource Cleanup Tests', () => {
-    test('should properly clean up resources after large operations', async () => {
+  describe("Resource Cleanup Tests", () => {
+    test("should properly clean up resources after large operations", async () => {
       const _initialMemory = process.memoryUsage().heapUsed;
       const resources: any[] = [];
 

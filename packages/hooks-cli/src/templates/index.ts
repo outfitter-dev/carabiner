@@ -2,24 +2,24 @@
  * Template registry
  */
 
-import { basicHookJavaScript, basicHookTypeScript } from './hook/basic.js';
+import { basicHookJavaScript, basicHookTypeScript } from "./hook/basic.js";
 import {
   securityHookJavaScript,
   securityHookTypeScript,
-} from './hook/security.js';
+} from "./hook/security.js";
 import {
   validationHookJavaScript,
   validationHookTypeScript,
-} from './hook/validation.js';
+} from "./hook/validation.js";
 import {
   middlewareJavaScript,
   middlewareTypeScript,
-} from './middleware/index.js';
-import { testJavaScript, testTypeScript } from './test/index.js';
-import { validatorJavaScript, validatorTypeScript } from './validator/index.js';
+} from "./middleware/index.js";
+import { testJavaScript, testTypeScript } from "./test/index.js";
+import { validatorJavaScript, validatorTypeScript } from "./validator/index.js";
 
-export type TemplateType = 'hook' | 'validator' | 'middleware' | 'test';
-export type HookTemplateVariant = 'basic' | 'validation' | 'security';
+export type TemplateType = "hook" | "validator" | "middleware" | "test";
+export type HookTemplateVariant = "basic" | "validation" | "security";
 
 export type TemplateFunction = (name: string) => string;
 
@@ -89,13 +89,13 @@ export const templates: TemplateRegistry = {
  */
 export function getTemplate(
   type: TemplateType,
-  language: 'typescript' | 'javascript',
+  language: "typescript" | "javascript",
   variant?: HookTemplateVariant
 ): TemplateFunction {
-  if (type === 'hook') {
+  if (type === "hook") {
     if (!variant) {
       throw new Error(
-        'Hook template requires a variant (basic, validation, security)'
+        "Hook template requires a variant (basic, validation, security)"
       );
     }
     return templates.hook[variant][language];
@@ -109,7 +109,7 @@ export function getTemplate(
  */
 export function hasTemplate(
   type: TemplateType,
-  language: 'typescript' | 'javascript',
+  language: "typescript" | "javascript",
   variant?: HookTemplateVariant
 ): boolean {
   try {

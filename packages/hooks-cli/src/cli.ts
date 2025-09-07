@@ -5,19 +5,19 @@
  * Command-line interface for managing Claude Code hooks
  */
 
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
-import { createCliLogger, type Logger } from '@carabiner/hooks-core';
-import { ConfigCommand } from './commands/config';
-import { GenerateCommand } from './commands/generate';
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
+import { createCliLogger, type Logger } from "@carabiner/hooks-core";
+import { ConfigCommand } from "./commands/config";
+import { GenerateCommand } from "./commands/generate";
 // Statically import commands to guarantee inclusion in compiled binary
-import { InitCommand } from './commands/init';
-import { TestCommand } from './commands/test';
-import { ValidateCommand } from './commands/validate';
-import { createWorkspaceValidator } from './security/workspace-validator';
-import type { CliConfig, Command } from './types';
+import { InitCommand } from "./commands/init";
+import { TestCommand } from "./commands/test";
+import { ValidateCommand } from "./commands/validate";
+import { createWorkspaceValidator } from "./security/workspace-validator";
+import type { CliConfig, Command } from "./types";
 
 type CLIValues = {
   help?: boolean;
@@ -43,22 +43,22 @@ export class ClaudeHooksCli {
 
   constructor() {
     // Read version from package.json for accurate version reporting
-    let version = '0.1.0';
+    let version = "0.1.0";
     try {
       // In compiled binary, we need to find the package.json differently
       const isCompiled =
-        typeof Bun !== 'undefined' && Bun.main === import.meta.path;
+        typeof Bun !== "undefined" && Bun.main === import.meta.path;
       if (isCompiled) {
         // For compiled binaries, version will be injected at build time
-        version = process.env.CLI_VERSION || '0.1.0';
+        version = process.env.CLI_VERSION || "0.1.0";
       } else {
         // For development, read from package.json
         const packagePath = join(
           dirname(fileURLToPath(import.meta.url)),
-          '..',
-          'package.json'
+          "..",
+          "package.json"
         );
-        const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
+        const packageJson = JSON.parse(readFileSync(packagePath, "utf-8"));
         version = packageJson.version;
       }
     } catch (_error) {
@@ -73,7 +73,7 @@ export class ClaudeHooksCli {
     };
 
     // Initialize logger with CLI-specific context
-    this.logger = createCliLogger('main');
+    this.logger = createCliLogger("main");
 
     // Commands will be registered lazily
   }
@@ -132,11 +132,11 @@ export class ClaudeHooksCli {
       args,
       allowPositionals: true,
       options: {
-        help: { type: 'boolean', short: 'h' },
-        version: { type: 'boolean', short: 'v' },
-        verbose: { type: 'boolean' },
-        debug: { type: 'boolean' },
-        workspace: { type: 'string', short: 'w' },
+        help: { type: "boolean", short: "h" },
+        version: { type: "boolean", short: "v" },
+        verbose: { type: "boolean" },
+        debug: { type: "boolean" },
+        workspace: { type: "string", short: "w" },
       },
     });
   }
@@ -179,7 +179,7 @@ export class ClaudeHooksCli {
 
     // Create new logger with updated context if debug/verbose mode changed
     if (values.debug || values.verbose) {
-      this.logger = createCliLogger('main').child({
+      this.logger = createCliLogger("main").child({
         verbose: this.config.verbose,
         debug: this.config.debug,
       });
@@ -202,7 +202,7 @@ export class ClaudeHooksCli {
       );
     } catch (error) {
       this.error(
-        `Invalid workspace path: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Invalid workspace path: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       process.exit(1);
     }
@@ -228,10 +228,10 @@ export class ClaudeHooksCli {
     // Validate command arguments for security
     for (const arg of commandArgs) {
       if (
-        typeof arg === 'string' &&
-        (arg.includes('../') || arg.includes('\x00'))
+        typeof arg === "string" &&
+        (arg.includes("../") || arg.includes("\x00"))
       ) {
-        this.error('Invalid characters in command arguments');
+        this.error("Invalid characters in command arguments");
         process.exit(1);
       }
     }
@@ -284,13 +284,13 @@ export class ClaudeHooksCli {
     }
 
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('Claude Code Hooks CLI');
+    console.log("Claude Code Hooks CLI");
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('Usage: claude-hooks <command> [options]');
+    console.log("Usage: claude-hooks <command> [options]");
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('');
+    console.log("");
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('Available commands:');
+    console.log("Available commands:");
 
     for (const command of this.commands.values()) {
       // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
@@ -298,19 +298,19 @@ export class ClaudeHooksCli {
     }
 
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('');
+    console.log("");
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('Global options:');
+    console.log("Global options:");
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('  --help       Show this help message');
+    console.log("  --help       Show this help message");
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('  --version    Show version information');
+    console.log("  --version    Show version information");
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('  --verbose    Enable verbose logging');
+    console.log("  --verbose    Enable verbose logging");
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('  --debug      Enable debug logging');
+    console.log("  --debug      Enable debug logging");
     // biome-ignore lint/suspicious/noConsole: CLI help output requires console.log
-    console.log('  --workspace  Set workspace directory');
+    console.log("  --workspace  Set workspace directory");
   }
 
   /**
@@ -318,7 +318,7 @@ export class ClaudeHooksCli {
    */
   private showAvailableCommands(): void {
     // biome-ignore lint/suspicious/noConsole: CLI output requires console.log
-    console.log('Available commands:');
+    console.log("Available commands:");
     for (const command of this.commands.values()) {
       // biome-ignore lint/suspicious/noConsole: CLI output requires console.log
       console.log(`  ${command.name} - ${command.description}`);
@@ -368,7 +368,7 @@ export class ClaudeHooksCli {
    */
   success(message: string): void {
     // Also log internally
-    this.logger.info(message, { type: 'success' });
+    this.logger.info(message, { type: "success" });
   }
 
   /**

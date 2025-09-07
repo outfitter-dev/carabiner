@@ -4,45 +4,45 @@
  * Supports JSON/TypeScript configuration files with validation and hot reload.
  */
 
-import { access, readFile, watch } from 'node:fs/promises';
-import { extname, join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { z } from 'zod';
-import type { PluginConfig } from './plugin';
+import { access, readFile, watch } from "node:fs/promises";
+import { extname, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { z } from "zod";
+import type { PluginConfig } from "./plugin";
 
 /**
  * Plugin condition schema for validation
  */
 const PluginConditionSchema = z
   .object({
-    type: z.enum(['env', 'context', 'tool', 'custom']),
+    type: z.enum(["env", "context", "tool", "custom"]),
     field: z.string().optional(),
     operator: z.enum([
-      'equals',
-      'not_equals',
-      'contains',
-      'not_contains',
-      'matches',
-      'custom',
+      "equals",
+      "not_equals",
+      "contains",
+      "not_contains",
+      "matches",
+      "custom",
     ]),
     value: z.unknown().optional(),
   })
   .refine(
     (condition) => {
       // Custom conditions don't need field/value
-      if (condition.type === 'custom') {
+      if (condition.type === "custom") {
         return true;
       }
 
       // Other conditions need field (except tool conditions)
-      if (condition.type !== 'tool' && !condition.field) {
+      if (condition.type !== "tool" && !condition.field) {
         return false;
       }
 
       return true;
     },
     {
-      message: 'Condition must have required fields for its type',
+      message: "Condition must have required fields for its type",
     }
   );
 
@@ -77,8 +77,8 @@ const HookConfigSchema = z.object({
       collectMetrics: z.boolean().default(true),
       enableHotReload: z.boolean().default(false),
       logLevel: z
-        .enum(['debug', 'info', 'warn', 'error', 'silent'])
-        .default('info'),
+        .enum(["debug", "info", "warn", "error", "silent"])
+        .default("info"),
       maxConcurrency: z.number().min(1).max(100).default(10),
     })
     .default({}),
@@ -86,13 +86,13 @@ const HookConfigSchema = z.object({
   // Loader configuration
   loader: z
     .object({
-      searchPaths: z.array(z.string()).default(['./plugins']),
+      searchPaths: z.array(z.string()).default(["./plugins"]),
       includePatterns: z
         .array(z.string())
-        .default(['*.plugin.js', '*.plugin.ts', '*.plugin.mjs']),
+        .default(["*.plugin.js", "*.plugin.ts", "*.plugin.mjs"]),
       excludePatterns: z
         .array(z.string())
-        .default(['*.test.*', '*.spec.*', '**/node_modules/**']),
+        .default(["*.test.*", "*.spec.*", "**/node_modules/**"]),
       recursive: z.boolean().default(true),
       maxDepth: z.number().min(1).max(10).default(5),
       enableCache: z.boolean().default(true),
@@ -113,7 +113,7 @@ const HookConfigSchema = z.object({
             collectMetrics: z.boolean().optional(),
             enableHotReload: z.boolean().optional(),
             logLevel: z
-              .enum(['debug', 'info', 'warn', 'error', 'silent'])
+              .enum(["debug", "info", "warn", "error", "silent"])
               .optional(),
             maxConcurrency: z.number().optional(),
           })
@@ -127,10 +127,10 @@ const HookConfigSchema = z.object({
  * Inferred configuration types
  */
 export type HookConfig = z.infer<typeof HookConfigSchema>;
-export type HookConfigSettings = z.infer<typeof HookConfigSchema>['settings'];
-export type HookConfigLoader = z.infer<typeof HookConfigSchema>['loader'];
+export type HookConfigSettings = z.infer<typeof HookConfigSchema>["settings"];
+export type HookConfigLoader = z.infer<typeof HookConfigSchema>["loader"];
 export type EnvironmentConfig = NonNullable<
-  z.infer<typeof HookConfigSchema>['environments']
+  z.infer<typeof HookConfigSchema>["environments"]
 >[string];
 
 /**
@@ -147,7 +147,7 @@ export type ConfigLoadResult = {
  * Configuration change event
  */
 export type ConfigChangeEvent = {
-  type: 'loaded' | 'changed' | 'error';
+  type: "loaded" | "changed" | "error";
   config?: HookConfig;
   error?: Error;
   source: string;
@@ -240,7 +240,7 @@ export class ConfigLoader {
   constructor(options: Partial<ConfigLoaderOptions> = {}) {
     this.options = {
       baseDir: process.cwd(),
-      environment: Bun.env.NODE_ENV || 'development',
+      environment: Bun.env.NODE_ENV || "development",
       enableHotReload: false,
       hotReloadDebounce: 300,
       validate: true,
@@ -278,7 +278,7 @@ export class ConfigLoader {
       };
 
       await this.emitChange({
-        type: 'loaded',
+        type: "loaded",
         config,
         source: resolvedPath,
         timestamp: new Date(),
@@ -290,7 +290,7 @@ export class ConfigLoader {
         error instanceof Error ? error : new Error(String(error));
 
       await this.emitChange({
-        type: 'error',
+        type: "error",
         error: configError,
         source: resolvedPath,
         timestamp: new Date(),
@@ -307,7 +307,7 @@ export class ConfigLoader {
    */
   async reload(): Promise<ConfigLoadResult> {
     if (!this.watchedFile) {
-      throw new Error('No configuration file is currently loaded');
+      throw new Error("No configuration file is currently loaded");
     }
 
     return this.load(this.watchedFile);
@@ -334,13 +334,13 @@ export class ConfigLoader {
 
     // Try common configuration file names
     const commonNames = [
-      'hooks.config.ts',
-      'hooks.config.js',
-      'hooks.config.mjs',
-      'hooks.config.json',
-      '.hooksrc.ts',
-      '.hooksrc.js',
-      '.hooksrc.json',
+      "hooks.config.ts",
+      "hooks.config.js",
+      "hooks.config.mjs",
+      "hooks.config.json",
+      ".hooksrc.ts",
+      ".hooksrc.js",
+      ".hooksrc.json",
     ];
 
     for (const name of commonNames) {
@@ -354,7 +354,7 @@ export class ConfigLoader {
     }
 
     throw new Error(
-      `Configuration file not found. Tried: ${commonNames.join(', ')}`
+      `Configuration file not found. Tried: ${commonNames.join(", ")}`
     );
   }
 
@@ -364,10 +364,10 @@ export class ConfigLoader {
   private async loadConfigFile(filePath: string): Promise<HookConfig> {
     const ext = extname(filePath);
 
-    if (ext === '.json') {
+    if (ext === ".json") {
       return this.loadJSONConfig(filePath);
     }
-    if (ext === '.js' || ext === '.mjs' || ext === '.ts') {
+    if (ext === ".js" || ext === ".mjs" || ext === ".ts") {
       return this.loadModuleConfig(filePath);
     }
     throw new Error(`Unsupported configuration file extension: ${ext}`);
@@ -377,14 +377,14 @@ export class ConfigLoader {
    * Load JSON configuration file
    */
   private async loadJSONConfig(filePath: string): Promise<HookConfig> {
-    const content = await readFile(filePath, 'utf-8');
+    const content = await readFile(filePath, "utf-8");
 
     try {
       return JSON.parse(content);
     } catch (error) {
       throw new Error(
         `Invalid JSON in configuration file: ${
-          error instanceof Error ? error.message : 'Unknown error'
+          error instanceof Error ? error.message : "Unknown error"
         }`
       );
     }
@@ -395,12 +395,12 @@ export class ConfigLoader {
    */
   private async loadModuleConfig(filePath: string): Promise<HookConfig> {
     const isESModule =
-      extname(filePath) === '.mjs' || this.isESModuleEnvironment();
+      extname(filePath) === ".mjs" || this.isESModuleEnvironment();
 
     let module: ConfigModule;
 
     try {
-      if (isESModule || extname(filePath) === '.ts') {
+      if (isESModule || extname(filePath) === ".ts") {
         // Use dynamic import
         const fileUrl = pathToFileURL(filePath).href;
         module = await import(`${fileUrl}?t=${Date.now()}`);
@@ -412,7 +412,7 @@ export class ConfigLoader {
     } catch (error) {
       throw new Error(
         `Failed to load configuration module: ${
-          error instanceof Error ? error.message : 'Unknown error'
+          error instanceof Error ? error.message : "Unknown error"
         }`
       );
     }
@@ -447,14 +447,14 @@ export class ConfigLoader {
       return module as HookConfig;
     }
 
-    throw new Error('No valid configuration found in module');
+    throw new Error("No valid configuration found in module");
   }
 
   /**
    * Resolve configuration value (could be function that returns config)
    */
   private async resolveConfigValue(value: unknown): Promise<HookConfig | null> {
-    if (typeof value === 'function') {
+    if (typeof value === "function") {
       const result = (value as () => HookConfig | Promise<HookConfig>)();
       return result instanceof Promise ? await result : result;
     }
@@ -483,7 +483,7 @@ export class ConfigLoader {
       } catch (error) {
         throw new Error(
           `Configuration validation failed: ${
-            error instanceof Error ? error.message : 'Unknown error'
+            error instanceof Error ? error.message : "Unknown error"
           }`
         );
       }
@@ -556,7 +556,7 @@ export class ConfigLoader {
       }, this.options.hotReloadDebounce);
 
       for await (const event of watcher) {
-        if (event.eventType === 'change') {
+        if (event.eventType === "change") {
           debouncedHandler(filePath);
         }
       }
@@ -585,14 +585,14 @@ export class ConfigLoader {
       const result = await this.load(filePath);
 
       await this.emitChange({
-        type: 'changed',
+        type: "changed",
         config: result.config,
         source: filePath,
         timestamp: new Date(),
       });
     } catch (error) {
       await this.emitChange({
-        type: 'error',
+        type: "error",
         error: error instanceof Error ? error : new Error(String(error)),
         source: filePath,
         timestamp: new Date(),
@@ -645,7 +645,7 @@ export class ConfigLoader {
   }
 
   private isPlainObject(value: unknown): boolean {
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
+    return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 
   private isConfigLike(value: unknown): boolean {
@@ -663,8 +663,8 @@ export class ConfigLoader {
 
   private isESModuleEnvironment(): boolean {
     try {
-      const pkg = require(join(process.cwd(), 'package.json'));
-      return pkg.type === 'module';
+      const pkg = require(join(process.cwd(), "package.json"));
+      return pkg.type === "module";
     } catch {
       return false;
     }
@@ -706,13 +706,13 @@ export function createDefaultConfig(): HookConfig {
       continueOnFailure: false,
       collectMetrics: true,
       enableHotReload: false,
-      logLevel: 'info',
+      logLevel: "info",
       maxConcurrency: 10,
     },
     loader: {
-      searchPaths: ['./plugins'],
-      includePatterns: ['*.plugin.js', '*.plugin.ts', '*.plugin.mjs'],
-      excludePatterns: ['*.test.*', '*.spec.*', '**/node_modules/**'],
+      searchPaths: ["./plugins"],
+      includePatterns: ["*.plugin.js", "*.plugin.ts", "*.plugin.mjs"],
+      excludePatterns: ["*.test.*", "*.spec.*", "**/node_modules/**"],
       recursive: true,
       maxDepth: 5,
       enableCache: true,

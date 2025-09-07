@@ -12,7 +12,7 @@ import type {
   HookEvent,
   ToolInput,
   ToolName,
-} from '@carabiner/hooks-core';
+} from "@carabiner/hooks-core";
 
 /**
  * Mock environment configuration
@@ -63,10 +63,10 @@ export class MockEnvironment {
    */
   setup(config: MockEnvironmentConfig = {}): void {
     const {
-      sessionId = 'test-session-123',
-      toolName = 'Bash',
+      sessionId = "test-session-123",
+      toolName = "Bash",
       workspacePath = process.cwd(),
-      toolInput = { command: 'echo test' },
+      toolInput = { command: "echo test" },
       toolOutput,
       userPrompt,
       additionalEnv = {},
@@ -74,12 +74,12 @@ export class MockEnvironment {
 
     // Store original environment
     const envVars = [
-      'CLAUDE_SESSION_ID',
-      'CLAUDE_TOOL_NAME',
-      'CLAUDE_PROJECT_DIR',
-      'TOOL_INPUT',
-      'TOOL_OUTPUT',
-      'USER_PROMPT',
+      "CLAUDE_SESSION_ID",
+      "CLAUDE_TOOL_NAME",
+      "CLAUDE_PROJECT_DIR",
+      "TOOL_INPUT",
+      "TOOL_OUTPUT",
+      "USER_PROMPT",
       ...Object.keys(additionalEnv),
     ];
 
@@ -93,7 +93,7 @@ export class MockEnvironment {
     Bun.env.CLAUDE_TOOL_NAME = toolName;
     Bun.env.CLAUDE_PROJECT_DIR = workspacePath;
     Bun.env.TOOL_INPUT =
-      typeof toolInput === 'string' ? toolInput : JSON.stringify(toolInput);
+      typeof toolInput === "string" ? toolInput : JSON.stringify(toolInput);
 
     if (toolOutput !== undefined) {
       Bun.env.TOOL_OUTPUT = toolOutput;
@@ -163,8 +163,8 @@ export function createMockContext<
 >(options: MockContextOptions<TEvent, TTool>): HookContext<TEvent, TTool> {
   const {
     event,
-    toolName = 'Bash' as TTool,
-    sessionId = 'test-session-123',
+    toolName = "Bash" as TTool,
+    sessionId = "test-session-123",
     workspacePath = process.cwd(),
     toolInput = {} as GetToolInput<TTool>,
     toolOutput: _toolOutput,
@@ -178,11 +178,11 @@ export function createMockContext<
   };
 
   const rawInput: ClaudeHookInputVariant = {
-    hook_event_name: event === 'PreToolUse' ? 'PreToolUse' : 'PostToolUse',
+    hook_event_name: event === "PreToolUse" ? "PreToolUse" : "PostToolUse",
     tool_name: toolName,
     tool_input: toolInput as Record<string, unknown>,
     session_id: sessionId,
-    transcript_path: '/tmp/test-transcript.txt',
+    transcript_path: "/tmp/test-transcript.txt",
     cwd: workspacePath,
     user_prompt: userPrompt,
   } as ClaudeToolHookInput;
@@ -190,7 +190,7 @@ export function createMockContext<
   return {
     event,
     sessionId,
-    transcriptPath: '/tmp/test-transcript.txt',
+    transcriptPath: "/tmp/test-transcript.txt",
     toolName,
     cwd: workspacePath,
     toolInput,
@@ -209,12 +209,12 @@ export const createMockContextFor = {
    */
   bash<TEvent extends HookEvent>(
     event: TEvent,
-    command = 'echo test',
-    options: Partial<MockContextOptions<TEvent, 'Bash'>> = {}
-  ): HookContext<TEvent, 'Bash'> {
+    command = "echo test",
+    options: Partial<MockContextOptions<TEvent, "Bash">> = {}
+  ): HookContext<TEvent, "Bash"> {
     return createMockContext({
       event,
-      toolName: 'Bash',
+      toolName: "Bash",
       toolInput: { command },
       ...options,
     });
@@ -225,13 +225,13 @@ export const createMockContextFor = {
    */
   write<TEvent extends HookEvent>(
     event: TEvent,
-    filePath = 'test.txt',
-    content = 'test content',
-    options: Partial<MockContextOptions<TEvent, 'Write'>> = {}
-  ): HookContext<TEvent, 'Write'> {
+    filePath = "test.txt",
+    content = "test content",
+    options: Partial<MockContextOptions<TEvent, "Write">> = {}
+  ): HookContext<TEvent, "Write"> {
     return createMockContext({
       event,
-      toolName: 'Write',
+      toolName: "Write",
       toolInput: { file_path: filePath, content },
       ...options,
     });
@@ -242,14 +242,14 @@ export const createMockContextFor = {
    */
   edit<TEvent extends HookEvent>(
     event: TEvent,
-    filePath = 'test.txt',
-    oldString = 'old',
-    newString = 'new',
-    options: Partial<MockContextOptions<TEvent, 'Edit'>> = {}
-  ): HookContext<TEvent, 'Edit'> {
+    filePath = "test.txt",
+    oldString = "old",
+    newString = "new",
+    options: Partial<MockContextOptions<TEvent, "Edit">> = {}
+  ): HookContext<TEvent, "Edit"> {
     return createMockContext({
       event,
-      toolName: 'Edit',
+      toolName: "Edit",
       toolInput: {
         file_path: filePath,
         old_string: oldString,
@@ -264,12 +264,12 @@ export const createMockContextFor = {
    */
   read<TEvent extends HookEvent>(
     event: TEvent,
-    filePath = 'test.txt',
-    options: Partial<MockContextOptions<TEvent, 'Read'>> = {}
-  ): HookContext<TEvent, 'Read'> {
+    filePath = "test.txt",
+    options: Partial<MockContextOptions<TEvent, "Read">> = {}
+  ): HookContext<TEvent, "Read"> {
     return createMockContext({
       event,
-      toolName: 'Read',
+      toolName: "Read",
       toolInput: { file_path: filePath },
       ...options,
     });
@@ -279,10 +279,10 @@ export const createMockContextFor = {
    * Create SessionStart context
    */
   sessionStart(
-    options: Partial<MockContextOptions<'SessionStart'>> = {}
-  ): HookContext<'SessionStart'> {
+    options: Partial<MockContextOptions<"SessionStart">> = {}
+  ): HookContext<"SessionStart"> {
     return createMockContext({
-      event: 'SessionStart',
+      event: "SessionStart",
       ...options,
     });
   },
@@ -291,11 +291,11 @@ export const createMockContextFor = {
    * Create UserPromptSubmit context
    */
   userPromptSubmit(
-    userPrompt = 'test prompt',
-    options: Partial<MockContextOptions<'UserPromptSubmit'>> = {}
-  ): HookContext<'UserPromptSubmit'> {
+    userPrompt = "test prompt",
+    options: Partial<MockContextOptions<"UserPromptSubmit">> = {}
+  ): HookContext<"UserPromptSubmit"> {
     return createMockContext({
-      event: 'UserPromptSubmit',
+      event: "UserPromptSubmit",
       userPrompt,
       ...options,
     });
@@ -306,20 +306,20 @@ export const createMockContextFor = {
  * Mock tool input builders
  */
 export const mockToolInputs = {
-  bash: (command = 'echo test', timeout?: number) => ({
+  bash: (command = "echo test", timeout?: number) => ({
     command,
     ...(timeout && { timeout }),
   }),
 
-  write: (filePath = 'test.txt', content = 'test content') => ({
+  write: (filePath = "test.txt", content = "test content") => ({
     file_path: filePath,
     content,
   }),
 
   edit: (
-    filePath = 'test.txt',
-    oldString = 'old',
-    newString = 'new',
+    filePath = "test.txt",
+    oldString = "old",
+    newString = "new",
     replaceAll?: boolean
   ) => ({
     file_path: filePath,
@@ -328,23 +328,23 @@ export const mockToolInputs = {
     ...(replaceAll !== undefined && { replace_all: replaceAll }),
   }),
 
-  read: (filePath = 'test.txt', limit?: number, offset?: number) => ({
+  read: (filePath = "test.txt", limit?: number, offset?: number) => ({
     file_path: filePath,
     ...(limit && { limit }),
     ...(offset !== undefined && { offset }),
   }),
 
-  glob: (pattern = '*.ts', path?: string) => ({
+  glob: (pattern = "*.ts", path?: string) => ({
     pattern,
     ...(path && { path }),
   }),
 
   grep: (
-    pattern = 'test',
+    pattern = "test",
     options: {
       path?: string;
       glob?: string;
-      outputMode?: 'content' | 'files_with_matches' | 'count';
+      outputMode?: "content" | "files_with_matches" | "count";
       multiline?: boolean;
     } = {}
   ) => ({
@@ -385,11 +385,11 @@ export const TestUtils = {
   async withTempWorkspace<T>(
     testFn: (workspacePath: string) => T | Promise<T>
   ): Promise<T> {
-    const { mkdtempSync, rmSync } = await import('node:fs');
-    const { tmpdir } = await import('node:os');
-    const { join } = await import('node:path');
+    const { mkdtempSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
 
-    const tempDir = mkdtempSync(join(tmpdir(), 'claude-hooks-test-'));
+    const tempDir = mkdtempSync(join(tmpdir(), "claude-hooks-test-"));
 
     try {
       return await Promise.resolve(testFn(tempDir));
@@ -417,11 +417,11 @@ export const TestUtils = {
       block?: boolean;
       data?: unknown;
     } {
-      return typeof value === 'object' && value !== null;
+      return typeof value === "object" && value !== null;
     }
 
     if (!isValidResult(result)) {
-      throw new Error('Result must be an object');
+      throw new Error("Result must be an object");
     }
     if (expected.success !== undefined && result.success !== expected.success) {
       throw new Error(

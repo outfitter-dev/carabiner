@@ -4,20 +4,20 @@
  * Comprehensive type definitions for production-ready error handling
  */
 
-import type { JsonValue } from 'type-fest';
+import type { JsonValue } from "type-fest";
 
 /**
  * Error severity levels for classification and handling
  */
 export enum ErrorSeverity {
   /** Critical system failures requiring immediate attention */
-  CRITICAL = 'critical',
+  CRITICAL = "critical",
   /** Errors that affect functionality but don't crash the system */
-  ERROR = 'error',
+  ERROR = "error",
   /** Warnings about potential issues */
-  WARNING = 'warning',
+  WARNING = "warning",
   /** Informational notices */
-  INFO = 'info',
+  INFO = "info",
 }
 
 /**
@@ -25,25 +25,25 @@ export enum ErrorSeverity {
  */
 export enum ErrorCategory {
   /** Configuration-related errors */
-  CONFIGURATION = 'configuration',
+  CONFIGURATION = "configuration",
   /** Runtime execution errors */
-  RUNTIME = 'runtime',
+  RUNTIME = "runtime",
   /** Input/output validation errors */
-  VALIDATION = 'validation',
+  VALIDATION = "validation",
   /** File system operation errors */
-  FILESYSTEM = 'filesystem',
+  FILESYSTEM = "filesystem",
   /** Network and connectivity errors */
-  NETWORK = 'network',
+  NETWORK = "network",
   /** Security-related violations */
-  SECURITY = 'security',
+  SECURITY = "security",
   /** User input and command errors */
-  USER_INPUT = 'user_input',
+  USER_INPUT = "user_input",
   /** System resource exhaustion */
-  RESOURCE = 'resource',
+  RESOURCE = "resource",
   /** Authentication and authorization */
-  AUTH = 'auth',
+  AUTH = "auth",
   /** Timeout and performance issues */
-  TIMEOUT = 'timeout',
+  TIMEOUT = "timeout",
 }
 
 /**
@@ -213,9 +213,9 @@ export type ErrorReport = {
  * Circuit breaker state
  */
 export enum CircuitState {
-  CLOSED = 'closed',
-  OPEN = 'open',
-  HALF_OPEN = 'half_open',
+  CLOSED = "closed",
+  OPEN = "open",
+  HALF_OPEN = "half_open",
 }
 
 /**

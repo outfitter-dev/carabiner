@@ -3,7 +3,7 @@
  * Provides comprehensive security validation for CLI commands and hook execution
  */
 
-import { SecurityValidationError } from '@carabiner/hooks-validators';
+import { SecurityValidationError } from "@carabiner/hooks-validators";
 
 /**
  * Command security configuration
@@ -18,7 +18,7 @@ export type CommandSecurityConfig = {
   /** Allowed executables */
   allowedExecutables: Set<string>;
   /** Environment restrictions */
-  environmentMode: 'development' | 'production' | 'test';
+  environmentMode: "development" | "production" | "test";
   /** Enable strict validation */
   strictMode: boolean;
 };
@@ -29,31 +29,31 @@ export type CommandSecurityConfig = {
 export const DEFAULT_COMMAND_CONFIG: CommandSecurityConfig = {
   maxLength: 2048,
   allowedPrefixes: new Set([
-    'bun',
-    'npm',
-    'yarn',
-    'pnpm',
-    'node',
-    'deno',
-    'python',
-    'python3',
-    'pip',
-    'git',
-    'echo',
-    'ls',
-    'cat',
-    'head',
-    'tail',
-    'grep',
-    'find',
-    'sort',
-    'uniq',
-    'wc',
-    'awk',
-    'sed',
-    'jq',
-    'curl',
-    'wget',
+    "bun",
+    "npm",
+    "yarn",
+    "pnpm",
+    "node",
+    "deno",
+    "python",
+    "python3",
+    "pip",
+    "git",
+    "echo",
+    "ls",
+    "cat",
+    "head",
+    "tail",
+    "grep",
+    "find",
+    "sort",
+    "uniq",
+    "wc",
+    "awk",
+    "sed",
+    "jq",
+    "curl",
+    "wget",
   ]),
   blockedPatterns: [
     // System destruction commands
@@ -111,57 +111,57 @@ export const DEFAULT_COMMAND_CONFIG: CommandSecurityConfig = {
     /\bgit\s+remote\s+add\s+.*http:/,
   ],
   allowedExecutables: new Set([
-    'bun',
-    'node',
-    'npm',
-    'yarn',
-    'pnpm',
-    'deno',
-    'python',
-    'python3',
-    'pip',
-    'pip3',
-    'git',
-    'gh',
-    'hub',
-    'ls',
-    'cat',
-    'head',
-    'tail',
-    'echo',
-    'printf',
-    'grep',
-    'egrep',
-    'fgrep',
-    'rg',
-    'find',
-    'locate',
-    'sort',
-    'uniq',
-    'wc',
-    'cut',
-    'tr',
-    'awk',
-    'sed',
-    'jq',
-    'yq',
-    'curl',
-    'wget',
-    'tar',
-    'gzip',
-    'gunzip',
-    'zip',
-    'unzip',
-    'diff',
-    'patch',
-    'make',
-    'cmake',
-    'docker',
-    'docker-compose',
-    'kubectl',
-    'helm',
+    "bun",
+    "node",
+    "npm",
+    "yarn",
+    "pnpm",
+    "deno",
+    "python",
+    "python3",
+    "pip",
+    "pip3",
+    "git",
+    "gh",
+    "hub",
+    "ls",
+    "cat",
+    "head",
+    "tail",
+    "echo",
+    "printf",
+    "grep",
+    "egrep",
+    "fgrep",
+    "rg",
+    "find",
+    "locate",
+    "sort",
+    "uniq",
+    "wc",
+    "cut",
+    "tr",
+    "awk",
+    "sed",
+    "jq",
+    "yq",
+    "curl",
+    "wget",
+    "tar",
+    "gzip",
+    "gunzip",
+    "zip",
+    "unzip",
+    "diff",
+    "patch",
+    "make",
+    "cmake",
+    "docker",
+    "docker-compose",
+    "kubectl",
+    "helm",
   ]),
-  environmentMode: 'development',
+  environmentMode: "development",
   strictMode: true,
 };
 
@@ -204,11 +204,11 @@ export class CommandValidator {
    * Validate command string for security issues
    */
   validateCommand(command: string): void {
-    if (!command || typeof command !== 'string') {
+    if (!command || typeof command !== "string") {
       throw new SecurityValidationError(
-        'Command must be a non-empty string',
-        'commandValidation',
-        'critical'
+        "Command must be a non-empty string",
+        "commandValidation",
+        "critical"
       );
     }
 
@@ -216,9 +216,9 @@ export class CommandValidator {
     const sanitized = this.sanitizeCommand(command);
     if (sanitized !== command) {
       throw new SecurityValidationError(
-        'Command contains invalid control characters',
-        'commandValidation',
-        'critical'
+        "Command contains invalid control characters",
+        "commandValidation",
+        "critical"
       );
     }
 
@@ -226,8 +226,8 @@ export class CommandValidator {
     if (command.length > this.config.maxLength) {
       throw new SecurityValidationError(
         `Command exceeds maximum length (${this.config.maxLength} characters)`,
-        'commandValidation',
-        'medium'
+        "commandValidation",
+        "medium"
       );
     }
 
@@ -255,7 +255,7 @@ export class CommandValidator {
     return (
       command
         // biome-ignore lint/suspicious/noControlCharactersInRegex: Security validation requires checking for control characters
-        .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '') // Remove control chars except \t, \n, \r
+        .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "") // Remove control chars except \t, \n, \r
         .trim()
     );
   }
@@ -279,7 +279,7 @@ export class CommandValidator {
       backgrounded: boolean;
       chained: boolean;
     } = {
-      executable: '',
+      executable: "",
       args: [],
       pipes: [],
       redirections: [],
@@ -292,8 +292,8 @@ export class CommandValidator {
     result.chained = /[;&|]{2}/.test(command);
 
     // Extract pipes
-    if (command.includes('|')) {
-      result.pipes = command.split('|').map((part) => part.trim());
+    if (command.includes("|")) {
+      result.pipes = command.split("|").map((part) => part.trim());
     }
 
     // Extract redirections
@@ -304,7 +304,7 @@ export class CommandValidator {
     }
 
     // Parse main command
-    const mainCommand = (command.split(/[|;&]/)[0] ?? '').trim();
+    const mainCommand = (command.split(/[|;&]/)[0] ?? "").trim();
     const parts = mainCommand ? mainCommand.split(/\s+/) : [];
 
     if (parts.length > 0) {
@@ -326,9 +326,9 @@ export class CommandValidator {
     // Validate executable
     if (!commandParts.executable) {
       throw new SecurityValidationError(
-        'Command must have an executable',
-        'commandStructure',
-        'high'
+        "Command must have an executable",
+        "commandStructure",
+        "high"
       );
     }
 
@@ -339,35 +339,35 @@ export class CommandValidator {
     ) {
       throw new SecurityValidationError(
         `Executable not in allowed list: ${commandParts.executable}`,
-        'commandStructure',
-        'high'
+        "commandStructure",
+        "high"
       );
     }
 
     // Check for dangerous command chaining
     if (commandParts.chained) {
       throw new SecurityValidationError(
-        'Command chaining with && or || is not allowed',
-        'commandStructure',
-        'critical'
+        "Command chaining with && or || is not allowed",
+        "commandStructure",
+        "critical"
       );
     }
 
     // Check for background execution
     if (commandParts.backgrounded) {
       throw new SecurityValidationError(
-        'Background command execution (&) is not allowed',
-        'commandStructure',
-        'high'
+        "Background command execution (&) is not allowed",
+        "commandStructure",
+        "high"
       );
     }
 
     // Validate pipes
     if (commandParts.pipes.length > 3) {
       throw new SecurityValidationError(
-        'Too many command pipes (maximum 3 allowed)',
-        'commandStructure',
-        'medium'
+        "Too many command pipes (maximum 3 allowed)",
+        "commandStructure",
+        "medium"
       );
     }
 
@@ -375,9 +375,9 @@ export class CommandValidator {
     for (const pipe of commandParts.pipes) {
       if (/\b(sh|bash|zsh|fish|eval|exec)\b/.test(pipe)) {
         throw new SecurityValidationError(
-          'Piping to shell interpreters is not allowed',
-          'commandStructure',
-          'critical'
+          "Piping to shell interpreters is not allowed",
+          "commandStructure",
+          "critical"
         );
       }
     }
@@ -385,18 +385,18 @@ export class CommandValidator {
     // Validate redirections
     for (const redirect of commandParts.redirections) {
       if (
-        redirect.includes('>') &&
+        redirect.includes(">") &&
         commandParts.args.some(
           (arg) =>
-            arg.includes('/dev/') ||
-            arg.includes('/proc/') ||
-            arg.includes('/sys/')
+            arg.includes("/dev/") ||
+            arg.includes("/proc/") ||
+            arg.includes("/sys/")
         )
       ) {
         throw new SecurityValidationError(
-          'Redirecting to system devices/pseudo-filesystems is not allowed',
-          'commandStructure',
-          'critical'
+          "Redirecting to system devices/pseudo-filesystems is not allowed",
+          "commandStructure",
+          "critical"
         );
       }
     }
@@ -411,20 +411,20 @@ export class CommandValidator {
       if (pattern.test(command)) {
         throw new SecurityValidationError(
           `Command matches blocked pattern: ${pattern.source}`,
-          'blockedPattern',
-          'critical'
+          "blockedPattern",
+          "critical"
         );
       }
     }
 
     // Check production-specific patterns
-    if (this.config.environmentMode === 'production') {
+    if (this.config.environmentMode === "production") {
       for (const pattern of PRODUCTION_BLOCKED_PATTERNS) {
         if (pattern.test(command)) {
           throw new SecurityValidationError(
             `Command blocked in production environment: ${pattern.source}`,
-            'productionBlocked',
-            'critical'
+            "productionBlocked",
+            "critical"
           );
         }
       }
@@ -436,13 +436,13 @@ export class CommandValidator {
    */
   private validateEnvironmentRestrictions(command: string): void {
     switch (this.config.environmentMode) {
-      case 'production':
+      case "production":
         this.validateProductionCommand(command);
         break;
-      case 'development':
+      case "development":
         this.validateDevelopmentCommand(command);
         break;
-      case 'test':
+      case "test":
         this.validateTestCommand(command);
         break;
       default:
@@ -458,21 +458,21 @@ export class CommandValidator {
     // Block sudo in production
     if (/\bsudo\b/.test(command)) {
       throw new SecurityValidationError(
-        'sudo commands are blocked in production environment',
-        'productionSafety',
-        'critical'
+        "sudo commands are blocked in production environment",
+        "productionSafety",
+        "critical"
       );
     }
 
     // Block package installations without explicit approval
     if (
       /\b(npm|yarn|pnpm|pip)\s+(install|add|i)\b/.test(command) &&
-      !command.includes('--production')
+      !command.includes("--production")
     ) {
       throw new SecurityValidationError(
-        'Package installations must use --production flag in production',
-        'productionSafety',
-        'high'
+        "Package installations must use --production flag in production",
+        "productionSafety",
+        "high"
       );
     }
 
@@ -482,9 +482,9 @@ export class CommandValidator {
       /\/(etc|usr|bin|boot|root|home)/.test(command)
     ) {
       throw new SecurityValidationError(
-        'System directory modifications blocked in production',
-        'productionSafety',
-        'critical'
+        "System directory modifications blocked in production",
+        "productionSafety",
+        "critical"
       );
     }
   }
@@ -496,9 +496,9 @@ export class CommandValidator {
     // More permissive but still check for dangerous patterns
     if (/\brm\s+-rf\s+\//.test(command)) {
       throw new SecurityValidationError(
-        'Recursive deletion of root directory blocked',
-        'developmentSafety',
-        'critical'
+        "Recursive deletion of root directory blocked",
+        "developmentSafety",
+        "critical"
       );
     }
   }
@@ -520,50 +520,50 @@ export class CommandValidator {
   ): void {
     // No network access in strict mode
     const networkCommands = [
-      'curl',
-      'wget',
-      'nc',
-      'telnet',
-      'ssh',
-      'scp',
-      'rsync',
+      "curl",
+      "wget",
+      "nc",
+      "telnet",
+      "ssh",
+      "scp",
+      "rsync",
     ];
     if (networkCommands.includes(commandParts.executable)) {
       throw new SecurityValidationError(
         `Network commands blocked in strict mode: ${commandParts.executable}`,
-        'strictMode',
-        'high'
+        "strictMode",
+        "high"
       );
     }
 
     // No package management in strict mode
-    const packageManagers = ['npm', 'yarn', 'pnpm', 'pip', 'pip3'];
+    const packageManagers = ["npm", "yarn", "pnpm", "pip", "pip3"];
     if (
       packageManagers.includes(commandParts.executable) &&
-      commandParts.args.some((arg) => ['install', 'add', 'i'].includes(arg))
+      commandParts.args.some((arg) => ["install", "add", "i"].includes(arg))
     ) {
       throw new SecurityValidationError(
-        'Package installations blocked in strict mode',
-        'strictMode',
-        'high'
+        "Package installations blocked in strict mode",
+        "strictMode",
+        "high"
       );
     }
 
     // No environment variable manipulation
     if (/\b(export|unset|env)\s+\w+=/i.test(command)) {
       throw new SecurityValidationError(
-        'Environment variable manipulation blocked in strict mode',
-        'strictMode',
-        'medium'
+        "Environment variable manipulation blocked in strict mode",
+        "strictMode",
+        "medium"
       );
     }
 
     // No shell variable substitution with command execution
     if (/\$\([^)]*[`|&;<>]/g.test(command) || /`[^`]*[|&;<>]/g.test(command)) {
       throw new SecurityValidationError(
-        'Complex shell substitutions blocked in strict mode',
-        'strictMode',
-        'high'
+        "Complex shell substitutions blocked in strict mode",
+        "strictMode",
+        "high"
       );
     }
   }
@@ -572,7 +572,7 @@ export class CommandValidator {
    * Check if command prefix is allowed
    */
   isAllowedPrefix(command: string): boolean {
-    const executable = command.trim().split(/\s+/)[0] || '';
+    const executable = command.trim().split(/\s+/)[0] || "";
     return this.config.allowedPrefixes.has(executable);
   }
 
@@ -594,7 +594,7 @@ export class CommandValidator {
    * Create command validator for specific environment
    */
   static forEnvironment(
-    env: 'development' | 'production' | 'test',
+    env: "development" | "production" | "test",
     strictMode = false
   ): CommandValidator {
     const config: Partial<CommandSecurityConfig> = {
@@ -602,18 +602,18 @@ export class CommandValidator {
       strictMode,
     };
 
-    if (env === 'production') {
+    if (env === "production") {
       config.strictMode = true;
       config.allowedExecutables = new Set([
-        'bun',
-        'node',
-        'npm',
-        'git',
-        'echo',
-        'cat',
-        'ls',
-        'grep',
-        'jq',
+        "bun",
+        "node",
+        "npm",
+        "git",
+        "echo",
+        "cat",
+        "ls",
+        "grep",
+        "jq",
       ]);
     }
 
@@ -626,7 +626,7 @@ export class CommandValidator {
  */
 export function validateCommand(
   command: string,
-  environment: 'development' | 'production' | 'test' = 'development',
+  environment: "development" | "production" | "test" = "development",
   strictMode = true
 ): void {
   const validator = CommandValidator.forEnvironment(environment, strictMode);
@@ -638,18 +638,18 @@ export function validateCommand(
  */
 export function validateHookCommand(command: string): string {
   const validator = new CommandValidator({
-    environmentMode: 'development',
+    environmentMode: "development",
     strictMode: true,
   });
 
   validator.validateCommand(command);
 
   // Additional hook-specific validation
-  if (!(command.startsWith('bun ') || command.startsWith('node '))) {
+  if (!(command.startsWith("bun ") || command.startsWith("node "))) {
     throw new SecurityValidationError(
       'Hook commands must start with "bun" or "node"',
-      'hookValidation',
-      'high'
+      "hookValidation",
+      "high"
     );
   }
 
@@ -670,26 +670,26 @@ export function createSecureCommand(
   if (!instance.getConfig().allowedExecutables.has(executable)) {
     throw new SecurityValidationError(
       `Executable not allowed: ${executable}`,
-      'commandBuilder',
-      'high'
+      "commandBuilder",
+      "high"
     );
   }
 
   // Sanitize arguments
   const sanitizedArgs = args.map((arg) => {
     // Basic sanitization - remove dangerous characters
-    const sanitized = arg.replace(/[`$(){}[\]|&;<>]/g, '');
+    const sanitized = arg.replace(/[`$(){}[\]|&;<>]/g, "");
     if (sanitized !== arg) {
       throw new SecurityValidationError(
         `Argument contains dangerous characters: ${arg}`,
-        'commandBuilder',
-        'high'
+        "commandBuilder",
+        "high"
       );
     }
     return `"${sanitized}"`;
   });
 
-  const command = `${executable} ${sanitizedArgs.join(' ')}`.trim();
+  const command = `${executable} ${sanitizedArgs.join(" ")}`.trim();
   instance.validateCommand(command);
 
   return command;

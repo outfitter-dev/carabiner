@@ -6,13 +6,13 @@
  * coverage analysis, and CI/CD integration.
  */
 
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { spawn } from "node:child_process";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import {
   detectTestEnvironment,
   TestOrchestrator,
-} from '../tests/test-runner.config';
+} from "../tests/test-runner.config";
 
 type TestExecutionOptions = {
   /** Filter to specific test categories */
@@ -86,7 +86,7 @@ class ComprehensiveTestRunner {
       performance: false,
       production: false,
       parallel: true,
-      outputDir: './test-results',
+      outputDir: "./test-results",
       verbose: false,
       ...options,
     };
@@ -115,7 +115,7 @@ class ComprehensiveTestRunner {
       // Generate execution plan
       const plan = this.orchestrator.generateExecutionPlan();
       plan.phases.forEach((phase, _index) => {
-        const _status = phase.condition !== false ? '✅' : '⏭️ ';
+        const _status = phase.condition !== false ? "✅" : "⏭️ ";
       });
 
       // Execute test phases
@@ -127,7 +127,7 @@ class ComprehensiveTestRunner {
         if (
           this.options.categories &&
           !this.options.categories.includes(
-            phase.name.toLowerCase().replace(/\s+/g, '-')
+            phase.name.toLowerCase().replace(/\s+/g, "-")
           )
         ) {
           continue;
@@ -189,18 +189,18 @@ class ComprehensiveTestRunner {
 
     try {
       // Build command
-      const args = ['test'];
+      const args = ["test"];
 
-      if (phase.pattern !== '**/*.test.ts') {
+      if (phase.pattern !== "**/*.test.ts") {
         args.push(phase.pattern);
       }
 
       if (this.options.coverage) {
-        args.push('--coverage');
+        args.push("--coverage");
       }
 
       if (this.options.verbose) {
-        args.push('--verbose');
+        args.push("--verbose");
       }
 
       // Execute tests
@@ -222,7 +222,7 @@ class ComprehensiveTestRunner {
 
       result.duration = Date.now() - startTime;
 
-      const _status = result.success ? '✅' : '❌';
+      const _status = result.success ? "✅" : "❌";
 
       if (result.errors.length > 0 && this.options.verbose) {
         result.errors.forEach((_error) => {});
@@ -252,28 +252,28 @@ class ComprehensiveTestRunner {
       const tryRun = () => {
         attempt++;
 
-        const proc = spawn('bun', args, {
-          stdio: ['pipe', 'pipe', 'pipe'],
+        const proc = spawn("bun", args, {
+          stdio: ["pipe", "pipe", "pipe"],
           cwd: process.cwd(),
         });
 
-        let stdout = '';
-        let stderr = '';
+        let stdout = "";
+        let stderr = "";
 
-        proc.stdout?.on('data', (data) => {
+        proc.stdout?.on("data", (data) => {
           stdout += data.toString();
         });
 
-        proc.stderr?.on('data', (data) => {
+        proc.stderr?.on("data", (data) => {
           stderr += data.toString();
         });
 
         const timeoutId = setTimeout(() => {
-          proc.kill('SIGTERM');
+          proc.kill("SIGTERM");
           lastError = new Error(`Test timed out after ${options.timeout}ms`);
         }, options.timeout);
 
-        proc.on('close', (code) => {
+        proc.on("close", (code) => {
           clearTimeout(timeoutId);
 
           if (code === 0) {
@@ -291,7 +291,7 @@ class ComprehensiveTestRunner {
           }
         });
 
-        proc.on('error', (error) => {
+        proc.on("error", (error) => {
           clearTimeout(timeoutId);
           lastError = error;
 
@@ -314,7 +314,7 @@ class ComprehensiveTestRunner {
     // Parse Bun test output to extract test results
     // This is a simplified parser - in production, you'd want more robust parsing
 
-    const lines = stdout.split('\n');
+    const lines = stdout.split("\n");
     let testsRun = 0;
     let testsPassed = 0;
     let testsFailed = 0;
@@ -323,7 +323,7 @@ class ComprehensiveTestRunner {
 
     // Look for test summary line
     const summaryLine = lines.find(
-      (line) => line.includes('pass') && line.includes('fail')
+      (line) => line.includes("pass") && line.includes("fail")
     );
     if (summaryLine) {
       const passMatch = summaryLine.match(/(\d+) pass/);
@@ -340,17 +340,17 @@ class ComprehensiveTestRunner {
 
     // Extract errors
     lines.forEach((line) => {
-      if (line.includes('(fail)') || line.includes('Error:')) {
+      if (line.includes("(fail)") || line.includes("Error:")) {
         errors.push(line.trim());
       }
-      if (line.includes('warn') || line.includes('Warning:')) {
+      if (line.includes("warn") || line.includes("Warning:")) {
         warnings.push(line.trim());
       }
     });
 
     // Parse coverage if present
     let coverage;
-    if (stdout.includes('Coverage')) {
+    if (stdout.includes("Coverage")) {
       coverage = this.parseCoverageOutput(stdout);
     }
 
@@ -370,8 +370,8 @@ class ComprehensiveTestRunner {
    */
   private parseCoverageOutput(output: string): CoverageResult | null {
     // Simplified coverage parsing - in production, use proper coverage tools
-    const lines = output.split('\n');
-    const coverageLine = lines.find((line) => line.includes('All files'));
+    const lines = output.split("\n");
+    const coverageLine = lines.find((line) => line.includes("All files"));
 
     if (coverageLine) {
       // Extract coverage percentages using regex
@@ -476,22 +476,22 @@ class ComprehensiveTestRunner {
     const jsonReport = {
       ...result,
       timestamp: new Date().toISOString(),
-      version: require('../package.json').version,
+      version: require("../package.json").version,
     };
 
     writeFileSync(
-      join(this.outputDir, 'test-results.json'),
+      join(this.outputDir, "test-results.json"),
       JSON.stringify(jsonReport, null, 2)
     );
 
     // Generate HTML report (simplified)
     const htmlReport = this.generateHtmlReport(result);
-    writeFileSync(join(this.outputDir, 'test-results.html'), htmlReport);
+    writeFileSync(join(this.outputDir, "test-results.html"), htmlReport);
 
     // Generate coverage report if available
     if (result.coverageSummary) {
       writeFileSync(
-        join(this.outputDir, 'coverage-summary.json'),
+        join(this.outputDir, "coverage-summary.json"),
         JSON.stringify(result.coverageSummary, null, 2)
       );
     }
@@ -527,7 +527,7 @@ class ComprehensiveTestRunner {
         <h1>🧪 Grapple Test Results</h1>
         <p>Environment: ${result.environment}</p>
         <p>Duration: ${result.totalDuration}ms</p>
-        <p>Status: ${result.overallSuccess ? '✅ PASSED' : '❌ FAILED'}</p>
+        <p>Status: ${result.overallSuccess ? "✅ PASSED" : "❌ FAILED"}</p>
     </div>
 
     <div class="stats">
@@ -555,15 +555,15 @@ class ComprehensiveTestRunner {
         <p>Branches: ${result.coverageSummary.branchesCovered.toFixed(2)}%</p>
     </div>
     `
-        : ''
+        : ""
     }
 
     <h2>📋 Test Phases</h2>
     ${result.phases
       .map(
         (phase) => `
-    <div class="phase ${phase.success ? 'success' : 'failure'}">
-        <h3>${phase.success ? '✅' : '❌'} ${phase.name}</h3>
+    <div class="phase ${phase.success ? "success" : "failure"}">
+        <h3>${phase.success ? "✅" : "❌"} ${phase.name}</h3>
         <p>Duration: ${phase.duration}ms</p>
         <p>Tests: ${phase.testsPassed}/${phase.testsRun} passed</p>
         ${
@@ -571,15 +571,15 @@ class ComprehensiveTestRunner {
             ? `
         <details>
             <summary>Errors (${phase.errors.length})</summary>
-            <pre>${phase.errors.join('\n')}</pre>
+            <pre>${phase.errors.join("\n")}</pre>
         </details>
         `
-            : ''
+            : ""
         }
     </div>
     `
       )
-      .join('')}
+      .join("")}
 </body>
 </html>
     `;
@@ -602,7 +602,7 @@ class ComprehensiveTestRunner {
 
     // Generate JUnit XML for CI systems
     const junit = this.generateJUnitXML(result);
-    writeFileSync(join(this.outputDir, 'junit.xml'), junit);
+    writeFileSync(join(this.outputDir, "junit.xml"), junit);
   }
 
   /**
@@ -621,11 +621,11 @@ class ComprehensiveTestRunner {
     .map(
       (phase) => `
   <testsuite name="${phase.name}" tests="${phase.testsRun}" failures="${phase.testsFailed}" time="${phase.duration / 1000}">
-    ${phase.success ? '<testcase name="Phase Execution" />' : `<testcase name="Phase Execution"><failure message="${phase.errors.join('; ')}" /></testcase>`}
+    ${phase.success ? '<testcase name="Phase Execution" />' : `<testcase name="Phase Execution"><failure message="${phase.errors.join("; ")}" /></testcase>`}
   </testsuite>
   `
     )
-    .join('')}
+    .join("")}
 </testsuites>`;
   }
 
@@ -634,7 +634,7 @@ class ComprehensiveTestRunner {
    */
   private printSummary(result: TestSuiteResult): void {
     result.phases.forEach((phase) => {
-      const _status = phase.success ? '✅' : '❌';
+      const _status = phase.success ? "✅" : "❌";
     });
 
     if (result.coverageSummary) {
@@ -667,28 +667,28 @@ async function main() {
     const arg = args[i];
 
     switch (arg) {
-      case '--coverage':
+      case "--coverage":
         options.coverage = true;
         break;
-      case '--no-coverage':
+      case "--no-coverage":
         options.coverage = false;
         break;
-      case '--performance':
+      case "--performance":
         options.performance = true;
         break;
-      case '--production':
+      case "--production":
         options.production = true;
         break;
-      case '--verbose':
+      case "--verbose":
         options.verbose = true;
         break;
-      case '--output':
+      case "--output":
         options.outputDir = args[++i];
         break;
-      case '--categories':
-        options.categories = args[++i]?.split(',');
+      case "--categories":
+        options.categories = args[++i]?.split(",");
         break;
-      case '--help':
+      case "--help":
         process.exit(0);
         break;
     }

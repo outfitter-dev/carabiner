@@ -5,9 +5,9 @@
  * Ensures all packages build correctly and meet quality standards
  */
 
-import { spawn } from 'node:child_process';
-import { existsSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { spawn } from "node:child_process";
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 
 type PackageCheck = {
   name: string;
@@ -19,11 +19,11 @@ type PackageCheck = {
 };
 
 const PACKAGES = [
-  'hooks-core',
-  'hooks-validators',
-  'hooks-config',
-  'hooks-testing',
-  'hooks-cli',
+  "hooks-core",
+  "hooks-validators",
+  "hooks-config",
+  "hooks-testing",
+  "hooks-cli",
 ];
 
 function runCommand(
@@ -34,32 +34,32 @@ function runCommand(
   return new Promise((resolve) => {
     const child = spawn(command, args, {
       cwd,
-      stdio: 'pipe',
-      env: { ...process.env, NODE_ENV: 'production' },
+      stdio: "pipe",
+      env: { ...process.env, NODE_ENV: "production" },
     });
 
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
 
-    child.stdout?.on('data', (data) => {
+    child.stdout?.on("data", (data) => {
       stdout += data.toString();
     });
 
-    child.stderr?.on('data', (data) => {
+    child.stderr?.on("data", (data) => {
       stderr += data.toString();
     });
 
-    child.on('close', (code) => {
+    child.on("close", (code) => {
       resolve({ code: code || 0, stdout, stderr });
     });
   });
 }
 
 function checkPackage(packageName: string): PackageCheck {
-  const packagePath = join(process.cwd(), 'packages', packageName);
-  const distPath = join(packagePath, 'dist');
-  const mainPath = join(distPath, 'index.js');
-  const typesPath = join(distPath, 'index.d.ts');
+  const packagePath = join(process.cwd(), "packages", packageName);
+  const distPath = join(packagePath, "dist");
+  const mainPath = join(distPath, "index.js");
+  const typesPath = join(distPath, "index.d.ts");
 
   let distSize = 0;
   if (existsSync(distPath)) {
@@ -97,7 +97,7 @@ function checkPackage(packageName: string): PackageCheck {
 }
 
 async function runCleanStep(): Promise<void> {
-  const cleanResult = await runCommand('bun', ['run', 'clean'], process.cwd());
+  const cleanResult = await runCommand("bun", ["run", "clean"], process.cwd());
   if (cleanResult.code !== 0) {
     throw new Error(`Clean failed with code ${cleanResult.code}`);
   }
@@ -105,8 +105,8 @@ async function runCleanStep(): Promise<void> {
 
 async function runBuildStep(): Promise<void> {
   const buildResult = await runCommand(
-    'bun',
-    ['run', 'build:packages'],
+    "bun",
+    ["run", "build:packages"],
     process.cwd()
   );
 
@@ -117,8 +117,8 @@ async function runBuildStep(): Promise<void> {
 
 async function runTypecheckStep(): Promise<void> {
   const typecheckResult = await runCommand(
-    'bun',
-    ['run', 'typecheck'],
+    "bun",
+    ["run", "typecheck"],
     process.cwd()
   );
 
@@ -132,17 +132,17 @@ async function validatePackageFiles(): Promise<void> {
     try {
       const packagePath = join(
         process.cwd(),
-        'packages',
+        "packages",
         packageName,
-        'dist',
-        'index.js'
+        "dist",
+        "index.js"
       );
       if (existsSync(packagePath)) {
-        const { readFile } = await import('node:fs/promises');
-        const content = await readFile(packagePath, 'utf-8');
+        const { readFile } = await import("node:fs/promises");
+        const content = await readFile(packagePath, "utf-8");
 
         if (content.length === 0) {
-          throw new Error('Package file is empty');
+          throw new Error("Package file is empty");
         }
       } else {
         throw new Error(`Package file not found: ${packagePath}`);
@@ -155,15 +155,15 @@ async function validatePackageFiles(): Promise<void> {
 
 async function runPublintValidation(): Promise<void> {
   const publintResult = await runCommand(
-    'bunx',
-    ['publint', '--strict'],
-    join(process.cwd(), 'packages')
+    "bunx",
+    ["publint", "--strict"],
+    join(process.cwd(), "packages")
   );
 
   if (publintResult.code !== 0) {
-    const stderr = publintResult.stderr?.trim() || '';
-    const stdout = publintResult.stdout?.trim() || '';
-    const errorMessage = stderr || stdout || 'Unknown publint failure';
+    const stderr = publintResult.stderr?.trim() || "";
+    const stdout = publintResult.stdout?.trim() || "";
+    const errorMessage = stderr || stdout || "Unknown publint failure";
 
     throw new Error(
       `Publint validation failed with exit code ${publintResult.code}:\n${errorMessage}`
@@ -173,7 +173,7 @@ async function runPublintValidation(): Promise<void> {
   // Log successful validation
   if (publintResult.stdout?.trim()) {
     // biome-ignore lint/suspicious/noConsole: Build verification logging requires console output
-    console.log('✅ Publint validation passed');
+    console.log("✅ Publint validation passed");
   }
 }
 

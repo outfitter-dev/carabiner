@@ -3,15 +3,15 @@
  * Provides input validation, schema validation, and business rules
  */
 
-import { existsSync, statSync } from 'node:fs';
-import { dirname, extname, resolve } from 'node:path';
-import type { HookContext, ToolInput, ToolName } from '@carabiner/hooks-core';
+import { existsSync, statSync } from "node:fs";
+import { dirname, extname, resolve } from "node:path";
+import type { HookContext, ToolInput, ToolName } from "@carabiner/hooks-core";
 import {
   isBashToolInput,
   isEditToolInput,
   isMultiEditToolInput,
   isWriteToolInput,
-} from '@carabiner/hooks-core';
+} from "@carabiner/hooks-core";
 
 /**
  * Validation error class
@@ -23,7 +23,7 @@ export class ValidationError extends Error {
     public readonly code?: string
   ) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
   }
 }
 
@@ -36,7 +36,7 @@ export type ValidationRule<T = unknown> = {
   validate: (value: T, context?: HookContext) => boolean | Promise<boolean>;
   message: string | ((value: T, context?: HookContext) => string);
   required?: boolean;
-  severity?: 'error' | 'warning' | 'info';
+  severity?: "error" | "warning" | "info";
 };
 
 /**
@@ -55,7 +55,7 @@ export type ValidationResult = {
     field?: string;
     message: string;
     code?: string;
-    severity?: 'error' | 'warning' | 'info';
+    severity?: "error" | "warning" | "info";
   }>;
   warnings: Array<{
     field?: string;
@@ -73,13 +73,13 @@ export const ValidationRules = {
    */
   required(fieldName: string): ValidationRule<unknown> {
     return {
-      name: 'required',
+      name: "required",
       description: `${fieldName} is required`,
       validate: (value) =>
-        value !== null && value !== undefined && value !== '',
+        value !== null && value !== undefined && value !== "",
       message: `${fieldName} is required`,
       required: true,
-      severity: 'error',
+      severity: "error",
     };
   },
 
@@ -88,21 +88,21 @@ export const ValidationRules = {
    */
   minLength(min: number): ValidationRule<unknown> {
     return {
-      name: 'minLength',
+      name: "minLength",
       description: `Minimum length of ${min}`,
-      validate: (value) => typeof value === 'string' && value.length >= min,
+      validate: (value) => typeof value === "string" && value.length >= min,
       message: `Must be at least ${min} characters long`,
-      severity: 'error',
+      severity: "error",
     };
   },
 
   maxLength(max: number): ValidationRule<unknown> {
     return {
-      name: 'maxLength',
+      name: "maxLength",
       description: `Maximum length of ${max}`,
-      validate: (value) => typeof value === 'string' && value.length <= max,
+      validate: (value) => typeof value === "string" && value.length <= max,
       message: `Must be no more than ${max} characters long`,
-      severity: 'error',
+      severity: "error",
     };
   },
 
@@ -111,11 +111,11 @@ export const ValidationRules = {
    */
   pattern(regex: RegExp, message?: string): ValidationRule<unknown> {
     return {
-      name: 'pattern',
+      name: "pattern",
       description: `Must match pattern ${regex}`,
-      validate: (value) => typeof value === 'string' && regex.test(value),
-      message: message || 'Must match required pattern',
-      severity: 'error',
+      validate: (value) => typeof value === "string" && regex.test(value),
+      message: message || "Must match required pattern",
+      severity: "error",
     };
   },
 
@@ -124,10 +124,10 @@ export const ValidationRules = {
    */
   validFilePath(allowNonExistent = false): ValidationRule<unknown> {
     return {
-      name: 'validFilePath',
-      description: 'Must be a valid file path',
+      name: "validFilePath",
+      description: "Must be a valid file path",
       validate: (value, context) => {
-        if (typeof value !== 'string') {
+        if (typeof value !== "string") {
           return false;
         }
 
@@ -140,8 +140,8 @@ export const ValidationRules = {
           return false;
         }
       },
-      message: allowNonExistent ? 'Invalid file path' : 'File does not exist',
-      severity: 'error',
+      message: allowNonExistent ? "Invalid file path" : "File does not exist",
+      severity: "error",
     };
   },
 
@@ -150,17 +150,17 @@ export const ValidationRules = {
    */
   fileExtension(extensions: string[]): ValidationRule<unknown> {
     return {
-      name: 'fileExtension',
-      description: `Must have extension: ${extensions.join(', ')}`,
+      name: "fileExtension",
+      description: `Must have extension: ${extensions.join(", ")}`,
       validate: (value) => {
-        if (typeof value !== 'string') {
+        if (typeof value !== "string") {
           return false;
         }
         const ext = extname(value);
         return extensions.includes(ext);
       },
-      message: `File must have one of these extensions: ${extensions.join(', ')}`,
-      severity: 'error',
+      message: `File must have one of these extensions: ${extensions.join(", ")}`,
+      severity: "error",
     };
   },
 
@@ -169,11 +169,11 @@ export const ValidationRules = {
    */
   number(min?: number, max?: number): ValidationRule<unknown> {
     return {
-      name: 'number',
-      description: `Must be a number${min !== undefined ? ` >= ${min}` : ''}${max !== undefined ? ` <= ${max}` : ''}`,
+      name: "number",
+      description: `Must be a number${min !== undefined ? ` >= ${min}` : ""}${max !== undefined ? ` <= ${max}` : ""}`,
       validate: (value) => {
-        const num = typeof value === 'string' ? Number(value) : value;
-        if (typeof num !== 'number' || Number.isNaN(num)) {
+        const num = typeof value === "string" ? Number(value) : value;
+        if (typeof num !== "number" || Number.isNaN(num)) {
           return false;
         }
         if (min !== undefined && num < min) {
@@ -185,9 +185,9 @@ export const ValidationRules = {
         return true;
       },
       message: (value) => {
-        const num = typeof value === 'string' ? Number(value) : value;
-        if (typeof num !== 'number' || Number.isNaN(num)) {
-          return 'Must be a valid number';
+        const num = typeof value === "string" ? Number(value) : value;
+        if (typeof num !== "number" || Number.isNaN(num)) {
+          return "Must be a valid number";
         }
         if (min !== undefined && num < min) {
           return `Must be at least ${min}`;
@@ -195,9 +195,9 @@ export const ValidationRules = {
         if (max !== undefined && num > max) {
           return `Must be at most ${max}`;
         }
-        return 'Invalid number';
+        return "Invalid number";
       },
-      severity: 'error',
+      severity: "error",
     };
   },
 
@@ -206,8 +206,8 @@ export const ValidationRules = {
    */
   array(minItems?: number, maxItems?: number): ValidationRule<unknown> {
     return {
-      name: 'array',
-      description: `Must be an array${minItems ? ` with at least ${minItems} items` : ''}${maxItems ? ` with at most ${maxItems} items` : ''}`,
+      name: "array",
+      description: `Must be an array${minItems ? ` with at least ${minItems} items` : ""}${maxItems ? ` with at most ${maxItems} items` : ""}`,
       validate: (value) => {
         if (!Array.isArray(value)) {
           return false;
@@ -222,7 +222,7 @@ export const ValidationRules = {
       },
       message: (value) => {
         if (!Array.isArray(value)) {
-          return 'Must be an array';
+          return "Must be an array";
         }
         if (minItems !== undefined && value.length < minItems) {
           return `Must have at least ${minItems} items`;
@@ -230,9 +230,9 @@ export const ValidationRules = {
         if (maxItems !== undefined && value.length > maxItems) {
           return `Must have at most ${maxItems} items`;
         }
-        return 'Invalid array';
+        return "Invalid array";
       },
-      severity: 'error',
+      severity: "error",
     };
   },
 
@@ -241,11 +241,11 @@ export const ValidationRules = {
    */
   boolean(): ValidationRule<unknown> {
     return {
-      name: 'boolean',
-      description: 'Must be a boolean value',
-      validate: (value) => typeof value === 'boolean',
-      message: 'Must be true or false',
-      severity: 'error',
+      name: "boolean",
+      description: "Must be a boolean value",
+      validate: (value) => typeof value === "boolean",
+      message: "Must be true or false",
+      severity: "error",
     };
   },
 
@@ -257,11 +257,11 @@ export const ValidationRules = {
     message: string | ((value: T, context?: HookContext) => string)
   ): ValidationRule<T> {
     return {
-      name: 'custom',
-      description: 'Custom validation rule',
+      name: "custom",
+      description: "Custom validation rule",
       validate,
       message,
-      severity: 'error',
+      severity: "error",
     };
   },
 };
@@ -272,7 +272,7 @@ export const ValidationRules = {
 export const ToolSchemas = {
   Bash: {
     command: [
-      ValidationRules.required('command'),
+      ValidationRules.required("command"),
       ValidationRules.minLength(1),
       ValidationRules.maxLength(10_000),
     ],
@@ -282,39 +282,39 @@ export const ToolSchemas = {
 
   Write: {
     file_path: [
-      ValidationRules.required('file_path'),
+      ValidationRules.required("file_path"),
       ValidationRules.validFilePath(true),
     ],
     content: [
-      ValidationRules.required('content'),
+      ValidationRules.required("content"),
       ValidationRules.maxLength(1_000_000), // 1MB limit
     ],
   } satisfies ValidationSchema,
 
   Edit: {
     file_path: [
-      ValidationRules.required('file_path'),
+      ValidationRules.required("file_path"),
       ValidationRules.validFilePath(),
     ],
     old_string: [
-      ValidationRules.required('old_string'),
+      ValidationRules.required("old_string"),
       ValidationRules.minLength(1),
     ],
-    new_string: ValidationRules.required('new_string'),
+    new_string: ValidationRules.required("new_string"),
     replace_all: ValidationRules.boolean(),
   } satisfies ValidationSchema,
 
   MultiEdit: {
     file_path: [
-      ValidationRules.required('file_path'),
+      ValidationRules.required("file_path"),
       ValidationRules.validFilePath(),
     ],
-    edits: [ValidationRules.required('edits'), ValidationRules.array(1, 50)],
+    edits: [ValidationRules.required("edits"), ValidationRules.array(1, 50)],
   } satisfies ValidationSchema,
 
   Read: {
     file_path: [
-      ValidationRules.required('file_path'),
+      ValidationRules.required("file_path"),
       ValidationRules.validFilePath(),
     ],
     limit: ValidationRules.number(1, 10_000),
@@ -323,7 +323,7 @@ export const ToolSchemas = {
 
   Glob: {
     pattern: [
-      ValidationRules.required('pattern'),
+      ValidationRules.required("pattern"),
       ValidationRules.minLength(1),
     ],
     path: ValidationRules.validFilePath(),
@@ -331,7 +331,7 @@ export const ToolSchemas = {
 
   Grep: {
     pattern: [
-      ValidationRules.required('pattern'),
+      ValidationRules.required("pattern"),
       ValidationRules.minLength(1),
     ],
     path: ValidationRules.validFilePath(),
@@ -339,8 +339,8 @@ export const ToolSchemas = {
     output_mode: ValidationRules.custom(
       (value) =>
         !value ||
-        ['content', 'files_with_matches', 'count'].includes(value as string),
-      'Must be one of: content, files_with_matches, count'
+        ["content", "files_with_matches", "count"].includes(value as string),
+      "Must be one of: content, files_with_matches, count"
     ),
     head_limit: ValidationRules.number(1, 10_000),
     multiline: ValidationRules.boolean(),
@@ -360,7 +360,7 @@ export async function validateRule<T>(
 
     if (!isValid) {
       const message =
-        typeof rule.message === 'function'
+        typeof rule.message === "function"
           ? rule.message(value, context)
           : rule.message;
 
@@ -371,7 +371,7 @@ export async function validateRule<T>(
   } catch (error) {
     return {
       valid: false,
-      message: `Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      message: `Validation error: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
   }
 }
@@ -388,12 +388,12 @@ async function validateSingleField(
   rules: ValidationRule | ValidationRule[],
   context?: HookContext
 ): Promise<{
-  errors: ValidationResult['errors'];
-  warnings: ValidationResult['warnings'];
+  errors: ValidationResult["errors"];
+  warnings: ValidationResult["warnings"];
 }> {
   const fieldRules = Array.isArray(rules) ? rules : [rules];
-  const errors: ValidationResult['errors'] = [];
-  const warnings: ValidationResult['warnings'] = [];
+  const errors: ValidationResult["errors"] = [];
+  const warnings: ValidationResult["warnings"] = [];
 
   for (const rule of fieldRules) {
     const result = await validateRule(rule, fieldValue, context);
@@ -401,14 +401,14 @@ async function validateSingleField(
     if (!result.valid) {
       const error = createValidationError(fieldName, rule, result.message);
 
-      if (error.severity === 'warning') {
+      if (error.severity === "warning") {
         warnings.push(error);
       } else {
         errors.push(error);
       }
 
       // Early exit for required field errors
-      if (rule.required && error.severity === 'error') {
+      if (rule.required && error.severity === "error") {
         break;
       }
     }
@@ -424,12 +424,12 @@ function createValidationError(
   fieldName: string,
   rule: ValidationRule<unknown>,
   message?: string
-): ValidationResult['errors'][0] {
+): ValidationResult["errors"][0] {
   return {
     field: fieldName,
-    message: message || 'Validation failed',
+    message: message || "Validation failed",
     code: rule.name,
-    severity: rule.severity || 'error',
+    severity: rule.severity || "error",
   };
 }
 
@@ -441,8 +441,8 @@ export async function validateSchema(
   schema: ValidationSchema,
   context?: HookContext
 ): Promise<ValidationResult> {
-  const allErrors: ValidationResult['errors'] = [];
-  const allWarnings: ValidationResult['warnings'] = [];
+  const allErrors: ValidationResult["errors"] = [];
+  const allWarnings: ValidationResult["warnings"] = [];
 
   for (const [fieldName, rules] of Object.entries(schema)) {
     const fieldValue = data[fieldName];
@@ -482,7 +482,7 @@ export async function validateToolInput(
       warnings: [
         {
           message: `No validation schema available for tool: ${toolName}`,
-          code: 'no_schema',
+          code: "no_schema",
         },
       ],
     };
@@ -511,25 +511,25 @@ async function performToolSpecificValidation(
   context?: HookContext
 ): Promise<void> {
   switch (toolName) {
-    case 'Write':
+    case "Write":
       if (isWriteToolInput(input)) {
         await validateWriteOperation(input, result, context);
       }
       break;
 
-    case 'Edit':
+    case "Edit":
       if (isEditToolInput(input)) {
         await validateEditOperation(input, result, context);
       }
       break;
 
-    case 'MultiEdit':
+    case "MultiEdit":
       if (isMultiEditToolInput(input)) {
         await validateMultiEditOperation(input, result, context);
       }
       break;
 
-    case 'Bash':
+    case "Bash":
       if (isBashToolInput(input)) {
         await validateBashOperation(input, result, context);
       }
@@ -562,10 +562,10 @@ async function validateWriteOperation(
 
       if (stats.isDirectory()) {
         result.errors.push({
-          field: 'file_path',
-          message: 'Cannot write to a directory',
-          code: 'is_directory',
-          severity: 'error',
+          field: "file_path",
+          message: "Cannot write to a directory",
+          code: "is_directory",
+          severity: "error",
         });
       }
 
@@ -573,9 +573,9 @@ async function validateWriteOperation(
       if (stats.size > 100_000) {
         // 100KB
         result.warnings.push({
-          field: 'file_path',
-          message: 'Overwriting large file (>100KB)',
-          code: 'large_file_overwrite',
+          field: "file_path",
+          message: "Overwriting large file (>100KB)",
+          code: "large_file_overwrite",
         });
       }
     }
@@ -584,32 +584,32 @@ async function validateWriteOperation(
     const parentDir = dirname(fullPath);
     if (!existsSync(parentDir)) {
       result.errors.push({
-        field: 'file_path',
-        message: 'Parent directory does not exist',
-        code: 'parent_missing',
-        severity: 'error',
+        field: "file_path",
+        message: "Parent directory does not exist",
+        code: "parent_missing",
+        severity: "error",
       });
     }
 
     // Validate file extension matches content type
     const ext = extname(file_path);
-    if (ext === '.json') {
+    if (ext === ".json") {
       try {
         JSON.parse(content);
       } catch {
         result.warnings.push({
-          field: 'content',
-          message: 'Content is not valid JSON for .json file',
-          code: 'invalid_json',
+          field: "content",
+          message: "Content is not valid JSON for .json file",
+          code: "invalid_json",
         });
       }
     }
   } catch (error) {
     result.errors.push({
-      field: 'file_path',
-      message: `File validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      code: 'validation_error',
-      severity: 'error',
+      field: "file_path",
+      message: `File validation error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      code: "validation_error",
+      severity: "error",
     });
   }
 }
@@ -637,10 +637,10 @@ async function validateEditOperation(
 
     if (!existsSync(fullPath)) {
       result.errors.push({
-        field: 'file_path',
-        message: 'File does not exist',
-        code: 'file_not_found',
-        severity: 'error',
+        field: "file_path",
+        message: "File does not exist",
+        code: "file_not_found",
+        severity: "error",
       });
       return;
     }
@@ -649,10 +649,10 @@ async function validateEditOperation(
 
     if (stats.isDirectory()) {
       result.errors.push({
-        field: 'file_path',
-        message: 'Cannot edit a directory',
-        code: 'is_directory',
-        severity: 'error',
+        field: "file_path",
+        message: "Cannot edit a directory",
+        code: "is_directory",
+        severity: "error",
       });
       return;
     }
@@ -661,33 +661,33 @@ async function validateEditOperation(
     if (stats.size > 1_000_000) {
       // 1MB
       result.warnings.push({
-        field: 'file_path',
-        message: 'Editing large file (>1MB)',
-        code: 'large_file_edit',
+        field: "file_path",
+        message: "Editing large file (>1MB)",
+        code: "large_file_edit",
       });
     }
 
     // Validate strings are not identical (no-op)
     if (old_string === new_string) {
       result.warnings.push({
-        message: 'Old and new strings are identical - no change will occur',
-        code: 'no_change',
+        message: "Old and new strings are identical - no change will occur",
+        code: "no_change",
       });
     }
 
     // Check for potentially problematic replacements
     if (old_string.length > 10_000 || new_string.length > 10_000) {
       result.warnings.push({
-        message: 'Very large replacement strings detected',
-        code: 'large_replacement',
+        message: "Very large replacement strings detected",
+        code: "large_replacement",
       });
     }
   } catch (error) {
     result.errors.push({
-      field: 'file_path',
-      message: `Edit validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      code: 'validation_error',
-      severity: 'error',
+      field: "file_path",
+      message: `Edit validation error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      code: "validation_error",
+      severity: "error",
     });
   }
 }
@@ -718,9 +718,9 @@ async function validateMultiEditOperation(
     if (!edit.old_string) {
       result.errors.push({
         field: `edits[${i}].old_string`,
-        message: 'old_string is required for each edit',
-        code: 'required',
-        severity: 'error',
+        message: "old_string is required for each edit",
+        code: "required",
+        severity: "error",
       });
     }
 
@@ -732,7 +732,7 @@ async function validateMultiEditOperation(
       result.warnings.push({
         field: `edits[${i}]`,
         message: `Edit ${i}: old and new strings are identical`,
-        code: 'no_change',
+        code: "no_change",
       });
     }
   }
@@ -745,10 +745,10 @@ async function validateMultiEditOperation(
 
   if (duplicates.length > 0) {
     result.warnings.push({
-      field: 'edits',
+      field: "edits",
       message:
-        'Duplicate edit strings detected - may cause unexpected behavior',
-      code: 'duplicate_edits',
+        "Duplicate edit strings detected - may cause unexpected behavior",
+      code: "duplicate_edits",
     });
   }
 }
@@ -766,27 +766,27 @@ async function validateBashOperation(
   // Basic command validation
   if (command.trim() !== command) {
     result.warnings.push({
-      field: 'command',
-      message: 'Command has leading/trailing whitespace',
-      code: 'whitespace_command',
+      field: "command",
+      message: "Command has leading/trailing whitespace",
+      code: "whitespace_command",
     });
   }
 
   // Check for common command issues
-  if (command.includes('&&') && command.includes('||')) {
+  if (command.includes("&&") && command.includes("||")) {
     result.warnings.push({
-      field: 'command',
-      message: 'Command contains both && and || operators - verify precedence',
-      code: 'complex_logic',
+      field: "command",
+      message: "Command contains both && and || operators - verify precedence",
+      code: "complex_logic",
     });
   }
 
   // Validate timeout
   if (timeout !== undefined && timeout < 1000) {
     result.warnings.push({
-      field: 'timeout',
-      message: 'Very short timeout (<1s) may cause premature termination',
-      code: 'short_timeout',
+      field: "timeout",
+      message: "Very short timeout (<1s) may cause premature termination",
+      code: "short_timeout",
     });
   }
 }
@@ -818,34 +818,34 @@ export async function validateHookContext(
   // Validate required context fields
   if (!context.event) {
     result.errors.push({
-      field: 'event',
-      message: 'Hook event is required',
-      code: 'required',
-      severity: 'error',
+      field: "event",
+      message: "Hook event is required",
+      code: "required",
+      severity: "error",
     });
   }
 
   if (!context.sessionId) {
     result.errors.push({
-      field: 'sessionId',
-      message: 'Session ID is required',
-      code: 'required',
-      severity: 'error',
+      field: "sessionId",
+      message: "Session ID is required",
+      code: "required",
+      severity: "error",
     });
   }
 
   if (!context.cwd) {
     result.errors.push({
-      field: 'cwd',
-      message: 'Working directory is required',
-      code: 'required',
-      severity: 'error',
+      field: "cwd",
+      message: "Working directory is required",
+      code: "required",
+      severity: "error",
     });
   } else if (!existsSync(context.cwd)) {
     result.warnings.push({
-      field: 'cwd',
-      message: 'Working directory does not exist',
-      code: 'path_missing',
+      field: "cwd",
+      message: "Working directory does not exist",
+      code: "path_missing",
     });
   }
 

@@ -11,9 +11,9 @@ import {
   executionLogger,
   type HookExecutionContext,
   type PerformanceMetrics,
-} from '@carabiner/hooks-core';
-import type { HookProtocol } from '@carabiner/protocol';
-import type { HookContext, HookHandler, HookResult } from '@carabiner/types';
+} from "@carabiner/hooks-core";
+import type { HookProtocol } from "@carabiner/protocol";
+import type { HookContext, HookHandler, HookResult } from "@carabiner/types";
 
 // Local structural type to avoid name clashes with runtime exports
 type ExecutorLogger = ReturnType<typeof executionLogger.child>;
@@ -24,7 +24,7 @@ import {
   type MemoryUsage,
   type MetricsCollector,
   snapshotMemoryUsage,
-} from './metrics';
+} from "./metrics";
 import {
   ExecutionError,
   failure,
@@ -35,7 +35,7 @@ import {
   toHookResult,
   tryAsyncResult,
   ValidationError,
-} from './result';
+} from "./result";
 
 /**
  * Configuration options for hook execution
@@ -103,7 +103,7 @@ export class HookExecutor {
     this.protocol = protocol;
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.logger = executionLogger.child({
-      component: 'executor',
+      component: "executor",
       timeout: this.options.timeout,
       collectMetrics: this.options.collectMetrics,
     });
@@ -125,7 +125,7 @@ export class HookExecutor {
     let result: HookResult;
     let executionContext: HookExecutionContext | null = null;
 
-    this.logger.debug('Starting hook execution', {
+    this.logger.debug("Starting hook execution", {
       timeout: this.options.timeout,
       collectMetrics: this.options.collectMetrics,
     });
@@ -133,7 +133,7 @@ export class HookExecutor {
     try {
       // Phase 1: Input reading
       const inputResult = await this.readInput();
-      timer.markPhase('input');
+      timer.markPhase("input");
 
       if (!isSuccess(inputResult)) {
         result = toHookResult(inputResult);
@@ -143,7 +143,7 @@ export class HookExecutor {
 
       // Phase 2: Context parsing and validation
       const contextResult = await this.parseContext(inputResult.value);
-      timer.markPhase('parsing');
+      timer.markPhase("parsing");
 
       if (!isSuccess(contextResult)) {
         result = toHookResult(contextResult);
@@ -159,7 +159,7 @@ export class HookExecutor {
 
       // Phase 3: Handler execution with timeout
       const executionResult = await this.executeHandler(handler, context);
-      timer.markPhase('execution');
+      timer.markPhase("execution");
 
       if (!isSuccess(executionResult)) {
         result = toHookResult(executionResult);
@@ -192,7 +192,7 @@ export class HookExecutor {
       }
 
       const outputResult = await this.writeOutput(result);
-      timer.markPhase('output');
+      timer.markPhase("output");
 
       if (!isSuccess(outputResult)) {
         const errorResult = toHookResult(outputResult);
@@ -264,7 +264,7 @@ export class HookExecutor {
           reject(
             new TimeoutError(this.options.timeout, {
               event: context.event,
-              toolName: 'toolName' in context ? context.toolName : undefined,
+              toolName: "toolName" in context ? context.toolName : undefined,
             })
           );
         }, this.options.timeout);
@@ -306,8 +306,8 @@ export class HookExecutor {
       return {
         success: false,
         message:
-          error instanceof Error ? error.message : 'Handler execution failed',
-        block: context.event === 'PreToolUse', // Block pre-tool-use by default on errors
+          error instanceof Error ? error.message : "Handler execution failed",
+        block: context.event === "PreToolUse", // Block pre-tool-use by default on errors
       };
     }
   }
@@ -324,23 +324,23 @@ export class HookExecutor {
     if (result === null || result === undefined) {
       return {
         success: true,
-        message: 'Handler completed successfully',
+        message: "Handler completed successfully",
       };
     }
 
     // Handle primitive boolean results
-    if (typeof result === 'boolean') {
+    if (typeof result === "boolean") {
       return {
         success: result,
         message: result
-          ? 'Handler completed successfully'
-          : 'Handler returned false',
-        block: !result && context.event === 'PreToolUse',
+          ? "Handler completed successfully"
+          : "Handler returned false",
+        block: !result && context.event === "PreToolUse",
       };
     }
 
     // Handle string results
-    if (typeof result === 'string') {
+    if (typeof result === "string") {
       return {
         success: true,
         message: result,
@@ -348,15 +348,15 @@ export class HookExecutor {
     }
 
     // Handle object results
-    if (typeof result === 'object' && result !== null) {
+    if (typeof result === "object" && result !== null) {
       const obj = result as Partial<HookResult>;
 
       return {
         success: obj.success ?? true,
-        message: obj.message || 'Handler completed successfully',
+        message: obj.message || "Handler completed successfully",
         block:
           obj.block ??
-          (obj.success === false && context.event === 'PreToolUse'),
+          (obj.success === false && context.event === "PreToolUse"),
         data: obj.data,
       };
     }
@@ -405,37 +405,37 @@ export class HookExecutor {
   private validateResult(result: HookResult): Result<HookResult, Error> {
     try {
       // Check required fields
-      if (typeof result.success !== 'boolean') {
+      if (typeof result.success !== "boolean") {
         return failure(
-          new ValidationError('Result must have boolean success field')
+          new ValidationError("Result must have boolean success field")
         );
       }
 
       // Validate message field
-      if (result.message !== undefined && typeof result.message !== 'string') {
+      if (result.message !== undefined && typeof result.message !== "string") {
         return failure(
-          new ValidationError('Result message must be string if present')
+          new ValidationError("Result message must be string if present")
         );
       }
 
       // Validate block field
-      if (result.block !== undefined && typeof result.block !== 'boolean') {
+      if (result.block !== undefined && typeof result.block !== "boolean") {
         return failure(
-          new ValidationError('Result block must be boolean if present')
+          new ValidationError("Result block must be boolean if present")
         );
       }
 
       // Additional semantic validation
       if (!(result.success || result.message)) {
         return failure(
-          new ValidationError('Failed results should include an error message')
+          new ValidationError("Failed results should include an error message")
         );
       }
 
       return success(result);
     } catch (error) {
       return failure(
-        error instanceof Error ? error : new Error('Validation failed')
+        error instanceof Error ? error : new Error("Validation failed")
       );
     }
   }
@@ -449,7 +449,7 @@ export class HookExecutor {
       process.env;
     return {
       event: context.event,
-      toolName: 'toolName' in context ? context.toolName : undefined,
+      toolName: "toolName" in context ? context.toolName : undefined,
       executionId: `exec_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
       sessionId: env.CLAUDE_SESSION_ID,
       projectDir: env.CLAUDE_PROJECT_DIR,
@@ -530,7 +530,7 @@ export class HookExecutor {
   ): Promise<void> {
     // Try to write error to protocol
     if (result.message) {
-      const error = new ExecutionError(result.message, 'EXECUTION_FAILED');
+      const error = new ExecutionError(result.message, "EXECUTION_FAILED");
       await this.writeError(error);
     }
 
@@ -558,13 +558,13 @@ export class HookExecutor {
         memoryAfter
       );
       const error = new ExecutionError(
-        result.message || 'Hook execution failed',
-        'EXECUTION_FAILED'
+        result.message || "Hook execution failed",
+        "EXECUTION_FAILED"
       );
       this.logger.failExecution(executionContext, error, metrics);
     } else {
       // Log generic failure if no execution context
-      this.logger.error('Hook execution failed without context', {
+      this.logger.error("Hook execution failed without context", {
         message: result.message,
         success: result.success,
         block: result.block,

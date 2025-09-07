@@ -9,19 +9,19 @@ import type {
   ClaudeToolHookInput,
   HookContext,
   HookResult,
-} from '@carabiner/hooks-core';
+} from "@carabiner/hooks-core";
 import {
   createHookContext,
   HookResults,
   runClaudeHook,
-} from '@carabiner/hooks-core';
+} from "@carabiner/hooks-core";
 
 function hasCommand(input: unknown): input is { command: string } {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'command' in (input as Record<string, unknown>) &&
-    typeof (input as { command?: unknown }).command === 'string'
+    "command" in (input as Record<string, unknown>) &&
+    typeof (input as { command?: unknown }).command === "string"
   );
 }
 
@@ -33,11 +33,11 @@ function exampleHook(context: HookContext): HookResult {
   // if (context.matcher) { /* ... */ }
 
   // Access tool input with full type safety
-  if (context.event === 'PostToolUse' && context.toolResponse) {
+  if (context.event === "PostToolUse" && context.toolResponse) {
     // Example: inspect toolResponse here (no-op for demonstration)
   }
 
-  if (context.event === 'UserPromptSubmit' && context.userPrompt) {
+  if (context.event === "UserPromptSubmit" && context.userPrompt) {
     // No-op for demonstration
   }
 
@@ -47,7 +47,7 @@ function exampleHook(context: HookContext): HookResult {
       processedAt: timestamp,
     }),
     metadata: {
-      hookVersion: '0.2.0',
+      hookVersion: "0.2.0",
       timestamp,
     },
   };
@@ -59,17 +59,17 @@ function exampleHook(context: HookContext): HookResult {
 export function testNewRuntime(): void {
   // Example 1: PreToolUse hook input
   const preToolUseInput: ClaudeToolHookInput = {
-    session_id: 'test-session-123',
-    transcript_path: '/tmp/claude-transcript.md',
-    cwd: '/Users/developer/project',
-    hook_event_name: 'PreToolUse',
-    tool_name: 'Bash',
+    session_id: "test-session-123",
+    transcript_path: "/tmp/claude-transcript.md",
+    cwd: "/Users/developer/project",
+    hook_event_name: "PreToolUse",
+    tool_name: "Bash",
     tool_input: {
       command: 'echo "Hello from Claude Code!"',
-      description: 'Test command',
+      description: "Test command",
       timeout: 5000,
     },
-    matcher: 'bash-command',
+    matcher: "bash-command",
   };
 
   // Create context from Claude input
@@ -86,21 +86,21 @@ export function testNewRuntime(): void {
 function exampleHookScript(context: HookContext): HookResult {
   // This is what goes in actual hook scripts
   if (
-    context.event === 'PreToolUse' &&
-    context.toolName === 'Bash' &&
+    context.event === "PreToolUse" &&
+    context.toolName === "Bash" &&
     hasCommand(context.toolInput) &&
-    context.toolInput.command.includes('rm -rf')
+    context.toolInput.command.includes("rm -rf")
   ) {
-    return HookResults.block('Dangerous command blocked for safety');
+    return HookResults.block("Dangerous command blocked for safety");
   }
 
-  return HookResults.success('Hook validation passed');
+  return HookResults.success("Hook validation passed");
 }
 
 // Main execution
 if (import.meta.main) {
   // For testing, run our test function
-  if (process.argv.includes('--test')) {
+  if (process.argv.includes("--test")) {
     testNewRuntime().catch((error) => {
       process.stderr.write(`Error: ${error}\n`);
       process.exit(1);
@@ -108,8 +108,8 @@ if (import.meta.main) {
   } else {
     // For actual hook execution, use the new runtime
     void runClaudeHook(exampleHookScript, {
-      outputMode: 'exit-code',
-      logLevel: 'info',
+      outputMode: "exit-code",
+      logLevel: "info",
       timeout: 30_000,
     });
   }

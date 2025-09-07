@@ -3,22 +3,22 @@
  * @description Main security scanning orchestration
  */
 
-import { analyzeCommand } from '../analyzers/command-analyzer.js';
+import { analyzeCommand } from "../analyzers/command-analyzer.js";
 import {
   analyzeFileContent,
   exceedsSizeLimit,
-} from '../analyzers/file-analyzer.js';
-import type { AnalyzerToolInput } from '../analyzers/tool-analyzer.js';
+} from "../analyzers/file-analyzer.js";
+import type { AnalyzerToolInput } from "../analyzers/tool-analyzer.js";
 import {
   extractBashCommand,
   extractEditContent,
   extractMultiEditContent,
   extractWriteContent,
-} from '../analyzers/tool-analyzer.js';
-import { ruleRegistry } from '../rules/index.js';
-import type { ScanResult, SecurityRule } from '../types/index.js';
-import { SecurityScannerConfigManager } from './config.js';
-import { SecurityReporter } from './reporter.js';
+} from "../analyzers/tool-analyzer.js";
+import { ruleRegistry } from "../rules/index.js";
+import type { ScanResult, SecurityRule } from "../types/index.js";
+import { SecurityScannerConfigManager } from "./config.js";
+import { SecurityReporter } from "./reporter.js";
 
 /**
  * Main security scanner orchestrator
@@ -74,7 +74,7 @@ export class SecurityScanner {
         findings: [],
         scanned: false,
         skipped: true,
-        skipReason: 'File too large',
+        skipReason: "File too large",
       };
     }
 
@@ -95,11 +95,11 @@ export class SecurityScanner {
     toolName: string,
     toolInput: AnalyzerToolInput
   ): Promise<ScanResult> {
-    if (toolName === 'Bash') {
+    if (toolName === "Bash") {
       return await this.scanBashTool(toolInput);
     }
 
-    if (['Write', 'Edit', 'MultiEdit'].includes(toolName)) {
+    if (["Write", "Edit", "MultiEdit"].includes(toolName)) {
       return await this.scanFileTool(toolName, toolInput);
     }
 
@@ -153,14 +153,14 @@ export class SecurityScanner {
     filePath: string
   ): Promise<string> {
     switch (toolName) {
-      case 'Write':
+      case "Write":
         return extractWriteContent(toolInput);
-      case 'Edit':
+      case "Edit":
         return await extractEditContent(toolInput, filePath);
-      case 'MultiEdit':
+      case "MultiEdit":
         return await extractMultiEditContent(toolInput, filePath);
       default:
-        return '';
+        return "";
     }
   }
 
@@ -176,7 +176,7 @@ export class SecurityScanner {
     if (findings.length === 0) {
       return {
         success: true,
-        message: 'No security issues detected',
+        message: "No security issues detected",
         metadata: { scanned: true, findings: [] },
       };
     }

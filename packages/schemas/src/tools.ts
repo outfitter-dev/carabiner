@@ -16,17 +16,17 @@ import type {
   WebFetchToolInput,
   WebSearchToolInput,
   WriteToolInput,
-} from '@carabiner/types';
-import { z } from 'zod';
+} from "@carabiner/types";
+import { z } from "zod";
 
 /**
  * Common validation schemas
  */
-const nonEmptyString = z.string().min(1, 'Must not be empty');
+const nonEmptyString = z.string().min(1, "Must not be empty");
 const filePath = z
   .string()
   .min(1)
-  .regex(/^\//, 'Must be absolute path starting with /');
+  .regex(/^\//, "Must be absolute path starting with /");
 const positiveInteger = z.number().int().positive();
 const nonNegativeInteger = z.number().int().nonnegative();
 
@@ -70,7 +70,7 @@ export const multiEditInputSchema = z.object({
         replace_all: z.boolean().optional(),
       })
     )
-    .min(1, 'Must have at least one edit'),
+    .min(1, "Must have at least one edit"),
 }) satisfies z.ZodType<MultiEditInput>;
 
 /**
@@ -97,7 +97,7 @@ export const grepToolInputSchema = z.object({
   pattern: nonEmptyString,
   path: z.string().optional(),
   glob: z.string().optional(),
-  output_mode: z.enum(['content', 'files_with_matches', 'count']).optional(),
+  output_mode: z.enum(["content", "files_with_matches", "count"]).optional(),
   head_limit: positiveInteger.optional(),
   multiline: z.boolean().optional(),
 }) satisfies z.ZodType<GrepToolInput>;
@@ -118,18 +118,18 @@ export const todoWriteToolInputSchema = z.object({
     .array(
       z.object({
         content: nonEmptyString,
-        status: z.enum(['pending', 'in_progress', 'completed']),
+        status: z.enum(["pending", "in_progress", "completed"]),
         id: nonEmptyString,
       })
     )
-    .min(1, 'Must have at least one todo'),
+    .min(1, "Must have at least one todo"),
 }) satisfies z.ZodType<TodoWriteToolInput>;
 
 /**
  * WebFetch tool input schema
  */
 export const webFetchToolInputSchema = z.object({
-  url: z.string().url('Must be a valid URL'),
+  url: z.string().url("Must be a valid URL"),
   prompt: nonEmptyString,
 }) satisfies z.ZodType<WebFetchToolInput>;
 
@@ -146,11 +146,11 @@ export const webSearchToolInputSchema = z.object({
  * NotebookEdit tool input schema
  */
 export const notebookEditToolInputSchema = z.object({
-  notebook_path: filePath.regex(/\.ipynb$/, 'Must be a .ipynb file'),
+  notebook_path: filePath.regex(/\.ipynb$/, "Must be a .ipynb file"),
   new_source: z.string(),
   cell_id: z.string().optional(),
-  cell_type: z.enum(['code', 'markdown']).optional(),
-  edit_mode: z.enum(['replace', 'insert', 'delete']).optional(),
+  cell_type: z.enum(["code", "markdown"]).optional(),
+  edit_mode: z.enum(["replace", "insert", "delete"]).optional(),
 }) satisfies z.ZodType<NotebookEditToolInput>;
 
 /**
@@ -207,7 +207,7 @@ export function getToolInputSchema(toolName: keyof typeof toolInputSchemas) {
 export function validateToolInput<T extends keyof typeof toolInputSchemas>(
   toolName: T,
   input: unknown
-): (typeof toolInputSchemas)[T]['_output'] {
+): (typeof toolInputSchemas)[T]["_output"] {
   const schema = toolInputSchemas[toolName];
   return schema.parse(input);
 }
@@ -218,7 +218,7 @@ export function validateToolInput<T extends keyof typeof toolInputSchemas>(
 export function safeValidateToolInput<T extends keyof typeof toolInputSchemas>(
   toolName: T,
   input: unknown
-): z.SafeParseReturnType<unknown, (typeof toolInputSchemas)[T]['_output']> {
+): z.SafeParseReturnType<unknown, (typeof toolInputSchemas)[T]["_output"]> {
   const schema = toolInputSchemas[toolName];
   return schema.safeParse(input);
 }

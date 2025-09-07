@@ -12,13 +12,13 @@ import {
   coreLogger as newCoreLogger,
   registryLogger as newRegistryLogger,
   runtimeLogger as newRuntimeLogger,
-} from './logging';
-import type { HookEvent, ToolName } from './types';
+} from "./logging";
+import type { HookEvent, ToolName } from "./types";
 
 /**
  * Legacy base logger - now uses the new system
  */
-export const logger = createLogger('hooks-core-legacy');
+export const logger = createLogger("hooks-core-legacy");
 
 /**
  * Hook-specific logger factory (legacy)
@@ -52,12 +52,12 @@ export const builderLogger = newBuilderLogger;
  */
 export const HookLogger = {
   info(event: HookEvent, toolName: ToolName, message: string): void {
-    const logger = createLogger('hook-legacy');
+    const logger = createLogger("hook-legacy");
     logger.info(message, { event, toolName });
   },
 
   warn(event: HookEvent, toolName: ToolName, message: string): void {
-    const logger = createLogger('hook-legacy');
+    const logger = createLogger("hook-legacy");
     logger.warn(message, { event, toolName });
   },
 
@@ -67,7 +67,7 @@ export const HookLogger = {
     message: string,
     error?: Error
   ): void {
-    const logger = createLogger('hook-legacy');
+    const logger = createLogger("hook-legacy");
     if (error) {
       logger.error(error, message, { event, toolName });
     } else {
@@ -81,7 +81,7 @@ export const HookLogger = {
     message: string,
     data?: unknown
   ): void {
-    const logger = createLogger('hook-legacy');
+    const logger = createLogger("hook-legacy");
     logger.debug(message, { event, toolName, data });
   },
 };

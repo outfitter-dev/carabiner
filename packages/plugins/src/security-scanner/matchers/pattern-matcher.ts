@@ -9,8 +9,8 @@
 export function matchesPatterns(filePath: string, patterns: string[]): boolean {
   return patterns.some((pattern) => {
     const regex = new RegExp(
-      pattern.replace(/\*/g, '.*').replace(/\?/g, '.'),
-      'i'
+      pattern.replace(/\*/g, ".*").replace(/\?/g, "."),
+      "i"
     );
     return regex.test(filePath);
   });
@@ -21,7 +21,7 @@ export function matchesPatterns(filePath: string, patterns: string[]): boolean {
  */
 export function getFileExtension(filePath: string): string {
   const match = filePath.match(/\.([^.]+)$/);
-  return match?.[1]?.toLowerCase() || '';
+  return match?.[1]?.toLowerCase() || "";
 }
 
 /**

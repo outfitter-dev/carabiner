@@ -2,8 +2,8 @@
  * Tests for Claude Code hook input validation schemas
  */
 
-import { describe, expect, test } from 'bun:test';
-import { z } from 'zod';
+import { describe, expect, test } from "bun:test";
+import { z } from "zod";
 import {
   baseClaudeHookInputSchema,
   claudeHookInputSchema,
@@ -21,17 +21,17 @@ import {
   safeParseClaudeHookInput,
   toolNameSchema,
   validateAndCreateBrandedInput,
-} from '../input.js';
+} from "../input.js";
 
-describe('hookEventSchema', () => {
-  test('validates all hook events', () => {
+describe("hookEventSchema", () => {
+  test("validates all hook events", () => {
     const validEvents = [
-      'PreToolUse',
-      'PostToolUse',
-      'UserPromptSubmit',
-      'SessionStart',
-      'Stop',
-      'SubagentStop',
+      "PreToolUse",
+      "PostToolUse",
+      "UserPromptSubmit",
+      "SessionStart",
+      "Stop",
+      "SubagentStop",
     ];
 
     for (const event of validEvents) {
@@ -39,12 +39,12 @@ describe('hookEventSchema', () => {
     }
   });
 
-  test('rejects invalid hook events', () => {
+  test("rejects invalid hook events", () => {
     const invalidEvents = [
-      'preToolUse', // wrong case
-      'PRETOOLUSE', // wrong case
-      'InvalidEvent',
-      '',
+      "preToolUse", // wrong case
+      "PRETOOLUSE", // wrong case
+      "InvalidEvent",
+      "",
       123,
       null,
       undefined,
@@ -56,20 +56,20 @@ describe('hookEventSchema', () => {
   });
 });
 
-describe('toolNameSchema', () => {
-  test('validates known tool names', () => {
+describe("toolNameSchema", () => {
+  test("validates known tool names", () => {
     const knownTools = [
-      'Bash',
-      'Edit',
-      'Write',
-      'Read',
-      'Glob',
-      'Grep',
-      'LS',
-      'TodoWrite',
-      'WebFetch',
-      'WebSearch',
-      'NotebookEdit',
+      "Bash",
+      "Edit",
+      "Write",
+      "Read",
+      "Glob",
+      "Grep",
+      "LS",
+      "TodoWrite",
+      "WebFetch",
+      "WebSearch",
+      "NotebookEdit",
     ];
 
     for (const tool of knownTools) {
@@ -77,12 +77,12 @@ describe('toolNameSchema', () => {
     }
   });
 
-  test('validates custom tool names', () => {
+  test("validates custom tool names", () => {
     const customTools = [
-      'CustomTool',
-      'MySpecialTool',
-      'tool-with-dashes',
-      'tool_with_underscores',
+      "CustomTool",
+      "MySpecialTool",
+      "tool-with-dashes",
+      "tool_with_underscores",
     ];
 
     for (const tool of customTools) {
@@ -90,9 +90,9 @@ describe('toolNameSchema', () => {
     }
   });
 
-  test('rejects invalid tool names', () => {
+  test("rejects invalid tool names", () => {
     const invalidTools = [
-      '', // empty string
+      "", // empty string
       123,
       null,
       undefined,
@@ -106,63 +106,63 @@ describe('toolNameSchema', () => {
   });
 });
 
-describe('baseClaudeHookInputSchema', () => {
-  test('validates valid base input', () => {
+describe("baseClaudeHookInputSchema", () => {
+  test("validates valid base input", () => {
     const validInput = {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'PreToolUse',
-      matcher: 'security-check',
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "PreToolUse",
+      matcher: "security-check",
     };
 
     expect(() => baseClaudeHookInputSchema.parse(validInput)).not.toThrow();
   });
 
-  test('validates input without optional matcher', () => {
+  test("validates input without optional matcher", () => {
     const validInput = {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'SessionStart',
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "SessionStart",
     };
 
     expect(() => baseClaudeHookInputSchema.parse(validInput)).not.toThrow();
   });
 
-  test('rejects invalid base input', () => {
+  test("rejects invalid base input", () => {
     const invalidInputs = [
       {}, // missing all required fields
-      { session_id: 'test' }, // missing other required fields
+      { session_id: "test" }, // missing other required fields
       {
-        session_id: 'ab',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'PreToolUse',
+        session_id: "ab",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "PreToolUse",
       }, // session_id too short
       {
-        session_id: 'test-session',
-        transcript_path: 'relative.md',
-        cwd: '/project',
-        hook_event_name: 'PreToolUse',
+        session_id: "test-session",
+        transcript_path: "relative.md",
+        cwd: "/project",
+        hook_event_name: "PreToolUse",
       }, // non-absolute transcript_path
       {
-        session_id: 'test-session',
-        transcript_path: '/tmp/file.txt',
-        cwd: '/project',
-        hook_event_name: 'PreToolUse',
+        session_id: "test-session",
+        transcript_path: "/tmp/file.txt",
+        cwd: "/project",
+        hook_event_name: "PreToolUse",
       }, // transcript_path not .md
       {
-        session_id: 'test-session',
-        transcript_path: '/tmp/transcript.md',
-        cwd: 'relative',
-        hook_event_name: 'PreToolUse',
+        session_id: "test-session",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "relative",
+        hook_event_name: "PreToolUse",
       }, // non-absolute cwd
       {
-        session_id: 'test session',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'PreToolUse',
+        session_id: "test session",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "PreToolUse",
       }, // invalid session_id format
     ];
 
@@ -172,51 +172,51 @@ describe('baseClaudeHookInputSchema', () => {
   });
 });
 
-describe('claudeToolHookInputSchema', () => {
-  test('validates PreToolUse input', () => {
+describe("claudeToolHookInputSchema", () => {
+  test("validates PreToolUse input", () => {
     const validInput = {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
-      tool_input: { command: 'ls -la' },
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "ls -la" },
     };
 
     expect(() => claudeToolHookInputSchema.parse(validInput)).not.toThrow();
   });
 
-  test('validates PostToolUse input with response', () => {
+  test("validates PostToolUse input with response", () => {
     const validInput = {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'PostToolUse',
-      tool_name: 'Bash',
-      tool_input: { command: 'ls' },
-      tool_response: { success: true, output: 'file1.txt\nfile2.txt' },
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "PostToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "ls" },
+      tool_response: { success: true, output: "file1.txt\nfile2.txt" },
     };
 
     expect(() => claudeToolHookInputSchema.parse(validInput)).not.toThrow();
   });
 
-  test('rejects invalid tool hook input', () => {
+  test("rejects invalid tool hook input", () => {
     const invalidInputs = [
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'UserPromptSubmit', // wrong event type
-        tool_name: 'Bash',
-        tool_input: { command: 'ls' },
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "UserPromptSubmit", // wrong event type
+        tool_name: "Bash",
+        tool_input: { command: "ls" },
       },
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'PreToolUse',
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "PreToolUse",
         // missing tool_name
-        tool_input: { command: 'ls' },
+        tool_input: { command: "ls" },
       },
     ];
 
@@ -226,34 +226,34 @@ describe('claudeToolHookInputSchema', () => {
   });
 });
 
-describe('claudeUserPromptInputSchema', () => {
-  test('validates user prompt input', () => {
+describe("claudeUserPromptInputSchema", () => {
+  test("validates user prompt input", () => {
     const validInput = {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'UserPromptSubmit',
-      prompt: 'Explain TypeScript generics',
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "UserPromptSubmit",
+      prompt: "Explain TypeScript generics",
     };
 
     expect(() => claudeUserPromptInputSchema.parse(validInput)).not.toThrow();
   });
 
-  test('rejects invalid user prompt input', () => {
+  test("rejects invalid user prompt input", () => {
     const invalidInputs = [
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'PreToolUse', // wrong event type
-        prompt: 'Test prompt',
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "PreToolUse", // wrong event type
+        prompt: "Test prompt",
       },
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'UserPromptSubmit',
-        prompt: '', // empty prompt
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "", // empty prompt
       },
     ];
 
@@ -265,28 +265,28 @@ describe('claudeUserPromptInputSchema', () => {
   });
 });
 
-describe('claudeNotificationInputSchema', () => {
-  test('validates notification inputs', () => {
+describe("claudeNotificationInputSchema", () => {
+  test("validates notification inputs", () => {
     const validInputs = [
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'SessionStart',
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "SessionStart",
       },
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'Stop',
-        message: 'User requested stop',
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "Stop",
+        message: "User requested stop",
       },
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'SubagentStop',
-        message: 'Subagent completed',
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "SubagentStop",
+        message: "Subagent completed",
       },
     ];
 
@@ -295,13 +295,13 @@ describe('claudeNotificationInputSchema', () => {
     }
   });
 
-  test('rejects invalid notification input', () => {
+  test("rejects invalid notification input", () => {
     const invalidInputs = [
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'PreToolUse', // wrong event type
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "PreToolUse", // wrong event type
       },
     ];
 
@@ -313,29 +313,29 @@ describe('claudeNotificationInputSchema', () => {
   });
 });
 
-describe('claudeHookInputSchema (discriminated union)', () => {
-  test('validates all input types', () => {
+describe("claudeHookInputSchema (discriminated union)", () => {
+  test("validates all input types", () => {
     const validInputs = [
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Bash',
-        tool_input: { command: 'ls' },
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        tool_input: { command: "ls" },
       },
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'UserPromptSubmit',
-        prompt: 'Help me',
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "Help me",
       },
       {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'SessionStart',
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "SessionStart",
       },
     ];
 
@@ -344,27 +344,27 @@ describe('claudeHookInputSchema (discriminated union)', () => {
     }
   });
 
-  test('discriminates based on hook_event_name', () => {
+  test("discriminates based on hook_event_name", () => {
     const toolInput = {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
-      tool_input: { command: 'ls' },
-      prompt: 'This should be ignored', // extra field
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "ls" },
+      prompt: "This should be ignored", // extra field
     };
 
     const parsed = claudeHookInputSchema.parse(toolInput);
-    expect('tool_name' in parsed).toBe(true);
-    expect('prompt' in parsed).toBe(false); // extra field stripped
+    expect("tool_name" in parsed).toBe(true);
+    expect("prompt" in parsed).toBe(false); // extra field stripped
   });
 });
 
-describe('hookEnvironmentSchema', () => {
-  test('validates environment with CLAUDE_PROJECT_DIR', () => {
+describe("hookEnvironmentSchema", () => {
+  test("validates environment with CLAUDE_PROJECT_DIR", () => {
     const validEnvs = [
-      { CLAUDE_PROJECT_DIR: '/project' },
+      { CLAUDE_PROJECT_DIR: "/project" },
       {}, // empty environment allowed
     ];
 
@@ -374,16 +374,16 @@ describe('hookEnvironmentSchema', () => {
   });
 });
 
-describe('hookResultSchema', () => {
-  test('validates hook results', () => {
+describe("hookResultSchema", () => {
+  test("validates hook results", () => {
     const validResults = [
       { success: true },
-      { success: false, message: 'Error occurred' },
+      { success: false, message: "Error occurred" },
       {
         success: true,
-        message: 'Completed',
+        message: "Completed",
         data: { count: 5 },
-        metadata: { duration: 150, timestamp: '2024-01-01T00:00:00Z' },
+        metadata: { duration: 150, timestamp: "2024-01-01T00:00:00Z" },
       },
     ];
 
@@ -392,10 +392,10 @@ describe('hookResultSchema', () => {
     }
   });
 
-  test('requires success field', () => {
+  test("requires success field", () => {
     const invalidResults = [
       {}, // missing success
-      { message: 'Error' }, // missing success
+      { message: "Error" }, // missing success
     ];
 
     for (const result of invalidResults) {
@@ -404,15 +404,15 @@ describe('hookResultSchema', () => {
   });
 });
 
-describe('claudeHookOutputSchema', () => {
-  test('validates Claude hook outputs', () => {
+describe("claudeHookOutputSchema", () => {
+  test("validates Claude hook outputs", () => {
     const validOutputs = [
-      { action: 'continue' },
-      { action: 'block', message: 'Security violation' },
+      { action: "continue" },
+      { action: "block", message: "Security violation" },
       {
-        action: 'block',
-        message: 'Security check complete',
-        data: { level: 'high', timestamp: '2024-01-01T00:00:00Z' },
+        action: "block",
+        message: "Security check complete",
+        data: { level: "high", timestamp: "2024-01-01T00:00:00Z" },
       },
     ];
 
@@ -421,9 +421,9 @@ describe('claudeHookOutputSchema', () => {
     }
   });
 
-  test('rejects invalid actions', () => {
+  test("rejects invalid actions", () => {
     const invalidOutputs = [
-      { action: 'invalid' },
+      { action: "invalid" },
       {}, // missing action
     ];
 
@@ -433,8 +433,8 @@ describe('claudeHookOutputSchema', () => {
   });
 });
 
-describe('hookExecutionOptionsSchema', () => {
-  test('validates execution options', () => {
+describe("hookExecutionOptionsSchema", () => {
+  test("validates execution options", () => {
     const validOptions = [
       {},
       { timeout: 30_000 },
@@ -442,8 +442,8 @@ describe('hookExecutionOptionsSchema', () => {
         timeout: 60_000,
         throwOnError: true,
         captureOutput: false,
-        logLevel: 'debug',
-        outputMode: 'json',
+        logLevel: "debug",
+        outputMode: "json",
       },
     ];
 
@@ -452,11 +452,11 @@ describe('hookExecutionOptionsSchema', () => {
     }
   });
 
-  test('rejects invalid options', () => {
+  test("rejects invalid options", () => {
     const invalidOptions = [
       { timeout: -1 }, // negative timeout
-      { logLevel: 'invalid' }, // invalid log level
-      { outputMode: 'invalid' }, // invalid output mode
+      { logLevel: "invalid" }, // invalid log level
+      { outputMode: "invalid" }, // invalid output mode
     ];
 
     for (const options of invalidOptions) {
@@ -467,35 +467,35 @@ describe('hookExecutionOptionsSchema', () => {
   });
 });
 
-describe('parsing functions', () => {
-  describe('parseClaudeHookInput', () => {
-    test('parses valid input', () => {
+describe("parsing functions", () => {
+  describe("parseClaudeHookInput", () => {
+    test("parses valid input", () => {
       const input = {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Bash',
-        tool_input: { command: 'ls' },
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        tool_input: { command: "ls" },
       };
 
       const parsed = parseClaudeHookInput(input);
       expect(parsed).toEqual(input);
     });
 
-    test('throws on invalid input', () => {
-      const input = { invalid: 'data' };
+    test("throws on invalid input", () => {
+      const input = { invalid: "data" };
       expect(() => parseClaudeHookInput(input)).toThrow(z.ZodError);
     });
   });
 
-  describe('safeParseClaudeHookInput', () => {
-    test('returns success for valid input', () => {
+  describe("safeParseClaudeHookInput", () => {
+    test("returns success for valid input", () => {
       const input = {
-        session_id: 'test-session-123',
-        transcript_path: '/tmp/transcript.md',
-        cwd: '/project',
-        hook_event_name: 'SessionStart',
+        session_id: "test-session-123",
+        transcript_path: "/tmp/transcript.md",
+        cwd: "/project",
+        hook_event_name: "SessionStart",
       };
 
       const result = safeParseClaudeHookInput(input);
@@ -505,44 +505,44 @@ describe('parsing functions', () => {
       }
     });
 
-    test('returns error for invalid input', () => {
-      const input = { invalid: 'data' };
+    test("returns error for invalid input", () => {
+      const input = { invalid: "data" };
       const result = safeParseClaudeHookInput(input);
       expect(result.success).toBe(false);
     });
   });
 });
 
-describe('type guard functions', () => {
-  test('isValidClaudeHookInput', () => {
+describe("type guard functions", () => {
+  test("isValidClaudeHookInput", () => {
     const validInput = {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'SessionStart',
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "SessionStart",
     };
 
-    const invalidInput = { invalid: 'data' };
+    const invalidInput = { invalid: "data" };
 
     expect(isValidClaudeHookInput(validInput)).toBe(true);
     expect(isValidClaudeHookInput(invalidInput)).toBe(false);
   });
 
-  test('isValidToolHookInput', () => {
+  test("isValidToolHookInput", () => {
     const validInput = {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'PreToolUse',
-      tool_name: 'Bash',
-      tool_input: { command: 'ls' },
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "ls" },
     };
 
     const invalidInput = {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'SessionStart', // not a tool event
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "SessionStart", // not a tool event
     };
 
     expect(isValidToolHookInput(validInput)).toBe(true);
@@ -550,33 +550,33 @@ describe('type guard functions', () => {
   });
 });
 
-describe('validateAndCreateBrandedInput', () => {
-  test('validates and creates branded types', async () => {
+describe("validateAndCreateBrandedInput", () => {
+  test("validates and creates branded types", async () => {
     const input = {
-      session_id: 'test-session-123',
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'SessionStart',
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "SessionStart",
     };
 
     const result = await validateAndCreateBrandedInput(input);
 
-    expect(result.session_id).toBe('test-session-123');
-    expect(result.transcript_path).toBe('/tmp/transcript.md');
-    expect(result.cwd).toBe('/project');
+    expect(result.session_id).toBe("test-session-123");
+    expect(result.transcript_path).toBe("/tmp/transcript.md");
+    expect(result.cwd).toBe("/project");
 
     // Branded types should be present
-    expect(typeof result.sessionId).toBe('string');
-    expect(typeof result.transcriptPath).toBe('string');
-    expect(typeof result.cwd).toBe('string');
+    expect(typeof result.sessionId).toBe("string");
+    expect(typeof result.transcriptPath).toBe("string");
+    expect(typeof result.cwd).toBe("string");
   });
 
-  test('throws on invalid branded input', async () => {
+  test("throws on invalid branded input", async () => {
     const input = {
-      session_id: 'ab', // too short for SessionId
-      transcript_path: '/tmp/transcript.md',
-      cwd: '/project',
-      hook_event_name: 'SessionStart',
+      session_id: "ab", // too short for SessionId
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/project",
+      hook_event_name: "SessionStart",
     };
 
     await expect(validateAndCreateBrandedInput(input)).rejects.toThrow();

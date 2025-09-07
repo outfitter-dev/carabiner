@@ -2,45 +2,45 @@
  * Registry tests for hook registration and execution
  */
 
-import { beforeEach, describe, expect, test } from 'bun:test';
-import { HookRegistry } from '../registry';
-import { HookResults } from '../runtime';
-import type { HookContext, HookHandler, HookRegistryEntry } from '../types';
+import { beforeEach, describe, expect, test } from "bun:test";
+import { HookRegistry } from "../registry";
+import { HookResults } from "../runtime";
+import type { HookContext, HookHandler, HookRegistryEntry } from "../types";
 
-describe('HookRegistry', () => {
+describe("HookRegistry", () => {
   let registry: HookRegistry;
 
   beforeEach(() => {
     registry = new HookRegistry();
   });
 
-  describe('Hook Registration', () => {
-    test('should register a single hook', () => {
+  describe("Hook Registration", () => {
+    test("should register a single hook", () => {
       const hook: HookRegistryEntry = {
-        event: 'PreToolUse',
-        handler: async () => HookResults.success('test'),
+        event: "PreToolUse",
+        handler: async () => HookResults.success("test"),
         priority: 0,
         enabled: true,
       };
 
       registry.register(hook);
-      const hooks = registry.getHooks('PreToolUse');
+      const hooks = registry.getHooks("PreToolUse");
 
       expect(hooks).toHaveLength(1);
       expect(hooks[0]).toEqual(hook);
     });
 
-    test('should register multiple hooks', () => {
+    test("should register multiple hooks", () => {
       const hooks: HookRegistryEntry[] = [
         {
-          event: 'PreToolUse',
-          handler: async () => HookResults.success('hook1'),
+          event: "PreToolUse",
+          handler: async () => HookResults.success("hook1"),
           priority: 0,
           enabled: true,
         },
         {
-          event: 'PostToolUse',
-          handler: async () => HookResults.success('hook2'),
+          event: "PostToolUse",
+          handler: async () => HookResults.success("hook2"),
           priority: 0,
           enabled: true,
         },
@@ -48,28 +48,28 @@ describe('HookRegistry', () => {
 
       registry.registerAll(hooks);
 
-      expect(registry.getHooks('PreToolUse')).toHaveLength(1);
-      expect(registry.getHooks('PostToolUse')).toHaveLength(1);
+      expect(registry.getHooks("PreToolUse")).toHaveLength(1);
+      expect(registry.getHooks("PostToolUse")).toHaveLength(1);
     });
 
-    test('should order hooks by priority', () => {
+    test("should order hooks by priority", () => {
       const hook1: HookRegistryEntry = {
-        event: 'PreToolUse',
-        handler: async () => HookResults.success('hook1'),
+        event: "PreToolUse",
+        handler: async () => HookResults.success("hook1"),
         priority: 10,
         enabled: true,
       };
 
       const hook2: HookRegistryEntry = {
-        event: 'PreToolUse',
-        handler: async () => HookResults.success('hook2'),
+        event: "PreToolUse",
+        handler: async () => HookResults.success("hook2"),
         priority: 20,
         enabled: true,
       };
 
       const hook3: HookRegistryEntry = {
-        event: 'PreToolUse',
-        handler: async () => HookResults.success('hook3'),
+        event: "PreToolUse",
+        handler: async () => HookResults.success("hook3"),
         priority: 15,
         enabled: true,
       };
@@ -78,116 +78,116 @@ describe('HookRegistry', () => {
       registry.register(hook2);
       registry.register(hook3);
 
-      const hooks = registry.getHooks('PreToolUse');
+      const hooks = registry.getHooks("PreToolUse");
 
       expect(hooks[0].priority).toBe(20);
       expect(hooks[1].priority).toBe(15);
       expect(hooks[2].priority).toBe(10);
     });
 
-    test('should handle tool-specific hooks', () => {
+    test("should handle tool-specific hooks", () => {
       const universalHook: HookRegistryEntry = {
-        event: 'PreToolUse',
-        handler: async () => HookResults.success('universal'),
+        event: "PreToolUse",
+        handler: async () => HookResults.success("universal"),
         priority: 0,
         enabled: true,
       };
 
       const bashHook: HookRegistryEntry = {
-        event: 'PreToolUse',
-        handler: async () => HookResults.success('bash'),
+        event: "PreToolUse",
+        handler: async () => HookResults.success("bash"),
         priority: 0,
         enabled: true,
-        tool: 'Bash',
+        tool: "Bash",
       };
 
       registry.register(universalHook);
       registry.register(bashHook);
 
-      const allHooks = registry.getHooks('PreToolUse');
-      const bashHooks = registry.getHooks('PreToolUse', 'Bash');
+      const allHooks = registry.getHooks("PreToolUse");
+      const bashHooks = registry.getHooks("PreToolUse", "Bash");
 
       expect(allHooks).toHaveLength(1); // Only universal hook
       expect(bashHooks).toHaveLength(2); // Universal + Bash-specific
     });
   });
 
-  describe('Hook Unregistration', () => {
-    test('should unregister a hook', () => {
-      const handler: HookHandler = async () => HookResults.success('test');
+  describe("Hook Unregistration", () => {
+    test("should unregister a hook", () => {
+      const handler: HookHandler = async () => HookResults.success("test");
 
       const hook: HookRegistryEntry = {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         handler,
         priority: 0,
         enabled: true,
       };
 
       registry.register(hook);
-      expect(registry.getHooks('PreToolUse')).toHaveLength(1);
+      expect(registry.getHooks("PreToolUse")).toHaveLength(1);
 
-      registry.unregister('PreToolUse', handler);
-      expect(registry.getHooks('PreToolUse')).toHaveLength(0);
+      registry.unregister("PreToolUse", handler);
+      expect(registry.getHooks("PreToolUse")).toHaveLength(0);
     });
 
-    test('should clear all hooks for an event', () => {
+    test("should clear all hooks for an event", () => {
       const hooks: HookRegistryEntry[] = [
         {
-          event: 'PreToolUse',
-          handler: async () => HookResults.success('hook1'),
+          event: "PreToolUse",
+          handler: async () => HookResults.success("hook1"),
           priority: 0,
           enabled: true,
         },
         {
-          event: 'PreToolUse',
-          handler: async () => HookResults.success('hook2'),
+          event: "PreToolUse",
+          handler: async () => HookResults.success("hook2"),
           priority: 0,
           enabled: true,
         },
       ];
 
       registry.registerAll(hooks);
-      expect(registry.getHooks('PreToolUse')).toHaveLength(2);
+      expect(registry.getHooks("PreToolUse")).toHaveLength(2);
 
-      registry.clear('PreToolUse');
-      expect(registry.getHooks('PreToolUse')).toHaveLength(0);
+      registry.clear("PreToolUse");
+      expect(registry.getHooks("PreToolUse")).toHaveLength(0);
     });
 
-    test('should clear all hooks', () => {
+    test("should clear all hooks", () => {
       const hooks: HookRegistryEntry[] = [
         {
-          event: 'PreToolUse',
-          handler: async () => HookResults.success('hook1'),
+          event: "PreToolUse",
+          handler: async () => HookResults.success("hook1"),
           priority: 0,
           enabled: true,
         },
         {
-          event: 'PostToolUse',
-          handler: async () => HookResults.success('hook2'),
+          event: "PostToolUse",
+          handler: async () => HookResults.success("hook2"),
           priority: 0,
           enabled: true,
         },
       ];
 
       registry.registerAll(hooks);
-      expect(registry.getHooks('PreToolUse')).toHaveLength(1);
-      expect(registry.getHooks('PostToolUse')).toHaveLength(1);
+      expect(registry.getHooks("PreToolUse")).toHaveLength(1);
+      expect(registry.getHooks("PostToolUse")).toHaveLength(1);
 
       registry.clear();
-      expect(registry.getHooks('PreToolUse')).toHaveLength(0);
-      expect(registry.getHooks('PostToolUse')).toHaveLength(0);
+      expect(registry.getHooks("PreToolUse")).toHaveLength(0);
+      expect(registry.getHooks("PostToolUse")).toHaveLength(0);
     });
   });
 
-  describe('Hook Execution', () => {
-    test('should execute enabled hooks', async () => {
+  describe("Hook Execution", () => {
+    test("should execute enabled hooks", async () => {
       let executed = false;
 
       const hook: HookRegistryEntry = {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         handler: async () => {
           executed = true;
-          return HookResults.success('executed');
+          return HookResults.success("executed");
         },
         priority: 0,
         enabled: true,
@@ -196,12 +196,12 @@ describe('HookRegistry', () => {
       registry.register(hook);
 
       const context: HookContext = {
-        event: 'PreToolUse',
-        toolName: 'Bash',
-        sessionId: 'test',
-        transcriptPath: '/test',
-        cwd: '/test',
-        toolInput: { command: 'test' },
+        event: "PreToolUse",
+        toolName: "Bash",
+        sessionId: "test",
+        transcriptPath: "/test",
+        cwd: "/test",
+        toolInput: { command: "test" },
         environment: {},
         rawInput: {} as any,
       };
@@ -213,14 +213,14 @@ describe('HookRegistry', () => {
       expect(results[0].success).toBe(true);
     });
 
-    test('should not execute disabled hooks', async () => {
+    test("should not execute disabled hooks", async () => {
       let executed = false;
 
       const hook: HookRegistryEntry = {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         handler: async () => {
           executed = true;
-          return HookResults.success('executed');
+          return HookResults.success("executed");
         },
         priority: 0,
         enabled: false,
@@ -229,12 +229,12 @@ describe('HookRegistry', () => {
       registry.register(hook);
 
       const context: HookContext = {
-        event: 'PreToolUse',
-        toolName: 'Bash',
-        sessionId: 'test',
-        transcriptPath: '/test',
-        cwd: '/test',
-        toolInput: { command: 'test' },
+        event: "PreToolUse",
+        toolName: "Bash",
+        sessionId: "test",
+        transcriptPath: "/test",
+        cwd: "/test",
+        toolInput: { command: "test" },
         environment: {},
         rawInput: {} as any,
       };
@@ -245,24 +245,24 @@ describe('HookRegistry', () => {
       expect(results).toHaveLength(0);
     });
 
-    test('should execute hooks in priority order', async () => {
+    test("should execute hooks in priority order", async () => {
       const executionOrder: number[] = [];
 
       const hook1: HookRegistryEntry = {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         handler: async () => {
           executionOrder.push(1);
-          return HookResults.success('hook1');
+          return HookResults.success("hook1");
         },
         priority: 10,
         enabled: true,
       };
 
       const hook2: HookRegistryEntry = {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         handler: async () => {
           executionOrder.push(2);
-          return HookResults.success('hook2');
+          return HookResults.success("hook2");
         },
         priority: 20,
         enabled: true,
@@ -272,12 +272,12 @@ describe('HookRegistry', () => {
       registry.register(hook2);
 
       const context: HookContext = {
-        event: 'PreToolUse',
-        toolName: 'Bash',
-        sessionId: 'test',
-        transcriptPath: '/test',
-        cwd: '/test',
-        toolInput: { command: 'test' },
+        event: "PreToolUse",
+        toolName: "Bash",
+        sessionId: "test",
+        transcriptPath: "/test",
+        cwd: "/test",
+        toolInput: { command: "test" },
         environment: {},
         rawInput: {} as any,
       };
@@ -287,11 +287,11 @@ describe('HookRegistry', () => {
       expect(executionOrder).toEqual([2, 1]); // Higher priority executes first
     });
 
-    test('should handle hook errors gracefully', async () => {
+    test("should handle hook errors gracefully", async () => {
       const hook: HookRegistryEntry = {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         handler: async () => {
-          throw new Error('Hook error');
+          throw new Error("Hook error");
         },
         priority: 0,
         enabled: true,
@@ -300,12 +300,12 @@ describe('HookRegistry', () => {
       registry.register(hook);
 
       const context: HookContext = {
-        event: 'PreToolUse',
-        toolName: 'Bash',
-        sessionId: 'test',
-        transcriptPath: '/test',
-        cwd: '/test',
-        toolInput: { command: 'test' },
+        event: "PreToolUse",
+        toolName: "Bash",
+        sessionId: "test",
+        transcriptPath: "/test",
+        cwd: "/test",
+        toolInput: { command: "test" },
         environment: {},
         rawInput: {} as any,
       };
@@ -314,15 +314,15 @@ describe('HookRegistry', () => {
 
       expect(results).toHaveLength(1);
       expect(results[0].success).toBe(false);
-      expect(results[0].message).toContain('Hook error');
+      expect(results[0].message).toContain("Hook error");
     });
   });
 
-  describe('Statistics', () => {
-    test('should track execution stats', async () => {
+  describe("Statistics", () => {
+    test("should track execution stats", async () => {
       const hook: HookRegistryEntry = {
-        event: 'PreToolUse',
-        handler: async () => HookResults.success('test'),
+        event: "PreToolUse",
+        handler: async () => HookResults.success("test"),
         priority: 0,
         enabled: true,
       };
@@ -330,18 +330,18 @@ describe('HookRegistry', () => {
       registry.register(hook);
 
       const context: HookContext = {
-        event: 'PreToolUse',
-        toolName: 'Bash',
-        sessionId: 'test',
-        transcriptPath: '/test',
-        cwd: '/test',
-        toolInput: { command: 'test' },
+        event: "PreToolUse",
+        toolName: "Bash",
+        sessionId: "test",
+        transcriptPath: "/test",
+        cwd: "/test",
+        toolInput: { command: "test" },
         environment: {},
         rawInput: {} as any,
       };
 
       await registry.execute(context);
-      const stats = registry.getStats('PreToolUse');
+      const stats = registry.getStats("PreToolUse");
 
       expect(stats).toHaveLength(1);
       expect(stats[0].totalExecutions).toBe(1);
@@ -349,10 +349,10 @@ describe('HookRegistry', () => {
       expect(stats[0].failedExecutions).toBe(0);
     });
 
-    test('should reset stats', async () => {
+    test("should reset stats", async () => {
       const hook: HookRegistryEntry = {
-        event: 'PreToolUse',
-        handler: async () => HookResults.success('test'),
+        event: "PreToolUse",
+        handler: async () => HookResults.success("test"),
         priority: 0,
         enabled: true,
       };
@@ -360,18 +360,18 @@ describe('HookRegistry', () => {
       registry.register(hook);
 
       const context: HookContext = {
-        event: 'PreToolUse',
-        toolName: 'Bash',
-        sessionId: 'test',
-        transcriptPath: '/test',
-        cwd: '/test',
-        toolInput: { command: 'test' },
+        event: "PreToolUse",
+        toolName: "Bash",
+        sessionId: "test",
+        transcriptPath: "/test",
+        cwd: "/test",
+        toolInput: { command: "test" },
         environment: {},
         rawInput: {} as any,
       };
 
       await registry.execute(context);
-      const initialStats = registry.getStats('PreToolUse');
+      const initialStats = registry.getStats("PreToolUse");
       expect(initialStats).toHaveLength(1);
       expect(initialStats[0].totalExecutions).toBe(1);
 
@@ -384,40 +384,40 @@ describe('HookRegistry', () => {
     });
   });
 
-  describe('Tool-specific execution', () => {
-    test('should execute only relevant tool-specific hooks', async () => {
+  describe("Tool-specific execution", () => {
+    test("should execute only relevant tool-specific hooks", async () => {
       const results: string[] = [];
 
       const universalHook: HookRegistryEntry = {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         handler: async () => {
-          results.push('universal');
-          return HookResults.success('universal');
+          results.push("universal");
+          return HookResults.success("universal");
         },
         priority: 0,
         enabled: true,
       };
 
       const bashHook: HookRegistryEntry = {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         handler: async () => {
-          results.push('bash');
-          return HookResults.success('bash');
+          results.push("bash");
+          return HookResults.success("bash");
         },
         priority: 0,
         enabled: true,
-        tool: 'Bash',
+        tool: "Bash",
       };
 
       const writeHook: HookRegistryEntry = {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         handler: async () => {
-          results.push('write');
-          return HookResults.success('write');
+          results.push("write");
+          return HookResults.success("write");
         },
         priority: 0,
         enabled: true,
-        tool: 'Write',
+        tool: "Write",
       };
 
       registry.register(universalHook);
@@ -425,21 +425,21 @@ describe('HookRegistry', () => {
       registry.register(writeHook);
 
       const bashContext: HookContext = {
-        event: 'PreToolUse',
-        toolName: 'Bash',
-        sessionId: 'test',
-        transcriptPath: '/test',
-        cwd: '/test',
-        toolInput: { command: 'test' },
+        event: "PreToolUse",
+        toolName: "Bash",
+        sessionId: "test",
+        transcriptPath: "/test",
+        cwd: "/test",
+        toolInput: { command: "test" },
         environment: {},
         rawInput: {} as any,
       };
 
       await registry.execute(bashContext);
 
-      expect(results).toContain('universal');
-      expect(results).toContain('bash');
-      expect(results).not.toContain('write');
+      expect(results).toContain("universal");
+      expect(results).toContain("bash");
+      expect(results).not.toContain("write");
     });
   });
 });

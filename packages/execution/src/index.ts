@@ -45,7 +45,7 @@ export {
   type ExecutionOptions,
   executeHook,
   HookExecutor,
-} from './executor';
+} from "./executor";
 // Metrics and performance monitoring
 export {
   type AggregateMetrics,
@@ -59,7 +59,7 @@ export {
   MetricsCollector,
   setMetricsEnabled,
   snapshotMemoryUsage,
-} from './metrics';
+} from "./metrics";
 
 // Result pattern for error handling
 export {
@@ -84,7 +84,7 @@ export {
   unwrapOr,
   unwrapResult,
   ValidationError,
-} from './result';
+} from "./result";
 // Simple runner utilities
 export {
   clearExecutionMetrics,
@@ -99,19 +99,19 @@ export {
   runHook,
   runTestHook,
   runTestHooks,
-} from './runner';
+} from "./runner";
 
 /**
  * Version information
  */
-export const VERSION = '1.0.0';
+export const VERSION = "1.0.0";
 
 /**
  * Package metadata
  */
 export const PACKAGE_INFO = {
-  name: '@carabiner/execution',
+  name: "@carabiner/execution",
   version: VERSION,
-  description: 'Simplified execution engine for Claude Code hooks',
-  repository: 'https://github.com/outfitter-dev/grapple',
+  description: "Simplified execution engine for Claude Code hooks",
+  repository: "https://github.com/outfitter-dev/grapple",
 } as const;

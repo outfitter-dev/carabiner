@@ -9,7 +9,7 @@ import type {
   LoggingConfig,
   LogLevel,
   SanitizationOptions,
-} from './types';
+} from "./types";
 
 /**
  * Determine environment from NODE_ENV and other indicators
@@ -18,30 +18,30 @@ export function detectEnvironment(): Environment {
   const nodeEnv = Bun.env.NODE_ENV?.toLowerCase();
 
   // Explicit test environment
-  if (nodeEnv === 'test' || Bun.env.BUN_ENV === 'test') {
-    return 'test';
+  if (nodeEnv === "test" || Bun.env.BUN_ENV === "test") {
+    return "test";
   }
 
   // Production indicators
   if (
-    nodeEnv === 'production' ||
-    Bun.env.NODE_ENV === 'prod' ||
-    Bun.env.BUN_ENV === 'production'
+    nodeEnv === "production" ||
+    Bun.env.NODE_ENV === "prod" ||
+    Bun.env.BUN_ENV === "production"
   ) {
-    return 'production';
+    return "production";
   }
 
   // Binary distribution indicator (only if not in test environment)
   if (!(Bun.env.DEBUG || nodeEnv || Bun.env.BUN_ENV)) {
     // Check if we're running from a compiled binary or in a test environment
     // In tests, we should default to development unless explicitly set
-    if (typeof Bun !== 'undefined' && Bun.main && !Bun.main.includes('test')) {
-      return 'production';
+    if (typeof Bun !== "undefined" && Bun.main && !Bun.main.includes("test")) {
+      return "production";
     }
   }
 
   // Default to development
-  return 'development';
+  return "development";
 }
 
 /**
@@ -49,13 +49,13 @@ export function detectEnvironment(): Environment {
  */
 export function detectLogLevel(): LogLevel {
   // CLI debug flag takes precedence
-  if (Bun.env.DEBUG === 'true' || process.argv.includes('--debug')) {
-    return 'debug';
+  if (Bun.env.DEBUG === "true" || process.argv.includes("--debug")) {
+    return "debug";
   }
 
   // CLI verbose flag
-  if (process.argv.includes('--verbose')) {
-    return 'info';
+  if (process.argv.includes("--verbose")) {
+    return "info";
   }
 
   // Explicit LOG_LEVEL environment variable
@@ -67,12 +67,12 @@ export function detectLogLevel(): LogLevel {
   // Environment-based defaults
   const env = detectEnvironment();
   switch (env) {
-    case 'test':
-      return 'error'; // Minimal logging in tests
-    case 'production':
-      return 'info'; // Info level for production observability
+    case "test":
+      return "error"; // Minimal logging in tests
+    case "production":
+      return "info"; // Info level for production observability
     default:
-      return 'debug'; // Verbose development logging
+      return "debug"; // Verbose development logging
   }
 }
 
@@ -80,7 +80,7 @@ export function detectLogLevel(): LogLevel {
  * Check if a string is a valid log level
  */
 function isValidLogLevel(level: string): boolean {
-  return ['error', 'warn', 'info', 'debug', 'trace'].includes(level);
+  return ["error", "warn", "info", "debug", "trace"].includes(level);
 }
 
 /**
@@ -96,15 +96,15 @@ export function createLoggingConfig(service: string): LoggingConfig {
     service,
     // Pretty printing only in development
     pretty:
-      environment === 'development' && !process.argv.includes('--no-pretty'),
+      environment === "development" && !process.argv.includes("--no-pretty"),
     // Console output enabled unless explicitly disabled
-    console: !process.argv.includes('--no-console'),
+    console: !process.argv.includes("--no-console"),
     // Silent mode for tests unless explicitly enabled
     silent:
-      environment === 'test' && !process.argv.includes('--enable-test-logs'),
+      environment === "test" && !process.argv.includes("--enable-test-logs"),
     // Additional context from environment
     context: {
-      version: Bun.env.CLI_VERSION || 'development',
+      version: Bun.env.CLI_VERSION || "development",
       nodeVersion: process.version,
       platform: process.platform,
       arch: process.arch,
@@ -118,45 +118,45 @@ export function createLoggingConfig(service: string): LoggingConfig {
 export const DEFAULT_SANITIZATION: SanitizationOptions = {
   // Fields to completely remove from logs
   removeFields: [
-    'password',
-    'passwd',
-    'secret',
-    'token',
-    'key',
-    'authorization',
-    'auth',
-    'cookie',
-    'session',
-    'credentials',
-    'credential',
-    'apiKey',
-    'api_key',
-    'accessToken',
-    'access_token',
-    'refreshToken',
-    'refresh_token',
-    'privateKey',
-    'private_key',
-    'ssn',
-    'social_security_number',
-    'credit_card',
-    'creditCard',
-    'cvv',
-    'pin',
+    "password",
+    "passwd",
+    "secret",
+    "token",
+    "key",
+    "authorization",
+    "auth",
+    "cookie",
+    "session",
+    "credentials",
+    "credential",
+    "apiKey",
+    "api_key",
+    "accessToken",
+    "access_token",
+    "refreshToken",
+    "refresh_token",
+    "privateKey",
+    "private_key",
+    "ssn",
+    "social_security_number",
+    "credit_card",
+    "creditCard",
+    "cvv",
+    "pin",
   ],
 
   // Fields to mask with [REDACTED]
   maskFields: [
-    'email', // Partially mask emails
-    'phone',
-    'phoneNumber',
-    'phone_number',
-    'ipAddress',
-    'ip_address',
-    'userAgent',
-    'user_agent',
-    'userId', // Hash user IDs
-    'user_id',
+    "email", // Partially mask emails
+    "phone",
+    "phoneNumber",
+    "phone_number",
+    "ipAddress",
+    "ip_address",
+    "userAgent",
+    "user_agent",
+    "userId", // Hash user IDs
+    "user_id",
   ],
 
   // Patterns to search for and mask in string values
@@ -190,8 +190,8 @@ export const DEFAULT_SANITIZATION: SanitizationOptions = {
 export function createProductionConfig(service: string): LoggingConfig {
   return {
     ...createLoggingConfig(service),
-    level: 'info',
-    environment: 'production',
+    level: "info",
+    environment: "production",
     pretty: false, // No pretty printing in production
     console: true,
     silent: false,
@@ -204,8 +204,8 @@ export function createProductionConfig(service: string): LoggingConfig {
 export function createDevelopmentConfig(service: string): LoggingConfig {
   return {
     ...createLoggingConfig(service),
-    level: 'debug',
-    environment: 'development',
+    level: "debug",
+    environment: "development",
     pretty: true, // Enable pretty printing
     console: true,
     silent: false,
@@ -218,8 +218,8 @@ export function createDevelopmentConfig(service: string): LoggingConfig {
 export function createTestConfig(service: string): LoggingConfig {
   return {
     ...createLoggingConfig(service),
-    level: 'error',
-    environment: 'test',
+    level: "error",
+    environment: "test",
     pretty: false,
     console: false, // Disable console in tests by default
     silent: true, // Silent by default in tests

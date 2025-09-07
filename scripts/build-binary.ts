@@ -5,12 +5,12 @@
  * Builds the claude-hooks CLI as a standalone binary
  */
 
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { $ } from 'bun';
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { $ } from "bun";
 
 type BuildOptions = {
-  target?: 'current' | 'linux' | 'macos' | 'windows';
+  target?: "current" | "linux" | "macos" | "windows";
   minify?: boolean;
   sourcemap?: boolean;
   verbose?: boolean;
@@ -19,7 +19,7 @@ type BuildOptions = {
 
 async function buildBinary(options: BuildOptions = {}) {
   const {
-    target = 'current',
+    target = "current",
     minify = true,
     sourcemap = true,
     verbose = false,
@@ -28,8 +28,8 @@ async function buildBinary(options: BuildOptions = {}) {
 
   // Verify we're in the correct directory
   const rootDir = process.cwd();
-  const cliDir = join(rootDir, 'packages/hooks-cli');
-  const entryPoint = join(cliDir, 'src/cli.ts');
+  const cliDir = join(rootDir, "packages/hooks-cli");
+  const entryPoint = join(cliDir, "src/cli.ts");
 
   if (!existsSync(entryPoint)) {
     process.exit(1);
@@ -41,27 +41,27 @@ async function buildBinary(options: BuildOptions = {}) {
     binaryName = output;
   } else {
     switch (target) {
-      case 'linux':
-        binaryName = 'claude-hooks-linux';
+      case "linux":
+        binaryName = "claude-hooks-linux";
         break;
-      case 'macos':
+      case "macos":
         binaryName =
-          process.arch === 'arm64'
-            ? 'claude-hooks-macos-arm64'
-            : 'claude-hooks-macos-x64';
+          process.arch === "arm64"
+            ? "claude-hooks-macos-arm64"
+            : "claude-hooks-macos-x64";
         break;
-      case 'windows':
-        binaryName = 'claude-hooks-windows.exe';
+      case "windows":
+        binaryName = "claude-hooks-windows.exe";
         break;
       default: {
         const platform =
-          process.platform === 'win32'
-            ? 'windows'
-            : process.platform === 'darwin'
-              ? 'macos'
-              : 'linux';
-        const arch = process.arch === 'arm64' ? '-arm64' : '-x64';
-        const ext = process.platform === 'win32' ? '.exe' : '';
+          process.platform === "win32"
+            ? "windows"
+            : process.platform === "darwin"
+              ? "macos"
+              : "linux";
+        const arch = process.arch === "arm64" ? "-arm64" : "-x64";
+        const ext = process.platform === "win32" ? ".exe" : "";
         binaryName = `claude-hooks-${platform}${arch}${ext}`;
       }
     }
@@ -74,41 +74,41 @@ async function buildBinary(options: BuildOptions = {}) {
 
     // Read version from CLI package.json
     const cliPackageJson = JSON.parse(
-      await Bun.file(join(cliDir, 'package.json')).text()
+      await Bun.file(join(cliDir, "package.json")).text()
     );
     const version = cliPackageJson.version;
 
     // Construct build command
     const buildArgs = [
-      'build',
+      "build",
       entryPoint,
-      '--compile',
-      '--target=bun',
+      "--compile",
+      "--target=bun",
       `--outfile=${outputPath}`,
-      '--define',
+      "--define",
       'process.env.NODE_ENV="production"',
-      '--define',
+      "--define",
       `process.env.CLI_VERSION="${version}"`,
-      '--external',
-      'fsevents',
+      "--external",
+      "fsevents",
     ];
 
     if (minify) {
-      buildArgs.push('--minify');
+      buildArgs.push("--minify");
     }
 
     if (sourcemap) {
-      buildArgs.push('--sourcemap=external');
+      buildArgs.push("--sourcemap=external");
     }
 
-    const _buildCommand = buildArgs.join(' ');
+    const _buildCommand = buildArgs.join(" ");
     if (verbose) {
     }
 
     await $`bun ${buildArgs}`.quiet(!verbose);
 
     // Make executable on Unix systems
-    if (process.platform !== 'win32') {
+    if (process.platform !== "win32") {
       await $`chmod +x ${outputPath}`;
     }
 
@@ -156,22 +156,22 @@ function parseArgs(): BuildOptions {
     const arg = args[i];
 
     switch (arg) {
-      case '--target':
-        options.target = args[++i] as BuildOptions['target'];
+      case "--target":
+        options.target = args[++i] as BuildOptions["target"];
         break;
-      case '--no-minify':
+      case "--no-minify":
         options.minify = false;
         break;
-      case '--no-sourcemap':
+      case "--no-sourcemap":
         options.sourcemap = false;
         break;
-      case '--verbose':
+      case "--verbose":
         options.verbose = true;
         break;
-      case '--output':
+      case "--output":
         options.output = args[++i];
         break;
-      case '--help':
+      case "--help":
         process.exit(0);
         break;
     }

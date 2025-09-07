@@ -2,12 +2,12 @@
  * Config command - Manages hook configuration
  */
 
-import { existsSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
-import { isAbsolute, join } from 'node:path';
-import { ConfigManager } from '@carabiner/hooks-config';
-import type { HookEvent, ToolName } from '@carabiner/hooks-core';
-import { BaseCommand, type CliConfig } from '../types';
+import { existsSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
+import { isAbsolute, join } from "node:path";
+import { ConfigManager } from "@carabiner/hooks-config";
+import type { HookEvent, ToolName } from "@carabiner/hooks-core";
+import { BaseCommand, type CliConfig } from "../types";
 
 // Regex constants for better command parsing
 // Handles: bun run script, bun run -S script, quoted paths with spaces, etc.
@@ -26,20 +26,20 @@ function validateCommandSafety(command: string): boolean {
 }
 
 export class ConfigCommand extends BaseCommand {
-  name = 'config';
-  description = 'Manage hook configuration';
-  usage = 'config <action> [options]';
+  name = "config";
+  description = "Manage hook configuration";
+  usage = "config <action> [options]";
   options = {
-    '--output, -o': 'Output file path',
-    '--format, -f': 'Output format (json, js, ts)',
-    '--help, -h': 'Show help',
+    "--output, -o": "Output file path",
+    "--format, -f": "Output format (json, js, ts)",
+    "--help, -h": "Show help",
   };
 
   async execute(args: string[], config: CliConfig): Promise<void> {
     const { values, positionals } = this.parseArgs(args, {
-      help: { type: 'boolean', short: 'h' },
-      output: { type: 'string', short: 'o' },
-      format: { type: 'string', short: 'f' },
+      help: { type: "boolean", short: "h" },
+      output: { type: "string", short: "o" },
+      format: { type: "string", short: "f" },
     });
 
     if (values.help) {
@@ -50,35 +50,35 @@ export class ConfigCommand extends BaseCommand {
 
     const [action] = positionals;
     if (!action) {
-      throw new Error('Action is required. Usage: config <action>');
+      throw new Error("Action is required. Usage: config <action>");
     }
 
     const configManager = new ConfigManager(config.workspacePath);
 
     try {
       switch (action.toLowerCase()) {
-        case 'show':
+        case "show":
           await this.showConfig(configManager, config.verbose);
           break;
-        case 'validate':
+        case "validate":
           await this.validateConfig(configManager);
           break;
-        case 'generate-settings':
+        case "generate-settings":
           await this.generateClaudeSettings(
             configManager,
             this.getStringValue(values.output)
           );
           break;
-        case 'enable':
+        case "enable":
           await this.enableHook(configManager, positionals.slice(1));
           break;
-        case 'disable':
+        case "disable":
           await this.disableHook(configManager, positionals.slice(1));
           break;
-        case 'set-timeout':
+        case "set-timeout":
           await this.setTimeout(configManager, positionals.slice(1));
           break;
-        case 'export':
+        case "export":
           await this.exportConfig(
             configManager,
             this.getStringValue(values.output),
@@ -147,7 +147,7 @@ Examples:
   private showConfigExtends(config: Record<string, unknown>): void {
     const configExtends = config.extends;
     if (Array.isArray(configExtends) && configExtends.length > 0) {
-      process.stdout.write(`Extends: ${configExtends.join(', ')}\n`);
+      process.stdout.write(`Extends: ${configExtends.join(", ")}\n`);
     }
   }
 
@@ -163,11 +163,11 @@ Examples:
         continue;
       }
 
-      if (eventConfig && typeof eventConfig === 'object') {
-        if ('command' in eventConfig) {
+      if (eventConfig && typeof eventConfig === "object") {
+        if ("command" in eventConfig) {
           this.displayHookConfig(
             eventConfig as Record<string, unknown>,
-            '  ',
+            "  ",
             verbose
           );
         } else {
@@ -188,10 +188,10 @@ Examples:
     verbose: boolean
   ): void {
     for (const [_tool, toolConfig] of Object.entries(eventConfig)) {
-      if (toolConfig && typeof toolConfig === 'object') {
+      if (toolConfig && typeof toolConfig === "object") {
         this.displayHookConfig(
           toolConfig as Record<string, unknown>,
-          '    ',
+          "    ",
           verbose
         );
       }
@@ -203,8 +203,8 @@ Examples:
    */
   private shouldSkipConfigEntry(event: string): boolean {
     return (
-      event.startsWith('$') ||
-      ['extends', 'templates', 'variables', 'environments'].includes(event)
+      event.startsWith("$") ||
+      ["extends", "templates", "variables", "environments"].includes(event)
     );
   }
 
@@ -215,13 +215,13 @@ Examples:
     const variables = config.variables;
     if (
       variables &&
-      typeof variables === 'object' &&
+      typeof variables === "object" &&
       Object.keys(variables).length > 0
     ) {
-      process.stdout.write('Variables:\n');
+      process.stdout.write("Variables:\n");
       for (const [key, value] of Object.entries(variables)) {
         const rendered =
-          value !== null && typeof value === 'object'
+          value !== null && typeof value === "object"
             ? JSON.stringify(value)
             : String(value);
         process.stdout.write(`  ${key}: ${rendered}\n`);
@@ -234,8 +234,8 @@ Examples:
    */
   private showEnvironmentOverrides(config: Record<string, unknown>): void {
     const environments = config.environments;
-    if (environments && typeof environments === 'object') {
-      process.stdout.write('Environment overrides:\n');
+    if (environments && typeof environments === "object") {
+      process.stdout.write("Environment overrides:\n");
       for (const [env, overrides] of Object.entries(environments)) {
         process.stdout.write(`  ${env}: ${JSON.stringify(overrides)}\n`);
       }
@@ -250,17 +250,17 @@ Examples:
     indent: string,
     verbose: boolean
   ): void {
-    const status = config.enabled !== false ? '✅ enabled' : '❌ disabled';
+    const status = config.enabled !== false ? "✅ enabled" : "❌ disabled";
     process.stdout.write(`${indent}Status: ${status}\n`);
 
     if (verbose) {
       if (config.detached !== undefined) {
         process.stdout.write(
-          `${indent}Detached: ${config.detached ? 'yes' : 'no'}\n`
+          `${indent}Detached: ${config.detached ? "yes" : "no"}\n`
         );
       }
       const timeout = (config as Record<string, unknown>).timeout;
-      if (typeof timeout === 'number') {
+      if (typeof timeout === "number") {
         process.stdout.write(`${indent}Timeout: ${timeout}ms\n`);
       }
     }
@@ -279,12 +279,12 @@ Examples:
 
       if (warnings > 0) {
         process.stderr.write(
-          `⚠️  Configuration validation completed with ${warnings} warning${warnings > 1 ? 's' : ''}\n`
+          `⚠️  Configuration validation completed with ${warnings} warning${warnings > 1 ? "s" : ""}\n`
         );
         process.exit(2); // Exit with code 2 for warnings (distinct from errors)
       } else {
         process.stdout.write(
-          '✅ Configuration validation passed with no warnings\n'
+          "✅ Configuration validation passed with no warnings\n"
         );
       }
     } catch (error) {
@@ -311,7 +311,7 @@ Examples:
         continue;
       }
 
-      if (eventConfig && typeof eventConfig === 'object') {
+      if (eventConfig && typeof eventConfig === "object") {
         warnings += this.validateEventConfig(
           eventConfig as Record<string, unknown>,
           event,
@@ -333,11 +333,11 @@ Examples:
   ): number {
     let warnings = 0;
 
-    if ('command' in eventConfig) {
+    if ("command" in eventConfig) {
       warnings += this.checkHookFile(
         eventConfig as Record<string, unknown>,
         event,
-        '',
+        "",
         workspacePath
       );
     } else {
@@ -364,8 +364,8 @@ Examples:
     for (const [tool, toolConfig] of Object.entries(eventConfig)) {
       if (
         toolConfig &&
-        typeof toolConfig === 'object' &&
-        'command' in toolConfig
+        typeof toolConfig === "object" &&
+        "command" in toolConfig
       ) {
         warnings += this.checkHookFile(
           toolConfig as Record<string, unknown>,
@@ -392,7 +392,7 @@ Examples:
 
     // Extract file path from bun run command
     const command = hookConfig.command;
-    if (typeof command !== 'string') {
+    if (typeof command !== "string") {
       return 0;
     }
 
@@ -415,7 +415,7 @@ Examples:
       if (!existsSync(resolved)) {
         return 1;
       }
-    } else if (command.includes('bun run')) {
+    } else if (command.includes("bun run")) {
       // Log warning for unparseable bun run commands
       process.stderr.write(
         `⚠️  Warning: Could not parse bun run command: ${command}\n`
@@ -437,7 +437,7 @@ Examples:
 
     const outputFile =
       outputPath ||
-      join(configManager.getWorkspacePath(), '.claude', 'settings.json');
+      join(configManager.getWorkspacePath(), ".claude", "settings.json");
 
     await writeFile(outputFile, JSON.stringify(settings, null, 2));
   }
@@ -451,15 +451,15 @@ Examples:
   ): Promise<void> {
     if (args.length === 0) {
       throw new Error(
-        'Hook identifier required. Format: <event> or <event>:<tool>'
+        "Hook identifier required. Format: <event> or <event>:<tool>"
       );
     }
 
     const [hookId] = args;
     if (!hookId) {
-      throw new Error('Hook identifier is required');
+      throw new Error("Hook identifier is required");
     }
-    const [event, tool] = hookId.split(':');
+    const [event, tool] = hookId.split(":");
 
     await configManager.toggleHook(
       event as HookEvent,
@@ -477,15 +477,15 @@ Examples:
   ): Promise<void> {
     if (args.length === 0) {
       throw new Error(
-        'Hook identifier required. Format: <event> or <event>:<tool>'
+        "Hook identifier required. Format: <event> or <event>:<tool>"
       );
     }
 
     const [hookId] = args;
     if (!hookId) {
-      throw new Error('Hook identifier is required');
+      throw new Error("Hook identifier is required");
     }
-    const [event, tool] = hookId.split(':');
+    const [event, tool] = hookId.split(":");
 
     await configManager.toggleHook(
       event as HookEvent,
@@ -503,19 +503,19 @@ Examples:
   ): Promise<void> {
     if (args.length < 2) {
       throw new Error(
-        'Hook identifier and timeout required. Usage: set-timeout <hook> <timeout>'
+        "Hook identifier and timeout required. Usage: set-timeout <hook> <timeout>"
       );
     }
 
     const [hookId, timeoutStr] = args;
     if (!(hookId && timeoutStr)) {
-      throw new Error('Both hook identifier and timeout are required');
+      throw new Error("Both hook identifier and timeout are required");
     }
-    const [event, tool] = hookId.split(':');
+    const [event, tool] = hookId.split(":");
     const timeout = Number.parseInt(timeoutStr, 10);
 
     if (Number.isNaN(timeout) || timeout <= 0) {
-      throw new Error('Timeout must be a positive number');
+      throw new Error("Timeout must be a positive number");
     }
 
     const hookConfig = configManager.getHookConfig(
@@ -550,16 +550,16 @@ Examples:
     const config = await configManager.load();
 
     // Validate format
-    const allowedFormats = new Set(['json', 'js', 'ts'] as const);
-    const chosen = (format ?? 'json').toLowerCase();
-    if (!allowedFormats.has(chosen as 'json' | 'js' | 'ts')) {
+    const allowedFormats = new Set(["json", "js", "ts"] as const);
+    const chosen = (format ?? "json").toLowerCase();
+    if (!allowedFormats.has(chosen as "json" | "js" | "ts")) {
       throw new Error(
         `Unsupported export format: ${format}. Use one of: json | js | ts.`
       );
     }
-    const exportFormat = chosen as 'json' | 'js' | 'ts';
+    const exportFormat = chosen as "json" | "js" | "ts";
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const defaultOutput = `hooks-config-${timestamp}.${exportFormat}`;
     const outputFile = outputPath || defaultOutput;
 

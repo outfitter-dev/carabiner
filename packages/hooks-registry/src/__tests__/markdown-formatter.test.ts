@@ -10,28 +10,28 @@ import {
   type mock,
   spyOn,
   test,
-} from 'bun:test';
-import * as childProcess from 'node:child_process';
-import * as fs from 'node:fs';
-import { createToolHookContext } from '@carabiner/types';
-import { createMarkdownFormatterHook } from '../hooks/markdown-formatter.js';
+} from "bun:test";
+import * as childProcess from "node:child_process";
+import * as fs from "node:fs";
+import { createToolHookContext } from "@carabiner/types";
+import { createMarkdownFormatterHook } from "../hooks/markdown-formatter.js";
 
 // Create mocks
 let mockExecFileSync: ReturnType<typeof mock>;
 let mockExistsSync: ReturnType<typeof mock>;
 
-describe('markdown formatter hook', () => {
+describe("markdown formatter hook", () => {
   beforeEach(() => {
     // Reset and create spies for each test
-    mockExistsSync = spyOn(fs, 'existsSync');
-    mockExecFileSync = spyOn(childProcess, 'execFileSync');
+    mockExistsSync = spyOn(fs, "existsSync");
+    mockExecFileSync = spyOn(childProcess, "execFileSync");
 
     // Clear the command cache
     (globalThis as any).__carabinerCmdCache?.clear();
 
     // Default mock implementations
     mockExistsSync.mockReturnValue(true);
-    mockExecFileSync.mockReturnValue('');
+    mockExecFileSync.mockReturnValue("");
   });
 
   afterEach(() => {
@@ -39,19 +39,19 @@ describe('markdown formatter hook', () => {
     mockExecFileSync.mockRestore();
   });
 
-  describe('event filtering', () => {
-    test('should only process PostToolUse events', async () => {
+  describe("event filtering", () => {
+    test("should only process PostToolUse events", async () => {
       const hook = createMarkdownFormatterHook();
 
       // Test with PreToolUse event - should pass through
       const preContext = createToolHookContext(
-        'PreToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PreToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
@@ -61,18 +61,18 @@ describe('markdown formatter hook', () => {
       expect(mockExecFileSync).not.toHaveBeenCalled();
     });
 
-    test('should only process file editing tools', async () => {
+    test("should only process file editing tools", async () => {
       const hook = createMarkdownFormatterHook();
 
       // Test with non-file-editing tool
       const context = createToolHookContext(
-        'PostToolUse',
-        'Bash',
-        { command: 'ls' },
+        "PostToolUse",
+        "Bash",
+        { command: "ls" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
@@ -83,27 +83,27 @@ describe('markdown formatter hook', () => {
     });
   });
 
-  describe('file pattern matching', () => {
-    test('should process .md files by default', async () => {
+  describe("file pattern matching", () => {
+    test("should process .md files by default", async () => {
       mockExecFileSync.mockImplementation(
         (command: string, _args?: string[]) => {
-          if (command === 'command' || command === 'where') {
-            return '';
+          if (command === "command" || command === "where") {
+            return "";
           }
-          return 'Formatted';
+          return "Formatted";
         }
       );
 
       const hook = createMarkdownFormatterHook();
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'README.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "README.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
@@ -113,26 +113,26 @@ describe('markdown formatter hook', () => {
       expect(mockExecFileSync).toHaveBeenCalled();
     });
 
-    test('should process .mdx files by default', async () => {
+    test("should process .mdx files by default", async () => {
       mockExecFileSync.mockImplementation(
         (command: string, _args?: string[]) => {
-          if (command === 'command' || command === 'where') {
-            return '';
+          if (command === "command" || command === "where") {
+            return "";
           }
-          return 'Formatted';
+          return "Formatted";
         }
       );
 
       const hook = createMarkdownFormatterHook();
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Write',
-        { file_path: 'component.mdx', content: '# MDX Test' },
+        "PostToolUse",
+        "Write",
+        { file_path: "component.mdx", content: "# MDX Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
@@ -142,19 +142,19 @@ describe('markdown formatter hook', () => {
       expect(mockExecFileSync).toHaveBeenCalled();
     });
 
-    test('should respect custom patterns', async () => {
+    test("should respect custom patterns", async () => {
       const hook = createMarkdownFormatterHook({
-        patterns: ['*.markdown', '*.mdown'],
+        patterns: ["*.markdown", "*.mdown"],
       });
 
       const mdContext = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
@@ -169,23 +169,23 @@ describe('markdown formatter hook', () => {
 
       // .markdown file should match
       const markdownContext = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.markdown', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.markdown", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       mockExecFileSync.mockImplementation(
         (command: string, _args?: string[]) => {
-          if (command === 'command' || command === 'where') {
-            return '';
+          if (command === "command" || command === "where") {
+            return "";
           }
-          return 'Formatted';
+          return "Formatted";
         }
       );
 
@@ -196,64 +196,64 @@ describe('markdown formatter hook', () => {
     });
   });
 
-  describe('formatter selection', () => {
-    test('should auto-detect markdownlint if available', async () => {
-      let formatterUsed = '';
+  describe("formatter selection", () => {
+    test("should auto-detect markdownlint if available", async () => {
+      let formatterUsed = "";
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('markdownlint-cli2')
+            (command === "command" || command === "where") &&
+            args?.includes("markdownlint-cli2")
           ) {
-            return '/usr/bin/markdownlint-cli2';
+            return "/usr/bin/markdownlint-cli2";
           }
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('prettier')
+            (command === "command" || command === "where") &&
+            args?.includes("prettier")
           ) {
-            throw new Error('not found');
+            throw new Error("not found");
           }
-          if (command === 'markdownlint-cli2') {
-            formatterUsed = 'markdownlint';
-            return 'Formatted with markdownlint';
+          if (command === "markdownlint-cli2") {
+            formatterUsed = "markdownlint";
+            return "Formatted with markdownlint";
           }
-          return '';
+          return "";
         }
       );
 
-      const hook = createMarkdownFormatterHook({ formatter: 'auto' });
+      const hook = createMarkdownFormatterHook({ formatter: "auto" });
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       const result = await hook(context);
       expect(result.success).toBe(true);
-      expect(formatterUsed).toBe('markdownlint');
-      expect((result as any).data?.formatter).toBe('markdownlint');
+      expect(formatterUsed).toBe("markdownlint");
+      expect((result as any).data?.formatter).toBe("markdownlint");
     });
 
-    test('should fall back to prettier if markdownlint not available', async () => {
-      let formatterUsed = '';
+    test("should fall back to prettier if markdownlint not available", async () => {
+      let formatterUsed = "";
 
       // Mock existsSync to return false for markdownlint-cli2 in node_modules/.bin
       // but true for the test file and prettier command
       mockExistsSync.mockImplementation((path: string) => {
-        if (typeof path === 'string' && path.includes('markdownlint-cli2')) {
+        if (typeof path === "string" && path.includes("markdownlint-cli2")) {
           return false;
         }
-        if (typeof path === 'string' && path.includes('prettier')) {
+        if (typeof path === "string" && path.includes("prettier")) {
           return true;
         }
-        if (typeof path === 'string' && path.includes('test.md')) {
+        if (typeof path === "string" && path.includes("test.md")) {
           return true; // Mock the test file exists
         }
         return false;
@@ -262,101 +262,101 @@ describe('markdown formatter hook', () => {
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('markdownlint-cli2')
+            (command === "command" || command === "where") &&
+            args?.includes("markdownlint-cli2")
           ) {
-            throw new Error('not found');
+            throw new Error("not found");
           }
-          if (command === 'npx' && args?.includes('markdownlint-cli2')) {
-            throw new Error('not found');
+          if (command === "npx" && args?.includes("markdownlint-cli2")) {
+            throw new Error("not found");
           }
-          if (command === 'pnpm' && args?.includes('markdownlint-cli2')) {
-            throw new Error('not found');
+          if (command === "pnpm" && args?.includes("markdownlint-cli2")) {
+            throw new Error("not found");
           }
-          if (command === 'bunx' && args?.includes('markdownlint-cli2')) {
-            throw new Error('not found');
+          if (command === "bunx" && args?.includes("markdownlint-cli2")) {
+            throw new Error("not found");
           }
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('prettier')
+            (command === "command" || command === "where") &&
+            args?.includes("prettier")
           ) {
-            return '/usr/bin/prettier';
+            return "/usr/bin/prettier";
           }
-          if (command === 'prettier') {
-            formatterUsed = 'prettier';
-            return 'Formatted with prettier';
+          if (command === "prettier") {
+            formatterUsed = "prettier";
+            return "Formatted with prettier";
           }
-          return '';
+          return "";
         }
       );
 
-      const hook = createMarkdownFormatterHook({ formatter: 'auto' });
+      const hook = createMarkdownFormatterHook({ formatter: "auto" });
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       const result = await hook(context);
       expect(result.success).toBe(true);
-      expect(formatterUsed).toBe('prettier');
-      expect((result as any).data?.formatter).toBe('prettier');
+      expect(formatterUsed).toBe("prettier");
+      expect((result as any).data?.formatter).toBe("prettier");
     });
 
-    test('should respect explicit formatter preference', async () => {
-      let formatterUsed = '';
+    test("should respect explicit formatter preference", async () => {
+      let formatterUsed = "";
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('markdownlint-cli2')
+            (command === "command" || command === "where") &&
+            args?.includes("markdownlint-cli2")
           ) {
-            return '/usr/bin/markdownlint-cli2';
+            return "/usr/bin/markdownlint-cli2";
           }
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('prettier')
+            (command === "command" || command === "where") &&
+            args?.includes("prettier")
           ) {
-            return '/usr/bin/prettier';
+            return "/usr/bin/prettier";
           }
-          if (command === 'prettier') {
-            formatterUsed = 'prettier';
-            return 'Formatted with prettier';
+          if (command === "prettier") {
+            formatterUsed = "prettier";
+            return "Formatted with prettier";
           }
-          return '';
+          return "";
         }
       );
 
-      const hook = createMarkdownFormatterHook({ formatter: 'prettier' });
+      const hook = createMarkdownFormatterHook({ formatter: "prettier" });
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       const result = await hook(context);
       expect(result.success).toBe(true);
-      expect(formatterUsed).toBe('prettier');
+      expect(formatterUsed).toBe("prettier");
     });
 
-    test('should fail if no formatter available', async () => {
+    test("should fail if no formatter available", async () => {
       // Mock existsSync to return false for all local binaries but true for the test file
       mockExistsSync.mockImplementation((path: string) => {
-        if (typeof path === 'string' && path.includes('test.md')) {
+        if (typeof path === "string" && path.includes("test.md")) {
           return true; // Mock the test file exists
         }
         return false; // All commands return false
@@ -365,93 +365,93 @@ describe('markdown formatter hook', () => {
       mockExecFileSync.mockImplementation(
         (command: string, _args?: string[]) => {
           if (
-            command === 'command' ||
-            command === 'where' ||
-            command === 'npx' ||
-            command === 'pnpm' ||
-            command === 'bunx'
+            command === "command" ||
+            command === "where" ||
+            command === "npx" ||
+            command === "pnpm" ||
+            command === "bunx"
           ) {
-            throw new Error('not found');
+            throw new Error("not found");
           }
-          return '';
+          return "";
         }
       );
 
       const hook = createMarkdownFormatterHook();
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       const result = await hook(context);
       expect(result.success).toBe(false);
-      expect(result.message).toContain('No markdown formatter available');
+      expect(result.message).toContain("No markdown formatter available");
     });
   });
 
-  describe('formatting options', () => {
-    test('should use --fix flag for markdownlint when autoFix is true', async () => {
+  describe("formatting options", () => {
+    test("should use --fix flag for markdownlint when autoFix is true", async () => {
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('markdownlint-cli2')
+            (command === "command" || command === "where") &&
+            args?.includes("markdownlint-cli2")
           ) {
-            return '/usr/bin/markdownlint-cli2';
+            return "/usr/bin/markdownlint-cli2";
           }
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('prettier')
+            (command === "command" || command === "where") &&
+            args?.includes("prettier")
           ) {
-            throw new Error('not found');
+            throw new Error("not found");
           }
-          if (command === 'markdownlint-cli2') {
-            return 'Fixed';
+          if (command === "markdownlint-cli2") {
+            return "Fixed";
           }
-          return '';
+          return "";
         }
       );
 
       const hook = createMarkdownFormatterHook({ autoFix: true });
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       await hook(context);
       expect(mockExecFileSync).toHaveBeenCalledWith(
-        'markdownlint-cli2',
-        expect.arrayContaining(['--fix']),
+        "markdownlint-cli2",
+        expect.arrayContaining(["--fix"]),
         expect.anything()
       );
     });
 
-    test('should use --write flag for prettier when autoFix is true', async () => {
+    test("should use --write flag for prettier when autoFix is true", async () => {
       // Mock existsSync to return false for markdownlint but true for prettier and test file
       mockExistsSync.mockImplementation((path: string) => {
-        if (typeof path === 'string' && path.includes('markdownlint-cli2')) {
+        if (typeof path === "string" && path.includes("markdownlint-cli2")) {
           return false;
         }
-        if (typeof path === 'string' && path.includes('prettier')) {
+        if (typeof path === "string" && path.includes("prettier")) {
           return true;
         }
-        if (typeof path === 'string' && path.includes('test.md')) {
+        if (typeof path === "string" && path.includes("test.md")) {
           return true; // Mock the test file exists
         }
         return false;
@@ -460,65 +460,65 @@ describe('markdown formatter hook', () => {
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('markdownlint-cli2')
+            (command === "command" || command === "where") &&
+            args?.includes("markdownlint-cli2")
           ) {
-            throw new Error('not found');
+            throw new Error("not found");
           }
-          if (command === 'npx' && args?.includes('markdownlint-cli2')) {
-            throw new Error('not found');
+          if (command === "npx" && args?.includes("markdownlint-cli2")) {
+            throw new Error("not found");
           }
-          if (command === 'pnpm' && args?.includes('markdownlint-cli2')) {
-            throw new Error('not found');
+          if (command === "pnpm" && args?.includes("markdownlint-cli2")) {
+            throw new Error("not found");
           }
-          if (command === 'bunx' && args?.includes('markdownlint-cli2')) {
-            throw new Error('not found');
+          if (command === "bunx" && args?.includes("markdownlint-cli2")) {
+            throw new Error("not found");
           }
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('prettier')
+            (command === "command" || command === "where") &&
+            args?.includes("prettier")
           ) {
-            return '/usr/bin/prettier';
+            return "/usr/bin/prettier";
           }
-          if (command === 'prettier') {
-            return 'Fixed';
+          if (command === "prettier") {
+            return "Fixed";
           }
-          return '';
+          return "";
         }
       );
 
       const hook = createMarkdownFormatterHook({ autoFix: true });
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       await hook(context);
       expect(mockExecFileSync).toHaveBeenCalledWith(
-        'prettier',
-        expect.arrayContaining(['--write']),
+        "prettier",
+        expect.arrayContaining(["--write"]),
         expect.anything()
       );
     });
 
-    test('should use --check flag for prettier when autoFix is false', async () => {
+    test("should use --check flag for prettier when autoFix is false", async () => {
       // Mock existsSync to return false for markdownlint but true for prettier and test file
       mockExistsSync.mockImplementation((path: string) => {
-        if (typeof path === 'string' && path.includes('markdownlint-cli2')) {
+        if (typeof path === "string" && path.includes("markdownlint-cli2")) {
           return false;
         }
-        if (typeof path === 'string' && path.includes('prettier')) {
+        if (typeof path === "string" && path.includes("prettier")) {
           return true;
         }
-        if (typeof path === 'string' && path.includes('test.md')) {
+        if (typeof path === "string" && path.includes("test.md")) {
           return true; // Mock the test file exists
         }
         return false;
@@ -527,177 +527,177 @@ describe('markdown formatter hook', () => {
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('markdownlint-cli2')
+            (command === "command" || command === "where") &&
+            args?.includes("markdownlint-cli2")
           ) {
-            throw new Error('not found');
+            throw new Error("not found");
           }
-          if (command === 'npx' && args?.includes('markdownlint-cli2')) {
-            throw new Error('not found');
+          if (command === "npx" && args?.includes("markdownlint-cli2")) {
+            throw new Error("not found");
           }
-          if (command === 'pnpm' && args?.includes('markdownlint-cli2')) {
-            throw new Error('not found');
+          if (command === "pnpm" && args?.includes("markdownlint-cli2")) {
+            throw new Error("not found");
           }
-          if (command === 'bunx' && args?.includes('markdownlint-cli2')) {
-            throw new Error('not found');
+          if (command === "bunx" && args?.includes("markdownlint-cli2")) {
+            throw new Error("not found");
           }
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('prettier')
+            (command === "command" || command === "where") &&
+            args?.includes("prettier")
           ) {
-            return '/usr/bin/prettier';
+            return "/usr/bin/prettier";
           }
-          if (command === 'prettier') {
-            return 'Checked';
+          if (command === "prettier") {
+            return "Checked";
           }
-          return '';
+          return "";
         }
       );
 
       const hook = createMarkdownFormatterHook({ autoFix: false });
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       await hook(context);
       expect(mockExecFileSync).toHaveBeenCalledWith(
-        'prettier',
-        expect.arrayContaining(['--check']),
+        "prettier",
+        expect.arrayContaining(["--check"]),
         expect.anything()
       );
       expect(mockExecFileSync).not.toHaveBeenCalledWith(
-        'prettier',
-        expect.arrayContaining(['--write'])
+        "prettier",
+        expect.arrayContaining(["--write"])
       );
     });
 
-    test('should pass additional arguments', async () => {
+    test("should pass additional arguments", async () => {
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('markdownlint-cli2')
+            (command === "command" || command === "where") &&
+            args?.includes("markdownlint-cli2")
           ) {
-            return '/usr/bin/markdownlint-cli2';
+            return "/usr/bin/markdownlint-cli2";
           }
-          if (command === 'markdownlint-cli2') {
-            return 'Fixed';
+          if (command === "markdownlint-cli2") {
+            return "Fixed";
           }
-          return '';
+          return "";
         }
       );
 
       const hook = createMarkdownFormatterHook({
-        additionalArgs: ['--config', '.markdownlint.json'],
+        additionalArgs: ["--config", ".markdownlint.json"],
       });
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       await hook(context);
       expect(mockExecFileSync).toHaveBeenCalledWith(
-        'markdownlint-cli2',
-        expect.arrayContaining(['--config', '.markdownlint.json']),
+        "markdownlint-cli2",
+        expect.arrayContaining(["--config", ".markdownlint.json"]),
         expect.anything()
       );
     });
   });
 
-  describe('error handling', () => {
-    test('should handle missing file gracefully', async () => {
+  describe("error handling", () => {
+    test("should handle missing file gracefully", async () => {
       mockExistsSync.mockReturnValue(false);
 
       const hook = createMarkdownFormatterHook();
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'nonexistent.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "nonexistent.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       const result = await hook(context);
       expect(result.success).toBe(false);
-      expect(result.message).toContain('File not found');
+      expect(result.message).toContain("File not found");
     });
 
-    test('should handle formatter errors gracefully', async () => {
+    test("should handle formatter errors gracefully", async () => {
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('markdownlint-cli2')
+            (command === "command" || command === "where") &&
+            args?.includes("markdownlint-cli2")
           ) {
-            return '/usr/bin/markdownlint-cli2';
+            return "/usr/bin/markdownlint-cli2";
           }
-          if (command === 'markdownlint-cli2') {
-            throw new Error('Formatting failed: invalid syntax');
+          if (command === "markdownlint-cli2") {
+            throw new Error("Formatting failed: invalid syntax");
           }
-          return '';
+          return "";
         }
       );
 
       const hook = createMarkdownFormatterHook();
 
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
 
       const result = await hook(context);
       expect(result.success).toBe(false);
-      expect(result.message).toContain('Failed to format with markdownlint');
+      expect(result.message).toContain("Failed to format with markdownlint");
     });
 
-    test('should accept toolInput.path as an alternative to file_path', async () => {
+    test("should accept toolInput.path as an alternative to file_path", async () => {
       mockExistsSync.mockReturnValue(true);
       mockExecFileSync.mockImplementation(
         (command: string, _args?: string[]) => {
-          if (command === 'command' || command === 'where') {
-            return '/usr/bin/dummy';
+          if (command === "command" || command === "where") {
+            return "/usr/bin/dummy";
           }
-          return 'Formatted';
+          return "Formatted";
         }
       );
       const hook = createMarkdownFormatterHook();
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { path: 'alternate.md', content: '# Test' } as any,
+        "PostToolUse",
+        "Edit",
+        { path: "alternate.md", content: "# Test" } as any,
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
@@ -706,26 +706,26 @@ describe('markdown formatter hook', () => {
     });
   });
 
-  describe('additional test coverage', () => {
-    test('should process MultiEdit and NotebookEdit tools', async () => {
+  describe("additional test coverage", () => {
+    test("should process MultiEdit and NotebookEdit tools", async () => {
       mockExecFileSync.mockImplementation(
         (command: string, _args?: string[]) => {
-          if (command === 'command' || command === 'where') {
-            return '/usr/bin/dummy';
+          if (command === "command" || command === "where") {
+            return "/usr/bin/dummy";
           }
-          return 'Formatted';
+          return "Formatted";
         }
       );
       const hook = createMarkdownFormatterHook();
-      for (const tool of ['MultiEdit', 'NotebookEdit'] as const) {
+      for (const tool of ["MultiEdit", "NotebookEdit"] as const) {
         const ctx = createToolHookContext(
-          'PostToolUse',
+          "PostToolUse",
           tool,
-          { file_path: 'doc.md', content: '# T' },
+          { file_path: "doc.md", content: "# T" },
           {
-            sessionId: 'test-session' as any,
-            transcriptPath: '/tmp/transcript.md' as any,
-            cwd: '/test' as any,
+            sessionId: "test-session" as any,
+            transcriptPath: "/tmp/transcript.md" as any,
+            cwd: "/test" as any,
             environment: {},
           }
         );
@@ -735,96 +735,96 @@ describe('markdown formatter hook', () => {
       expect(mockExecFileSync).toHaveBeenCalled();
     });
 
-    test('should prefer markdownlint over prettier in auto mode when both exist', async () => {
-      let formatterUsed = '';
+    test("should prefer markdownlint over prettier in auto mode when both exist", async () => {
+      let formatterUsed = "";
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('markdownlint-cli2')
+            (command === "command" || command === "where") &&
+            args?.includes("markdownlint-cli2")
           ) {
-            return '/usr/bin/markdownlint-cli2';
+            return "/usr/bin/markdownlint-cli2";
           }
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('prettier')
+            (command === "command" || command === "where") &&
+            args?.includes("prettier")
           ) {
-            return '/usr/bin/prettier';
+            return "/usr/bin/prettier";
           }
-          if (command === 'markdownlint-cli2') {
-            formatterUsed = 'markdownlint';
-            return 'Formatted with markdownlint';
+          if (command === "markdownlint-cli2") {
+            formatterUsed = "markdownlint";
+            return "Formatted with markdownlint";
           }
-          return '';
+          return "";
         }
       );
 
-      const hook = createMarkdownFormatterHook({ formatter: 'auto' });
+      const hook = createMarkdownFormatterHook({ formatter: "auto" });
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
       const result = await hook(context);
       expect(result.success).toBe(true);
-      expect(formatterUsed).toBe('markdownlint');
-      expect((result as any).data?.formatter).toBe('markdownlint');
+      expect(formatterUsed).toBe("markdownlint");
+      expect((result as any).data?.formatter).toBe("markdownlint");
     });
 
-    test('should pass additional arguments to prettier', async () => {
+    test("should pass additional arguments to prettier", async () => {
       mockExecFileSync.mockImplementation(
         (command: string, args?: string[]) => {
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('markdownlint-cli2')
+            (command === "command" || command === "where") &&
+            args?.includes("markdownlint-cli2")
           ) {
-            throw new Error('not found');
+            throw new Error("not found");
           }
-          if (command === 'npx' && args?.includes('markdownlint-cli2')) {
-            throw new Error('not found');
+          if (command === "npx" && args?.includes("markdownlint-cli2")) {
+            throw new Error("not found");
           }
           if (
-            (command === 'command' || command === 'where') &&
-            args?.includes('prettier')
+            (command === "command" || command === "where") &&
+            args?.includes("prettier")
           ) {
-            return '/usr/bin/prettier';
+            return "/usr/bin/prettier";
           }
-          if (command === 'prettier') {
-            return 'Fixed';
+          if (command === "prettier") {
+            return "Fixed";
           }
-          return '';
+          return "";
         }
       );
       const hook = createMarkdownFormatterHook({
-        formatter: 'prettier',
-        additionalArgs: ['--prose-wrap', 'always', '--print-width', '100'],
+        formatter: "prettier",
+        additionalArgs: ["--prose-wrap", "always", "--print-width", "100"],
         autoFix: true,
       });
       const context = createToolHookContext(
-        'PostToolUse',
-        'Edit',
-        { file_path: 'test.md', content: '# Test' },
+        "PostToolUse",
+        "Edit",
+        { file_path: "test.md", content: "# Test" },
         {
-          sessionId: 'test-session' as any,
-          transcriptPath: '/tmp/transcript.md' as any,
-          cwd: '/test' as any,
+          sessionId: "test-session" as any,
+          transcriptPath: "/tmp/transcript.md" as any,
+          cwd: "/test" as any,
           environment: {},
         }
       );
       await hook(context);
       expect(mockExecFileSync).toHaveBeenCalledWith(
-        'prettier',
+        "prettier",
         expect.arrayContaining([
-          '--prose-wrap',
-          'always',
-          '--print-width',
-          '100',
+          "--prose-wrap",
+          "always",
+          "--print-width",
+          "100",
         ]),
         expect.anything()
       );

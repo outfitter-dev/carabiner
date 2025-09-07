@@ -6,37 +6,37 @@
  * in a Claude Code hooks configuration.
  */
 
-import { HookExecutor } from '@carabiner/execution';
-import { createMarkdownFormatterHook } from '@carabiner/hooks-registry';
-import { StdinProtocol } from '@carabiner/protocol';
+import { HookExecutor } from "@carabiner/execution";
+import { createMarkdownFormatterHook } from "@carabiner/hooks-registry";
+import { StdinProtocol } from "@carabiner/protocol";
 
 // Example 1: Basic usage with auto-detection
 const basicHook = createMarkdownFormatterHook();
 
 // Example 2: Prefer markdownlint with custom config
 const markdownlintHook = createMarkdownFormatterHook({
-  formatter: 'markdownlint',
-  additionalArgs: ['--config', '.markdownlint.json'],
+  formatter: "markdownlint",
+  additionalArgs: ["--config", ".markdownlint.json"],
   autoFix: true,
 });
 
 // Example 3: Use prettier with specific options
 const prettierHook = createMarkdownFormatterHook({
-  formatter: 'prettier',
-  additionalArgs: ['--prose-wrap', 'always', '--print-width', '80'],
+  formatter: "prettier",
+  additionalArgs: ["--prose-wrap", "always", "--print-width", "80"],
   autoFix: true,
 });
 
 // Example 4: Check-only mode (no auto-fix)
 const checkOnlyHook = createMarkdownFormatterHook({
-  formatter: 'auto',
+  formatter: "auto",
   autoFix: false,
 });
 
 // Example 5: Custom file patterns
 const customPatternsHook = createMarkdownFormatterHook({
-  patterns: ['*.md', '*.mdx', '*.markdown', 'README*'],
-  formatter: 'auto',
+  patterns: ["*.md", "*.mdx", "*.markdown", "README*"],
+  formatter: "auto",
   autoFix: true,
 });
 
@@ -50,9 +50,9 @@ async function main() {
   try {
     await executor.execute(
       createMarkdownFormatterHook({
-        formatter: 'auto', // Auto-detect formatter
+        formatter: "auto", // Auto-detect formatter
         autoFix: true, // Fix issues automatically
-        patterns: ['*.md'], // Only process .md files
+        patterns: ["*.md"], // Only process .md files
         additionalArgs: [], // No additional arguments
       })
     );

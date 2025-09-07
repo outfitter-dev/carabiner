@@ -5,7 +5,7 @@
  * from specific transport mechanisms like stdin/stdout, HTTP, or testing.
  */
 
-import type { HookContext, HookResult } from '@carabiner/types';
+import type { HookContext, HookResult } from "@carabiner/types";
 
 /**
  * Core protocol interface for Claude Code hooks I/O
@@ -75,7 +75,7 @@ export type HookProtocolFactory<T = unknown> = {
  * Protocol error types for better error handling
  */
 export class ProtocolError extends Error {
-  override name = 'ProtocolError';
+  override name = "ProtocolError";
   public readonly code: string;
   override readonly cause?: unknown;
 
@@ -87,26 +87,26 @@ export class ProtocolError extends Error {
 }
 
 export class ProtocolInputError extends ProtocolError {
-  override name = 'ProtocolInputError';
+  override name = "ProtocolInputError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, 'PROTOCOL_INPUT_ERROR', cause);
+    super(message, "PROTOCOL_INPUT_ERROR", cause);
   }
 }
 
 export class ProtocolOutputError extends ProtocolError {
-  override name = 'ProtocolOutputError';
+  override name = "ProtocolOutputError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, 'PROTOCOL_OUTPUT_ERROR', cause);
+    super(message, "PROTOCOL_OUTPUT_ERROR", cause);
   }
 }
 
 export class ProtocolParseError extends ProtocolError {
-  override name = 'ProtocolParseError';
+  override name = "ProtocolParseError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, 'PROTOCOL_PARSE_ERROR', cause);
+    super(message, "PROTOCOL_PARSE_ERROR", cause);
   }
 }
 

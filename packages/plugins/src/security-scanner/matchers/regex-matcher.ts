@@ -3,7 +3,7 @@
  * @description Regex pattern matching for security rules
  */
 
-import type { SecurityFinding, SecurityRule } from '../types/index.js';
+import type { SecurityFinding, SecurityRule } from "../types/index.js";
 
 /**
  * Result of regex matching operation
@@ -25,15 +25,15 @@ export function executeRegex(
   const matches: RegexMatch[] = [];
 
   try {
-    const flags = rule.flags || 'gm';
+    const flags = rule.flags || "gm";
     const regex = new RegExp(rule.pattern, flags);
 
     let match: RegExpExecArray | null = regex.exec(content);
     while (match !== null) {
       // Find line number
       const beforeMatch = content.substring(0, match.index);
-      const lineNumber = beforeMatch.split('\n').length;
-      const columnNumber = beforeMatch.split('\n').pop()?.length || 0;
+      const lineNumber = beforeMatch.split("\n").length;
+      const columnNumber = beforeMatch.split("\n").pop()?.length || 0;
 
       matches.push({
         match: match[0],
@@ -43,7 +43,7 @@ export function executeRegex(
       });
 
       // Prevent infinite loops with global regex
-      if (!flags.includes('g')) {
+      if (!flags.includes("g")) {
         break;
       }
 

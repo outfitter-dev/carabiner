@@ -11,13 +11,13 @@
  * - Configurable log levels and formats
  */
 
-import { appendFile, mkdir } from 'node:fs/promises';
-import { hostname, userInfo } from 'node:os';
-import { dirname, join } from 'node:path';
-import type { HookPlugin, PluginResult } from '@carabiner/registry';
-import type { HookContext } from '@carabiner/types';
-import { isBashHookContext, isFileHookContext } from '@carabiner/types';
-import { z } from 'zod';
+import { appendFile, mkdir } from "node:fs/promises";
+import { hostname, userInfo } from "node:os";
+import { dirname, join } from "node:path";
+import type { HookPlugin, PluginResult } from "@carabiner/registry";
+import type { HookContext } from "@carabiner/types";
+import { isBashHookContext, isFileHookContext } from "@carabiner/types";
+import { z } from "zod";
 
 /**
  * Audit log entry interface
@@ -35,7 +35,7 @@ type AuditLogEntry = {
   duration?: number;
   metadata: Record<string, unknown>;
   sensitive?: boolean;
-  risk?: 'low' | 'medium' | 'high';
+  risk?: "low" | "medium" | "high";
 };
 
 /**
@@ -47,22 +47,22 @@ const AuditLoggerConfigSchema = z
     enabled: z.boolean().default(true),
 
     /** Log file path (relative to working directory or absolute) */
-    logFile: z.string().default('audit.log'),
+    logFile: z.string().default("audit.log"),
 
     /** Whether to use absolute path for log file */
     absoluteLogPath: z.boolean().default(false),
 
     /** Log format */
-    format: z.enum(['json', 'text', 'csv']).default('json'),
+    format: z.enum(["json", "text", "csv"]).default("json"),
 
     /** Log level */
-    level: z.enum(['all', 'operations', 'security', 'errors']).default('all'),
+    level: z.enum(["all", "operations", "security", "errors"]).default("all"),
 
     /** Whether to log to console as well */
     logToConsole: z.boolean().default(false),
 
     /** Console log level for filtering */
-    consoleLevel: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+    consoleLevel: z.enum(["debug", "info", "warn", "error"]).default("info"),
 
     /** Whether to include sensitive information (file contents, command outputs) */
     includeSensitive: z.boolean().default(false),
@@ -174,13 +174,13 @@ class AuditLogger {
 
   private shouldLog(entry: AuditLogEntry): boolean {
     switch (this.config.level) {
-      case 'all':
+      case "all":
         return true;
-      case 'operations':
-        return ['PreToolUse', 'PostToolUse'].includes(entry.event);
-      case 'security':
-        return entry.risk === 'high' || Boolean(entry.sensitive);
-      case 'errors':
+      case "operations":
+        return ["PreToolUse", "PostToolUse"].includes(entry.event);
+      case "security":
+        return entry.risk === "high" || Boolean(entry.sensitive);
+      case "errors":
         return !entry.success;
       default:
         return true;
@@ -197,7 +197,7 @@ class AuditLogger {
       // Remove large fields
       if (
         sanitized.metadata.content &&
-        typeof sanitized.metadata.content === 'string'
+        typeof sanitized.metadata.content === "string"
       ) {
         sanitized.metadata.content = `${sanitized.metadata.content.substring(0, 1000)}... [truncated]`;
       }
@@ -211,7 +211,7 @@ class AuditLogger {
 
       if (
         sanitized.metadata.filePath &&
-        typeof sanitized.metadata.filePath === 'string'
+        typeof sanitized.metadata.filePath === "string"
       ) {
         sanitized.metadata.filePath = this.anonymizePath(
           sanitized.metadata.filePath
@@ -221,7 +221,7 @@ class AuditLogger {
 
     // Remove sensitive information if not included
     if (!this.config.includeSensitive && sanitized.sensitive) {
-      sanitized.metadata = { ...sanitized.metadata, sensitive: '[REDACTED]' };
+      sanitized.metadata = { ...sanitized.metadata, sensitive: "[REDACTED]" };
     }
 
     return sanitized;
@@ -230,16 +230,16 @@ class AuditLogger {
   private anonymizePath(path: string): string {
     // Replace username and other sensitive parts
     const user = userInfo().username;
-    return path.replace(new RegExp(`/${user}/`, 'g'), '/[USER]/');
+    return path.replace(new RegExp(`/${user}/`, "g"), "/[USER]/");
   }
 
   private formatEntry(entry: AuditLogEntry): string {
     switch (this.config.format) {
-      case 'json':
+      case "json":
         return JSON.stringify(entry);
-      case 'text':
+      case "text":
         return this.formatAsText(entry);
-      case 'csv':
+      case "csv":
         return this.formatAsCSV(entry);
       default:
         return JSON.stringify(entry);
@@ -248,11 +248,11 @@ class AuditLogger {
 
   private formatAsText(entry: AuditLogEntry): string {
     const timestamp = entry.timestamp;
-    const status = entry.success ? 'SUCCESS' : 'FAILURE';
+    const status = entry.success ? "SUCCESS" : "FAILURE";
     const operation = entry.toolName
       ? `${entry.event}_${entry.toolName}`
       : entry.event;
-    const duration = entry.duration ? ` (${Math.round(entry.duration)}ms)` : '';
+    const duration = entry.duration ? ` (${Math.round(entry.duration)}ms)` : "";
 
     return `[${timestamp}] ${status} ${operation}${duration} - ${entry.user}@${entry.hostname} in ${entry.workingDirectory}`;
   }
@@ -262,26 +262,26 @@ class AuditLogger {
       entry.timestamp,
       entry.sessionId,
       entry.event,
-      entry.toolName || '',
+      entry.toolName || "",
       entry.operation,
       entry.user,
       entry.hostname,
       entry.workingDirectory,
       entry.success.toString(),
-      entry.duration?.toString() || '',
+      entry.duration?.toString() || "",
       JSON.stringify(entry.metadata).replace(/"/g, '""'), // Escape quotes for CSV
-      entry.sensitive?.toString() || '',
-      entry.risk || '',
+      entry.sensitive?.toString() || "",
+      entry.risk || "",
     ];
 
-    return fields.map((f) => `"${f}"`).join(',');
+    return fields.map((f) => `"${f}"`).join(",");
   }
 
   private logToConsole(entry: AuditLogEntry, _formatted: string): void {
-    const level = entry.success ? 'info' : 'error';
+    const level = entry.success ? "info" : "error";
 
     if (this.shouldLogToConsole(level)) {
-      if (this.config.format === 'json') {
+      if (this.config.format === "json") {
       } else {
       }
     }
@@ -302,7 +302,7 @@ class AuditLogger {
     }
 
     const entries = this.buffer.splice(0);
-    const content = `${entries.join('\n')}\n`;
+    const content = `${entries.join("\n")}\n`;
 
     await this.writeToFile(content);
   }
@@ -350,23 +350,23 @@ let globalAuditLogger: AuditLogger | undefined;
 /**
  * Extract risk level from operation
  */
-function assessOperationRisk(context: HookContext): 'low' | 'medium' | 'high' {
+function assessOperationRisk(context: HookContext): "low" | "medium" | "high" {
   // High risk operations
   if (isBashHookContext(context)) {
     const command = context.toolInput.command;
     if (command && /\b(rm\s+-rf|sudo|chmod|chown)\b/.test(command)) {
-      return 'high';
+      return "high";
     }
-    return 'medium';
+    return "medium";
   }
 
   // Medium risk operations
   if (isFileHookContext(context)) {
-    return 'medium';
+    return "medium";
   }
 
   // Low risk operations
-  return 'low';
+  return "low";
 }
 
 /**
@@ -392,10 +392,10 @@ function containsSensitiveInfo(context: HookContext): boolean {
   // Check file content for sensitive info
   if (isFileHookContext(context)) {
     const content =
-      ('content' in context.toolInput && context.toolInput.content) ||
-      ('new_string' in context.toolInput && context.toolInput.new_string) ||
-      '';
-    if (typeof content === 'string') {
+      ("content" in context.toolInput && context.toolInput.content) ||
+      ("new_string" in context.toolInput && context.toolInput.new_string) ||
+      "";
+    if (typeof content === "string") {
       return sensitivePatterns.some((pattern) => pattern.test(content));
     }
   }
@@ -447,17 +447,17 @@ function containsSensitiveInfo(context: HookContext): boolean {
  * ```
  */
 export const auditLoggerPlugin: HookPlugin = {
-  name: 'audit-logger',
-  version: '1.0.0',
-  description: 'Comprehensive audit logging of Claude Code operations',
-  author: 'Outfitter Team',
+  name: "audit-logger",
+  version: "1.0.0",
+  description: "Comprehensive audit logging of Claude Code operations",
+  author: "Outfitter Team",
 
   events: [
-    'PreToolUse',
-    'PostToolUse',
-    'SessionStart',
-    'Stop',
-    'UserPromptSubmit',
+    "PreToolUse",
+    "PostToolUse",
+    "SessionStart",
+    "Stop",
+    "UserPromptSubmit",
   ],
   priority: 5, // Very low priority to run after other plugins
 
@@ -475,7 +475,7 @@ export const auditLoggerPlugin: HookPlugin = {
         success: true,
         pluginName: this.name,
         pluginVersion: this.version,
-        metadata: { skipped: true, reason: 'Logging disabled' },
+        metadata: { skipped: true, reason: "Logging disabled" },
       };
     }
 
@@ -486,9 +486,9 @@ export const auditLoggerPlugin: HookPlugin = {
 
     // Extract session info
     const sessionInfo = {
-      sessionId: 'sessionId' in context ? String(context.sessionId) : 'unknown',
-      cwd: 'cwd' in context ? String(context.cwd) : process.cwd(),
-      toolName: 'toolName' in context ? context.toolName : undefined,
+      sessionId: "sessionId" in context ? String(context.sessionId) : "unknown",
+      cwd: "cwd" in context ? String(context.cwd) : process.cwd(),
+      toolName: "toolName" in context ? context.toolName : undefined,
     };
 
     // Get user info
@@ -509,25 +509,25 @@ export const auditLoggerPlugin: HookPlugin = {
       ...auditConfig.customFields,
     };
 
-    const toolName = 'toolName' in context ? context.toolName : undefined;
+    const toolName = "toolName" in context ? context.toolName : undefined;
     if (toolName) {
       metadata.toolName = toolName;
 
       // Add tool-specific metadata for known context types
-      if (isBashHookContext(context) && toolName === 'Bash') {
+      if (isBashHookContext(context) && toolName === "Bash") {
         metadata.command = context.toolInput.command;
         if (auditConfig.logCommands && auditConfig.includeSensitive) {
           metadata.fullCommand = context.toolInput;
         }
       } else if (
         isFileHookContext(context) &&
-        ['Write', 'Edit', 'MultiEdit'].includes(toolName)
+        ["Write", "Edit", "MultiEdit"].includes(toolName)
       ) {
         metadata.filePath = context.toolInput.file_path;
         if (auditConfig.logFileChanges && auditConfig.includeSensitive) {
-          if (toolName === 'Write' && 'content' in context.toolInput) {
+          if (toolName === "Write" && "content" in context.toolInput) {
             metadata.content = context.toolInput.content;
-          } else if (toolName === 'Edit' && 'new_string' in context.toolInput) {
+          } else if (toolName === "Edit" && "new_string" in context.toolInput) {
             metadata.content = context.toolInput.new_string;
           }
         }
@@ -593,12 +593,12 @@ export const auditLoggerPlugin: HookPlugin = {
   },
 
   metadata: {
-    name: 'audit-logger',
-    version: '1.0.0',
-    description: 'Comprehensive audit logging of Claude Code operations',
-    author: 'Outfitter Team',
-    keywords: ['audit', 'logging', 'security', 'compliance', 'tracking'],
-    license: 'MIT',
+    name: "audit-logger",
+    version: "1.0.0",
+    description: "Comprehensive audit logging of Claude Code operations",
+    author: "Outfitter Team",
+    keywords: ["audit", "logging", "security", "compliance", "tracking"],
+    license: "MIT",
   },
 };
 

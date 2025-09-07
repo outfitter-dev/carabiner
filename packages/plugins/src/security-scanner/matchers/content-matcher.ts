@@ -7,10 +7,10 @@ import type {
   SecurityFinding,
   SecurityRule,
   SecurityScannerConfig,
-} from '../types/index.js';
-import { getSeverityLevel } from '../types/index.js';
-import { isFileTypeSupported } from './pattern-matcher.js';
-import { executeRegex, matchesToFindings } from './regex-matcher.js';
+} from "../types/index.js";
+import { getSeverityLevel } from "../types/index.js";
+import { isFileTypeSupported } from "./pattern-matcher.js";
+import { executeRegex, matchesToFindings } from "./regex-matcher.js";
 
 /**
  * Check if rule should be applied based on severity threshold

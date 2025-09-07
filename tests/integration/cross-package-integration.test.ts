@@ -5,7 +5,7 @@
  * to ensure all packages work together correctly in real-world scenarios.
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import {
   existsSync,
   mkdirSync,
@@ -13,10 +13,10 @@ import {
   readFileSync,
   rmSync,
   writeFileSync,
-} from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import type { HookConfiguration } from '@carabiner/types';
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import type { HookConfiguration } from "@carabiner/types";
 
 /**
  * Test workspace for integration tests
@@ -25,18 +25,18 @@ class TestWorkspace {
   public readonly path: string;
 
   constructor() {
-    this.path = mkdtempSync(join(tmpdir(), 'grapple-integration-'));
+    this.path = mkdtempSync(join(tmpdir(), "grapple-integration-"));
   }
 
   /**
    * Create a hooks configuration file
    */
   createHooksConfig(config: HookConfiguration): string {
-    const claudeDir = join(this.path, '.claude');
+    const claudeDir = join(this.path, ".claude");
     if (!existsSync(claudeDir)) {
       mkdirSync(claudeDir, { recursive: true });
     }
-    const configPath = join(claudeDir, 'hooks.json');
+    const configPath = join(claudeDir, "hooks.json");
     writeFileSync(configPath, JSON.stringify(config, null, 2));
     return configPath;
   }
@@ -57,7 +57,7 @@ class TestWorkspace {
    * Create a package.json for testing
    */
   createPackageJson(packageJson: object): string {
-    const pkgPath = join(this.path, 'package.json');
+    const pkgPath = join(this.path, "package.json");
     writeFileSync(pkgPath, JSON.stringify(packageJson, null, 2));
     return pkgPath;
   }
@@ -66,7 +66,7 @@ class TestWorkspace {
    * Read file contents
    */
   readFile(filename: string): string {
-    return readFileSync(join(this.path, filename), 'utf8');
+    return readFileSync(join(this.path, filename), "utf8");
   }
 
   /**
@@ -79,7 +79,7 @@ class TestWorkspace {
   }
 }
 
-describe('Cross-Package Integration Tests', () => {
+describe("Cross-Package Integration Tests", () => {
   let workspace: TestWorkspace;
 
   beforeAll(() => {
@@ -90,76 +90,76 @@ describe('Cross-Package Integration Tests', () => {
     workspace.cleanup();
   });
 
-  describe('CLI → Config → Core Integration', () => {
-    test('should generate valid hook configuration through CLI', async () => {
+  describe("CLI → Config → Core Integration", () => {
+    test("should generate valid hook configuration through CLI", async () => {
       // This would test the CLI generation of hook configs
       // For now, create a config manually that simulates CLI output
       const config: HookConfiguration = {
-        version: '1.0.0',
+        version: "1.0.0",
         PreToolUse: {
           Bash: {
-            command: 'bun run ./hooks/security-check.ts',
+            command: "bun run ./hooks/security-check.ts",
             timeout: 5000,
             enabled: true,
           },
         },
         PostToolUse: {
           Bash: {
-            command: 'bun run ./hooks/logging.ts',
+            command: "bun run ./hooks/logging.ts",
             timeout: 3000,
             enabled: true,
           },
         },
         environments: {
           test: {
-            NODE_ENV: 'test',
+            NODE_ENV: "test",
           },
         },
       };
 
       const _configPath = workspace.createHooksConfig(config);
-      const configContent = workspace.readFile('.claude/hooks.json');
+      const configContent = workspace.readFile(".claude/hooks.json");
       const parsedConfig = JSON.parse(configContent);
 
       expect(parsedConfig).toEqual(config);
       expect(parsedConfig.PreToolUse.Bash.command).toBe(
-        'bun run ./hooks/security-check.ts'
+        "bun run ./hooks/security-check.ts"
       );
     });
 
-    test('should load and validate configuration through hooks-config', async () => {
+    test("should load and validate configuration through hooks-config", async () => {
       // Test loading config through the config package
-      const { ConfigManager } = await import('@carabiner/hooks-config');
+      const { ConfigManager } = await import("@carabiner/hooks-config");
 
       const config = {
-        version: '1.0.0',
+        version: "1.0.0",
         PreToolUse: {
           Bash: {
-            command: 'bun run ./hooks/security-check.ts',
+            command: "bun run ./hooks/security-check.ts",
             timeout: 5000,
             enabled: true,
           },
         },
         PostToolUse: {},
         SessionStart: {
-          command: 'bun run hooks/session-start.ts',
+          command: "bun run hooks/session-start.ts",
           timeout: 10_000,
           enabled: true,
         },
         UserPromptSubmit: {
-          command: 'bun run hooks/user-prompt-submit.ts',
+          command: "bun run hooks/user-prompt-submit.ts",
           timeout: 5000,
           enabled: false,
         },
         templates: {
           typescript: {
-            command: 'bun run {hookPath}',
+            command: "bun run {hookPath}",
             timeout: 10_000,
             enabled: true,
           },
         },
         variables: {
-          hookPath: 'hooks/{event}.ts',
+          hookPath: "hooks/{event}.ts",
         },
         environments: {},
       };
@@ -169,16 +169,16 @@ describe('Cross-Package Integration Tests', () => {
       const configManager = new ConfigManager(workspace.path);
       const loadedConfig = await configManager.load();
 
-      expect(loadedConfig.version).toBe('1.0.0');
+      expect(loadedConfig.version).toBe("1.0.0");
       expect(loadedConfig.PreToolUse).toBeDefined();
       expect(loadedConfig.PreToolUse.Bash).toBeDefined();
       expect(loadedConfig.PreToolUse.Bash.timeout).toBe(5000);
     });
 
-    test('should execute hooks through hooks-core runtime', async () => {
+    test("should execute hooks through hooks-core runtime", async () => {
       // Test the complete execution flow
-      const { HookExecutor } = await import('@carabiner/execution');
-      const { TestProtocol } = await import('@carabiner/protocol');
+      const { HookExecutor } = await import("@carabiner/execution");
+      const { TestProtocol } = await import("@carabiner/protocol");
 
       // Create a simple hook
       const hookContent = `
@@ -191,12 +191,12 @@ export default async function(context) {
 }
       `;
 
-      workspace.createHookFile('test-hook.ts', hookContent);
+      workspace.createHookFile("test-hook.ts", hookContent);
 
       // Create test protocol with mock input
       const protocol = new TestProtocol({
-        event: 'pre-tool-use',
-        tool: 'Bash',
+        event: "pre-tool-use",
+        tool: "Bash",
         input: { command: 'echo "test"' },
       });
 
@@ -212,29 +212,29 @@ export default async function(context) {
     });
   });
 
-  describe('Configuration Validation Integration', () => {
-    test('should validate complete hook configuration', async () => {
-      const { ConfigManager } = await import('@carabiner/hooks-config');
+  describe("Configuration Validation Integration", () => {
+    test("should validate complete hook configuration", async () => {
+      const { ConfigManager } = await import("@carabiner/hooks-config");
 
       const validConfig: HookConfiguration = {
-        version: '1.0.0',
+        version: "1.0.0",
         PreToolUse: {
           Bash: {
-            command: 'bun run ./hooks/security-check.ts',
+            command: "bun run ./hooks/security-check.ts",
             timeout: 5000,
             enabled: true,
           },
         },
         PostToolUse: {
           Bash: {
-            command: 'bun run ./hooks/audit-log.ts',
+            command: "bun run ./hooks/audit-log.ts",
             timeout: 3000,
             enabled: true,
           },
         },
         environments: {
           production: {
-            LOG_LEVEL: 'info',
+            LOG_LEVEL: "info",
             WORKSPACE_PATH: workspace.path,
           },
         },
@@ -249,15 +249,15 @@ export default async function(context) {
       }).not.toThrow();
     });
 
-    test('should reject invalid configuration', async () => {
-      const { ConfigManager } = await import('@carabiner/hooks-config');
+    test("should reject invalid configuration", async () => {
+      const { ConfigManager } = await import("@carabiner/hooks-config");
 
       const invalidConfig = {
-        version: '1.0.0',
+        version: "1.0.0",
         InvalidEvent: {
           // Invalid hook event - not in allowed list
           Bash: {
-            command: 'bun run ./hooks/test.ts',
+            command: "bun run ./hooks/test.ts",
             timeout: 5000,
             enabled: true,
           },
@@ -271,46 +271,46 @@ export default async function(context) {
     });
   });
 
-  describe('End-to-End Hook Execution', () => {
-    test('should execute complete hook workflow with metrics', async () => {
+  describe("End-to-End Hook Execution", () => {
+    test("should execute complete hook workflow with metrics", async () => {
       // Test the complete flow from configuration loading to hook execution
-      const { ConfigManager } = await import('@carabiner/hooks-config');
+      const { ConfigManager } = await import("@carabiner/hooks-config");
       const { globalMetrics, clearExecutionMetrics, getExecutionStats } =
-        await import('@carabiner/execution');
+        await import("@carabiner/execution");
 
       // Clear any existing metrics
       clearExecutionMetrics();
 
       // Create a hook configuration
       const config = {
-        version: '1.0.0',
+        version: "1.0.0",
         PreToolUse: {
           Bash: {
-            command: 'bun run ./hooks/test-hook.ts',
+            command: "bun run ./hooks/test-hook.ts",
             timeout: 5000,
             enabled: true,
           },
         },
         PostToolUse: {},
         SessionStart: {
-          command: 'bun run hooks/session-start.ts',
+          command: "bun run hooks/session-start.ts",
           timeout: 10_000,
           enabled: true,
         },
         UserPromptSubmit: {
-          command: 'bun run hooks/user-prompt-submit.ts',
+          command: "bun run hooks/user-prompt-submit.ts",
           timeout: 5000,
           enabled: false,
         },
         templates: {
           typescript: {
-            command: 'bun run {hookPath}',
+            command: "bun run {hookPath}",
             timeout: 10_000,
             enabled: true,
           },
         },
         variables: {
-          hookPath: 'hooks/{event}.ts',
+          hookPath: "hooks/{event}.ts",
         },
         environments: {
           test: {
@@ -340,7 +340,7 @@ export default async function(context) {
       `;
 
       workspace.createHooksConfig(config);
-      workspace.createHookFile('hooks/test-hook.ts', hookContent);
+      workspace.createHookFile("hooks/test-hook.ts", hookContent);
 
       // Load configuration
       const configManager = new ConfigManager(workspace.path);
@@ -354,8 +354,8 @@ export default async function(context) {
       expect(initialMetrics).toBeDefined();
     });
 
-    test('should handle hook execution errors gracefully', async () => {
-      const { ConfigManager } = await import('@carabiner/hooks-config');
+    test("should handle hook execution errors gracefully", async () => {
+      const { ConfigManager } = await import("@carabiner/hooks-config");
 
       // Create a failing hook
       const failingHookContent = `
@@ -365,40 +365,40 @@ export default async function(context) {
       `;
 
       const config = {
-        version: '1.0.0',
+        version: "1.0.0",
         PreToolUse: {
           Bash: {
-            command: 'bun run ./hooks/failing-hook.ts',
+            command: "bun run ./hooks/failing-hook.ts",
             timeout: 5000,
             enabled: true,
           },
         },
         PostToolUse: {},
         SessionStart: {
-          command: 'bun run hooks/session-start.ts',
+          command: "bun run hooks/session-start.ts",
           timeout: 10_000,
           enabled: true,
         },
         UserPromptSubmit: {
-          command: 'bun run hooks/user-prompt-submit.ts',
+          command: "bun run hooks/user-prompt-submit.ts",
           timeout: 5000,
           enabled: false,
         },
         templates: {
           typescript: {
-            command: 'bun run {hookPath}',
+            command: "bun run {hookPath}",
             timeout: 10_000,
             enabled: true,
           },
         },
         variables: {
-          hookPath: 'hooks/{event}.ts',
+          hookPath: "hooks/{event}.ts",
         },
         environments: {},
       };
 
       workspace.createHooksConfig(config);
-      workspace.createHookFile('hooks/failing-hook.ts', failingHookContent);
+      workspace.createHookFile("hooks/failing-hook.ts", failingHookContent);
 
       const configManager = new ConfigManager(workspace.path);
       const loadedConfig = await configManager.load();
@@ -406,21 +406,21 @@ export default async function(context) {
       // Configuration should load successfully even with failing hooks
       expect(loadedConfig).toBeDefined();
       expect(loadedConfig.PreToolUse.Bash.command).toBe(
-        'bun run ./hooks/failing-hook.ts'
+        "bun run ./hooks/failing-hook.ts"
       );
     });
   });
 
-  describe('Security Integration Tests', () => {
-    test('should enforce security policies across packages', async () => {
-      const { ConfigManager } = await import('@carabiner/hooks-config');
+  describe("Security Integration Tests", () => {
+    test("should enforce security policies across packages", async () => {
+      const { ConfigManager } = await import("@carabiner/hooks-config");
 
       // Test configuration with potentially unsafe settings
       const unsafeConfig = {
-        version: '1.0.0',
+        version: "1.0.0",
         PreToolUse: {
           Bash: {
-            command: 'bun run ../../../etc/passwd', // Path traversal attempt
+            command: "bun run ../../../etc/passwd", // Path traversal attempt
             timeout: 5000,
             enabled: true,
           },
@@ -437,14 +437,14 @@ export default async function(context) {
       );
     });
 
-    test('should validate environment variable safety', async () => {
-      const { ConfigManager } = await import('@carabiner/hooks-config');
+    test("should validate environment variable safety", async () => {
+      const { ConfigManager } = await import("@carabiner/hooks-config");
 
       const configWithUnsafeEnv: HookConfiguration = {
-        version: '1.0.0',
+        version: "1.0.0",
         PreToolUse: {
           Bash: {
-            command: 'bun run ./hooks/test.ts',
+            command: "bun run ./hooks/test.ts",
             timeout: 5000,
             enabled: true,
           },
@@ -453,7 +453,7 @@ export default async function(context) {
           production: {
             // These should be validated by security policies
             WORKSPACE_PATH: workspace.path,
-            LOG_LEVEL: 'debug',
+            LOG_LEVEL: "debug",
           },
         },
       };
@@ -469,10 +469,10 @@ export default async function(context) {
     });
   });
 
-  describe('Performance Integration', () => {
-    test('should track performance across package boundaries', async () => {
+  describe("Performance Integration", () => {
+    test("should track performance across package boundaries", async () => {
       const { globalMetrics, clearExecutionMetrics } = await import(
-        '@carabiner/execution'
+        "@carabiner/execution"
       );
 
       // Clear existing metrics
@@ -495,7 +495,7 @@ export default async function(context) {
       expect(duration).toBeLessThan(1000); // Should complete quickly in tests
     });
 
-    test('should handle concurrent hook executions', async () => {
+    test("should handle concurrent hook executions", async () => {
       // Test concurrent execution capabilities
       const promises = [];
 

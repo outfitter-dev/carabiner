@@ -9,40 +9,40 @@
  *   LOG_LEVEL=debug bun run demo.ts          # Debug level
  */
 
-import { createCliLogger, createHookLogger, createLogger } from './factory';
-import type { HookExecutionContext, PerformanceMetrics } from './types';
+import { createCliLogger, createHookLogger, createLogger } from "./factory";
+import type { HookExecutionContext, PerformanceMetrics } from "./types";
 
 /**
  * Demonstrate basic logging
  */
 function basicLoggingDemo(): void {
-  const logger = createLogger('demo-service');
+  const logger = createLogger("demo-service");
 
-  logger.info('Demo service started', {
-    version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    logLevel: process.env.LOG_LEVEL || 'auto',
+  logger.info("Demo service started", {
+    version: "1.0.0",
+    environment: process.env.NODE_ENV || "development",
+    logLevel: process.env.LOG_LEVEL || "auto",
   });
 
-  logger.debug('Debug information', {
+  logger.debug("Debug information", {
     memoryUsage: process.memoryUsage(),
     uptime: process.uptime(),
   });
 
-  logger.warn('This is a warning', {
-    reason: 'demo-purpose',
-    severity: 'low',
+  logger.warn("This is a warning", {
+    reason: "demo-purpose",
+    severity: "low",
   });
 
   // Demonstrate sensitive data sanitization
-  logger.info('User data logged safely', {
-    username: 'john_doe',
-    email: 'john@example.com', // Will be masked
-    password: 'secret123', // Will be removed
-    apiKey: 'sk-1234567890abcdef', // Will be removed
-    sessionToken: 'sess_abcdef123456', // Will be removed
-    normalData: 'this is fine',
-    userId: 'user_12345', // Will be hashed
+  logger.info("User data logged safely", {
+    username: "john_doe",
+    email: "john@example.com", // Will be masked
+    password: "secret123", // Will be removed
+    apiKey: "sk-1234567890abcdef", // Will be removed
+    sessionToken: "sess_abcdef123456", // Will be removed
+    normalData: "this is fine",
+    userId: "user_12345", // Will be hashed
   });
 }
 
@@ -50,15 +50,15 @@ function basicLoggingDemo(): void {
  * Demonstrate hook execution logging
  */
 function hookExecutionDemo(): void {
-  const hookLogger = createHookLogger('PreToolUse', 'Bash');
+  const hookLogger = createHookLogger("PreToolUse", "Bash");
 
   const executionContext: HookExecutionContext = {
-    event: 'PreToolUse',
-    toolName: 'Bash',
+    event: "PreToolUse",
+    toolName: "Bash",
     executionId: `demo_${Date.now()}`,
-    sessionId: 'demo-session-123',
-    projectDir: '/demo/workspace',
-    userId: 'demo-user-456',
+    sessionId: "demo-session-123",
+    projectDir: "/demo/workspace",
+    userId: "demo-user-456",
   };
 
   // Start execution
@@ -66,13 +66,13 @@ function hookExecutionDemo(): void {
 
   // Log a security event
   hookLogger.logSecurityEvent(
-    'command_validation',
-    'medium',
+    "command_validation",
+    "medium",
     executionContext,
     {
-      command: 'ls -la /workspace',
-      validation: 'passed',
-      restrictions: ['workspace-only'],
+      command: "ls -la /workspace",
+      validation: "passed",
+      restrictions: ["workspace-only"],
     }
   );
 
@@ -87,8 +87,8 @@ function hookExecutionDemo(): void {
 
   hookLogger.completeExecution(executionContext, true, performanceMetrics, {
     success: true,
-    message: 'Command executed successfully',
-    output: 'file1.txt\nfile2.txt\nfile3.txt',
+    message: "Command executed successfully",
+    output: "file1.txt\nfile2.txt\nfile3.txt",
   });
 }
 
@@ -96,27 +96,27 @@ function hookExecutionDemo(): void {
  * Demonstrate CLI logging
  */
 function cliLoggingDemo(): void {
-  const cliLogger = createCliLogger('demo');
+  const cliLogger = createCliLogger("demo");
 
-  cliLogger.info('Starting CLI demo command', {
-    command: 'demo',
-    args: ['--example'],
+  cliLogger.info("Starting CLI demo command", {
+    command: "demo",
+    args: ["--example"],
     workDir: process.cwd(),
   });
 
-  cliLogger.debug('Loading configuration', {
-    configFile: './hooks.config.json',
-    schema: 'v1.0',
+  cliLogger.debug("Loading configuration", {
+    configFile: "./hooks.config.json",
+    schema: "v1.0",
   });
 
-  cliLogger.info('Processing files', {
-    inputFiles: ['input1.ts', 'input2.ts'],
-    outputDir: './output',
+  cliLogger.info("Processing files", {
+    inputFiles: ["input1.ts", "input2.ts"],
+    outputDir: "./output",
   });
 
-  cliLogger.info('✅ Command completed successfully', {
+  cliLogger.info("✅ Command completed successfully", {
     filesProcessed: 2,
-    duration: '1.2s',
+    duration: "1.2s",
     warnings: 0,
     errors: 0,
   });
@@ -126,15 +126,15 @@ function cliLoggingDemo(): void {
  * Demonstrate error handling
  */
 function errorHandlingDemo(): void {
-  const logger = createLogger('error-demo');
+  const logger = createLogger("error-demo");
 
   try {
-    throw new Error('Simulated database connection error');
+    throw new Error("Simulated database connection error");
   } catch (error) {
     if (error instanceof Error) {
-      logger.error(error, 'Database operation failed', {
-        operation: 'user-lookup',
-        database: 'users-db',
+      logger.error(error, "Database operation failed", {
+        operation: "user-lookup",
+        database: "users-db",
         retryable: true,
         retryCount: 0,
         maxRetries: 3,
@@ -143,17 +143,17 @@ function errorHandlingDemo(): void {
   }
 
   // Log different error severities
-  logger.error('Critical system failure', {
-    component: 'auth-service',
-    impact: 'service-unavailable',
-    escalation: 'immediate',
+  logger.error("Critical system failure", {
+    component: "auth-service",
+    impact: "service-unavailable",
+    escalation: "immediate",
   });
 
-  logger.warn('Deprecated API usage detected', {
-    api: '/v1/users',
-    deprecatedSince: '2024-01-01',
-    replacementApi: '/v2/users',
-    client: 'mobile-app',
+  logger.warn("Deprecated API usage detected", {
+    api: "/v1/users",
+    deprecatedSince: "2024-01-01",
+    replacementApi: "/v2/users",
+    client: "mobile-app",
   });
 }
 
@@ -161,51 +161,51 @@ function errorHandlingDemo(): void {
  * Demonstrate child loggers
  */
 function childLoggerDemo(): void {
-  const baseLogger = createLogger('request-handler');
+  const baseLogger = createLogger("request-handler");
 
   // Create child logger for a specific request
   const requestLogger = baseLogger.child({
-    requestId: 'req-abc-123',
-    userId: 'user-456',
-    endpoint: '/api/data',
-    method: 'GET',
+    requestId: "req-abc-123",
+    userId: "user-456",
+    endpoint: "/api/data",
+    method: "GET",
   });
 
-  requestLogger.info('Request received');
-  requestLogger.debug('Validating request parameters');
-  requestLogger.info('Database query executed', {
-    query: 'SELECT * FROM data',
+  requestLogger.info("Request received");
+  requestLogger.debug("Validating request parameters");
+  requestLogger.info("Database query executed", {
+    query: "SELECT * FROM data",
   });
-  requestLogger.info('Response sent', {
+  requestLogger.info("Response sent", {
     statusCode: 200,
-    responseTime: '45ms',
+    responseTime: "45ms",
   });
 
   // Create nested child logger
   const auditLogger = requestLogger.child({
-    component: 'audit',
-    action: 'data-access',
+    component: "audit",
+    action: "data-access",
   });
 
-  auditLogger.info('Data access logged for compliance');
+  auditLogger.info("Data access logged for compliance");
 }
 
 /**
  * Show environment-specific behavior
  */
 function environmentDemo(): void {
-  const logger = createLogger('env-demo');
+  const logger = createLogger("env-demo");
 
-  logger.info('Environment information', {
+  logger.info("Environment information", {
     nodeEnv: process.env.NODE_ENV,
     logLevel: process.env.LOG_LEVEL,
     debug: process.env.DEBUG,
-    prettyPrint: process.env.NODE_ENV !== 'production',
+    prettyPrint: process.env.NODE_ENV !== "production",
   });
 
   // These will only show in debug mode
-  logger.debug('Detailed debug info - only visible in debug mode');
-  logger.trace('Trace level info - only visible in trace mode');
+  logger.debug("Detailed debug info - only visible in debug mode");
+  logger.trace("Trace level info - only visible in trace mode");
 }
 
 /**

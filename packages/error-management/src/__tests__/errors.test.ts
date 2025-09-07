@@ -2,7 +2,7 @@
  * Tests for core error classes and functionality
  */
 
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from "bun:test";
 import {
   AuthError,
   ConfigurationError,
@@ -16,54 +16,54 @@ import {
   SecurityError,
   TimeoutError,
   ValidationError,
-} from '../errors.js';
-import { ErrorCategory, ErrorCode, ErrorSeverity } from '../types.js';
+} from "../errors.js";
+import { ErrorCategory, ErrorCode, ErrorSeverity } from "../types.js";
 
-describe('GrappleError', () => {
-  test('should create basic error with required properties', () => {
+describe("GrappleError", () => {
+  test("should create basic error with required properties", () => {
     const error = new GrappleError({
-      message: 'Test error message',
+      message: "Test error message",
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
     });
 
-    expect(error.message).toBe('Test error message');
+    expect(error.message).toBe("Test error message");
     expect(error.code).toBe(ErrorCode.RUNTIME_EXCEPTION);
     expect(error.category).toBe(ErrorCategory.RUNTIME);
     expect(error.severity).toBe(ErrorSeverity.ERROR);
-    expect(error.name).toBe('GrappleError');
+    expect(error.name).toBe("GrappleError");
     expect(error.context.correlationId).toBeDefined();
     expect(error.context.timestamp).toBeInstanceOf(Date);
   });
 
-  test('should handle optional properties correctly', () => {
-    const cause = new Error('Original error');
+  test("should handle optional properties correctly", () => {
+    const cause = new Error("Original error");
     const error = new GrappleError({
-      message: 'Test error',
+      message: "Test error",
       code: ErrorCode.CONFIG_INVALID,
       category: ErrorCategory.CONFIGURATION,
       severity: ErrorSeverity.CRITICAL,
       cause,
-      operation: 'test-operation',
-      userMessage: 'User-friendly message',
-      technicalDetails: { key: 'value' },
+      operation: "test-operation",
+      userMessage: "User-friendly message",
+      technicalDetails: { key: "value" },
       metadata: { test: true },
       isRecoverable: false,
     });
 
     expect(error.cause).toBe(cause);
     expect(error.severity).toBe(ErrorSeverity.CRITICAL);
-    expect(error.context.operation).toBe('test-operation');
-    expect(error.context.userMessage).toBe('User-friendly message');
-    expect(error.context.technicalDetails).toEqual({ key: 'value' });
+    expect(error.context.operation).toBe("test-operation");
+    expect(error.context.userMessage).toBe("User-friendly message");
+    expect(error.context.technicalDetails).toEqual({ key: "value" });
     expect(error.context.metadata).toEqual({ test: true });
     expect(error.isRecoverable).toBe(false);
   });
 
-  test('should determine recoverability correctly', () => {
+  test("should determine recoverability correctly", () => {
     // Non-recoverable security error
     const securityError = new GrappleError({
-      message: 'Security violation',
+      message: "Security violation",
       code: ErrorCode.SECURITY_VIOLATION,
       category: ErrorCategory.SECURITY,
     });
@@ -71,7 +71,7 @@ describe('GrappleError', () => {
 
     // Recoverable network error
     const networkError = new GrappleError({
-      message: 'Connection timeout',
+      message: "Connection timeout",
       code: ErrorCode.CONNECTION_TIMEOUT,
       category: ErrorCategory.NETWORK,
     });
@@ -79,68 +79,68 @@ describe('GrappleError', () => {
 
     // Non-recoverable validation error
     const validationError = new GrappleError({
-      message: 'Invalid input',
+      message: "Invalid input",
       code: ErrorCode.INVALID_INPUT,
       category: ErrorCategory.VALIDATION,
     });
     expect(validationError.isRecoverable).toBe(false);
   });
 
-  test('should generate user-friendly messages', () => {
+  test("should generate user-friendly messages", () => {
     const configError = new GrappleError({
-      message: 'Config file not found',
+      message: "Config file not found",
       code: ErrorCode.CONFIG_NOT_FOUND,
       category: ErrorCategory.CONFIGURATION,
     });
-    expect(configError.toUserMessage()).toContain('Configuration error');
+    expect(configError.toUserMessage()).toContain("Configuration error");
 
     const networkError = new GrappleError({
-      message: 'Connection failed',
+      message: "Connection failed",
       code: ErrorCode.CONNECTION_REFUSED,
       category: ErrorCategory.NETWORK,
     });
-    expect(networkError.toUserMessage()).toContain('Network error');
+    expect(networkError.toUserMessage()).toContain("Network error");
 
     const errorWithCustomMessage = new GrappleError({
-      message: 'Technical error',
+      message: "Technical error",
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
       severity: ErrorSeverity.ERROR,
-      userMessage: 'Custom user message',
+      userMessage: "Custom user message",
     });
-    expect(errorWithCustomMessage.toUserMessage()).toBe('Custom user message');
+    expect(errorWithCustomMessage.toUserMessage()).toBe("Custom user message");
   });
 
-  test('should generate detailed log messages', () => {
+  test("should generate detailed log messages", () => {
     const error = new GrappleError({
-      message: 'Test error',
+      message: "Test error",
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
       severity: ErrorSeverity.ERROR,
-      operation: 'test-operation',
-      technicalDetails: { key: 'value' },
+      operation: "test-operation",
+      technicalDetails: { key: "value" },
     });
 
     const logMessage = error.toLogMessage();
-    expect(logMessage).toContain('Error: GrappleError');
-    expect(logMessage).toContain('Message: Test error');
-    expect(logMessage).toContain('Code: 1103');
-    expect(logMessage).toContain('Category: runtime');
-    expect(logMessage).toContain('Severity: error');
-    expect(logMessage).toContain('Operation: test-operation');
-    expect(logMessage).toContain('Correlation ID:');
+    expect(logMessage).toContain("Error: GrappleError");
+    expect(logMessage).toContain("Message: Test error");
+    expect(logMessage).toContain("Code: 1103");
+    expect(logMessage).toContain("Category: runtime");
+    expect(logMessage).toContain("Severity: error");
+    expect(logMessage).toContain("Operation: test-operation");
+    expect(logMessage).toContain("Correlation ID:");
   });
 
-  test('should create error reports', () => {
+  test("should create error reports", () => {
     const error = new GrappleError({
-      message: 'Test error',
+      message: "Test error",
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
     });
 
     const report = error.toReport();
-    expect(report.error.name).toBe('GrappleError');
-    expect(report.error.message).toBe('Test error');
+    expect(report.error.name).toBe("GrappleError");
+    expect(report.error.message).toBe("Test error");
     expect(report.error.code).toBe(ErrorCode.RUNTIME_EXCEPTION);
     expect(report.error.category).toBe(ErrorCategory.RUNTIME);
     expect(report.error.severity).toBe(ErrorSeverity.ERROR);
@@ -149,16 +149,16 @@ describe('GrappleError', () => {
     expect(report.reportedAt).toBeInstanceOf(Date);
   });
 
-  test('should determine retryability correctly', () => {
+  test("should determine retryability correctly", () => {
     const retryableError = new GrappleError({
-      message: 'Timeout',
+      message: "Timeout",
       code: ErrorCode.OPERATION_TIMEOUT,
       category: ErrorCategory.TIMEOUT,
     });
     expect(retryableError.isRetryable()).toBe(true);
 
     const nonRetryableError = new GrappleError({
-      message: 'Security violation',
+      message: "Security violation",
       code: ErrorCode.SECURITY_VIOLATION,
       category: ErrorCategory.SECURITY,
       severity: ErrorSeverity.CRITICAL,
@@ -167,82 +167,82 @@ describe('GrappleError', () => {
   });
 });
 
-describe('Specific Error Classes', () => {
-  test('ConfigurationError should have correct defaults', () => {
-    const error = new ConfigurationError('Config error');
+describe("Specific Error Classes", () => {
+  test("ConfigurationError should have correct defaults", () => {
+    const error = new ConfigurationError("Config error");
     expect(error.code).toBe(ErrorCode.CONFIG_INVALID);
     expect(error.category).toBe(ErrorCategory.CONFIGURATION);
     expect(error.severity).toBe(ErrorSeverity.ERROR);
   });
 
-  test('ValidationError should not be recoverable', () => {
-    const error = new ValidationError('Validation failed');
+  test("ValidationError should not be recoverable", () => {
+    const error = new ValidationError("Validation failed");
     expect(error.isRecoverable).toBe(false);
     expect(error.category).toBe(ErrorCategory.VALIDATION);
   });
 
-  test('NetworkError should be recoverable', () => {
-    const error = new NetworkError('Connection failed');
+  test("NetworkError should be recoverable", () => {
+    const error = new NetworkError("Connection failed");
     expect(error.isRecoverable).toBe(true);
     expect(error.category).toBe(ErrorCategory.NETWORK);
   });
 
-  test('SecurityError should not be recoverable and have critical severity', () => {
-    const error = new SecurityError('Security violation');
+  test("SecurityError should not be recoverable and have critical severity", () => {
+    const error = new SecurityError("Security violation");
     expect(error.isRecoverable).toBe(false);
     expect(error.severity).toBe(ErrorSeverity.CRITICAL);
     expect(error.toUserMessage()).toBe(
-      'Security violation detected. Operation denied.'
+      "Security violation detected. Operation denied."
     );
   });
 
-  test('AuthError should have user-friendly message', () => {
-    const error = new AuthError('Auth failed');
+  test("AuthError should have user-friendly message", () => {
+    const error = new AuthError("Auth failed");
     expect(error.isRecoverable).toBe(false);
     expect(error.toUserMessage()).toBe(
-      'Authentication required. Please verify your credentials.'
+      "Authentication required. Please verify your credentials."
     );
   });
 
-  test('TimeoutError should be recoverable', () => {
-    const error = new TimeoutError('Operation timed out');
+  test("TimeoutError should be recoverable", () => {
+    const error = new TimeoutError("Operation timed out");
     expect(error.isRecoverable).toBe(true);
     expect(error.category).toBe(ErrorCategory.TIMEOUT);
   });
 });
 
-describe('Factory Functions', () => {
-  test('should create appropriate errors from system errors', () => {
-    const enoentError = new Error('File not found') as NodeJS.ErrnoException;
-    enoentError.code = 'ENOENT';
+describe("Factory Functions", () => {
+  test("should create appropriate errors from system errors", () => {
+    const enoentError = new Error("File not found") as NodeJS.ErrnoException;
+    enoentError.code = "ENOENT";
 
-    const grappleError = fromSystemError(enoentError, 'file-operation');
+    const grappleError = fromSystemError(enoentError, "file-operation");
     expect(grappleError).toBeInstanceOf(FileSystemError);
     expect(grappleError.code).toBe(ErrorCode.FILE_NOT_FOUND);
-    expect(grappleError.context.operation).toBe('file-operation');
+    expect(grappleError.context.operation).toBe("file-operation");
   });
 
-  test('should create network errors from connection errors', () => {
-    const connError = new Error('Connection refused') as NodeJS.ErrnoException;
-    connError.code = 'ECONNREFUSED';
+  test("should create network errors from connection errors", () => {
+    const connError = new Error("Connection refused") as NodeJS.ErrnoException;
+    connError.code = "ECONNREFUSED";
 
     const grappleError = fromSystemError(connError);
     expect(grappleError).toBeInstanceOf(NetworkError);
     expect(grappleError.code).toBe(ErrorCode.CONNECTION_REFUSED);
   });
 
-  test('should create appropriate errors from generic errors', () => {
-    const genericError = new Error('Something went wrong');
-    const grappleError = fromError(genericError, 'test-operation');
+  test("should create appropriate errors from generic errors", () => {
+    const genericError = new Error("Something went wrong");
+    const grappleError = fromError(genericError, "test-operation");
 
     expect(grappleError).toBeInstanceOf(RuntimeError);
     expect(grappleError.cause).toBe(genericError);
-    expect(grappleError.context.operation).toBe('test-operation');
+    expect(grappleError.context.operation).toBe("test-operation");
   });
 
-  test('should return existing GrappleError unchanged', () => {
+  test("should return existing GrappleError unchanged", () => {
     const originalError = new GrappleError({
-      message: 'Original error',
+      message: "Original error",
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
     });
@@ -251,41 +251,41 @@ describe('Factory Functions', () => {
     expect(result).toBe(originalError);
   });
 
-  test('should create errors based on message patterns', () => {
-    const timeoutMessage = fromMessage('Operation timed out', 'test');
+  test("should create errors based on message patterns", () => {
+    const timeoutMessage = fromMessage("Operation timed out", "test");
     expect(timeoutMessage).toBeInstanceOf(TimeoutError);
 
-    const permissionMessage = fromMessage('Permission denied', 'test');
+    const permissionMessage = fromMessage("Permission denied", "test");
     expect(permissionMessage).toBeInstanceOf(FileSystemError);
     expect(permissionMessage.code).toBe(ErrorCode.PERMISSION_DENIED);
 
-    const validationMessage = fromMessage('Validation failed', 'test');
+    const validationMessage = fromMessage("Validation failed", "test");
     expect(validationMessage).toBeInstanceOf(ValidationError);
 
-    const configMessage = fromMessage('Config error', 'test');
+    const configMessage = fromMessage("Config error", "test");
     expect(configMessage).toBeInstanceOf(ConfigurationError);
 
-    const securityMessage = fromMessage('Unauthorized access', 'test');
+    const securityMessage = fromMessage("Unauthorized access", "test");
     expect(securityMessage).toBeInstanceOf(SecurityError);
   });
 });
 
-describe('Error Inheritance and Polymorphism', () => {
-  test('should maintain proper inheritance chain', () => {
-    const configError = new ConfigurationError('Config error');
+describe("Error Inheritance and Polymorphism", () => {
+  test("should maintain proper inheritance chain", () => {
+    const configError = new ConfigurationError("Config error");
 
     expect(configError instanceof GrappleError).toBe(true);
     expect(configError instanceof Error).toBe(true);
     expect(configError instanceof ConfigurationError).toBe(true);
   });
 
-  test('should have consistent prototype chain', () => {
+  test("should have consistent prototype chain", () => {
     const errors = [
-      new ConfigurationError('Config error'),
-      new RuntimeError('Runtime error'),
-      new ValidationError('Validation error'),
-      new NetworkError('Network error'),
-      new SecurityError('Security error'),
+      new ConfigurationError("Config error"),
+      new RuntimeError("Runtime error"),
+      new ValidationError("Validation error"),
+      new NetworkError("Network error"),
+      new SecurityError("Security error"),
     ];
 
     for (const error of errors) {
@@ -294,15 +294,15 @@ describe('Error Inheritance and Polymorphism', () => {
     }
   });
 
-  test('should capture stack traces correctly', () => {
+  test("should capture stack traces correctly", () => {
     const error = new GrappleError({
-      message: 'Test error',
+      message: "Test error",
       code: ErrorCode.RUNTIME_EXCEPTION,
       category: ErrorCategory.RUNTIME,
     });
 
     expect(error.stack).toBeDefined();
-    expect(error.stack).toContain('GrappleError');
+    expect(error.stack).toContain("GrappleError");
     expect(error.context.stackTrace).toBeDefined();
   });
 });

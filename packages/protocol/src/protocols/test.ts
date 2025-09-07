@@ -9,7 +9,7 @@
 import {
   parseClaudeHookInput,
   validateAndCreateBrandedInput,
-} from '@carabiner/schemas';
+} from "@carabiner/schemas";
 import type {
   BashToolInput,
   DirectoryPath,
@@ -20,7 +20,7 @@ import type {
   ToolHookEvent,
   ToolInput,
   TranscriptPath,
-} from '@carabiner/types';
+} from "@carabiner/types";
 import {
   createDirectoryPath,
   createNotificationContext,
@@ -28,9 +28,9 @@ import {
   createToolHookContext,
   createTranscriptPath,
   createUserPromptContext,
-} from '@carabiner/types';
-import type { HookProtocol } from '../interface';
-import { ProtocolParseError } from '../interface';
+} from "@carabiner/types";
+import type { HookProtocol } from "../interface";
+import { ProtocolParseError } from "../interface";
 
 /**
  * Configuration options for TestProtocol
@@ -164,7 +164,7 @@ export class TestProtocol implements HookProtocol {
             error
           );
         }
-        throw new ProtocolParseError('Failed to parse hook context');
+        throw new ProtocolParseError("Failed to parse hook context");
       }
 
       // In non-strict mode, return a minimal context for testing
@@ -265,63 +265,63 @@ export class TestProtocol implements HookProtocol {
       ...this.options.environment,
     };
 
-    if ('tool_name' in inRec || 'toolName' in inRec) {
+    if ("tool_name" in inRec || "toolName" in inRec) {
       // Tool hook context (PreToolUse/PostToolUse)
       return createToolHookContext(
-        get<ToolHookEvent>('hookEventName', 'hook_event_name'),
-        get<string>('toolName', 'tool_name'),
-        get<ToolInput>('toolInput', 'tool_input'),
+        get<ToolHookEvent>("hookEventName", "hook_event_name"),
+        get<string>("toolName", "tool_name"),
+        get<ToolInput>("toolInput", "tool_input"),
         {
-          sessionId: get<SessionId>('sessionId', 'session_id'),
+          sessionId: get<SessionId>("sessionId", "session_id"),
           transcriptPath: get<TranscriptPath>(
-            'transcriptPath',
-            'transcript_path'
+            "transcriptPath",
+            "transcript_path"
           ),
-          cwd: get<DirectoryPath>('cwd', 'cwd'),
+          cwd: get<DirectoryPath>("cwd", "cwd"),
           environment,
-          matcher: get<string | undefined>('matcher', 'matcher'),
+          matcher: get<string | undefined>("matcher", "matcher"),
         },
         get<Record<string, unknown> | undefined>(
-          'toolResponse',
-          'tool_response'
+          "toolResponse",
+          "tool_response"
         )
       );
     }
 
-    if ('prompt' in inRec) {
+    if ("prompt" in inRec) {
       // User prompt context
       return createUserPromptContext(inRec.prompt as string, {
-        sessionId: get<SessionId>('sessionId', 'session_id'),
+        sessionId: get<SessionId>("sessionId", "session_id"),
         transcriptPath: get<TranscriptPath>(
-          'transcriptPath',
-          'transcript_path'
+          "transcriptPath",
+          "transcript_path"
         ),
-        cwd: get<DirectoryPath>('cwd', 'cwd'),
+        cwd: get<DirectoryPath>("cwd", "cwd"),
         environment,
-        matcher: get<string | undefined>('matcher', 'matcher'),
+        matcher: get<string | undefined>("matcher", "matcher"),
       });
     }
 
-    if ('notification' in inRec) {
+    if ("notification" in inRec) {
       // Notification context
       return createNotificationContext(
-        get<NotificationEvent>('hookEventName', 'hook_event_name'),
+        get<NotificationEvent>("hookEventName", "hook_event_name"),
         {
-          sessionId: get<SessionId>('sessionId', 'session_id'),
+          sessionId: get<SessionId>("sessionId", "session_id"),
           transcriptPath: get<TranscriptPath>(
-            'transcriptPath',
-            'transcript_path'
+            "transcriptPath",
+            "transcript_path"
           ),
-          cwd: get<DirectoryPath>('cwd', 'cwd'),
+          cwd: get<DirectoryPath>("cwd", "cwd"),
           environment,
-          matcher: get<string | undefined>('matcher', 'matcher'),
+          matcher: get<string | undefined>("matcher", "matcher"),
         },
         inRec.notification as string | undefined
       );
     }
 
     throw new ProtocolParseError(
-      `Unsupported hook event: ${String(get('hookEventName', 'hook_event_name'))}`
+      `Unsupported hook event: ${String(get("hookEventName", "hook_event_name"))}`
     );
   }
 
@@ -330,13 +330,13 @@ export class TestProtocol implements HookProtocol {
    */
   private createMinimalContext(): HookContext {
     return createToolHookContext(
-      'PreToolUse',
-      'Bash',
+      "PreToolUse",
+      "Bash",
       { command: 'echo "test"' } as BashToolInput,
       {
-        sessionId: createSessionId('test-session'),
-        transcriptPath: createTranscriptPath('/test/transcript.md'),
-        cwd: createDirectoryPath('/test/dir'),
+        sessionId: createSessionId("test-session"),
+        transcriptPath: createTranscriptPath("/test/transcript.md"),
+        cwd: createDirectoryPath("/test/dir"),
         environment: {
           CLAUDE_PROJECT_DIR: Bun.env.CLAUDE_PROJECT_DIR,
           ...this.options.environment,
@@ -350,7 +350,7 @@ export class TestProtocol implements HookProtocol {
  * Factory for creating TestProtocol instances
  */
 export class TestProtocolFactory {
-  readonly type = 'test';
+  readonly type = "test";
 
   create({
     input,
@@ -373,11 +373,11 @@ export function createToolHookInput(
   overrides: Partial<Record<string, unknown>> = {}
 ) {
   return {
-    session_id: 'test-session-123',
-    transcript_path: '/tmp/test-transcript.md',
-    cwd: '/test/cwd',
-    hook_event_name: 'PreToolUse',
-    tool_name: 'Bash',
+    session_id: "test-session-123",
+    transcript_path: "/tmp/test-transcript.md",
+    cwd: "/test/cwd",
+    hook_event_name: "PreToolUse",
+    tool_name: "Bash",
     tool_input: { command: 'echo "test"' },
     ...overrides,
   };
@@ -390,11 +390,11 @@ export function createUserPromptInput(
   overrides: Partial<Record<string, unknown>> = {}
 ) {
   return {
-    session_id: 'test-session-123',
-    transcript_path: '/tmp/test-transcript.md',
-    cwd: '/test/cwd',
-    hook_event_name: 'UserPromptSubmit',
-    prompt: 'Test prompt',
+    session_id: "test-session-123",
+    transcript_path: "/tmp/test-transcript.md",
+    cwd: "/test/cwd",
+    hook_event_name: "UserPromptSubmit",
+    prompt: "Test prompt",
     ...overrides,
   };
 }
@@ -406,11 +406,11 @@ export function createNotificationInput(
   overrides: Partial<Record<string, unknown>> = {}
 ) {
   return {
-    session_id: 'test-session-123',
-    transcript_path: '/tmp/test-transcript.md',
-    cwd: '/test/cwd',
-    hook_event_name: 'SessionStart',
-    notification: 'Session started',
+    session_id: "test-session-123",
+    transcript_path: "/tmp/test-transcript.md",
+    cwd: "/test/cwd",
+    hook_event_name: "SessionStart",
+    notification: "Session started",
     ...overrides,
   };
 }

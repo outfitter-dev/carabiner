@@ -3,14 +3,14 @@
  * Handles loading, validation, and management of hook configurations
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import type {
   HookConfiguration,
   HookEvent,
   ToolHookConfig,
   ToolName,
-} from '@carabiner/hooks-core';
+} from "@carabiner/hooks-core";
 // Note: Error management lives in a separate package. To avoid build-order
 // coupling here, we use a local error type and keep integration optional.
 
@@ -23,14 +23,14 @@ export class ConfigError extends Error {
     public readonly code?: string
   ) {
     super(message);
-    this.name = 'ConfigError';
+    this.name = "ConfigError";
   }
 }
 
 /**
  * Configuration file formats
  */
-export type ConfigFormat = 'json' | 'js' | 'ts';
+export type ConfigFormat = "json" | "js" | "ts";
 
 /**
  * Configuration loading options
@@ -80,32 +80,32 @@ export interface ExtendedHookConfiguration extends HookConfiguration {
  * Configuration file paths
  */
 export const CONFIG_PATHS = {
-  json: '.claude/hooks.json',
-  js: '.claude/hooks.config.js',
-  ts: '.claude/hooks.config.ts',
-  settings: '.claude/settings.json',
+  json: ".claude/hooks.json",
+  js: ".claude/hooks.config.js",
+  ts: ".claude/hooks.config.ts",
+  settings: ".claude/settings.json",
 } as const;
 
 /**
  * Default hook configuration
  */
 export const DEFAULT_CONFIG: ExtendedHookConfiguration = {
-  $schema: 'https://carabiner.outfitter.dev/schema.json',
-  version: '1.0.0',
+  $schema: "https://carabiner.outfitter.dev/schema.json",
+  version: "1.0.0",
 
   PreToolUse: {
     Bash: {
-      command: 'bun run hooks/pre-tool-use.ts',
+      command: "bun run hooks/pre-tool-use.ts",
       timeout: 5000,
       enabled: true,
     },
     Write: {
-      command: 'bun run hooks/pre-tool-use.ts',
+      command: "bun run hooks/pre-tool-use.ts",
       timeout: 3000,
       enabled: true,
     },
     Edit: {
-      command: 'bun run hooks/pre-tool-use.ts',
+      command: "bun run hooks/pre-tool-use.ts",
       timeout: 3000,
       enabled: true,
     },
@@ -113,49 +113,49 @@ export const DEFAULT_CONFIG: ExtendedHookConfiguration = {
 
   PostToolUse: {
     Write: {
-      command: 'bun run hooks/post-tool-use.ts',
+      command: "bun run hooks/post-tool-use.ts",
       timeout: 30_000,
       enabled: true,
     },
     Edit: {
-      command: 'bun run hooks/post-tool-use.ts',
+      command: "bun run hooks/post-tool-use.ts",
       timeout: 30_000,
       enabled: true,
     },
     Bash: {
-      command: 'bun run hooks/post-tool-use.ts',
+      command: "bun run hooks/post-tool-use.ts",
       timeout: 10_000,
       enabled: true,
     },
   },
 
   SessionStart: {
-    command: 'bun run hooks/session-start.ts',
+    command: "bun run hooks/session-start.ts",
     timeout: 10_000,
     enabled: true,
   },
 
   UserPromptSubmit: {
-    command: 'bun run hooks/user-prompt-submit.ts',
+    command: "bun run hooks/user-prompt-submit.ts",
     timeout: 5000,
     enabled: false,
   },
 
   templates: {
     typescript: {
-      command: 'bun run {hookPath}',
+      command: "bun run {hookPath}",
       timeout: 10_000,
       enabled: true,
     },
     shell: {
-      command: 'bash {hookPath}',
+      command: "bash {hookPath}",
       timeout: 5000,
       enabled: true,
     },
   },
 
   variables: {
-    hookPath: 'hooks/{event}.ts',
+    hookPath: "hooks/{event}.ts",
   },
 
   environments: {
@@ -194,7 +194,7 @@ export class ConfigManager {
    */
   private setConfig(config: ExtendedHookConfiguration | null): void {
     // Use Object.defineProperty to set readonly property
-    Object.defineProperty(this, 'config', {
+    Object.defineProperty(this, "config", {
       value: config,
       writable: false,
       configurable: true,
@@ -206,9 +206,9 @@ export class ConfigManager {
    * Controlled by ENABLE_ADVANCED_ERROR_MANAGEMENT env ("true" to enable)
    */
   private get advancedErrorManagementEnabled(): boolean {
-    const env = typeof Bun !== 'undefined' ? Bun.env : process.env;
+    const env = typeof Bun !== "undefined" ? Bun.env : process.env;
     return (
-      (env?.ENABLE_ADVANCED_ERROR_MANAGEMENT || '').toLowerCase() === 'true'
+      (env?.ENABLE_ADVANCED_ERROR_MANAGEMENT || "").toLowerCase() === "true"
     );
   }
 
@@ -225,7 +225,7 @@ export class ConfigManager {
       return await op();
     }
     try {
-      const em = await import('@carabiner/error-management');
+      const em = await import("@carabiner/error-management");
       return await em.executeWithBoundary(
         op,
         boundaryName,
@@ -256,8 +256,8 @@ export class ConfigManager {
   async load(options: ConfigOptions = {}): Promise<ExtendedHookConfiguration> {
     return this.withBoundary(
       () => this._loadInternal(options),
-      'config-operations',
-      'load-config',
+      "config-operations",
+      "load-config",
       () => this.createDefaultConfig()
     );
   }
@@ -283,7 +283,7 @@ export class ConfigManager {
     }
 
     if (!configPath) {
-      throw new ConfigError('No configuration file found', 'CONFIG_NOT_FOUND');
+      throw new ConfigError("No configuration file found", "CONFIG_NOT_FOUND");
     }
 
     this.configPath = configPath;
@@ -308,10 +308,10 @@ export class ConfigManager {
       // Optionally report via error-management if available
       if (this.advancedErrorManagementEnabled) {
         try {
-          const em = await import('@carabiner/error-management');
+          const em = await import("@carabiner/error-management");
           await em.reportError(
             new em.ConfigurationError(
-              `Failed to load configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              `Failed to load configuration: ${error instanceof Error ? error.message : "Unknown error"}`,
               em.ErrorCode.CONFIG_PARSE_ERROR
             )
           );
@@ -320,8 +320,8 @@ export class ConfigManager {
         }
       }
       throw new ConfigError(
-        `Failed to load configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'LOAD_ERROR'
+        `Failed to load configuration: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "LOAD_ERROR"
       );
     }
   }
@@ -331,12 +331,12 @@ export class ConfigManager {
    */
   async save(
     config: ExtendedHookConfiguration,
-    format: ConfigFormat = 'json'
+    format: ConfigFormat = "json"
   ): Promise<void> {
     return this.withBoundary(
       () => this._saveInternal(config, format),
-      'config-operations',
-      'save-config'
+      "config-operations",
+      "save-config"
     );
   }
 
@@ -345,7 +345,7 @@ export class ConfigManager {
    */
   private async _saveInternal(
     config: ExtendedHookConfiguration,
-    format: ConfigFormat = 'json'
+    format: ConfigFormat = "json"
   ): Promise<void> {
     const configPath = join(this.workspacePath, CONFIG_PATHS[format]);
     const configDir = dirname(configPath);
@@ -359,26 +359,26 @@ export class ConfigManager {
       let content: string;
 
       switch (format) {
-        case 'json':
+        case "json":
           content = JSON.stringify(config, null, 2);
           break;
 
-        case 'js':
+        case "js":
           content = this.generateJSConfig(config);
           break;
 
-        case 'ts':
+        case "ts":
           content = this.generateTSConfig(config);
           break;
 
         default:
           throw new ConfigError(
             `Unsupported format: ${format}`,
-            'UNSUPPORTED_FORMAT'
+            "UNSUPPORTED_FORMAT"
           );
       }
 
-      writeFileSync(configPath, content, 'utf-8');
+      writeFileSync(configPath, content, "utf-8");
       this.configPath = configPath;
       this.setConfig(config);
 
@@ -387,10 +387,10 @@ export class ConfigManager {
     } catch (error) {
       if (this.advancedErrorManagementEnabled) {
         try {
-          const em = await import('@carabiner/error-management');
+          const em = await import("@carabiner/error-management");
           await em.reportError(
             new em.ConfigurationError(
-              `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              `Failed to save configuration: ${error instanceof Error ? error.message : "Unknown error"}`,
               em.ErrorCode.CONFIG_WRITE_FAILED
             )
           );
@@ -399,8 +399,8 @@ export class ConfigManager {
         }
       }
       throw new ConfigError(
-        `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'SAVE_ERROR'
+        `Failed to save configuration: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "SAVE_ERROR"
       );
     }
   }
@@ -410,7 +410,7 @@ export class ConfigManager {
    */
   getConfig(): ExtendedHookConfiguration {
     if (!this.config) {
-      throw new ConfigError('Configuration not loaded', 'NOT_LOADED');
+      throw new ConfigError("Configuration not loaded", "NOT_LOADED");
     }
     return this.config;
   }
@@ -446,15 +446,15 @@ export class ConfigManager {
     // For events that support tool-specific configuration
     if (
       tool &&
-      typeof eventConfig === 'object' &&
-      !('command' in eventConfig)
+      typeof eventConfig === "object" &&
+      !("command" in eventConfig)
     ) {
       const toolConfig = (eventConfig as Record<string, ToolHookConfig>)[tool];
-      return toolConfig && 'command' in toolConfig ? toolConfig : undefined;
+      return toolConfig && "command" in toolConfig ? toolConfig : undefined;
     }
 
     // For events with single configuration
-    if (typeof eventConfig === 'object' && 'command' in eventConfig) {
+    if (typeof eventConfig === "object" && "command" in eventConfig) {
       return eventConfig as ToolHookConfig;
     }
 
@@ -472,16 +472,16 @@ export class ConfigManager {
     const currentConfig = this.getConfig();
     const nextConfig = { ...currentConfig } as ExtendedHookConfiguration;
 
-    if (typeof toolOrConfig === 'string' && config) {
+    if (typeof toolOrConfig === "string" && config) {
       // Setting tool-specific config - create immutable copy
       const existing = nextConfig[event];
       const eventMap =
-        existing && typeof existing === 'object' && !('command' in existing)
+        existing && typeof existing === "object" && !("command" in existing)
           ? { ...existing }
           : {};
       eventMap[toolOrConfig] = { ...config };
       (nextConfig as Record<string, unknown>)[event] = eventMap;
-    } else if (typeof toolOrConfig === 'object' && 'command' in toolOrConfig) {
+    } else if (typeof toolOrConfig === "object" && "command" in toolOrConfig) {
       // Setting event-level config - create immutable copy
       (nextConfig as Record<string, unknown>)[event] = { ...toolOrConfig };
     }
@@ -550,14 +550,14 @@ export class ConfigManager {
 
     for (const [event, eventConfig] of Object.entries(config)) {
       if (
-        event.startsWith('$') ||
-        ['templates', 'variables', 'environments'].includes(event)
+        event.startsWith("$") ||
+        ["templates", "variables", "environments"].includes(event)
       ) {
         continue;
       }
 
-      if (eventConfig && typeof eventConfig === 'object') {
-        if ('command' in eventConfig) {
+      if (eventConfig && typeof eventConfig === "object") {
+        if ("command" in eventConfig) {
           // Single hook config
           hooks[event] = this.processHookConfig(eventConfig);
         } else {
@@ -566,8 +566,8 @@ export class ConfigManager {
           for (const [tool, toolConfig] of Object.entries(eventConfig)) {
             if (
               toolConfig &&
-              typeof toolConfig === 'object' &&
-              'command' in toolConfig
+              typeof toolConfig === "object" &&
+              "command" in toolConfig
             ) {
               eventHooks[tool] = this.processHookConfig(
                 toolConfig as ToolHookConfig
@@ -619,7 +619,7 @@ export class ConfigManager {
   private findConfigFile(preferredFormat?: ConfigFormat): string | null {
     const formats: ConfigFormat[] = preferredFormat
       ? [preferredFormat]
-      : ['ts', 'js', 'json'];
+      : ["ts", "js", "json"];
 
     for (const format of formats) {
       const path = join(this.workspacePath, CONFIG_PATHS[format]);
@@ -638,21 +638,21 @@ export class ConfigManager {
     const format = this.getFormatFromPath(path);
 
     switch (format) {
-      case 'json': {
-        const jsonConfig = JSON.parse(readFileSync(path, 'utf-8'));
+      case "json": {
+        const jsonConfig = JSON.parse(readFileSync(path, "utf-8"));
         // Security: Validate JSON configuration
         this.validateConfigSecurity(jsonConfig);
         return jsonConfig;
       }
 
-      case 'js':
-      case 'ts':
+      case "js":
+      case "ts":
         return await this.loadJsOrTsConfig(path);
 
       default:
         throw new ConfigError(
           `Unknown configuration format: ${format}`,
-          'UNKNOWN_FORMAT'
+          "UNKNOWN_FORMAT"
         );
     }
   }
@@ -673,30 +673,30 @@ export class ConfigManager {
       if (!resolvedPath.startsWith(workspaceRoot)) {
         throw new ConfigError(
           `Configuration file outside workspace boundary: ${path}`,
-          'SECURITY_VIOLATION'
+          "SECURITY_VIOLATION"
         );
       }
 
       // Validate file extension
-      if (!(resolvedPath.endsWith('.js') || resolvedPath.endsWith('.ts'))) {
+      if (!(resolvedPath.endsWith(".js") || resolvedPath.endsWith(".ts"))) {
         throw new ConfigError(
           `Invalid configuration file extension: ${path}`,
-          'INVALID_EXTENSION'
+          "INVALID_EXTENSION"
         );
       }
 
       // Check if we're running under Bun
-      if (typeof Bun !== 'undefined') {
+      if (typeof Bun !== "undefined") {
         // Use dynamic import with validated absolute path
         const module = await import(resolvedPath);
 
         // Handle both default export and named exports
         const config = module.default || module;
 
-        if (!config || typeof config !== 'object') {
+        if (!config || typeof config !== "object") {
           throw new ConfigError(
-            'Configuration file must export a configuration object',
-            'INVALID_EXPORT'
+            "Configuration file must export a configuration object",
+            "INVALID_EXPORT"
           );
         }
 
@@ -707,8 +707,8 @@ export class ConfigManager {
       }
       // Fallback for Node.js environments
       throw new ConfigError(
-        'JS/TS configuration files are only supported under Bun runtime. Please use JSON format or switch to Bun.',
-        'RUNTIME_NOT_SUPPORTED'
+        "JS/TS configuration files are only supported under Bun runtime. Please use JSON format or switch to Bun.",
+        "RUNTIME_NOT_SUPPORTED"
       );
     } catch (error) {
       if (error instanceof ConfigError) {
@@ -716,8 +716,8 @@ export class ConfigManager {
       }
 
       throw new ConfigError(
-        `Failed to load ${path}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'IMPORT_ERROR'
+        `Failed to load ${path}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "IMPORT_ERROR"
       );
     }
   }
@@ -727,7 +727,7 @@ export class ConfigManager {
    */
   private async createDefaultConfig(): Promise<ExtendedHookConfiguration> {
     const defaultConfig = { ...DEFAULT_CONFIG };
-    await this.save(defaultConfig, 'json');
+    await this.save(defaultConfig, "json");
     return defaultConfig;
   }
 
@@ -746,7 +746,7 @@ export class ConfigManager {
   private applyEnvironmentOverrides(
     config: ExtendedHookConfiguration
   ): ExtendedHookConfiguration {
-    const env = Bun.env.NODE_ENV || 'development';
+    const env = Bun.env.NODE_ENV || "development";
     const envOverrides = config.environments?.[env];
 
     if (!envOverrides) {
@@ -774,9 +774,9 @@ export class ConfigManager {
 
       if (sourceValue !== undefined) {
         if (
-          typeof targetValue === 'object' &&
+          typeof targetValue === "object" &&
           targetValue !== null &&
-          typeof sourceValue === 'object' &&
+          typeof sourceValue === "object" &&
           sourceValue !== null &&
           !Array.isArray(targetValue) &&
           !Array.isArray(sourceValue)
@@ -798,13 +798,13 @@ export class ConfigManager {
    * Get format from file path
    */
   private getFormatFromPath(path: string): ConfigFormat {
-    if (path.endsWith('.ts')) {
-      return 'ts';
+    if (path.endsWith(".ts")) {
+      return "ts";
     }
-    if (path.endsWith('.js')) {
-      return 'js';
+    if (path.endsWith(".js")) {
+      return "js";
     }
-    return 'json';
+    return "json";
   }
 
   /**
@@ -843,7 +843,7 @@ export default config;
       // First, replace legitimate template variables to avoid false positives
       const cmdWithoutTemplates = cmd.replace(
         /\{[a-zA-Z_][a-zA-Z0-9_]*\}/g,
-        'TEMPLATE_VAR'
+        "TEMPLATE_VAR"
       );
 
       // Block commands with shell injection attempts
@@ -861,34 +861,34 @@ export default config;
         if (pattern.test(cmdWithoutTemplates)) {
           throw new ConfigError(
             `Dangerous command pattern detected in ${context}: ${cmd}`,
-            'SECURITY_VIOLATION'
+            "SECURITY_VIOLATION"
           );
         }
       }
 
       // Ensure commands start with allowed executables
-      const allowedExecutables = ['bun', 'node', 'npm', 'yarn', 'pnpm', 'bash'];
+      const allowedExecutables = ["bun", "node", "npm", "yarn", "pnpm", "bash"];
       const executable = cmd.trim().split(/\s+/)[0];
       if (!(executable && allowedExecutables.includes(executable))) {
         throw new ConfigError(
-          `Unsafe executable in ${context}: ${executable}. Only ${allowedExecutables.join(', ')} are allowed.`,
-          'SECURITY_VIOLATION'
+          `Unsafe executable in ${context}: ${executable}. Only ${allowedExecutables.join(", ")} are allowed.`,
+          "SECURITY_VIOLATION"
         );
       }
     };
 
     // Recursively check all commands in configuration
-    const checkConfigCommands = (obj: unknown, path = ''): void => {
-      if (!obj || typeof obj !== 'object') {
+    const checkConfigCommands = (obj: unknown, path = ""): void => {
+      if (!obj || typeof obj !== "object") {
         return;
       }
 
       for (const [key, value] of Object.entries(obj)) {
         const currentPath = path ? `${path}.${key}` : key;
 
-        if (key === 'command' && typeof value === 'string') {
+        if (key === "command" && typeof value === "string") {
           checkCommand(value, currentPath);
-        } else if (typeof value === 'object' && value !== null) {
+        } else if (typeof value === "object" && value !== null) {
           checkConfigCommands(value, currentPath);
         }
       }
@@ -901,27 +901,27 @@ export default config;
    * Validate configuration
    */
   private validateConfig(config: ExtendedHookConfiguration): void {
-    if (!config || typeof config !== 'object') {
+    if (!config || typeof config !== "object") {
       throw new ConfigError(
-        'Configuration must be an object',
-        'INVALID_CONFIG'
+        "Configuration must be an object",
+        "INVALID_CONFIG"
       );
     }
 
     // Validate hook events
     for (const [event, eventConfig] of Object.entries(config)) {
       if (
-        event.startsWith('$') ||
-        ['version', 'templates', 'variables', 'environments'].includes(event)
+        event.startsWith("$") ||
+        ["version", "templates", "variables", "environments"].includes(event)
       ) {
         continue;
       }
 
       if (!this.isValidHookEvent(event)) {
-        throw new ConfigError(`Invalid hook event: ${event}`, 'INVALID_EVENT');
+        throw new ConfigError(`Invalid hook event: ${event}`, "INVALID_EVENT");
       }
 
-      if (eventConfig && typeof eventConfig === 'object') {
+      if (eventConfig && typeof eventConfig === "object") {
         this.validateEventConfig(event, eventConfig);
       }
     }
@@ -932,12 +932,12 @@ export default config;
    */
   private isValidHookEvent(event: string): boolean {
     return [
-      'PreToolUse',
-      'PostToolUse',
-      'UserPromptSubmit',
-      'SessionStart',
-      'Stop',
-      'SubagentStop',
+      "PreToolUse",
+      "PostToolUse",
+      "UserPromptSubmit",
+      "SessionStart",
+      "Stop",
+      "SubagentStop",
     ].includes(event);
   }
 
@@ -945,13 +945,13 @@ export default config;
    * Validate event configuration
    */
   private validateEventConfig(event: string, config: unknown): void {
-    if (config && typeof config === 'object' && 'command' in config) {
+    if (config && typeof config === "object" && "command" in config) {
       // Single hook config
       this.validateToolHookConfig(config, `${event} hook`);
-    } else if (config && typeof config === 'object') {
+    } else if (config && typeof config === "object") {
       // Tool-specific configs
       for (const [tool, toolConfig] of Object.entries(config)) {
-        if (toolConfig && typeof toolConfig === 'object') {
+        if (toolConfig && typeof toolConfig === "object") {
           this.validateToolHookConfig(toolConfig, `${event}:${tool} hook`);
         }
       }
@@ -962,49 +962,49 @@ export default config;
    * Validate tool hook configuration
    */
   private validateToolHookConfig(config: unknown, context: string): void {
-    if (!config || typeof config !== 'object') {
+    if (!config || typeof config !== "object") {
       throw new ConfigError(
         `${context}: config must be an object`,
-        'INVALID_CONFIG'
+        "INVALID_CONFIG"
       );
     }
 
     const hookConfig = config as Record<string, unknown>;
 
-    if (!hookConfig.command || typeof hookConfig.command !== 'string') {
+    if (!hookConfig.command || typeof hookConfig.command !== "string") {
       throw new ConfigError(
         `${context}: command is required and must be a string`,
-        'INVALID_COMMAND'
+        "INVALID_COMMAND"
       );
     }
 
     if (
       hookConfig.timeout !== undefined &&
-      (typeof hookConfig.timeout !== 'number' || hookConfig.timeout < 0)
+      (typeof hookConfig.timeout !== "number" || hookConfig.timeout < 0)
     ) {
       throw new ConfigError(
         `${context}: timeout must be a positive number`,
-        'INVALID_TIMEOUT'
+        "INVALID_TIMEOUT"
       );
     }
 
     if (
       hookConfig.enabled !== undefined &&
-      typeof hookConfig.enabled !== 'boolean'
+      typeof hookConfig.enabled !== "boolean"
     ) {
       throw new ConfigError(
         `${context}: enabled must be a boolean`,
-        'INVALID_ENABLED'
+        "INVALID_ENABLED"
       );
     }
 
     if (
       hookConfig.detached !== undefined &&
-      typeof hookConfig.detached !== 'boolean'
+      typeof hookConfig.detached !== "boolean"
     ) {
       throw new ConfigError(
         `${context}: detached must be a boolean`,
-        'INVALID_DETACHED'
+        "INVALID_DETACHED"
       );
     }
   }
@@ -1047,7 +1047,7 @@ export async function loadConfig(
 export async function saveConfig(
   workspacePath: string,
   config: ExtendedHookConfiguration,
-  format: ConfigFormat = 'json'
+  format: ConfigFormat = "json"
 ): Promise<void> {
   const manager = createConfigManager(workspacePath);
   await manager.save(config, format);

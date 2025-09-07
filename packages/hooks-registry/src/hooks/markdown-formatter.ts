@@ -5,11 +5,11 @@
  * markdownlint-cli2 or prettier, depending on what's available.
  */
 
-import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-import type { HookHandler } from '@carabiner/types';
-import { isMatch } from 'picomatch';
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import type { HookHandler } from "@carabiner/types";
+import { isMatch } from "picomatch";
 
 /**
  * Configuration for the markdown formatter hook
@@ -19,7 +19,7 @@ export type MarkdownFormatterConfig = {
    * Preferred formatter to use ('markdownlint' | 'prettier' | 'auto')
    * @default 'auto'
    */
-  formatter?: 'markdownlint' | 'prettier' | 'auto';
+  formatter?: "markdownlint" | "prettier" | "auto";
 
   /**
    * Additional arguments to pass to the formatter
@@ -44,10 +44,10 @@ export type MarkdownFormatterConfig = {
  */
 function convertBufferToString(value: unknown): string {
   if (!value) {
-    return '';
+    return "";
   }
   if (Buffer.isBuffer(value)) {
-    return value.toString('utf-8');
+    return value.toString("utf-8");
   }
   return String(value);
 }
@@ -72,11 +72,11 @@ function commandExists(command: string): boolean {
 
   try {
     // 1) local node_modules/.bin
-    const ext = process.platform === 'win32' ? '.cmd' : '';
+    const ext = process.platform === "win32" ? ".cmd" : "";
     const localBin = join(
       process.cwd(),
-      'node_modules',
-      '.bin',
+      "node_modules",
+      ".bin",
       `${command}${ext}`
     );
     if (existsSync(localBin)) {
@@ -84,30 +84,30 @@ function commandExists(command: string): boolean {
       return true;
     }
 
-    const isWindows = process.platform === 'win32';
-    const detector = isWindows ? 'where' : 'command';
-    const args = isWindows ? [command] : ['-v', command];
-    execFileSync(detector, args, { stdio: 'ignore' });
+    const isWindows = process.platform === "win32";
+    const detector = isWindows ? "where" : "command";
+    const args = isWindows ? [command] : ["-v", command];
+    execFileSync(detector, args, { stdio: "ignore" });
     cache.set(key, true);
     return true;
   } catch {
     // Try common package runner fallbacks for locally installed CLIs
     try {
-      execFileSync('npx', ['--no-install', command, '--version'], {
-        stdio: 'ignore',
+      execFileSync("npx", ["--no-install", command, "--version"], {
+        stdio: "ignore",
       });
       cache.set(key, true);
       return true;
     } catch {
       try {
-        execFileSync('pnpm', ['dlx', command, '--version'], {
-          stdio: 'ignore',
+        execFileSync("pnpm", ["dlx", command, "--version"], {
+          stdio: "ignore",
         });
         cache.set(key, true);
         return true;
       } catch {
         try {
-          execFileSync('bunx', [command, '--version'], { stdio: 'ignore' });
+          execFileSync("bunx", [command, "--version"], { stdio: "ignore" });
           cache.set(key, true);
           return true;
         } catch {
@@ -128,26 +128,26 @@ function formatWithMarkdownlint(
   additionalArgs: string[] = []
 ): { success: boolean; output: string } {
   try {
-    const args = [...(autoFix ? ['--fix'] : []), ...additionalArgs, filePath];
+    const args = [...(autoFix ? ["--fix"] : []), ...additionalArgs, filePath];
 
-    const output = execFileSync('markdownlint-cli2', args, {
-      encoding: 'utf-8',
-      stdio: 'pipe',
+    const output = execFileSync("markdownlint-cli2", args, {
+      encoding: "utf-8",
+      stdio: "pipe",
     });
 
     return {
       success: true,
       output:
-        output || 'Markdown file formatted successfully with markdownlint',
+        output || "Markdown file formatted successfully with markdownlint",
     };
   } catch (error) {
     const err = error as Record<string, unknown>;
-    const errorOutput = err?.message ? String(err.message) : 'Unknown error';
+    const errorOutput = err?.message ? String(err.message) : "Unknown error";
     const stderr = convertBufferToString(err?.stderr);
     const stdout = convertBufferToString(err?.stdout);
     return {
       success: false,
-      output: `Failed to format with markdownlint: ${errorOutput}${stderr ? `\n${stderr}` : ''}${stdout ? `\n${stdout}` : ''}`,
+      output: `Failed to format with markdownlint: ${errorOutput}${stderr ? `\n${stderr}` : ""}${stdout ? `\n${stdout}` : ""}`,
     };
   }
 }
@@ -162,28 +162,28 @@ function formatWithPrettier(
 ): { success: boolean; output: string } {
   try {
     const args = [
-      ...(autoFix ? ['--write'] : ['--check']),
+      ...(autoFix ? ["--write"] : ["--check"]),
       ...additionalArgs,
       filePath,
     ];
 
-    const output = execFileSync('prettier', args, {
-      encoding: 'utf-8',
-      stdio: 'pipe',
+    const output = execFileSync("prettier", args, {
+      encoding: "utf-8",
+      stdio: "pipe",
     });
 
     return {
       success: true,
-      output: output || 'Markdown file formatted successfully with prettier',
+      output: output || "Markdown file formatted successfully with prettier",
     };
   } catch (error) {
     const err = error as Record<string, unknown>;
-    const errorOutput = err?.message ? String(err.message) : 'Unknown error';
+    const errorOutput = err?.message ? String(err.message) : "Unknown error";
     const stderr = convertBufferToString(err?.stderr);
     const stdout = convertBufferToString(err?.stdout);
     return {
       success: false,
-      output: `Failed to format with prettier: ${errorOutput}${stderr ? `\n${stderr}` : ''}${stdout ? `\n${stdout}` : ''}`,
+      output: `Failed to format with prettier: ${errorOutput}${stderr ? `\n${stderr}` : ""}${stdout ? `\n${stdout}` : ""}`,
     };
   }
 }
@@ -195,22 +195,22 @@ export function createMarkdownFormatterHook(
   config: MarkdownFormatterConfig = {}
 ): HookHandler {
   const {
-    formatter = 'auto',
+    formatter = "auto",
     additionalArgs = [],
     autoFix = true,
-    patterns = ['**/*.md', '**/*.mdx'],
+    patterns = ["**/*.md", "**/*.mdx"],
   } = config;
 
   return (context) => {
     // Only process PostToolUse events for file editing tools
-    if (context.event !== 'PostToolUse') {
+    if (context.event !== "PostToolUse") {
       return { success: true };
     }
 
     // Check if this is a file editing tool
-    const fileEditingTools = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'];
+    const fileEditingTools = ["Edit", "Write", "MultiEdit", "NotebookEdit"];
     if (
-      !('toolName' in context && fileEditingTools.includes(context.toolName))
+      !("toolName" in context && fileEditingTools.includes(context.toolName))
     ) {
       return { success: true };
     }
@@ -224,9 +224,9 @@ export function createMarkdownFormatterHook(
     let filePaths: string[];
     if (Array.isArray(multiplePaths)) {
       filePaths = multiplePaths.filter(
-        (p: unknown): p is string => typeof p === 'string'
+        (p: unknown): p is string => typeof p === "string"
       );
-    } else if (typeof singlePath === 'string') {
+    } else if (typeof singlePath === "string") {
       filePaths = [singlePath];
     } else {
       filePaths = [];
@@ -264,29 +264,29 @@ export function createMarkdownFormatterHook(
       }
 
       // Determine which formatter to use
-      let selectedFormatter: 'markdownlint' | 'prettier' | null = null;
+      let selectedFormatter: "markdownlint" | "prettier" | null = null;
 
-      if (formatter === 'auto') {
+      if (formatter === "auto") {
         // Try markdownlint first, then prettier
-        if (commandExists('markdownlint-cli2')) {
-          selectedFormatter = 'markdownlint';
-        } else if (commandExists('prettier')) {
-          selectedFormatter = 'prettier';
+        if (commandExists("markdownlint-cli2")) {
+          selectedFormatter = "markdownlint";
+        } else if (commandExists("prettier")) {
+          selectedFormatter = "prettier";
         }
       } else if (
-        formatter === 'markdownlint' &&
-        commandExists('markdownlint-cli2')
+        formatter === "markdownlint" &&
+        commandExists("markdownlint-cli2")
       ) {
-        selectedFormatter = 'markdownlint';
-      } else if (formatter === 'prettier' && commandExists('prettier')) {
-        selectedFormatter = 'prettier';
+        selectedFormatter = "markdownlint";
+      } else if (formatter === "prettier" && commandExists("prettier")) {
+        selectedFormatter = "prettier";
       }
 
       if (!selectedFormatter) {
         results.push({
           success: false,
           message:
-            'No markdown formatter available. Install markdownlint-cli2 or prettier.',
+            "No markdown formatter available. Install markdownlint-cli2 or prettier.",
           filePath,
         });
         continue;
@@ -294,7 +294,7 @@ export function createMarkdownFormatterHook(
 
       // Format the file
       const result =
-        selectedFormatter === 'markdownlint'
+        selectedFormatter === "markdownlint"
           ? formatWithMarkdownlint(filePath, autoFix, additionalArgs)
           : formatWithPrettier(filePath, autoFix, additionalArgs);
 
@@ -314,7 +314,7 @@ export function createMarkdownFormatterHook(
     const allSuccess = results.every((r) => r.success);
     const messages = results
       .map((r) => `${r.filePath}: ${r.message}`)
-      .join('\n');
+      .join("\n");
 
     return {
       success: allSuccess,

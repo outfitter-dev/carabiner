@@ -5,7 +5,7 @@
  * with coverage targets and performance requirements.
  */
 
-import type { TestOptions } from 'bun:test';
+import type { TestOptions } from "bun:test";
 
 // Memory constants to avoid magic numbers
 const BYTES_PER_KB = 1024;
@@ -98,20 +98,20 @@ export const grappleTestConfig: GrappleTestConfig = {
     minFunctionsCoverage: 95,
     minBranchesCoverage: 85,
     criticalPaths: [
-      'packages/hooks-core/src/runtime.ts',
-      'packages/execution/src/executor.ts',
-      'packages/hooks-core/src/logging/logger.ts',
-      'packages/hooks-config/src/config.ts',
+      "packages/hooks-core/src/runtime.ts",
+      "packages/execution/src/executor.ts",
+      "packages/hooks-core/src/logging/logger.ts",
+      "packages/hooks-config/src/config.ts",
     ],
     exclude: [
-      'node_modules/**',
-      'dist/**',
-      'coverage/**',
-      '**/*.test.ts',
-      '**/*.spec.ts',
-      'tests/**',
-      '**/__tests__/**',
-      '**/__mocks__/**',
+      "node_modules/**",
+      "dist/**",
+      "coverage/**",
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      "tests/**",
+      "**/__tests__/**",
+      "**/__mocks__/**",
     ],
   },
 
@@ -126,42 +126,42 @@ export const grappleTestConfig: GrappleTestConfig = {
 
   categories: {
     unit: {
-      pattern: '**/*.test.ts',
+      pattern: "**/*.test.ts",
       timeout: 5000,
       parallel: true,
       retries: 2,
       coverageRequired: true,
     },
     integration: {
-      pattern: 'tests/integration/**/*.test.ts',
+      pattern: "tests/integration/**/*.test.ts",
       timeout: 30_000,
       parallel: false,
       retries: 1,
       coverageRequired: true,
     },
     edgeCases: {
-      pattern: 'tests/edge-cases/**/*.test.ts',
+      pattern: "tests/edge-cases/**/*.test.ts",
       timeout: 60_000,
       parallel: true,
       retries: 0,
       coverageRequired: false,
     },
     performance: {
-      pattern: 'tests/performance/**/*.test.ts',
+      pattern: "tests/performance/**/*.test.ts",
       timeout: 120_000,
       parallel: false,
       retries: 0,
       coverageRequired: false,
     },
     errorPaths: {
-      pattern: 'tests/error-paths/**/*.test.ts',
+      pattern: "tests/error-paths/**/*.test.ts",
       timeout: 30_000,
       parallel: true,
       retries: 3, // Error tests can be flaky
       coverageRequired: true,
     },
     production: {
-      pattern: 'tests/production/**/*.test.ts',
+      pattern: "tests/production/**/*.test.ts",
       timeout: 180_000,
       parallel: false,
       retries: 1,
@@ -197,16 +197,16 @@ export const grappleTestConfig: GrappleTestConfig = {
 /**
  * Test environment detection
  */
-export function detectTestEnvironment(): keyof GrappleTestConfig['environments'] {
-  if (process.env.CI === 'true') {
-    return 'ci';
+export function detectTestEnvironment(): keyof GrappleTestConfig["environments"] {
+  if (process.env.CI === "true") {
+    return "ci";
   }
 
-  if (process.env.NODE_ENV === 'production') {
-    return 'production';
+  if (process.env.NODE_ENV === "production") {
+    return "production";
   }
 
-  return 'development';
+  return "development";
 }
 
 /**
@@ -245,20 +245,20 @@ export class TestOrchestrator {
    * Get test patterns to run based on environment
    */
   getTestPatterns(): string[] {
-    const patterns = ['**/*.test.ts']; // Always include unit tests
+    const patterns = ["**/*.test.ts"]; // Always include unit tests
 
     if (this.environment.includePerformanceTests) {
-      patterns.push('tests/performance/**/*.test.ts');
+      patterns.push("tests/performance/**/*.test.ts");
     }
 
     if (this.environment.includeProductionTests) {
-      patterns.push('tests/production/**/*.test.ts');
+      patterns.push("tests/production/**/*.test.ts");
     }
 
     // Always include integration and error path tests
-    patterns.push('tests/integration/**/*.test.ts');
-    patterns.push('tests/error-paths/**/*.test.ts');
-    patterns.push('tests/edge-cases/**/*.test.ts');
+    patterns.push("tests/integration/**/*.test.ts");
+    patterns.push("tests/error-paths/**/*.test.ts");
+    patterns.push("tests/edge-cases/**/*.test.ts");
 
     return patterns;
   }
@@ -272,40 +272,40 @@ export class TestOrchestrator {
     return {
       phases: [
         {
-          name: 'Unit Tests',
-          pattern: '**/*.test.ts',
+          name: "Unit Tests",
+          pattern: "**/*.test.ts",
           timeout: this.config.categories.unit.timeout,
           parallel: this.config.categories.unit.parallel,
           retries: this.config.categories.unit.retries,
           required: true,
         },
         {
-          name: 'Integration Tests',
-          pattern: 'tests/integration/**/*.test.ts',
+          name: "Integration Tests",
+          pattern: "tests/integration/**/*.test.ts",
           timeout: this.config.categories.integration.timeout,
           parallel: this.config.categories.integration.parallel,
           retries: this.config.categories.integration.retries,
           required: true,
         },
         {
-          name: 'Edge Cases',
-          pattern: 'tests/edge-cases/**/*.test.ts',
+          name: "Edge Cases",
+          pattern: "tests/edge-cases/**/*.test.ts",
           timeout: this.config.categories.edgeCases.timeout,
           parallel: this.config.categories.edgeCases.parallel,
           retries: this.config.categories.edgeCases.retries,
           required: false,
         },
         {
-          name: 'Error Path Tests',
-          pattern: 'tests/error-paths/**/*.test.ts',
+          name: "Error Path Tests",
+          pattern: "tests/error-paths/**/*.test.ts",
           timeout: this.config.categories.errorPaths.timeout,
           parallel: this.config.categories.errorPaths.parallel,
           retries: this.config.categories.errorPaths.retries,
           required: true,
         },
         {
-          name: 'Performance Tests',
-          pattern: 'tests/performance/**/*.test.ts',
+          name: "Performance Tests",
+          pattern: "tests/performance/**/*.test.ts",
           timeout: this.config.categories.performance.timeout,
           parallel: this.config.categories.performance.parallel,
           retries: this.config.categories.performance.retries,
@@ -313,8 +313,8 @@ export class TestOrchestrator {
           condition: this.environment.includePerformanceTests,
         },
         {
-          name: 'Production Scenarios',
-          pattern: 'tests/production/**/*.test.ts',
+          name: "Production Scenarios",
+          pattern: "tests/production/**/*.test.ts",
           timeout: this.config.categories.production.timeout,
           parallel: this.config.categories.production.parallel,
           retries: this.config.categories.production.retries,
@@ -397,7 +397,7 @@ type TestExecutionPlan = {
   phases: TestPhase[];
   coverage: {
     enabled: boolean;
-    requirements: GrappleTestConfig['coverage'];
+    requirements: GrappleTestConfig["coverage"];
   };
   performance: {
     maxSuiteRuntime: number;

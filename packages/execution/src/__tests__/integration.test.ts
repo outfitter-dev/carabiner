@@ -2,48 +2,48 @@
  * @outfitter/execution - Integration tests demonstrating the execution engine
  */
 
-import { beforeEach, describe, expect, test } from 'bun:test';
-import type { HookContext, HookHandler } from '@carabiner/types';
+import { beforeEach, describe, expect, test } from "bun:test";
+import type { HookContext, HookHandler } from "@carabiner/types";
 import {
   createDirectoryPath,
   createSessionId,
   createTranscriptPath,
-} from '@carabiner/types';
+} from "@carabiner/types";
 import {
   ExecutionTimer,
   MetricsCollector,
   snapshotMemoryUsage,
-} from '../metrics';
-import { failure, isSuccess, success } from '../result';
+} from "../metrics";
+import { failure, isSuccess, success } from "../result";
 
-describe('Execution Engine Integration', () => {
+describe("Execution Engine Integration", () => {
   let metricsCollector: MetricsCollector;
 
   beforeEach(() => {
     metricsCollector = new MetricsCollector();
   });
 
-  test('should demonstrate complete execution flow with metrics', async () => {
+  test("should demonstrate complete execution flow with metrics", async () => {
     // Create a mock context (normally comes from protocol parsing)
     const mockContext: HookContext = {
-      event: 'PreToolUse',
-      toolName: 'Bash',
-      sessionId: createSessionId('integration-test-123'),
-      cwd: createDirectoryPath('/tmp'),
-      environment: { PATH: '/usr/bin' },
+      event: "PreToolUse",
+      toolName: "Bash",
+      sessionId: createSessionId("integration-test-123"),
+      cwd: createDirectoryPath("/tmp"),
+      environment: { PATH: "/usr/bin" },
       toolInput: { command: 'echo "Hello World"' },
-      transcriptPath: createTranscriptPath('/tmp/transcript.md'),
+      transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     } as HookContext;
 
     // Create a handler that validates bash commands
     const securityHandler: HookHandler = (context) => {
-      if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
+      if (context.event === "PreToolUse" && context.toolName === "Bash") {
         const command = (
           context as HookContext & { toolInput: { command: string } }
         ).toolInput.command;
 
         // Block dangerous commands
-        const dangerousPatterns = ['rm -rf', 'sudo', '> /dev/null'];
+        const dangerousPatterns = ["rm -rf", "sudo", "> /dev/null"];
         for (const pattern of dangerousPatterns) {
           if (command.includes(pattern)) {
             return {
@@ -55,25 +55,25 @@ describe('Execution Engine Integration', () => {
         }
       }
 
-      return { success: true, message: 'Command approved' };
+      return { success: true, message: "Command approved" };
     };
 
     // Simulate execution timing and metrics collection
     const timer = new ExecutionTimer();
     const memoryBefore = snapshotMemoryUsage();
 
-    timer.markPhase('input');
+    timer.markPhase("input");
     // Simulate parsing delay
     await new Promise((resolve) => setTimeout(resolve, 1));
-    timer.markPhase('parsing');
+    timer.markPhase("parsing");
     // Execute the handler
     const result = await securityHandler(mockContext);
 
-    timer.markPhase('execution');
+    timer.markPhase("execution");
     // Simulate output delay
     await new Promise((resolve) => setTimeout(resolve, 1));
 
-    timer.markPhase('output');
+    timer.markPhase("output");
     const memoryAfter = snapshotMemoryUsage();
 
     // Record metrics
@@ -83,12 +83,12 @@ describe('Execution Engine Integration', () => {
       timer.getTiming(),
       memoryBefore,
       memoryAfter,
-      { test: 'integration' }
+      { test: "integration" }
     );
 
     // Verify execution results
     expect(result.success).toBe(true);
-    expect(result.message).toBe('Command approved');
+    expect(result.message).toBe("Command approved");
 
     // Verify metrics were collected
     const metrics = metricsCollector.getMetrics();
@@ -97,7 +97,7 @@ describe('Execution Engine Integration', () => {
     const metric = metrics[0];
     expect(metric).toBeDefined();
     if (metric) {
-      expect(metric.event).toBe('PreToolUse');
+      expect(metric.event).toBe("PreToolUse");
       expect(metric.success).toBe(true);
       expect(metric.timing.duration).toBeGreaterThan(0);
       expect(metric.timing.phases.input).toBeGreaterThanOrEqual(0);
@@ -105,28 +105,28 @@ describe('Execution Engine Integration', () => {
     }
   });
 
-  test('should handle execution errors gracefully', async () => {
+  test("should handle execution errors gracefully", async () => {
     const mockContext: HookContext = {
-      event: 'PreToolUse',
-      toolName: 'Bash',
-      sessionId: createSessionId('error-test'),
-      cwd: '/tmp',
+      event: "PreToolUse",
+      toolName: "Bash",
+      sessionId: createSessionId("error-test"),
+      cwd: "/tmp",
       environment: {},
-      toolInput: { command: 'rm -rf /' },
-      transcriptPath: createTranscriptPath('/tmp/transcript.md'),
+      toolInput: { command: "rm -rf /" },
+      transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     } as HookContext;
 
     const securityHandler: HookHandler = (context) => {
-      if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
+      if (context.event === "PreToolUse" && context.toolName === "Bash") {
         const command = (
           context as HookContext & { toolInput: { command: string } }
         ).toolInput.command;
 
-        if (command.includes('rm -rf /')) {
+        if (command.includes("rm -rf /")) {
           return {
             success: false,
             block: true,
-            message: 'SECURITY_ERROR: Dangerous command blocked',
+            message: "SECURITY_ERROR: Dangerous command blocked",
           };
         }
       }
@@ -152,7 +152,7 @@ describe('Execution Engine Integration', () => {
     // Verify the dangerous command was blocked
     expect(result.success).toBe(false);
     expect(result.block).toBe(true);
-    expect(result.message).toContain('SECURITY_ERROR');
+    expect(result.message).toContain("SECURITY_ERROR");
 
     // Verify metrics show the failure
     const aggregate = metricsCollector.getAggregateMetrics();
@@ -162,12 +162,12 @@ describe('Execution Engine Integration', () => {
       expect(aggregate.successRate).toBe(0);
       expect(aggregate.topErrors[0]).toBeDefined();
       if (aggregate.topErrors[0]) {
-        expect(aggregate.topErrors[0].code).toBe('SECURITY_ERROR');
+        expect(aggregate.topErrors[0].code).toBe("SECURITY_ERROR");
       }
     }
   });
 
-  test('should handle Result type operations', () => {
+  test("should handle Result type operations", () => {
     // Simulate operations that may succeed or fail
     const parseConfig = (input: string) => {
       try {
@@ -181,7 +181,7 @@ describe('Execution Engine Integration', () => {
     const validateConfig = (config: unknown) => {
       const configObj = config as { timeout?: number };
       if (!configObj.timeout || configObj.timeout < 0) {
-        return failure(new Error('Invalid timeout configuration'));
+        return failure(new Error("Invalid timeout configuration"));
       }
       return success(configObj);
     };
@@ -209,11 +209,11 @@ describe('Execution Engine Integration', () => {
     }
   });
 
-  test('should demonstrate performance monitoring', async () => {
+  test("should demonstrate performance monitoring", async () => {
     const contexts = [
-      { event: 'PreToolUse', tool: 'Bash', fast: true },
-      { event: 'PreToolUse', tool: 'Write', fast: false },
-      { event: 'PostToolUse', tool: 'Bash', fast: true },
+      { event: "PreToolUse", tool: "Bash", fast: true },
+      { event: "PreToolUse", tool: "Write", fast: false },
+      { event: "PostToolUse", tool: "Bash", fast: true },
     ];
 
     // Simulate multiple executions with different performance characteristics
@@ -227,10 +227,10 @@ describe('Execution Engine Integration', () => {
         event: contextItem.event,
         toolName: contextItem.tool,
         sessionId: createSessionId(`perf-test-${i}`),
-        cwd: '/tmp',
+        cwd: "/tmp",
         environment: {},
-        toolInput: { command: 'test' },
-        transcriptPath: createTranscriptPath('/tmp/transcript.md'),
+        toolInput: { command: "test" },
+        transcriptPath: createTranscriptPath("/tmp/transcript.md"),
       } as HookContext;
 
       const handler: HookHandler = async () => {
@@ -276,31 +276,31 @@ describe('Execution Engine Integration', () => {
     }
   });
 
-  test('should handle concurrent executions', async () => {
+  test("should handle concurrent executions", async () => {
     const handlers = [
       async () => {
         await new Promise((resolve) => setTimeout(resolve, 5));
-        return { success: true, message: 'Handler 1' };
+        return { success: true, message: "Handler 1" };
       },
       async () => {
         await new Promise((resolve) => setTimeout(resolve, 3));
-        return { success: true, message: 'Handler 2' };
+        return { success: true, message: "Handler 2" };
       },
       async () => {
         await new Promise((resolve) => setTimeout(resolve, 7));
-        return { success: false, message: 'Handler 3 failed' };
+        return { success: false, message: "Handler 3 failed" };
       },
     ];
 
     const promises = handlers.map(async (handler, index) => {
       const context = {
-        event: 'PreToolUse',
+        event: "PreToolUse",
         sessionId: createSessionId(`concurrent-${index}`),
-        cwd: '/tmp',
+        cwd: "/tmp",
         environment: {},
-        toolName: 'Bash',
-        toolInput: { command: 'test' },
-        transcriptPath: createTranscriptPath('/tmp/transcript.md'),
+        toolName: "Bash",
+        toolInput: { command: "test" },
+        transcriptPath: createTranscriptPath("/tmp/transcript.md"),
       } as HookContext;
 
       const timer = new ExecutionTimer();

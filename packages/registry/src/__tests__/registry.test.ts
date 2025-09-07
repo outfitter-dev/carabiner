@@ -11,38 +11,38 @@ import {
   mock,
   spyOn,
   test,
-} from 'bun:test';
-import type { HookContext } from '@carabiner/types';
-import type { HookPlugin, PluginConfig } from '../plugin';
-import { PluginRegistry } from '../registry';
+} from "bun:test";
+import type { HookContext } from "@carabiner/types";
+import type { HookPlugin, PluginConfig } from "../plugin";
+import { PluginRegistry } from "../registry";
 
 // Mock plugins for testing
 const createMockPlugin = (
   name: string,
-  events: string[] = ['PreToolUse'],
+  events: string[] = ["PreToolUse"],
   options: Partial<HookPlugin> = {}
 ): HookPlugin => ({
   name,
-  version: '1.0.0',
+  version: "1.0.0",
   events,
   apply: async (_context: HookContext) => ({
     success: true,
     pluginName: name,
-    pluginVersion: '1.0.0',
+    pluginVersion: "1.0.0",
     message: `${name} executed`,
   }),
   ...options,
 });
 
 const createMockContext = (
-  event = 'PreToolUse',
+  event = "PreToolUse",
   toolName?: string
 ): HookContext => {
   const base = {
     event,
-    sessionId: 'test-session-123' as any,
-    transcriptPath: '/tmp/transcript' as any,
-    cwd: '/test/cwd' as any,
+    sessionId: "test-session-123" as any,
+    transcriptPath: "/tmp/transcript" as any,
+    cwd: "/test/cwd" as any,
     environment: {},
   };
 
@@ -50,14 +50,14 @@ const createMockContext = (
     return {
       ...base,
       toolName,
-      toolInput: { command: 'test command' },
+      toolInput: { command: "test command" },
     } as any;
   }
 
   return base as any;
 };
 
-describe('PluginRegistry', () => {
+describe("PluginRegistry", () => {
   let registry: PluginRegistry;
 
   beforeEach(() => {
@@ -68,96 +68,96 @@ describe('PluginRegistry', () => {
     await registry.shutdown();
   });
 
-  describe('Plugin Registration', () => {
-    test('should register a valid plugin', () => {
-      const plugin = createMockPlugin('test-plugin');
+  describe("Plugin Registration", () => {
+    test("should register a valid plugin", () => {
+      const plugin = createMockPlugin("test-plugin");
 
       expect(() => registry.register(plugin)).not.toThrow();
-      expect(registry.hasPlugin('test-plugin')).toBe(true);
-      expect(registry.getPlugin('test-plugin')).toBe(plugin);
+      expect(registry.hasPlugin("test-plugin")).toBe(true);
+      expect(registry.getPlugin("test-plugin")).toBe(plugin);
     });
 
-    test('should register plugin with custom configuration', () => {
-      const plugin = createMockPlugin('test-plugin');
+    test("should register plugin with custom configuration", () => {
+      const plugin = createMockPlugin("test-plugin");
       const config: Partial<PluginConfig> = {
         priority: 100,
         enabled: false,
-        config: { customSetting: 'value' },
+        config: { customSetting: "value" },
       };
 
       registry.register(plugin, config);
 
-      const pluginConfig = registry.getPluginConfig('test-plugin');
+      const pluginConfig = registry.getPluginConfig("test-plugin");
       expect(pluginConfig?.priority).toBe(100);
       expect(pluginConfig?.enabled).toBe(false);
-      expect(pluginConfig?.config?.customSetting).toBe('value');
+      expect(pluginConfig?.config?.customSetting).toBe("value");
     });
 
-    test('should throw error for duplicate plugin registration', () => {
-      const plugin1 = createMockPlugin('duplicate-plugin');
-      const plugin2 = createMockPlugin('duplicate-plugin');
+    test("should throw error for duplicate plugin registration", () => {
+      const plugin1 = createMockPlugin("duplicate-plugin");
+      const plugin2 = createMockPlugin("duplicate-plugin");
 
       registry.register(plugin1);
 
       expect(() => registry.register(plugin2)).toThrow(
-        'Plugin already registered'
+        "Plugin already registered"
       );
     });
 
-    test('should validate plugin structure', () => {
+    test("should validate plugin structure", () => {
       const invalidPlugin = {
-        name: 'invalid-plugin',
-        version: '1.0.0',
+        name: "invalid-plugin",
+        version: "1.0.0",
         // Missing events and apply function
       };
 
       expect(() => registry.register(invalidPlugin as any)).toThrow();
     });
 
-    test('should validate plugin name format', () => {
-      const invalidPlugin = createMockPlugin('Invalid_Plugin_Name');
+    test("should validate plugin name format", () => {
+      const invalidPlugin = createMockPlugin("Invalid_Plugin_Name");
 
       expect(() => registry.register(invalidPlugin)).toThrow(
-        'Plugin name must be kebab-case'
+        "Plugin name must be kebab-case"
       );
     });
 
-    test('should validate plugin version format', () => {
-      const invalidPlugin = createMockPlugin('test-plugin');
-      invalidPlugin.version = 'invalid-version';
+    test("should validate plugin version format", () => {
+      const invalidPlugin = createMockPlugin("test-plugin");
+      invalidPlugin.version = "invalid-version";
 
       expect(() => registry.register(invalidPlugin)).toThrow(
-        'Plugin version must be semver format'
+        "Plugin version must be semver format"
       );
     });
 
-    test('should validate plugin has events', () => {
-      const invalidPlugin = createMockPlugin('test-plugin', []);
+    test("should validate plugin has events", () => {
+      const invalidPlugin = createMockPlugin("test-plugin", []);
 
       expect(() => registry.register(invalidPlugin)).toThrow(
-        'Plugin must handle at least one event'
+        "Plugin must handle at least one event"
       );
     });
   });
 
-  describe('Plugin Unregistration', () => {
-    test('should unregister existing plugin', () => {
-      const plugin = createMockPlugin('test-plugin');
+  describe("Plugin Unregistration", () => {
+    test("should unregister existing plugin", () => {
+      const plugin = createMockPlugin("test-plugin");
       registry.register(plugin);
 
-      expect(registry.unregister('test-plugin')).toBe(true);
-      expect(registry.hasPlugin('test-plugin')).toBe(false);
+      expect(registry.unregister("test-plugin")).toBe(true);
+      expect(registry.hasPlugin("test-plugin")).toBe(false);
     });
 
-    test('should return false for non-existent plugin', () => {
-      expect(registry.unregister('non-existent')).toBe(false);
+    test("should return false for non-existent plugin", () => {
+      expect(registry.unregister("non-existent")).toBe(false);
     });
   });
 
-  describe('Plugin Discovery', () => {
-    test('should get all registered plugins', () => {
-      const plugin1 = createMockPlugin('plugin-1');
-      const plugin2 = createMockPlugin('plugin-2');
+  describe("Plugin Discovery", () => {
+    test("should get all registered plugins", () => {
+      const plugin1 = createMockPlugin("plugin-1");
+      const plugin2 = createMockPlugin("plugin-2");
 
       registry.register(plugin1);
       registry.register(plugin2);
@@ -168,34 +168,34 @@ describe('PluginRegistry', () => {
       expect(plugins).toContain(plugin2);
     });
 
-    test('should get plugin by name', () => {
-      const plugin = createMockPlugin('test-plugin');
+    test("should get plugin by name", () => {
+      const plugin = createMockPlugin("test-plugin");
       registry.register(plugin);
 
-      expect(registry.getPlugin('test-plugin')).toBe(plugin);
-      expect(registry.getPlugin('non-existent')).toBeUndefined();
+      expect(registry.getPlugin("test-plugin")).toBe(plugin);
+      expect(registry.getPlugin("non-existent")).toBeUndefined();
     });
 
-    test('should check plugin existence', () => {
-      const plugin = createMockPlugin('test-plugin');
+    test("should check plugin existence", () => {
+      const plugin = createMockPlugin("test-plugin");
       registry.register(plugin);
 
-      expect(registry.hasPlugin('test-plugin')).toBe(true);
-      expect(registry.hasPlugin('non-existent')).toBe(false);
+      expect(registry.hasPlugin("test-plugin")).toBe(true);
+      expect(registry.hasPlugin("non-existent")).toBe(false);
     });
   });
 
-  describe('Plugin Execution', () => {
-    test('should execute applicable plugins', async () => {
-      const plugin1 = createMockPlugin('plugin-1', ['PreToolUse']);
-      const plugin2 = createMockPlugin('plugin-2', ['PostToolUse']);
-      const plugin3 = createMockPlugin('plugin-3', ['PreToolUse']);
+  describe("Plugin Execution", () => {
+    test("should execute applicable plugins", async () => {
+      const plugin1 = createMockPlugin("plugin-1", ["PreToolUse"]);
+      const plugin2 = createMockPlugin("plugin-2", ["PostToolUse"]);
+      const plugin3 = createMockPlugin("plugin-3", ["PreToolUse"]);
 
       registry.register(plugin1);
       registry.register(plugin2);
       registry.register(plugin3);
 
-      const context = createMockContext('PreToolUse');
+      const context = createMockContext("PreToolUse");
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(2); // Only PreToolUse plugins should execute
@@ -203,88 +203,88 @@ describe('PluginRegistry', () => {
       expect(results[1].pluginName).toMatch(/plugin-(1|3)/);
     });
 
-    test('should execute plugins in priority order', async () => {
-      const highPriorityPlugin = createMockPlugin('high-priority');
-      const lowPriorityPlugin = createMockPlugin('low-priority');
+    test("should execute plugins in priority order", async () => {
+      const highPriorityPlugin = createMockPlugin("high-priority");
+      const lowPriorityPlugin = createMockPlugin("low-priority");
 
       registry.register(highPriorityPlugin, { priority: 100 });
       registry.register(lowPriorityPlugin, { priority: 10 });
 
-      const context = createMockContext('PreToolUse');
+      const context = createMockContext("PreToolUse");
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(2);
-      expect(results[0].pluginName).toBe('high-priority');
-      expect(results[1].pluginName).toBe('low-priority');
+      expect(results[0].pluginName).toBe("high-priority");
+      expect(results[1].pluginName).toBe("low-priority");
     });
 
-    test('should skip disabled plugins', async () => {
-      const enabledPlugin = createMockPlugin('enabled');
-      const disabledPlugin = createMockPlugin('disabled');
+    test("should skip disabled plugins", async () => {
+      const enabledPlugin = createMockPlugin("enabled");
+      const disabledPlugin = createMockPlugin("disabled");
 
       registry.register(enabledPlugin, { enabled: true });
       registry.register(disabledPlugin, { enabled: false });
 
-      const context = createMockContext('PreToolUse');
+      const context = createMockContext("PreToolUse");
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0].pluginName).toBe('enabled');
+      expect(results[0].pluginName).toBe("enabled");
     });
 
-    test('should filter by tool name', async () => {
-      const bashPlugin = createMockPlugin('bash-plugin', ['PreToolUse']);
-      const writePlugin = createMockPlugin('write-plugin', ['PreToolUse']);
+    test("should filter by tool name", async () => {
+      const bashPlugin = createMockPlugin("bash-plugin", ["PreToolUse"]);
+      const writePlugin = createMockPlugin("write-plugin", ["PreToolUse"]);
 
-      registry.register(bashPlugin, { tools: ['Bash'] });
-      registry.register(writePlugin, { tools: ['Write'] });
+      registry.register(bashPlugin, { tools: ["Bash"] });
+      registry.register(writePlugin, { tools: ["Write"] });
 
-      const context = createMockContext('PreToolUse', 'Bash');
+      const context = createMockContext("PreToolUse", "Bash");
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0].pluginName).toBe('bash-plugin');
+      expect(results[0].pluginName).toBe("bash-plugin");
     });
 
-    test('should stop on blocking failure', async () => {
-      const blockingPlugin = createMockPlugin('blocking', ['PreToolUse'], {
+    test("should stop on blocking failure", async () => {
+      const blockingPlugin = createMockPlugin("blocking", ["PreToolUse"], {
         apply: async () => ({
           success: false,
           block: true,
-          pluginName: 'blocking',
-          pluginVersion: '1.0.0',
-          message: 'Blocked',
+          pluginName: "blocking",
+          pluginVersion: "1.0.0",
+          message: "Blocked",
         }),
       });
-      const normalPlugin = createMockPlugin('normal', ['PreToolUse']);
+      const normalPlugin = createMockPlugin("normal", ["PreToolUse"]);
 
       registry.register(blockingPlugin, { priority: 100 });
       registry.register(normalPlugin, { priority: 50 });
 
-      const context = createMockContext('PreToolUse');
+      const context = createMockContext("PreToolUse");
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0].pluginName).toBe('blocking');
+      expect(results[0].pluginName).toBe("blocking");
       expect(results[0].success).toBe(false);
       expect(results[0].block).toBe(true);
     });
 
-    test('should continue on failure when configured', async () => {
-      const failingPlugin = createMockPlugin('failing', ['PreToolUse'], {
+    test("should continue on failure when configured", async () => {
+      const failingPlugin = createMockPlugin("failing", ["PreToolUse"], {
         apply: async () => ({
           success: false,
-          pluginName: 'failing',
-          pluginVersion: '1.0.0',
-          message: 'Failed',
+          pluginName: "failing",
+          pluginVersion: "1.0.0",
+          message: "Failed",
         }),
       });
-      const normalPlugin = createMockPlugin('normal', ['PreToolUse']);
+      const normalPlugin = createMockPlugin("normal", ["PreToolUse"]);
 
       registry.register(failingPlugin, { priority: 100 });
       registry.register(normalPlugin, { priority: 50 });
 
-      const context = createMockContext('PreToolUse');
+      const context = createMockContext("PreToolUse");
       const results = await registry.execute(context, {
         continueOnFailure: true,
       });
@@ -294,69 +294,69 @@ describe('PluginRegistry', () => {
       expect(results[1].success).toBe(true);
     });
 
-    test('should handle plugin execution errors', async () => {
-      const errorPlugin = createMockPlugin('error', ['PreToolUse'], {
+    test("should handle plugin execution errors", async () => {
+      const errorPlugin = createMockPlugin("error", ["PreToolUse"], {
         apply: async () => {
-          throw new Error('Plugin error');
+          throw new Error("Plugin error");
         },
       });
 
       registry.register(errorPlugin);
 
-      const context = createMockContext('PreToolUse');
+      const context = createMockContext("PreToolUse");
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
       expect(results[0].success).toBe(false);
-      expect(results[0].message).toContain('Plugin execution failed');
+      expect(results[0].message).toContain("Plugin execution failed");
     });
   });
 
-  describe('Plugin Configuration', () => {
-    test('should update plugin configuration', () => {
-      const plugin = createMockPlugin('test-plugin');
+  describe("Plugin Configuration", () => {
+    test("should update plugin configuration", () => {
+      const plugin = createMockPlugin("test-plugin");
       registry.register(plugin, { priority: 50 });
 
-      const updated = registry.updatePluginConfig('test-plugin', {
+      const updated = registry.updatePluginConfig("test-plugin", {
         priority: 100,
         enabled: false,
       });
 
       expect(updated).toBe(true);
 
-      const config = registry.getPluginConfig('test-plugin');
+      const config = registry.getPluginConfig("test-plugin");
       expect(config?.priority).toBe(100);
       expect(config?.enabled).toBe(false);
     });
 
-    test('should return false for non-existent plugin config update', () => {
-      const updated = registry.updatePluginConfig('non-existent', {
+    test("should return false for non-existent plugin config update", () => {
+      const updated = registry.updatePluginConfig("non-existent", {
         priority: 100,
       });
       expect(updated).toBe(false);
     });
 
-    test('should get plugin configuration', () => {
-      const plugin = createMockPlugin('test-plugin');
+    test("should get plugin configuration", () => {
+      const plugin = createMockPlugin("test-plugin");
       const customConfig = { priority: 75, enabled: true };
 
       registry.register(plugin, customConfig);
 
-      const config = registry.getPluginConfig('test-plugin');
+      const config = registry.getPluginConfig("test-plugin");
       expect(config?.priority).toBe(75);
       expect(config?.enabled).toBe(true);
     });
   });
 
-  describe('Plugin Lifecycle', () => {
-    test('should initialize plugins', async () => {
-      const plugin = createMockPlugin('test-plugin', ['PreToolUse'], {
+  describe("Plugin Lifecycle", () => {
+    test("should initialize plugins", async () => {
+      const plugin = createMockPlugin("test-plugin", ["PreToolUse"], {
         init: async () => {
           // Initialization logic
         },
       });
 
-      const initSpy = spyOn(plugin, 'init');
+      const initSpy = spyOn(plugin, "init");
       registry.register(plugin);
 
       await registry.initialize();
@@ -364,14 +364,14 @@ describe('PluginRegistry', () => {
       expect(initSpy).toHaveBeenCalled();
     });
 
-    test('should shutdown plugins', async () => {
-      const plugin = createMockPlugin('test-plugin', ['PreToolUse'], {
+    test("should shutdown plugins", async () => {
+      const plugin = createMockPlugin("test-plugin", ["PreToolUse"], {
         shutdown: async () => {
           // Shutdown logic
         },
       });
 
-      const shutdownSpy = spyOn(plugin, 'shutdown');
+      const shutdownSpy = spyOn(plugin, "shutdown");
       registry.register(plugin);
       await registry.initialize();
 
@@ -380,11 +380,11 @@ describe('PluginRegistry', () => {
       expect(shutdownSpy).toHaveBeenCalled();
     });
 
-    test('should run health checks', async () => {
-      const healthyPlugin = createMockPlugin('healthy', ['PreToolUse'], {
+    test("should run health checks", async () => {
+      const healthyPlugin = createMockPlugin("healthy", ["PreToolUse"], {
         healthCheck: async () => true,
       });
-      const unhealthyPlugin = createMockPlugin('unhealthy', ['PreToolUse'], {
+      const unhealthyPlugin = createMockPlugin("unhealthy", ["PreToolUse"], {
         healthCheck: async () => false,
       });
 
@@ -398,10 +398,10 @@ describe('PluginRegistry', () => {
     });
   });
 
-  describe('Registry Statistics', () => {
-    test('should track plugin statistics', () => {
-      const plugin1 = createMockPlugin('plugin-1');
-      const plugin2 = createMockPlugin('plugin-2');
+  describe("Registry Statistics", () => {
+    test("should track plugin statistics", () => {
+      const plugin1 = createMockPlugin("plugin-1");
+      const plugin2 = createMockPlugin("plugin-2");
 
       registry.register(plugin1, { enabled: true });
       registry.register(plugin2, { enabled: false });
@@ -413,11 +413,11 @@ describe('PluginRegistry', () => {
       expect(stats.disabledPlugins).toBe(1);
     });
 
-    test('should update execution statistics', async () => {
-      const plugin = createMockPlugin('test-plugin');
+    test("should update execution statistics", async () => {
+      const plugin = createMockPlugin("test-plugin");
       registry.register(plugin);
 
-      const context = createMockContext('PreToolUse');
+      const context = createMockContext("PreToolUse");
       await registry.execute(context);
 
       const stats = registry.getStats();
@@ -425,46 +425,46 @@ describe('PluginRegistry', () => {
     });
   });
 
-  describe('Event System', () => {
-    test('should emit plugin registration events', () => {
+  describe("Event System", () => {
+    test("should emit plugin registration events", () => {
       const eventListener = mock(() => {
         // Mock event listener
       });
       registry.addEventListener(eventListener);
 
-      const plugin = createMockPlugin('test-plugin');
+      const plugin = createMockPlugin("test-plugin");
       registry.register(plugin);
 
       expect(eventListener).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'plugin-registered',
+          type: "plugin-registered",
           plugin,
         })
       );
     });
 
-    test('should emit plugin execution events', async () => {
+    test("should emit plugin execution events", async () => {
       const eventListener = mock(() => {
         // Mock event listener
       });
       registry.addEventListener(eventListener);
 
-      const plugin = createMockPlugin('test-plugin');
+      const plugin = createMockPlugin("test-plugin");
       registry.register(plugin);
 
-      const context = createMockContext('PreToolUse');
+      const context = createMockContext("PreToolUse");
       await registry.execute(context);
 
       expect(eventListener).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'plugin-executed',
+          type: "plugin-executed",
         })
       );
     });
   });
 
-  describe('Registry Options', () => {
-    test('should respect registry options', () => {
+  describe("Registry Options", () => {
+    test("should respect registry options", () => {
       const registryWithOptions = new PluginRegistry({
         defaultTimeout: 10_000,
         collectMetrics: false,

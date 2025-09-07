@@ -2,7 +2,7 @@
  * @outfitter/execution - Result pattern tests
  */
 
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from "bun:test";
 import {
   chainResult,
   ExecutionError,
@@ -22,19 +22,19 @@ import {
   unwrapOr,
   unwrapResult,
   ValidationError,
-} from '../result';
+} from "../result";
 
-describe('Result Pattern', () => {
-  describe('success and failure constructors', () => {
-    test('should create success result', () => {
-      const result = success('test value');
+describe("Result Pattern", () => {
+  describe("success and failure constructors", () => {
+    test("should create success result", () => {
+      const result = success("test value");
 
       expect(result.success).toBe(true);
-      expect(result.value).toBe('test value');
+      expect(result.value).toBe("test value");
     });
 
-    test('should create failure result', () => {
-      const error = new Error('test error');
+    test("should create failure result", () => {
+      const error = new Error("test error");
       const result = failure(error);
 
       expect(result.success).toBe(false);
@@ -42,26 +42,26 @@ describe('Result Pattern', () => {
     });
   });
 
-  describe('type guards', () => {
-    test('isSuccess should identify success results', () => {
-      const successResult = success('value');
-      const failureResult = failure(new Error('error'));
+  describe("type guards", () => {
+    test("isSuccess should identify success results", () => {
+      const successResult = success("value");
+      const failureResult = failure(new Error("error"));
 
       expect(isSuccess(successResult)).toBe(true);
       expect(isSuccess(failureResult)).toBe(false);
     });
 
-    test('isFailure should identify failure results', () => {
-      const successResult = success('value');
-      const failureResult = failure(new Error('error'));
+    test("isFailure should identify failure results", () => {
+      const successResult = success("value");
+      const failureResult = failure(new Error("error"));
 
       expect(isFailure(successResult)).toBe(false);
       expect(isFailure(failureResult)).toBe(true);
     });
   });
 
-  describe('mapResult', () => {
-    test('should transform successful values', () => {
+  describe("mapResult", () => {
+    test("should transform successful values", () => {
       const result = success(5);
       const mapped = mapResult(result, (x: number) => x * 2);
 
@@ -71,8 +71,8 @@ describe('Result Pattern', () => {
       }
     });
 
-    test('should leave failures unchanged', () => {
-      const error = new Error('test error');
+    test("should leave failures unchanged", () => {
+      const error = new Error("test error");
       const result = failure(error);
       const mapped = mapResult(result, (x: unknown) => x);
 
@@ -83,8 +83,8 @@ describe('Result Pattern', () => {
     });
   });
 
-  describe('chainResult', () => {
-    test('should chain successful operations', () => {
+  describe("chainResult", () => {
+    test("should chain successful operations", () => {
       const result = success(5);
       const chained = chainResult(result, (x: unknown) =>
         success((x as number) * 2)
@@ -96,8 +96,8 @@ describe('Result Pattern', () => {
       }
     });
 
-    test('should propagate failures from first operation', () => {
-      const error = new Error('first error');
+    test("should propagate failures from first operation", () => {
+      const error = new Error("first error");
       const result = failure(error);
       const chained = chainResult(result, (x: unknown) =>
         success((x as number) * 2)
@@ -109,9 +109,9 @@ describe('Result Pattern', () => {
       }
     });
 
-    test('should propagate failures from second operation', () => {
+    test("should propagate failures from second operation", () => {
       const result = success(5);
-      const error = new Error('second error');
+      const error = new Error("second error");
       const chained = chainResult(result, (_) => failure(error));
 
       expect(isFailure(chained)).toBe(true);
@@ -121,8 +121,8 @@ describe('Result Pattern', () => {
     });
   });
 
-  describe('tryResult', () => {
-    test('should capture successful synchronous operations', () => {
+  describe("tryResult", () => {
+    test("should capture successful synchronous operations", () => {
       const result = tryResult(() => 5 + 5);
 
       expect(isSuccess(result)).toBe(true);
@@ -131,32 +131,32 @@ describe('Result Pattern', () => {
       }
     });
 
-    test('should capture thrown errors', () => {
+    test("should capture thrown errors", () => {
       const result = tryResult(() => {
-        throw new Error('test error');
+        throw new Error("test error");
       });
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.message).toBe('test error');
+        expect(result.error.message).toBe("test error");
       }
     });
 
-    test('should handle non-Error throws', () => {
+    test("should handle non-Error throws", () => {
       const result = tryResult(() => {
         // biome-ignore lint/style/useThrowOnlyError: Testing non-Error throws
-        throw 'string error';
+        throw "string error";
       });
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.message).toBe('string error');
+        expect(result.error.message).toBe("string error");
       }
     });
   });
 
-  describe('tryAsyncResult', () => {
-    test('should capture successful async operations', async () => {
+  describe("tryAsyncResult", () => {
+    test("should capture successful async operations", async () => {
       const result = await tryAsyncResult(async () => {
         return Promise.resolve(42);
       });
@@ -167,64 +167,64 @@ describe('Result Pattern', () => {
       }
     });
 
-    test('should capture async errors', async () => {
+    test("should capture async errors", async () => {
       const result = await tryAsyncResult(async () => {
-        throw new Error('async error');
+        throw new Error("async error");
       });
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.message).toBe('async error');
+        expect(result.error.message).toBe("async error");
       }
     });
 
-    test('should capture promise rejections', async () => {
+    test("should capture promise rejections", async () => {
       const result = await tryAsyncResult(async () => {
-        return Promise.reject(new Error('rejection error'));
+        return Promise.reject(new Error("rejection error"));
       });
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.message).toBe('rejection error');
+        expect(result.error.message).toBe("rejection error");
       }
     });
   });
 
-  describe('unwrapResult', () => {
-    test('should return value from success', () => {
-      const result = success('test value');
+  describe("unwrapResult", () => {
+    test("should return value from success", () => {
+      const result = success("test value");
       const value = unwrapResult(result);
 
-      expect(value).toBe('test value');
+      expect(value).toBe("test value");
     });
 
-    test('should throw error from failure', () => {
-      const error = new Error('test error');
+    test("should throw error from failure", () => {
+      const error = new Error("test error");
       const result = failure(error);
 
-      expect(() => unwrapResult(result)).toThrow('test error');
+      expect(() => unwrapResult(result)).toThrow("test error");
     });
   });
 
-  describe('unwrapOr', () => {
-    test('should return value from success', () => {
-      const result = success('actual value');
-      const value = unwrapOr(result, 'default value');
+  describe("unwrapOr", () => {
+    test("should return value from success", () => {
+      const result = success("actual value");
+      const value = unwrapOr(result, "default value");
 
-      expect(value).toBe('actual value');
+      expect(value).toBe("actual value");
     });
 
-    test('should return default from failure', () => {
-      const result = failure(new Error('test error'));
-      const value = unwrapOr(result, 'default value');
+    test("should return default from failure", () => {
+      const result = failure(new Error("test error"));
+      const value = unwrapOr(result, "default value");
 
-      expect(value).toBe('default value');
+      expect(value).toBe("default value");
     });
   });
 
-  describe('Hook result conversions', () => {
-    test('fromHookResult should convert successful hook result', () => {
-      const hookResult = { success: true, message: 'All good' };
+  describe("Hook result conversions", () => {
+    test("fromHookResult should convert successful hook result", () => {
+      const hookResult = { success: true, message: "All good" };
       const result = fromHookResult(hookResult);
 
       expect(isSuccess(result)).toBe(true);
@@ -233,106 +233,106 @@ describe('Result Pattern', () => {
       }
     });
 
-    test('fromHookResult should convert failed hook result', () => {
+    test("fromHookResult should convert failed hook result", () => {
       const hookResult = {
         success: false,
-        message: 'Something went wrong',
+        message: "Something went wrong",
         block: true,
       };
       const result = fromHookResult(hookResult);
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.message).toBe('Something went wrong');
+        expect(result.error.message).toBe("Something went wrong");
       }
     });
 
-    test('fromHookResult should handle missing error message', () => {
+    test("fromHookResult should handle missing error message", () => {
       const hookResult = { success: false, block: true };
       const result = fromHookResult(hookResult);
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.message).toBe('Hook execution failed');
+        expect(result.error.message).toBe("Hook execution failed");
       }
     });
 
-    test('toHookResult should convert successful result', () => {
-      const result = success('test data');
+    test("toHookResult should convert successful result", () => {
+      const result = success("test data");
       const hookResult = toHookResult(result);
 
       expect(hookResult.success).toBe(true);
-      expect(hookResult.message).toBe('Execution completed successfully');
+      expect(hookResult.message).toBe("Execution completed successfully");
     });
 
-    test('toHookResult should convert failed result', () => {
-      const error = new Error('execution failed');
+    test("toHookResult should convert failed result", () => {
+      const error = new Error("execution failed");
       const result = failure(error);
       const hookResult = toHookResult(result);
 
       expect(hookResult.success).toBe(false);
-      expect(hookResult.message).toBe('execution failed');
+      expect(hookResult.message).toBe("execution failed");
       expect(hookResult.block).toBe(true);
     });
   });
 
-  describe('Execution Errors', () => {
-    describe('ExecutionError', () => {
-      test('should create execution error with code and context', () => {
-        const context = { toolName: 'Bash', command: 'ls' };
-        const error = new ExecutionError('Test error', 'TEST_ERROR', context);
+  describe("Execution Errors", () => {
+    describe("ExecutionError", () => {
+      test("should create execution error with code and context", () => {
+        const context = { toolName: "Bash", command: "ls" };
+        const error = new ExecutionError("Test error", "TEST_ERROR", context);
 
-        expect(error.name).toBe('ExecutionError');
-        expect(error.message).toBe('Test error');
-        expect(error.code).toBe('TEST_ERROR');
+        expect(error.name).toBe("ExecutionError");
+        expect(error.message).toBe("Test error");
+        expect(error.code).toBe("TEST_ERROR");
         expect(error.context).toEqual(context);
       });
 
-      test('should be identifiable by type guard', () => {
-        const error = new ExecutionError('Test error', 'TEST_ERROR');
+      test("should be identifiable by type guard", () => {
+        const error = new ExecutionError("Test error", "TEST_ERROR");
 
         expect(isExecutionError(error)).toBe(true);
-        expect(isExecutionError(new Error('regular error'))).toBe(false);
+        expect(isExecutionError(new Error("regular error"))).toBe(false);
       });
     });
 
-    describe('TimeoutError', () => {
-      test('should create timeout error with timeout value', () => {
-        const context = { event: 'PreToolUse' };
+    describe("TimeoutError", () => {
+      test("should create timeout error with timeout value", () => {
+        const context = { event: "PreToolUse" };
         const error = new TimeoutError(5000, context);
 
-        expect(error.name).toBe('TimeoutError');
-        expect(error.message).toBe('Execution timed out after 5000ms');
-        expect(error.code).toBe('EXECUTION_TIMEOUT');
+        expect(error.name).toBe("TimeoutError");
+        expect(error.message).toBe("Execution timed out after 5000ms");
+        expect(error.code).toBe("EXECUTION_TIMEOUT");
         expect(error.context).toEqual(context);
       });
 
-      test('should be identifiable by type guard', () => {
+      test("should be identifiable by type guard", () => {
         const error = new TimeoutError(1000);
 
         expect(isTimeoutError(error)).toBe(true);
         expect(isExecutionError(error)).toBe(true); // Also an ExecutionError
-        expect(isTimeoutError(new Error('regular error'))).toBe(false);
+        expect(isTimeoutError(new Error("regular error"))).toBe(false);
       });
     });
 
-    describe('ValidationError', () => {
-      test('should create validation error with context', () => {
-        const context = { field: 'success', value: undefined };
-        const error = new ValidationError('Missing required field', context);
+    describe("ValidationError", () => {
+      test("should create validation error with context", () => {
+        const context = { field: "success", value: undefined };
+        const error = new ValidationError("Missing required field", context);
 
-        expect(error.name).toBe('ValidationError');
-        expect(error.message).toBe('Missing required field');
-        expect(error.code).toBe('VALIDATION_ERROR');
+        expect(error.name).toBe("ValidationError");
+        expect(error.message).toBe("Missing required field");
+        expect(error.code).toBe("VALIDATION_ERROR");
         expect(error.context).toEqual(context);
       });
 
-      test('should be identifiable by type guard', () => {
-        const error = new ValidationError('Test validation error');
+      test("should be identifiable by type guard", () => {
+        const error = new ValidationError("Test validation error");
 
         expect(isValidationError(error)).toBe(true);
         expect(isExecutionError(error)).toBe(true); // Also an ExecutionError
-        expect(isValidationError(new Error('regular error'))).toBe(false);
+        expect(isValidationError(new Error("regular error"))).toBe(false);
       });
     });
   });

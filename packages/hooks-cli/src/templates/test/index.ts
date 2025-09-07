@@ -2,7 +2,7 @@
  * Test template
  */
 
-import { pascalCase } from '../../utils/case-conversion.js';
+import { pascalCase } from "../../utils/case-conversion.js";
 
 export const testTypeScript = (
   name: string

@@ -7,10 +7,10 @@
  * patterns and allow lists for fine-tuned control.
  */
 
-import type { HookPlugin, PluginResult } from '@carabiner/registry';
-import type { HookContext } from '@carabiner/types';
-import { isBashHookContext } from '@carabiner/types';
-import { z } from 'zod';
+import type { HookPlugin, PluginResult } from "@carabiner/registry";
+import type { HookContext } from "@carabiner/types";
+import { isBashHookContext } from "@carabiner/types";
+import { z } from "zod";
 
 /**
  * Git safety plugin configuration schema
@@ -21,45 +21,45 @@ const GitSafetyConfigSchema = z
     blockPatterns: z
       .array(z.string())
       .default([
-        'push.*--force',
-        'push.*-f(?:\\s|$)',
-        'reset.*--hard',
-        'clean.*(-f.*-d|-fd)',
-        'branch.*-D',
-        'tag.*-d',
-        'reflog.*--delete',
-        'gc.*--aggressive.*--prune=now',
+        "push.*--force",
+        "push.*-f(?:\\s|$)",
+        "reset.*--hard",
+        "clean.*(-f.*-d|-fd)",
+        "branch.*-D",
+        "tag.*-d",
+        "reflog.*--delete",
+        "gc.*--aggressive.*--prune=now",
       ]),
 
     /** Commands to always allow (overrides block patterns) */
     allowList: z
       .array(z.string())
       .default([
-        'git status',
-        'git log',
-        'git diff',
-        'git branch$',
-        'git branch -[alv]',
-        'git branch --list',
-        'git checkout',
-        'git add',
-        'git commit',
-        'git pull',
-        'git fetch',
-        'git merge$',
-        'git merge --abort',
-        'git merge --continue',
-        'git rebase',
-        'git stash',
-        'git clone',
-        'git init',
-        'git config',
-        'git remote',
-        'git tag$',
-        'git tag -l',
-        'git tag --list',
-        'git show',
-        'git rev-parse',
+        "git status",
+        "git log",
+        "git diff",
+        "git branch$",
+        "git branch -[alv]",
+        "git branch --list",
+        "git checkout",
+        "git add",
+        "git commit",
+        "git pull",
+        "git fetch",
+        "git merge$",
+        "git merge --abort",
+        "git merge --continue",
+        "git rebase",
+        "git stash",
+        "git clone",
+        "git init",
+        "git config",
+        "git remote",
+        "git tag$",
+        "git tag -l",
+        "git tag --list",
+        "git show",
+        "git rev-parse",
       ]),
 
     /** Whether to block force operations */
@@ -81,7 +81,7 @@ const GitSafetyConfigSchema = z
           name: z.string(),
           pattern: z.string(),
           message: z.string(),
-          severity: z.enum(['block', 'warn']),
+          severity: z.enum(["block", "warn"]),
         })
       )
       .default([]),
@@ -101,13 +101,13 @@ function matchesPattern(command: string, patterns: string[]): string | null {
   const gitCommand = command.trim();
 
   // Only check git commands (case insensitive)
-  if (!gitCommand.toLowerCase().startsWith('git ')) {
+  if (!gitCommand.toLowerCase().startsWith("git ")) {
     return null;
   }
 
   for (const pattern of patterns) {
     try {
-      const regex = new RegExp(pattern, 'i');
+      const regex = new RegExp(pattern, "i");
       if (regex.test(gitCommand)) {
         return pattern;
       }
@@ -128,7 +128,7 @@ function isAllowed(command: string, allowList: string[]): boolean {
   return allowList.some((allowed) => {
     try {
       // Match allowed patterns exactly - the allowlist should contain full patterns
-      const regex = new RegExp(`^${allowed.toLowerCase()}`, 'i');
+      const regex = new RegExp(`^${allowed.toLowerCase()}`, "i");
       return regex.test(gitCommand);
     } catch (_error) {
       return false;
@@ -182,7 +182,7 @@ function checkRepoExclusions(
           pluginVersion,
           metadata: {
             skipped: true,
-            reason: 'Repository excluded',
+            reason: "Repository excluded",
           },
         };
       }
@@ -226,7 +226,7 @@ function checkRepoInclusions(
       pluginVersion,
       metadata: {
         skipped: true,
-        reason: 'Repository not in include list',
+        reason: "Repository not in include list",
       },
     };
   }
@@ -242,16 +242,16 @@ function checkCustomRules(
     name: string;
     pattern: string;
     message: string;
-    severity: 'block' | 'warn';
+    severity: "block" | "warn";
   }>,
   pluginName: string,
   pluginVersion: string
 ): PluginResult | null {
   for (const rule of customRules) {
     try {
-      const regex = new RegExp(rule.pattern, 'i');
+      const regex = new RegExp(rule.pattern, "i");
       if (regex.test(command)) {
-        if (rule.severity === 'warn') {
+        if (rule.severity === "warn") {
           return {
             success: true,
             pluginName,
@@ -323,13 +323,13 @@ function checkCustomRules(
  * ```
  */
 export const gitSafetyPlugin: HookPlugin = {
-  name: 'git-safety',
-  version: '1.0.0',
-  description: 'Prevents dangerous git operations',
-  author: 'Outfitter Team',
+  name: "git-safety",
+  version: "1.0.0",
+  description: "Prevents dangerous git operations",
+  author: "Outfitter Team",
 
-  events: ['PreToolUse'],
-  tools: ['Bash'],
+  events: ["PreToolUse"],
+  tools: ["Bash"],
   priority: 90, // High priority to intercept dangerous commands
 
   configSchema: GitSafetyConfigSchema as z.ZodType<Record<string, unknown>>,
@@ -340,7 +340,7 @@ export const gitSafetyPlugin: HookPlugin = {
     config: Record<string, unknown> = {}
   ): PluginResult {
     // Only handle PreToolUse for Bash commands
-    if (context.event !== 'PreToolUse' || !('toolName' in context)) {
+    if (context.event !== "PreToolUse" || !("toolName" in context)) {
       return {
         success: true,
         pluginName: this.name,
@@ -382,14 +382,14 @@ export const gitSafetyPlugin: HookPlugin = {
     }
 
     // Skip non-git commands
-    if (!command.trim().toLowerCase().startsWith('git ')) {
+    if (!command.trim().toLowerCase().startsWith("git ")) {
       return {
         success: true,
         pluginName: this.name,
         pluginVersion: this.version,
         metadata: {
           safe: true,
-          reason: 'Non-git command',
+          reason: "Non-git command",
         },
       };
     }
@@ -405,7 +405,7 @@ export const gitSafetyPlugin: HookPlugin = {
           allowed: true,
           scanned: true,
           command,
-          reason: 'Command in allow list',
+          reason: "Command in allow list",
         },
       };
     }
@@ -421,7 +421,7 @@ export const gitSafetyPlugin: HookPlugin = {
         pluginVersion: this.version,
         metadata: {
           safe: true,
-          reason: 'Trusted directory',
+          reason: "Trusted directory",
         },
       };
     }
@@ -491,7 +491,7 @@ export const gitSafetyPlugin: HookPlugin = {
         allowed: true,
         scanned: true,
         command,
-        reason: 'No dangerous patterns matched',
+        reason: "No dangerous patterns matched",
       },
     };
   },
@@ -511,12 +511,12 @@ export const gitSafetyPlugin: HookPlugin = {
   },
 
   metadata: {
-    name: 'git-safety',
-    version: '1.0.0',
-    description: 'Prevents dangerous git operations',
-    author: 'Outfitter Team',
-    keywords: ['git', 'safety', 'security', 'version-control'],
-    license: 'MIT',
+    name: "git-safety",
+    version: "1.0.0",
+    description: "Prevents dangerous git operations",
+    author: "Outfitter Team",
+    keywords: ["git", "safety", "security", "version-control"],
+    license: "MIT",
   },
 };
 

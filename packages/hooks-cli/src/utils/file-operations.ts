@@ -3,10 +3,10 @@
  * Enhanced with security validation for safe file operations
  */
 
-import { existsSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
-import { createWorkspaceValidator } from '../security/workspace-validator';
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
+import { createWorkspaceValidator } from "../security/workspace-validator";
 
 export type FileWriteOptions = {
   force?: boolean;
@@ -53,7 +53,7 @@ export async function writeFileWithChecks(
   }
 
   // Write the file with atomic creation when not forcing overwrites to avoid TOCTOU issues.
-  await writeFile(validatedPath, content, { flag: force ? 'w' : 'wx' });
+  await writeFile(validatedPath, content, { flag: force ? "w" : "wx" });
 }
 
 /**

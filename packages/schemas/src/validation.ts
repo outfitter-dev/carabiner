@@ -3,16 +3,16 @@
  * Combines Zod schemas with branded type validation
  */
 
-import type { ToolName } from '@carabiner/types';
+import type { ToolName } from "@carabiner/types";
 import {
   BrandValidationError,
   createDirectoryPath,
   createSessionId,
   createTranscriptPath,
-} from '@carabiner/types';
-import type { z } from 'zod';
-import { type ClaudeHookInput, safeParseClaudeHookInput } from './input.js';
-import { safeValidateToolInput, toolInputSchemas } from './tools.js';
+} from "@carabiner/types";
+import type { z } from "zod";
+import { type ClaudeHookInput, safeParseClaudeHookInput } from "./input.js";
+import { safeValidateToolInput, toolInputSchemas } from "./tools.js";
 
 /**
  * Validation error with detailed information
@@ -25,12 +25,12 @@ export class ValidationError extends Error {
     message: string
   ) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
   }
 
-  static fromZodError(error: z.ZodError, context = 'input'): ValidationError {
+  static fromZodError(error: z.ZodError, context = "input"): ValidationError {
     const issues = error.issues.map((issue) => {
-      const path = issue.path.join('.');
+      const path = issue.path.join(".");
       return `${path}: ${issue.message}`;
     });
 
@@ -38,7 +38,7 @@ export class ValidationError extends Error {
       context,
       undefined, // ZodError doesn't have input property
       issues,
-      `Validation failed for ${context}: ${issues.join('; ')}`
+      `Validation failed for ${context}: ${issues.join("; ")}`
     );
   }
 }
@@ -57,10 +57,10 @@ export type ValidationResult<T> = {
  */
 export type ValidatedClaudeInput = {
   readonly original: ClaudeHookInput;
-  readonly sessionId: import('@carabiner/types').SessionId;
-  readonly transcriptPath: import('@carabiner/types').TranscriptPath;
-  readonly cwd: import('@carabiner/types').DirectoryPath;
-  readonly event: import('@carabiner/types').HookEvent;
+  readonly sessionId: import("@carabiner/types").SessionId;
+  readonly transcriptPath: import("@carabiner/types").TranscriptPath;
+  readonly cwd: import("@carabiner/types").DirectoryPath;
+  readonly event: import("@carabiner/types").HookEvent;
   readonly matcher?: string;
 };
 
@@ -78,7 +78,7 @@ export function validateClaudeInput(
         success: false,
         error: ValidationError.fromZodError(
           schemaResult.error,
-          'Claude hook input'
+          "Claude hook input"
         ),
       };
     }
@@ -108,10 +108,10 @@ export function validateClaudeInput(
         error instanceof BrandValidationError
           ? error
           : new ValidationError(
-              'unknown',
+              "unknown",
               input,
               [String(error)],
-              'Unknown validation error'
+              "Unknown validation error"
             ),
     };
   }
@@ -125,7 +125,7 @@ export function validateToolInputForTool<
 >(
   toolName: T,
   input: unknown
-): ValidationResult<(typeof toolInputSchemas)[T]['_output']> {
+): ValidationResult<(typeof toolInputSchemas)[T]["_output"]> {
   try {
     const result = safeValidateToolInput(toolName, input);
     if (!result.success) {
@@ -146,7 +146,7 @@ export function validateToolInputForTool<
     return {
       success: false,
       error: new ValidationError(
-        'tool_input',
+        "tool_input",
         input,
         [String(error)],
         `Failed to validate ${toolName} tool input`
@@ -161,14 +161,14 @@ export function validateToolInputForTool<
 export function validateGenericToolInput(
   input: unknown
 ): ValidationResult<Record<string, unknown>> {
-  if (typeof input !== 'object' || input === null) {
+  if (typeof input !== "object" || input === null) {
     return {
       success: false,
       error: new ValidationError(
-        'tool_input',
+        "tool_input",
         input,
-        ['Must be an object'],
-        'Tool input must be an object'
+        ["Must be an object"],
+        "Tool input must be an object"
       ),
     };
   }
@@ -239,7 +239,7 @@ function validateToolInputIfPresent(claudeInput: ValidatedClaudeInput): {
 } {
   const original = claudeInput.original;
 
-  if (!('tool_name' in original && 'tool_input' in original)) {
+  if (!("tool_name" in original && "tool_input" in original)) {
     return {};
   }
 
@@ -322,7 +322,7 @@ export const ValidationUtils = {
       return [];
     }
     if (!result.error) {
-      return ['Unknown error'];
+      return ["Unknown error"];
     }
 
     if (result.error instanceof ValidationError) {
@@ -331,7 +331,7 @@ export const ValidationUtils = {
     if (result.error instanceof BrandValidationError) {
       return [result.error.message];
     }
-    return ['Unknown error'];
+    return ["Unknown error"];
   },
 
   /**

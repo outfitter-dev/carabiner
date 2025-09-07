@@ -2,13 +2,13 @@
  * Core logger implementation using Pino with enterprise features
  */
 
-import pino from 'pino';
+import pino from "pino";
 import {
   generateCorrelationId,
   sanitizeError,
   sanitizeForLogging,
-} from './sanitizer';
-import type { BaseLogEntry, Logger, LoggingConfig, LogLevel } from './types';
+} from "./sanitizer";
+import type { BaseLogEntry, Logger, LoggingConfig, LogLevel } from "./types";
 
 /**
  * Production-ready logger implementation
@@ -63,7 +63,7 @@ export class ProductionLogger implements Logger {
 
     // Silent mode for tests
     if (this.config.silent) {
-      pinoConfig.level = 'silent';
+      pinoConfig.level = "silent";
     }
 
     return pino(pinoConfig);
@@ -74,20 +74,20 @@ export class ProductionLogger implements Logger {
    */
   private createTransportConfig(): pino.TransportSingleOptions | undefined {
     // Production: structured JSON logging only
-    if (this.config.environment === 'production') {
+    if (this.config.environment === "production") {
       return; // No transport = raw JSON output
     }
 
     // Development: pretty printing if enabled and not disabled
     if (this.config.pretty && !this.config.silent) {
       return {
-        target: 'pino-pretty',
+        target: "pino-pretty",
         options: {
           colorize: true,
-          translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
-          ignore: 'pid,hostname,service,env,correlationId',
-          messageFormat: '{service}[{level}]: {msg}',
-          errorLikeObjectKeys: ['error', 'err', 'failure'],
+          translateTime: "SYS:yyyy-mm-dd HH:MM:ss",
+          ignore: "pid,hostname,service,env,correlationId",
+          messageFormat: "{service}[{level}]: {msg}",
+          errorLikeObjectKeys: ["error", "err", "failure"],
         },
       };
     }
@@ -110,7 +110,7 @@ export class ProductionLogger implements Logger {
     messageOrContext?: string | Record<string, unknown>,
     context?: Record<string, unknown>
   ): void {
-    if (typeof messageOrError === 'string') {
+    if (typeof messageOrError === "string") {
       // error(message, context)
       this.pino.error(
         messageOrContext as Record<string, unknown>,
@@ -120,9 +120,9 @@ export class ProductionLogger implements Logger {
       // error(error, message?, context?)
       const error = messageOrError;
       const message =
-        typeof messageOrContext === 'string' ? messageOrContext : error.message;
+        typeof messageOrContext === "string" ? messageOrContext : error.message;
       const ctx =
-        typeof messageOrContext === 'string' ? context : messageOrContext;
+        typeof messageOrContext === "string" ? context : messageOrContext;
 
       this.pino.error({ error, ...ctx }, message);
     }
@@ -199,7 +199,7 @@ class ChildLogger implements Logger {
     messageOrContext?: string | Record<string, unknown>,
     context?: Record<string, unknown>
   ): void {
-    if (typeof messageOrError === 'string') {
+    if (typeof messageOrError === "string") {
       this.pino.error(
         messageOrContext as Record<string, unknown>,
         messageOrError
@@ -207,9 +207,9 @@ class ChildLogger implements Logger {
     } else {
       const error = messageOrError;
       const message =
-        typeof messageOrContext === 'string' ? messageOrContext : error.message;
+        typeof messageOrContext === "string" ? messageOrContext : error.message;
       const ctx =
-        typeof messageOrContext === 'string' ? context : messageOrContext;
+        typeof messageOrContext === "string" ? context : messageOrContext;
 
       this.pino.error({ error, ...ctx }, message);
     }
@@ -275,9 +275,9 @@ export function createLogEntry(
     level,
     message,
     pid: process.pid,
-    hostname: 'localhost', // Sanitized hostname
-    service: 'unknown',
-    env: 'development',
+    hostname: "localhost", // Sanitized hostname
+    service: "unknown",
+    env: "development",
     correlationId: generateCorrelationId(),
     ...context,
   };

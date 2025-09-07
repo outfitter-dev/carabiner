@@ -11,7 +11,7 @@ import {
   type SessionId,
   type TranscriptPath,
   UnsafeBrands,
-} from './brands';
+} from "./brands";
 
 /**
  * Safe test context creation with proper types
@@ -35,23 +35,23 @@ export type TestContextOptions = {
 export function createTestContext(options: TestContextOptions = {}) {
   const sessionId = options.sessionId
     ? createSessionId(options.sessionId)
-    : createSessionId('test-session-123');
+    : createSessionId("test-session-123");
 
   const transcriptPath = options.transcriptPath
     ? createTranscriptPath(options.transcriptPath)
-    : createTranscriptPath('/tmp/test-transcript.md');
+    : createTranscriptPath("/tmp/test-transcript.md");
 
   const cwd = options.cwd
     ? createDirectoryPath(options.cwd)
-    : createDirectoryPath('/test/workspace');
+    : createDirectoryPath("/test/workspace");
 
   return {
-    event: options.hookEventName ?? 'PreToolUse',
+    event: options.hookEventName ?? "PreToolUse",
     sessionId,
     transcriptPath,
     cwd,
     matcher: options.matcher,
-    toolName: options.toolName ?? 'Bash',
+    toolName: options.toolName ?? "Bash",
     toolInput: options.toolInput ?? {},
     ...(options.toolResponse && { toolResponse: options.toolResponse }),
     ...(options.userPrompt && { userPrompt: options.userPrompt }),
@@ -69,14 +69,14 @@ export const TestMocks = {
   /**
    * Create a minimal readable stream mock for stdin tests
    */
-  stdin: (data = '{}') => ({
+  stdin: (data = "{}") => ({
     setEncoding: () => {},
     on: (event: string, callback: (chunk: string) => void) => {
-      if (event === 'data') {
+      if (event === "data") {
         // Simulate async data arrival
         setTimeout(() => callback(data), 0);
       }
-      if (event === 'end') {
+      if (event === "end") {
         setTimeout(() => callback, 0);
       }
     },
@@ -120,8 +120,8 @@ export const TestMocks = {
    * Create a safe process environment mock
    */
   env: (overrides: Record<string, string> = {}) => ({
-    NODE_ENV: 'test',
-    CLAUDE_PROJECT_DIR: '/test/workspace',
+    NODE_ENV: "test",
+    CLAUDE_PROJECT_DIR: "/test/workspace",
     ...overrides,
   }),
 } as const;
@@ -130,11 +130,11 @@ export const TestMocks = {
  * Test data factories with proper validation
  */
 export const TestFactories = {
-  sessionId: (suffix = '123'): SessionId =>
+  sessionId: (suffix = "123"): SessionId =>
     createSessionId(`test-session-${suffix}`),
-  transcriptPath: (name = 'test'): TranscriptPath =>
+  transcriptPath: (name = "test"): TranscriptPath =>
     createTranscriptPath(`/tmp/${name}-transcript.md`),
-  directoryPath: (path = 'workspace'): DirectoryPath =>
+  directoryPath: (path = "workspace"): DirectoryPath =>
     createDirectoryPath(`/test/${path}`),
 
   /**
@@ -157,22 +157,22 @@ export const TestAssertions = {
    * Assert that a value matches the expected hook context structure
    */
   isValidTestContext(value: unknown): boolean {
-    if (!value || typeof value !== 'object') {
+    if (!value || typeof value !== "object") {
       return false;
     }
 
     const ctx = value as Record<string, unknown>;
 
     return (
-      typeof ctx.event === 'string' &&
-      typeof ctx.sessionId === 'string' &&
-      typeof ctx.transcriptPath === 'string' &&
-      typeof ctx.cwd === 'string' &&
-      typeof ctx.toolName === 'string' &&
+      typeof ctx.event === "string" &&
+      typeof ctx.sessionId === "string" &&
+      typeof ctx.transcriptPath === "string" &&
+      typeof ctx.cwd === "string" &&
+      typeof ctx.toolName === "string" &&
       ctx.toolInput !== null &&
-      typeof ctx.toolInput === 'object' &&
+      typeof ctx.toolInput === "object" &&
       ctx.environment !== null &&
-      typeof ctx.environment === 'object'
+      typeof ctx.environment === "object"
     );
   },
 
@@ -180,7 +180,7 @@ export const TestAssertions = {
    * Assert that a value has the correct tool input structure
    */
   hasValidToolInput(value: unknown, expectedKeys: string[]): boolean {
-    if (!value || typeof value !== 'object') {
+    if (!value || typeof value !== "object") {
       return false;
     }
 
@@ -198,7 +198,7 @@ export class TestSetupError extends Error {
     public readonly context?: Record<string, unknown>
   ) {
     super(message);
-    this.name = 'TestSetupError';
+    this.name = "TestSetupError";
   }
 }
 
@@ -209,6 +209,6 @@ export class TestValidationError extends Error {
     public readonly expected?: unknown
   ) {
     super(message);
-    this.name = 'TestValidationError';
+    this.name = "TestValidationError";
   }
 }

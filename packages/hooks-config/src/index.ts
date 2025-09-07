@@ -7,7 +7,7 @@ export type {
   ConfigFormat,
   ConfigOptions,
   ExtendedHookConfiguration,
-} from './config';
+} from "./config";
 // Export configuration management
 export {
   CONFIG_PATHS,
@@ -17,8 +17,8 @@ export {
   DEFAULT_CONFIG,
   loadConfig,
   saveConfig,
-} from './config';
+} from "./config";
 
 // Version export (derived from package.json)
-import pkg from '../package.json' with { type: 'json' };
+import pkg from "../package.json" with { type: "json" };
 export const VERSION = pkg.version as string;

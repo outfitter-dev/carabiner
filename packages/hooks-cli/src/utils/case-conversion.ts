@@ -11,7 +11,7 @@ export function pascalCase(str: string): string {
   return str
     .split(WORD_SPLIT_REGEX)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
+    .join("");
 }
 
 /**
@@ -29,7 +29,7 @@ export function kebabCase(str: string): string {
   return str
     .split(WORD_SPLIT_REGEX)
     .map((word) => word.toLowerCase())
-    .join('-');
+    .join("-");
 }
 
 /**
@@ -39,5 +39,5 @@ export function snakeCase(str: string): string {
   return str
     .split(WORD_SPLIT_REGEX)
     .map((word) => word.toLowerCase())
-    .join('_');
+    .join("_");
 }

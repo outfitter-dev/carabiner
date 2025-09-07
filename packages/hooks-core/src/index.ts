@@ -11,9 +11,9 @@ export {
   HookBuilder,
   hook,
   middleware,
-} from './builder';
+} from "./builder";
 // Export production logging system
-export * from './logging';
+export * from "./logging";
 // Export registry
 export {
   createHookRegistry,
@@ -25,7 +25,7 @@ export {
   hasHooksForEvent,
   registerHook,
   registerHooks,
-} from './registry';
+} from "./registry";
 // Export runtime utilities
 export {
   createBashContext,
@@ -58,13 +58,13 @@ export {
   runClaudeHook,
   safeHookExecution,
   validateHookContext,
-} from './runtime';
+} from "./runtime";
 // Export all types
-export type * from './types';
+export type * from "./types";
 
 // Version export (derived from package.json)
-import type { PackageJson } from 'type-fest';
-import pkgJson from '../package.json' with { type: 'json' };
+import type { PackageJson } from "type-fest";
+import pkgJson from "../package.json" with { type: "json" };
 
 const pkg = pkgJson as PackageJson;
-export const VERSION = pkg.version || '0.0.0';
+export const VERSION = pkg.version || "0.0.0";

@@ -4,7 +4,7 @@
  * Provides plugin registration, discovery, priority ordering, and event-based execution.
  */
 
-import type { HookContext, HookResult } from '@carabiner/types';
+import type { HookContext, HookResult } from "@carabiner/types";
 // import { ExecutionTimer, MemoryTracker } from '@carabiner/execution';
 import type {
   HookPlugin,
@@ -13,14 +13,14 @@ import type {
   PluginExecutionContext,
   PluginExecutionOptions,
   PluginResult,
-} from './plugin';
+} from "./plugin";
 import {
   createPluginResult,
   isHookPlugin,
   PluginConfigurationError,
   PluginExecutionError,
   PluginValidationError,
-} from './plugin';
+} from "./plugin";
 
 /**
  * Registry statistics and metrics
@@ -63,7 +63,7 @@ export type RegistryOptions = {
   /** Enable hot reload in development */
   enableHotReload: boolean;
   /** Log level for registry operations */
-  logLevel: 'debug' | 'info' | 'warn' | 'error' | 'silent';
+  logLevel: "debug" | "info" | "warn" | "error" | "silent";
 };
 
 /**
@@ -71,11 +71,11 @@ export type RegistryOptions = {
  */
 export type RegistryEvent = {
   type:
-    | 'plugin-registered'
-    | 'plugin-unregistered'
-    | 'plugin-executed'
-    | 'plugin-failed'
-    | 'registry-cleared';
+    | "plugin-registered"
+    | "plugin-unregistered"
+    | "plugin-executed"
+    | "plugin-failed"
+    | "registry-cleared";
   plugin?: HookPlugin;
   error?: Error;
   result?: PluginResult;
@@ -140,7 +140,7 @@ export class PluginRegistry {
       continueOnFailure: false,
       maxConcurrency: 10,
       enableHotReload: false,
-      logLevel: 'info',
+      logLevel: "info",
       ...options,
     };
 
@@ -168,8 +168,8 @@ export class PluginRegistry {
     if (this.plugins.has(plugin.name)) {
       throw new PluginValidationError(
         plugin.name,
-        'name',
-        'Plugin already registered'
+        "name",
+        "Plugin already registered"
       );
     }
 
@@ -192,7 +192,7 @@ export class PluginRegistry {
       } catch (error) {
         throw new PluginConfigurationError(
           plugin.name,
-          `Invalid configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Invalid configuration: ${error instanceof Error ? error.message : "Unknown error"}`
         );
       }
     }
@@ -202,12 +202,12 @@ export class PluginRegistry {
 
     this.updateStats();
     this.emitEvent({
-      type: 'plugin-registered',
+      type: "plugin-registered",
       plugin,
       timestamp: new Date(),
     });
 
-    if (this.options.logLevel !== 'silent') {
+    if (this.options.logLevel !== "silent") {
     }
   }
 
@@ -225,12 +225,12 @@ export class PluginRegistry {
 
     this.updateStats();
     this.emitEvent({
-      type: 'plugin-unregistered',
+      type: "plugin-unregistered",
       plugin,
       timestamp: new Date(),
     });
 
-    if (this.options.logLevel !== 'silent') {
+    if (this.options.logLevel !== "silent") {
     }
 
     return true;
@@ -245,9 +245,9 @@ export class PluginRegistry {
     this.configs.clear();
 
     this.updateStats();
-    this.emitEvent({ type: 'registry-cleared', timestamp: new Date() });
+    this.emitEvent({ type: "registry-cleared", timestamp: new Date() });
 
-    if (this.options.logLevel !== 'silent') {
+    if (this.options.logLevel !== "silent") {
     }
   }
 
@@ -317,7 +317,7 @@ export class PluginRegistry {
       if (options.timeout && options.timeout > 0) {
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(
-            () => reject(new Error('Plugin execution timeout')),
+            () => reject(new Error("Plugin execution timeout")),
             options.timeout
           );
         });
@@ -348,7 +348,7 @@ export class PluginRegistry {
     } catch (error) {
       throw new PluginExecutionError(
         plugin.name,
-        `Execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         error instanceof Error ? error : undefined
       );
     }
@@ -375,7 +375,7 @@ export class PluginRegistry {
     _applicablePlugins: HookPlugin[],
     _context: HookContext
   ): void {
-    if (this.options.logLevel === 'debug') {
+    if (this.options.logLevel === "debug") {
     }
   }
 
@@ -409,7 +409,7 @@ export class PluginRegistry {
 
       results.push(result);
       this.emitEvent({
-        type: 'plugin-executed',
+        type: "plugin-executed",
         plugin,
         result,
         context,
@@ -441,7 +441,7 @@ export class PluginRegistry {
       result.block &&
       !(execOptions.continueOnFailure ?? false)
     ) {
-      if (this.options.logLevel !== 'silent') {
+      if (this.options.logLevel !== "silent") {
       }
       return false;
     }
@@ -462,7 +462,7 @@ export class PluginRegistry {
     results.push(errorResult);
 
     this.emitEvent({
-      type: 'plugin-failed',
+      type: "plugin-failed",
       plugin,
       error,
       context,
@@ -540,7 +540,7 @@ export class PluginRegistry {
       return true;
     }
 
-    const toolName = 'toolName' in context ? context.toolName : null;
+    const toolName = "toolName" in context ? context.toolName : null;
     return Boolean(toolName && config.tools.includes(toolName));
   }
 
@@ -578,13 +578,13 @@ export class PluginRegistry {
   ): boolean {
     return conditions.every((condition) => {
       switch (condition.type) {
-        case 'env':
+        case "env":
           return this.checkEnvironmentCondition(condition);
-        case 'context':
+        case "context":
           return this.checkContextCondition(context, condition);
-        case 'tool':
+        case "tool":
           return this.checkToolCondition(context, condition);
-        case 'custom':
+        case "custom":
           return condition.condition ? condition.condition(context) : true;
         default:
           return true;
@@ -623,7 +623,7 @@ export class PluginRegistry {
     context: HookContext,
     condition: PluginCondition
   ): boolean {
-    if (!('toolName' in context)) {
+    if (!("toolName" in context)) {
       return false;
     }
 
@@ -635,35 +635,35 @@ export class PluginRegistry {
 
   private compareValues(
     actual: unknown,
-    operator: PluginCondition['operator'],
+    operator: PluginCondition["operator"],
     expected: unknown
   ): boolean {
     switch (operator) {
-      case 'equals':
+      case "equals":
         return actual === expected;
-      case 'not_equals':
+      case "not_equals":
         return actual !== expected;
-      case 'contains':
+      case "contains":
         return (
-          typeof actual === 'string' &&
-          typeof expected === 'string' &&
+          typeof actual === "string" &&
+          typeof expected === "string" &&
           actual.includes(expected)
         );
-      case 'not_contains':
+      case "not_contains":
         return (
-          typeof actual === 'string' &&
-          typeof expected === 'string' &&
+          typeof actual === "string" &&
+          typeof expected === "string" &&
           !actual.includes(expected)
         );
-      case 'matches':
-        if (typeof actual === 'string' && expected instanceof RegExp) {
+      case "matches":
+        if (typeof actual === "string" && expected instanceof RegExp) {
           return expected.test(actual);
         }
-        if (typeof actual === 'string' && typeof expected === 'string') {
+        if (typeof actual === "string" && typeof expected === "string") {
           return new RegExp(expected).test(actual);
         }
         return false;
-      case 'custom':
+      case "custom":
         return false; // Custom conditions handled separately
       default:
         return true;
@@ -713,7 +713,7 @@ export class PluginRegistry {
         if (plugin.init) {
           try {
             await plugin.init();
-            if (this.options.logLevel === 'debug') {
+            if (this.options.logLevel === "debug") {
             }
           } catch (_error) {}
         }
@@ -737,7 +737,7 @@ export class PluginRegistry {
         if (plugin.shutdown) {
           try {
             await plugin.shutdown();
-            if (this.options.logLevel === 'debug') {
+            if (this.options.logLevel === "debug") {
             }
           } catch (_error) {}
         }
@@ -828,7 +828,7 @@ export class PluginRegistry {
       try {
         await listener(event);
       } catch (_error) {
-        if (this.options.logLevel !== 'silent') {
+        if (this.options.logLevel !== "silent") {
         }
       }
     });
@@ -841,33 +841,33 @@ export class PluginRegistry {
   private validatePlugin(plugin: HookPlugin): void {
     if (!isHookPlugin(plugin)) {
       throw new PluginValidationError(
-        'unknown',
-        'structure',
-        'Invalid plugin structure'
+        "unknown",
+        "structure",
+        "Invalid plugin structure"
       );
     }
 
     if (!plugin.name.match(/^[a-z0-9-]+$/)) {
       throw new PluginValidationError(
         plugin.name,
-        'name',
-        'Plugin name must be kebab-case'
+        "name",
+        "Plugin name must be kebab-case"
       );
     }
 
     if (!plugin.version.match(/^\d+\.\d+\.\d+/)) {
       throw new PluginValidationError(
         plugin.name,
-        'version',
-        'Plugin version must be semver format'
+        "version",
+        "Plugin version must be semver format"
       );
     }
 
     if (plugin.events.length === 0) {
       throw new PluginValidationError(
         plugin.name,
-        'events',
-        'Plugin must handle at least one event'
+        "events",
+        "Plugin must handle at least one event"
       );
     }
   }
@@ -876,7 +876,7 @@ export class PluginRegistry {
     plugin: HookPlugin,
     result: HookResult | PluginResult
   ): PluginResult {
-    if ('pluginName' in result && 'pluginVersion' in result) {
+    if ("pluginName" in result && "pluginVersion" in result) {
       return result as PluginResult;
     }
 

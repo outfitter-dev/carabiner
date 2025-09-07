@@ -2,15 +2,15 @@
  * Logger factory and hook-specific logger implementations
  */
 
-import type { HookEvent, ToolName } from '../types';
+import type { HookEvent, ToolName } from "../types";
 import {
   createDevelopmentConfig,
   createLoggingConfig,
   createProductionConfig,
   createTestConfig,
-} from './config';
-import { formatDuration, ProductionLogger } from './logger';
-import { hashUserId } from './sanitizer';
+} from "./config";
+import { formatDuration, ProductionLogger } from "./logger";
+import { hashUserId } from "./sanitizer";
 import type {
   HookExecutionContext,
   HookLogger,
@@ -18,7 +18,7 @@ import type {
   LoggingConfig,
   LogLevel,
   PerformanceMetrics,
-} from './types';
+} from "./types";
 
 /**
  * Global logger instances
@@ -29,7 +29,7 @@ const loggerCache = new Map<string, Logger>();
  * Create or get cached logger for a service
  */
 export function createLogger(service: string, config?: LoggingConfig): Logger {
-  const cacheKey = `${service}-${config ? JSON.stringify(config) : 'default'}`;
+  const cacheKey = `${service}-${config ? JSON.stringify(config) : "default"}`;
 
   if (loggerCache.has(cacheKey)) {
     return loggerCache.get(cacheKey)!;
@@ -85,7 +85,7 @@ export class HookLoggerImpl implements HookLogger {
     messageOrContext?: string | Record<string, unknown>,
     context?: Record<string, unknown>
   ): void {
-    if (typeof messageOrError === 'string') {
+    if (typeof messageOrError === "string") {
       this.baseLogger.error(
         messageOrError,
         messageOrContext as Record<string, unknown>
@@ -125,7 +125,7 @@ export class HookLoggerImpl implements HookLogger {
 
   // Hook-specific logging methods
   startExecution(context: HookExecutionContext): void {
-    this.info('Hook execution started', {
+    this.info("Hook execution started", {
       event: context.event,
       toolName: context.toolName,
       executionId: context.executionId,
@@ -143,7 +143,7 @@ export class HookLoggerImpl implements HookLogger {
   ): void {
     const logMethod = success ? this.info.bind(this) : this.warn.bind(this);
 
-    logMethod('Hook execution completed', {
+    logMethod("Hook execution completed", {
       event: context.event,
       toolName: context.toolName,
       executionId: context.executionId,
@@ -160,7 +160,7 @@ export class HookLoggerImpl implements HookLogger {
           : undefined,
       },
       // Only log result in debug mode and sanitize it
-      result: this.isLevelEnabled('debug')
+      result: this.isLevelEnabled("debug")
         ? this.sanitizeResult(result)
         : undefined,
     });
@@ -171,7 +171,7 @@ export class HookLoggerImpl implements HookLogger {
     error: Error,
     metrics: PerformanceMetrics
   ): void {
-    this.error(error, 'Hook execution failed', {
+    this.error(error, "Hook execution failed", {
       event: context.event,
       toolName: context.toolName,
       executionId: context.executionId,
@@ -191,7 +191,7 @@ export class HookLoggerImpl implements HookLogger {
     context: HookExecutionContext,
     metadata?: Record<string, unknown>
   ): void {
-    this.info('User action logged', {
+    this.info("User action logged", {
       action,
       event: context.event,
       toolName: context.toolName,
@@ -204,12 +204,12 @@ export class HookLoggerImpl implements HookLogger {
 
   logSecurityEvent(
     event: string,
-    severity: 'low' | 'medium' | 'high' | 'critical',
+    severity: "low" | "medium" | "high" | "critical",
     context: HookExecutionContext,
     details?: Record<string, unknown>
   ): void {
     const logMethod =
-      severity === 'critical' || severity === 'high'
+      severity === "critical" || severity === "high"
         ? this.error.bind(this)
         : this.warn.bind(this);
 
@@ -234,9 +234,9 @@ export class HookLoggerImpl implements HookLogger {
     }
 
     // Only show the last two directory components
-    const parts = projectDir.split('/');
+    const parts = projectDir.split("/");
     if (parts.length > 2) {
-      return `.../${parts.slice(-2).join('/')}`;
+      return `.../${parts.slice(-2).join("/")}`;
     }
 
     return projectDir;
@@ -250,16 +250,16 @@ export class HookLoggerImpl implements HookLogger {
       return result;
     }
 
-    if (typeof result === 'object') {
+    if (typeof result === "object") {
       return {
-        type: Array.isArray(result) ? 'array' : 'object',
+        type: Array.isArray(result) ? "array" : "object",
         size: Array.isArray(result)
           ? result.length
           : Object.keys(result as object).length,
       };
     }
 
-    if (typeof result === 'string') {
+    if (typeof result === "string") {
       return result.length > 100
         ? `${result.slice(0, 100)}...[truncated]`
         : result;
@@ -276,7 +276,7 @@ export function createHookLogger(
   event: HookEvent,
   toolName?: ToolName
 ): HookLogger {
-  const baseLogger = createLogger('hook-runtime').child({
+  const baseLogger = createLogger("hook-runtime").child({
     event,
     toolName,
   });
@@ -288,8 +288,8 @@ export function createHookLogger(
  * CLI-specific logger factory
  */
 export function createCliLogger(command?: string): Logger {
-  return createLogger('cli').child({
-    component: 'cli',
+  return createLogger("cli").child({
+    component: "cli",
     command,
   });
 }
@@ -297,12 +297,12 @@ export function createCliLogger(command?: string): Logger {
 /**
  * Pre-configured logger instances for different components
  */
-export const coreLogger = createLogger('core');
-export const runtimeLogger = createLogger('runtime');
-export const registryLogger = createLogger('registry');
-export const builderLogger = createLogger('builder');
-export const executionLogger = new HookLoggerImpl(createLogger('execution'));
-export const configLogger = createLogger('config');
+export const coreLogger = createLogger("core");
+export const runtimeLogger = createLogger("runtime");
+export const registryLogger = createLogger("registry");
+export const builderLogger = createLogger("builder");
+export const executionLogger = new HookLoggerImpl(createLogger("execution"));
+export const configLogger = createLogger("config");
 
 /**
  * Clear logger cache (useful for testing)

@@ -2,7 +2,7 @@
  * Middleware template
  */
 
-import { camelCase, pascalCase } from '../../utils/case-conversion.js';
+import { camelCase, pascalCase } from "../../utils/case-conversion.js";
 
 export const middlewareTypeScript = (name: string): string => `/**
  * Custom middleware: ${name}

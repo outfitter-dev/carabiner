@@ -10,19 +10,19 @@ import type {
   DeclarativeHookConfig,
   HookContext,
   HookResult,
-} from '@/hooks-core';
+} from "@/hooks-core";
 import {
   defineHook,
   HookResults,
   middleware,
   registerHooks,
   runClaudeHook,
-} from '@/hooks-core';
+} from "@/hooks-core";
 import {
   SecurityValidators,
   ValidationError,
   validateToolInput,
-} from '@/hooks-validators';
+} from "@/hooks-validators";
 
 /**
  * Development environment hooks configuration
@@ -30,32 +30,32 @@ import {
 const developmentHooks: DeclarativeHookConfig[] = [
   // Basic PreToolUse validation
   {
-    event: 'PreToolUse',
+    event: "PreToolUse",
     handler: (context) => {
       // Apply lenient validation for development
       try {
         SecurityValidators.development(context);
-        return HookResults.success('Development validation passed');
+        return HookResults.success("Development validation passed");
       } catch (_error) {
         return HookResults.success(
-          'Development validation completed with warnings'
+          "Development validation completed with warnings"
         );
       }
     },
     priority: 50,
     enabled: true,
     timeout: 5000,
-    middleware: [middleware.logging('debug'), middleware.timing()],
+    middleware: [middleware.logging("debug"), middleware.timing()],
   },
 
   // File formatting after writes/edits
   {
-    event: 'PostToolUse',
-    tool: 'Write',
+    event: "PostToolUse",
+    tool: "Write",
     handler: async (context) => {
       const filePath = (context.toolInput as { file_path?: string })?.file_path;
       if (!filePath) {
-        return HookResults.success('No file to format');
+        return HookResults.success("No file to format");
       }
 
       try {
@@ -73,16 +73,16 @@ const developmentHooks: DeclarativeHookConfig[] = [
 
   // Development session initialization
   {
-    event: 'SessionStart',
+    event: "SessionStart",
     handler: async (context) => {
       // Display helpful development information
       await displayDevInfo(context.cwd);
 
-      return HookResults.success('Development session initialized');
+      return HookResults.success("Development session initialized");
     },
     enabled: true,
     timeout: 10_000,
-    middleware: [middleware.logging('info')],
+    middleware: [middleware.logging("info")],
   },
 ];
 
@@ -92,7 +92,7 @@ const developmentHooks: DeclarativeHookConfig[] = [
 const productionHooks: DeclarativeHookConfig[] = [
   // Strict security validation
   {
-    event: 'PreToolUse',
+    event: "PreToolUse",
     handler: (context) => {
       try {
         // Apply strict security validation
@@ -101,9 +101,9 @@ const productionHooks: DeclarativeHookConfig[] = [
         // Additional production checks
         performProductionChecks(context);
 
-        return HookResults.success('Production security validation passed', {
-          securityLevel: 'strict',
-          environment: 'production',
+        return HookResults.success("Production security validation passed", {
+          securityLevel: "strict",
+          environment: "production",
         });
       } catch (error) {
         return HookResults.block(
@@ -115,7 +115,7 @@ const productionHooks: DeclarativeHookConfig[] = [
     enabled: true,
     timeout: 10_000,
     middleware: [
-      middleware.logging('warn'),
+      middleware.logging("warn"),
       middleware.errorHandling(),
       middleware.timing(),
     ],
@@ -123,7 +123,7 @@ const productionHooks: DeclarativeHookConfig[] = [
 
   // Production audit logging
   {
-    event: 'PostToolUse',
+    event: "PostToolUse",
     handler: async (context) => {
       await auditLog({
         timestamp: new Date().toISOString(),
@@ -131,10 +131,10 @@ const productionHooks: DeclarativeHookConfig[] = [
         toolName: context.toolName,
         cwd: context.cwd,
         success: true, // PostToolUse implies successful execution
-        environment: 'production',
+        environment: "production",
       });
 
-      return HookResults.success('Audit log recorded');
+      return HookResults.success("Audit log recorded");
     },
     enabled: true,
     timeout: 5000,
@@ -143,25 +143,25 @@ const productionHooks: DeclarativeHookConfig[] = [
 
   // Restricted session management
   {
-    event: 'SessionStart',
+    event: "SessionStart",
     handler: async (context) => {
       // Validate session in production
       const sessionValidation = validateProductionSession(context);
       if (!sessionValidation.valid) {
         return HookResults.failure(
-          sessionValidation.reason ?? 'Session validation failed'
+          sessionValidation.reason ?? "Session validation failed"
         );
       }
 
       await auditLog({
         timestamp: new Date().toISOString(),
         sessionId: context.sessionId,
-        event: 'session-start',
+        event: "session-start",
         cwd: context.cwd,
-        environment: 'production',
+        environment: "production",
       });
 
-      return HookResults.success('Production session initialized');
+      return HookResults.success("Production session initialized");
     },
     enabled: true,
     timeout: 15_000,
@@ -174,24 +174,24 @@ const productionHooks: DeclarativeHookConfig[] = [
 const testingHooks: DeclarativeHookConfig[] = [
   // Test-friendly validation
   {
-    event: 'PreToolUse',
+    event: "PreToolUse",
     handler: (context) => {
       // Use test-specific validation
       SecurityValidators.test(context);
 
-      return HookResults.success('Test validation passed');
+      return HookResults.success("Test validation passed");
     },
     enabled: true,
     timeout: 3000,
     condition: (_context) => {
       // Only run if in test environment
-      return Bun.env.NODE_ENV === 'test' || Bun.env.CI === 'true';
+      return Bun.env.NODE_ENV === "test" || Bun.env.CI === "true";
     },
   },
 
   // Test result capture
   {
-    event: 'PostToolUse',
+    event: "PostToolUse",
     handler: (context) => {
       // Capture test execution data
       const _testData = {
@@ -205,14 +205,14 @@ const testingHooks: DeclarativeHookConfig[] = [
           const response = context.toolResponse as
             | string
             | Record<string, unknown>;
-          if (typeof response === 'string') {
+          if (typeof response === "string") {
             return response.length;
           }
           return JSON.stringify(response).length;
         })(),
       };
 
-      return HookResults.success('Test data captured');
+      return HookResults.success("Test data captured");
     },
     enabled: true,
     timeout: 2000,
@@ -226,7 +226,7 @@ const testingHooks: DeclarativeHookConfig[] = [
 const universalHooks: DeclarativeHookConfig[] = [
   // Input validation for all tools (universal hook)
   {
-    event: 'PreToolUse',
+    event: "PreToolUse",
     // No tool specified - this runs for ALL tools
     handler: async (context) => {
       // Validate tool input structure
@@ -237,17 +237,17 @@ const universalHooks: DeclarativeHookConfig[] = [
       );
 
       if (!validation.valid) {
-        const errors = validation.errors.map((e) => e.message).join(', ');
+        const errors = validation.errors.map((e) => e.message).join(", ");
         return HookResults.block(`Input validation failed: ${errors}`);
       }
 
       if (validation.warnings && validation.warnings.length > 0) {
-        const _warnings = validation.warnings.map((w) => w.message).join(', ');
+        const _warnings = validation.warnings.map((w) => w.message).join(", ");
       }
 
-      return HookResults.success('Input validation passed', {
+      return HookResults.success("Input validation passed", {
         warnings: validation.warnings?.length ?? 0,
-        toolScoping: 'This universal hook runs for ALL tools',
+        toolScoping: "This universal hook runs for ALL tools",
       });
     },
     priority: 80,
@@ -257,27 +257,27 @@ const universalHooks: DeclarativeHookConfig[] = [
 
   // Bash-specific command monitoring (tool-specific hook)
   {
-    event: 'PreToolUse',
-    tool: 'Bash', // This hook ONLY runs for Bash commands
+    event: "PreToolUse",
+    tool: "Bash", // This hook ONLY runs for Bash commands
     handler: (context) => {
       const command = (context.toolInput as Record<string, unknown>)?.command;
       if (command) {
         // Monitor command patterns
         const suspiciousPatterns = [
-          { pattern: /rm\s+-rf\s+\//, description: 'Root deletion attempt' },
-          { pattern: /sudo\s+/, description: 'Sudo usage detected' },
-          { pattern: /curl.*\|\s*sh/, description: 'Curl pipe to shell' },
+          { pattern: /rm\s+-rf\s+\//, description: "Root deletion attempt" },
+          { pattern: /sudo\s+/, description: "Sudo usage detected" },
+          { pattern: /curl.*\|\s*sh/, description: "Curl pipe to shell" },
         ];
 
         for (const { pattern, description } of suspiciousPatterns) {
-          if (pattern.test(command) && Bun.env.NODE_ENV === 'production') {
+          if (pattern.test(command) && Bun.env.NODE_ENV === "production") {
             return HookResults.block(`Blocked: ${description}`);
           }
         }
       }
 
-      return HookResults.success('Bash command monitoring completed', {
-        toolScoping: 'This hook only runs for Bash commands',
+      return HookResults.success("Bash command monitoring completed", {
+        toolScoping: "This hook only runs for Bash commands",
       });
     },
     priority: 90,
@@ -287,7 +287,7 @@ const universalHooks: DeclarativeHookConfig[] = [
 
   // Performance monitoring for all tools (universal hook)
   {
-    event: 'PostToolUse',
+    event: "PostToolUse",
     handler: (context) => {
       // Note: In the real implementation, metadata would be on the result, not context
       // This is just for demonstration purposes
@@ -298,7 +298,7 @@ const universalHooks: DeclarativeHookConfig[] = [
         const response = context.toolResponse as
           | string
           | Record<string, unknown>;
-        if (typeof response === 'string') {
+        if (typeof response === "string") {
           return response.length;
         }
         return JSON.stringify(response).length;
@@ -309,10 +309,10 @@ const universalHooks: DeclarativeHookConfig[] = [
         // Large output warning would be logged here
       }
 
-      return HookResults.success('Performance monitoring completed', {
+      return HookResults.success("Performance monitoring completed", {
         outputSize,
         large: outputSize > 100_000,
-        toolScoping: 'This universal hook runs for ALL tools',
+        toolScoping: "This universal hook runs for ALL tools",
       });
     },
     enabled: true,
@@ -335,7 +335,7 @@ const environmentConfigs = {
  */
 function getHooksForEnvironment(): DeclarativeHookConfig[] {
   const env =
-    (Bun.env.NODE_ENV as keyof typeof environmentConfigs) || 'development';
+    (Bun.env.NODE_ENV as keyof typeof environmentConfigs) || "development";
   const envHooks = environmentConfigs[env] || developmentHooks;
 
   return [...envHooks, ...universalHooks];
@@ -388,7 +388,7 @@ async function runDeclarativeHooks(context: HookContext): Promise<HookResult> {
     try {
       const result = await hookConfig.handler(context);
       results.push({
-        type: hookConfig.tool ? `${hookConfig.tool}-specific` : 'universal',
+        type: hookConfig.tool ? `${hookConfig.tool}-specific` : "universal",
         success: result.success,
         message: result.message,
       });
@@ -402,7 +402,7 @@ async function runDeclarativeHooks(context: HookContext): Promise<HookResult> {
         `Hook execution failed: ${error instanceof Error ? error.message : error}`
       );
       results.push({
-        type: hookConfig.tool ? `${hookConfig.tool}-specific` : 'universal',
+        type: hookConfig.tool ? `${hookConfig.tool}-specific` : "universal",
         success: false,
         message: errorResult.message,
       });
@@ -423,26 +423,26 @@ async function runDeclarativeHooks(context: HookContext): Promise<HookResult> {
  */
 
 async function formatFile(filePath: string): Promise<void> {
-  const { spawn } = await import('node:child_process');
-  const { extname } = await import('node:path');
+  const { spawn } = await import("node:child_process");
+  const { extname } = await import("node:path");
 
   const ext = extname(filePath);
 
   // Only format supported file types
-  if (!['.ts', '.tsx', '.js', '.jsx', '.json', '.css', '.html'].includes(ext)) {
+  if (![".ts", ".tsx", ".js", ".jsx", ".json", ".css", ".html"].includes(ext)) {
     return;
   }
 
   return new Promise((resolve, reject) => {
     const format = spawn(
-      'bunx',
-      ['@biomejs/biome', 'format', '--write', filePath],
+      "bunx",
+      ["@biomejs/biome", "format", "--write", filePath],
       {
-        stdio: 'pipe',
+        stdio: "pipe",
       }
     );
 
-    format.on('close', (code) => {
+    format.on("close", (code) => {
       if (code === 0) {
         resolve();
       } else {
@@ -450,20 +450,20 @@ async function formatFile(filePath: string): Promise<void> {
       }
     });
 
-    format.on('error', reject);
+    format.on("error", reject);
   });
 }
 
 async function displayDevInfo(cwd: string): Promise<void> {
-  const { existsSync } = await import('node:fs');
-  const { readFile } = await import('node:fs/promises');
-  const { join } = await import('node:path');
+  const { existsSync } = await import("node:fs");
+  const { readFile } = await import("node:fs/promises");
+  const { join } = await import("node:path");
 
   // Show project info if package.json exists
-  const packagePath = join(cwd, 'package.json');
+  const packagePath = join(cwd, "package.json");
   if (existsSync(packagePath)) {
     try {
-      const packageContent = await readFile(packagePath, 'utf-8');
+      const packageContent = await readFile(packagePath, "utf-8");
       const packageJson = JSON.parse(packageContent);
 
       if (packageJson.scripts) {
@@ -476,18 +476,18 @@ async function displayDevInfo(cwd: string): Promise<void> {
 
   // Show git branch if available
   try {
-    const { spawn } = await import('node:child_process');
-    const git = spawn('git', ['branch', '--show-current'], {
+    const { spawn } = await import("node:child_process");
+    const git = spawn("git", ["branch", "--show-current"], {
       cwd,
-      stdio: 'pipe',
+      stdio: "pipe",
     });
 
-    let branch = '';
-    git.stdout?.on('data', (data) => {
+    let branch = "";
+    git.stdout?.on("data", (data) => {
       branch += data.toString().trim();
     });
 
-    git.on('close', (code) => {
+    git.on("close", (code) => {
       if (code === 0 && branch) {
         // Git branch information available for display
       }
@@ -499,7 +499,7 @@ async function displayDevInfo(cwd: string): Promise<void> {
 
 function performProductionChecks(context: HookContext): void {
   // Check for production-specific restrictions
-  if (context.toolName === 'Bash') {
+  if (context.toolName === "Bash") {
     const command = (context.toolInput as Record<string, unknown>)?.command;
     if (command) {
       const productionBlockedPatterns = [
@@ -522,8 +522,8 @@ function performProductionChecks(context: HookContext): void {
   }
 
   // Check workspace restrictions
-  const restrictedPaths = ['node_modules', '.git', 'dist', 'build'];
-  if (context.toolName === 'Write' || context.toolName === 'Edit') {
+  const restrictedPaths = ["node_modules", ".git", "dist", "build"];
+  if (context.toolName === "Write" || context.toolName === "Edit") {
     const filePath = (context.toolInput as Record<string, unknown>)?.file_path;
     if (filePath && restrictedPaths.some((path) => filePath.includes(path))) {
       throw new ValidationError(
@@ -546,7 +546,7 @@ function validateProductionSession(context: HookContext): {
   if (!context.sessionId || context.sessionId.length < 10) {
     return {
       valid: false,
-      reason: 'Invalid session ID for production environment',
+      reason: "Invalid session ID for production environment",
     };
   }
 
@@ -565,8 +565,8 @@ if (import.meta.main) {
 
   // Use the new stdin-based runtime
   runClaudeHook(runDeclarativeHooks, {
-    outputMode: 'exit-code',
-    logLevel: 'info',
+    outputMode: "exit-code",
+    logLevel: "info",
   });
 }
 

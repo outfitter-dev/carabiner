@@ -2,12 +2,12 @@
  * @outfitter/execution - Metrics collection tests
  */
 
-import { beforeEach, describe, expect, test } from 'bun:test';
+import { beforeEach, describe, expect, test } from "bun:test";
 import {
   createDirectoryPath,
   createSessionId,
   createTranscriptPath,
-} from '@carabiner/types';
+} from "@carabiner/types";
 import {
   deltaMemoryUsage,
   ExecutionTimer,
@@ -15,10 +15,10 @@ import {
   MetricsCollector,
   setMetricsEnabled,
   snapshotMemoryUsage,
-} from '../metrics';
+} from "../metrics";
 
-describe('ExecutionTimer', () => {
-  test('should track elapsed time', async () => {
+describe("ExecutionTimer", () => {
+  test("should track elapsed time", async () => {
     const timer = new ExecutionTimer();
 
     // Small delay to ensure measurable time passes
@@ -28,13 +28,13 @@ describe('ExecutionTimer', () => {
     expect(elapsed).toBeGreaterThan(5); // At least 5ms should have passed
   });
 
-  test('should track phases correctly', () => {
+  test("should track phases correctly", () => {
     const timer = new ExecutionTimer();
 
     // Mark some phases
-    timer.markPhase('input');
-    timer.markPhase('parsing');
-    timer.markPhase('execution');
+    timer.markPhase("input");
+    timer.markPhase("parsing");
+    timer.markPhase("execution");
 
     const timing = timer.getTiming();
 
@@ -46,19 +46,19 @@ describe('ExecutionTimer', () => {
     expect(timing.phases.execution).toBeGreaterThanOrEqual(0);
   });
 
-  test('should return phase duration when marking', () => {
+  test("should return phase duration when marking", () => {
     const timer = new ExecutionTimer();
 
-    const inputDuration = timer.markPhase('input');
+    const inputDuration = timer.markPhase("input");
     expect(inputDuration).toBeGreaterThanOrEqual(0);
 
-    const parsingDuration = timer.markPhase('parsing');
+    const parsingDuration = timer.markPhase("parsing");
     expect(parsingDuration).toBeGreaterThanOrEqual(0);
   });
 });
 
-describe('Memory tracking functions', () => {
-  test('should take memory snapshots', () => {
+describe("Memory tracking functions", () => {
+  test("should take memory snapshots", () => {
     const snapshot = snapshotMemoryUsage();
 
     expect(snapshot.heapUsed).toBeGreaterThan(0);
@@ -67,7 +67,7 @@ describe('Memory tracking functions', () => {
     expect(snapshot.rss).toBeGreaterThan(0);
   });
 
-  test('should calculate memory deltas', () => {
+  test("should calculate memory deltas", () => {
     const before = snapshotMemoryUsage();
 
     // Allocate some memory that will definitely be tracked
@@ -84,7 +84,7 @@ describe('Memory tracking functions', () => {
     expect(largeBuffer.length).toBe(1024 * 1024);
   });
 
-  test('should format memory usage for display', () => {
+  test("should format memory usage for display", () => {
     const memory = {
       heapUsed: 1024 * 1024, // 1 MB
       heapTotal: 2 * 1024 * 1024, // 2 MB
@@ -94,32 +94,32 @@ describe('Memory tracking functions', () => {
 
     const formatted = formatMemoryUsage(memory);
 
-    expect(formatted.heapUsed).toBe('1.00 MB');
-    expect(formatted.heapTotal).toBe('2.00 MB');
-    expect(formatted.external).toBe('0.50 MB');
-    expect(formatted.rss).toBe('4.00 MB');
+    expect(formatted.heapUsed).toBe("1.00 MB");
+    expect(formatted.heapTotal).toBe("2.00 MB");
+    expect(formatted.external).toBe("0.50 MB");
+    expect(formatted.rss).toBe("4.00 MB");
   });
 });
 
-describe('MetricsCollector', () => {
+describe("MetricsCollector", () => {
   let collector: MetricsCollector;
 
   beforeEach(() => {
     collector = new MetricsCollector();
   });
 
-  test('should record execution metrics', () => {
+  test("should record execution metrics", () => {
     const context = {
-      event: 'PreToolUse' as const,
-      toolName: 'Bash',
-      sessionId: createSessionId('test-session'),
-      cwd: createDirectoryPath('/tmp'),
+      event: "PreToolUse" as const,
+      toolName: "Bash",
+      sessionId: createSessionId("test-session"),
+      cwd: createDirectoryPath("/tmp"),
       environment: {},
-      toolInput: { command: 'ls' },
-      transcriptPath: createTranscriptPath('/tmp/transcript.md'),
+      toolInput: { command: "ls" },
+      transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     };
 
-    const result = { success: true, message: 'Test completed' };
+    const result = { success: true, message: "Test completed" };
 
     const timing = {
       startTime: performance.now(),
@@ -149,26 +149,26 @@ describe('MetricsCollector', () => {
     const metric = metrics[0];
     expect(metric).toBeDefined();
     if (metric) {
-      expect(metric.event).toBe('PreToolUse');
-      expect(metric.toolName).toBe('Bash');
+      expect(metric.event).toBe("PreToolUse");
+      expect(metric.toolName).toBe("Bash");
       expect(metric.success).toBe(true);
       expect(metric.timing.duration).toBe(100);
       expect(metric.memoryDelta.heapUsed).toBe(100);
     }
   });
 
-  test('should limit stored metrics to prevent memory leaks', () => {
+  test("should limit stored metrics to prevent memory leaks", () => {
     const maxMetrics = 5;
     const limitedCollector = new MetricsCollector(maxMetrics);
 
     const context = {
-      event: 'PreToolUse' as const,
-      sessionId: createSessionId('test'),
-      cwd: createDirectoryPath('/tmp'),
+      event: "PreToolUse" as const,
+      sessionId: createSessionId("test"),
+      cwd: createDirectoryPath("/tmp"),
       environment: {},
-      toolName: 'Bash',
-      toolInput: { command: 'test' },
-      transcriptPath: createTranscriptPath('/tmp/transcript.md'),
+      toolName: "Bash",
+      toolInput: { command: "test" },
+      transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     } as const;
     const result = { success: true };
     const timing = {
@@ -193,16 +193,16 @@ describe('MetricsCollector', () => {
     expect(limitedCollector.size()).toBe(maxMetrics);
   });
 
-  test('should filter metrics by time range', () => {
+  test("should filter metrics by time range", () => {
     const baseTime = Date.now();
     const context = {
-      event: 'PreToolUse' as const,
-      sessionId: createSessionId('test'),
-      cwd: createDirectoryPath('/tmp'),
+      event: "PreToolUse" as const,
+      sessionId: createSessionId("test"),
+      cwd: createDirectoryPath("/tmp"),
       environment: {},
-      toolName: 'Bash' as const,
-      toolInput: { command: 'test' },
-      transcriptPath: createTranscriptPath('/tmp/transcript.md'),
+      toolName: "Bash" as const,
+      toolInput: { command: "test" },
+      transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     };
     const result = { success: true };
     const timing = {
@@ -239,15 +239,15 @@ describe('MetricsCollector', () => {
     expect(filteredMetrics).toHaveLength(1);
   });
 
-  test('should calculate aggregate metrics correctly', () => {
+  test("should calculate aggregate metrics correctly", () => {
     const context = {
-      event: 'PreToolUse' as const,
-      sessionId: createSessionId('test'),
-      cwd: createDirectoryPath('/tmp'),
+      event: "PreToolUse" as const,
+      sessionId: createSessionId("test"),
+      cwd: createDirectoryPath("/tmp"),
       environment: {},
-      toolName: 'Bash',
-      toolInput: { command: 'test' },
-      transcriptPath: createTranscriptPath('/tmp/transcript.md'),
+      toolName: "Bash",
+      toolInput: { command: "test" },
+      transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     } as const;
     const memory = {
       heapUsed: 1000,
@@ -259,7 +259,7 @@ describe('MetricsCollector', () => {
     // Record successful execution
     collector.record(
       context,
-      { success: true, message: 'Success 1' },
+      { success: true, message: "Success 1" },
       {
         startTime: 0,
         endTime: 100,
@@ -274,7 +274,7 @@ describe('MetricsCollector', () => {
       context,
       {
         success: false,
-        message: 'VALIDATION_ERROR: Invalid input',
+        message: "VALIDATION_ERROR: Invalid input",
         block: true,
       },
       {
@@ -290,7 +290,7 @@ describe('MetricsCollector', () => {
     // Record another successful execution
     collector.record(
       context,
-      { success: true, message: 'Success 2' },
+      { success: true, message: "Success 2" },
       {
         startTime: 0,
         endTime: 150,
@@ -315,13 +315,13 @@ describe('MetricsCollector', () => {
       expect(aggregate.medianDuration).toBe(150);
       expect(aggregate.topErrors).toHaveLength(1);
       if (aggregate.topErrors[0]) {
-        expect(aggregate.topErrors[0].code).toBe('VALIDATION_ERROR');
+        expect(aggregate.topErrors[0].code).toBe("VALIDATION_ERROR");
         expect(aggregate.topErrors[0].count).toBe(1);
       }
     }
   });
 
-  test('should handle empty metrics gracefully', () => {
+  test("should handle empty metrics gracefully", () => {
     const aggregate = collector.getAggregateMetrics();
 
     expect(aggregate).toBeDefined();
@@ -333,15 +333,15 @@ describe('MetricsCollector', () => {
     expect(aggregate.topErrors).toHaveLength(0);
   });
 
-  test('should clear all metrics', () => {
+  test("should clear all metrics", () => {
     const context = {
-      event: 'PreToolUse' as const,
-      sessionId: createSessionId('test'),
-      cwd: createDirectoryPath('/tmp'),
+      event: "PreToolUse" as const,
+      sessionId: createSessionId("test"),
+      cwd: createDirectoryPath("/tmp"),
       environment: {},
-      toolName: 'Bash' as const,
-      toolInput: { command: 'test' },
-      transcriptPath: createTranscriptPath('/tmp/transcript.md'),
+      toolName: "Bash" as const,
+      toolInput: { command: "test" },
+      transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     };
     const result = { success: true };
     const timing = {
@@ -365,8 +365,8 @@ describe('MetricsCollector', () => {
     expect(collector.getMetrics()).toHaveLength(0);
   });
 
-  describe('Global metrics', () => {
-    test('setMetricsEnabled should clear metrics when disabled', () => {
+  describe("Global metrics", () => {
+    test("setMetricsEnabled should clear metrics when disabled", () => {
       // This is a bit tricky to test since globalMetrics is shared
       // We'll just verify the function doesn't throw
       expect(() => setMetricsEnabled(false)).not.toThrow();

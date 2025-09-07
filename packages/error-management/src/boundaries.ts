@@ -5,13 +5,13 @@
  * and fault isolation in production environments
  */
 
-import { fromError, GrappleError } from './errors.js';
-import type { HealthStatus, IGrappleError } from './types.js';
+import { fromError, GrappleError } from "./errors.js";
+import type { HealthStatus, IGrappleError } from "./types.js";
 import {
   ErrorCategory as Category,
   ErrorCode as Code,
   ErrorSeverity as Severity,
-} from './types.js';
+} from "./types.js";
 
 /**
  * Error boundary configuration
@@ -57,10 +57,10 @@ export type ErrorBoundaryContext = {
  * Error boundary state
  */
 export enum ErrorBoundaryState {
-  HEALTHY = 'healthy',
-  DEGRADED = 'degraded',
-  FAILED = 'failed',
-  RECOVERING = 'recovering',
+  HEALTHY = "healthy",
+  DEGRADED = "degraded",
+  FAILED = "failed",
+  RECOVERING = "recovering",
 }
 
 /**
@@ -387,7 +387,7 @@ export class ErrorBoundaryRegistry {
    * Get overall health status
    */
   getHealthStatus(): HealthStatus {
-    const components: HealthStatus['components'] = {};
+    const components: HealthStatus["components"] = {};
     let overallHealthy = true;
 
     for (const [name, boundary] of this.boundaries) {
@@ -412,8 +412,8 @@ export class ErrorBoundaryRegistry {
       components,
       message:
         overallHealthy === true
-          ? 'All error boundaries healthy'
-          : 'Some error boundaries are degraded or failed',
+          ? "All error boundaries healthy"
+          : "Some error boundaries are degraded or failed",
       timestamp: new Date(),
     };
   }

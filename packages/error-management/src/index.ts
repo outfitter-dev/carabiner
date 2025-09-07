@@ -46,14 +46,14 @@
 export type {
   ErrorBoundaryConfig,
   ErrorBoundaryContext,
-} from './boundaries.js';
+} from "./boundaries.js";
 export {
   ErrorBoundary,
   ErrorBoundaryRegistry,
   ErrorBoundaryState,
   executeWithBoundary,
   withErrorBoundary,
-} from './boundaries.js';
+} from "./boundaries.js";
 
 // Core Error Classes
 export {
@@ -71,7 +71,7 @@ export {
   TimeoutError,
   UserInputError,
   ValidationError,
-} from './errors.js';
+} from "./errors.js";
 
 // Recovery Mechanisms
 export {
@@ -81,7 +81,7 @@ export {
   withCleanup,
   withFallback,
   withPriorityFallback,
-} from './recovery.js';
+} from "./recovery.js";
 // Reporting and Logging
 export {
   configureGlobalReporter,
@@ -92,7 +92,7 @@ export {
   StructuredLogger,
   sanitizeError,
   sanitizeText,
-} from './reporting.js';
+} from "./reporting.js";
 // Core Types
 export type {
   CircuitBreakerConfig,
@@ -102,14 +102,14 @@ export type {
   HealthStatus,
   IGrappleError,
   RecoveryStrategy,
-} from './types.js';
+} from "./types.js";
 // Export enums and constants
 export {
   CircuitState,
   ErrorCategory,
   ErrorCode,
   ErrorSeverity,
-} from './types.js';
+} from "./types.js";
 
 // Utility Functions
 export {
@@ -118,7 +118,7 @@ export {
   safeAsync,
   withTimeout,
   wrapWithErrorHandling,
-} from './utils.js';
+} from "./utils.js";
 
 /**
  * Quick setup function for common error handling patterns
@@ -137,13 +137,13 @@ export function setupErrorHandling(
 ) {
   // Configure global reporter
   if (config.reporting) {
-    const { configureGlobalReporter } = require('./reporting.js');
+    const { configureGlobalReporter } = require("./reporting.js");
     configureGlobalReporter(config.reporting);
   }
 
   // Setup common error boundaries
   if (config.boundaries) {
-    const { ErrorBoundaryRegistry } = require('./boundaries.js');
+    const { ErrorBoundaryRegistry } = require("./boundaries.js");
     const registry = ErrorBoundaryRegistry.getInstance();
 
     for (const [name, boundaryConfig] of Object.entries(config.boundaries)) {
@@ -153,7 +153,7 @@ export function setupErrorHandling(
 
   // Create recovery manager with config
   if (config.recovery) {
-    const { ErrorRecoveryManager } = require('./recovery.js');
+    const { ErrorRecoveryManager } = require("./recovery.js");
     return new ErrorRecoveryManager(
       config.recovery.retry,
       config.recovery.circuitBreaker
@@ -170,7 +170,7 @@ export function setupProductionErrorHandling() {
   return setupErrorHandling({
     reporting: {
       enabled: true,
-      minSeverity: 'warning' as const,
+      minSeverity: "warning" as const,
       includeStackTrace: true,
       includeEnvironment: true,
     },
@@ -191,17 +191,17 @@ export function setupProductionErrorHandling() {
       },
     },
     boundaries: {
-      'config-operations': {
+      "config-operations": {
         errorThreshold: 3,
         timeWindow: 300_000,
         autoRecover: true,
       },
-      'hook-execution': {
+      "hook-execution": {
         errorThreshold: 5,
         timeWindow: 300_000,
         autoRecover: true,
       },
-      'file-operations': {
+      "file-operations": {
         errorThreshold: 10,
         timeWindow: 300_000,
         autoRecover: true,

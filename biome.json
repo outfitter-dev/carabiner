@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
   "extends": ["ultracite"],
   "javascript": {
     "globals": ["Bun"]
@@ -13,9 +13,7 @@
   "files": {
     "ignoreUnknown": true,
     "includes": ["**/*.{js,ts,jsx,tsx,json,jsonc}"],
-    "ignore": [
-      "**/.conductor/**"
-    ]
+    "experimentalScannerIgnores": ["**/.conductor/**"]
   },
   "vcs": {
     "useIgnoreFile": true

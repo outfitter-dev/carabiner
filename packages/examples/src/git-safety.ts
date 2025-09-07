@@ -14,18 +14,18 @@
  * - Blocks dangerous reset operations
  */
 
-import { execSync } from 'node:child_process';
-import { HookExecutor } from '@carabiner/execution';
-import { StdinProtocol } from '@carabiner/protocol';
-import type { HookHandler, HookResult } from '@carabiner/types';
+import { execSync } from "node:child_process";
+import { HookExecutor } from "@carabiner/execution";
+import { StdinProtocol } from "@carabiner/protocol";
+import type { HookHandler, HookResult } from "@carabiner/types";
 
 // Protected branch names
 const PROTECTED_BRANCHES = [
-  'main',
-  'master',
-  'production',
-  'release',
-  'staging',
+  "main",
+  "master",
+  "production",
+  "release",
+  "staging",
 ];
 
 // Dangerous git patterns
@@ -33,12 +33,12 @@ const GIT_DANGERS = [
   {
     pattern: /git\s+push\s+.*--force(?:-with-lease)?/,
     checkBranch: true,
-    message: 'Force push detected on protected branch',
+    message: "Force push detected on protected branch",
   },
   {
     pattern: /git\s+push\s+.*-f(?:\s|$)/,
     checkBranch: true,
-    message: 'Force push detected on protected branch',
+    message: "Force push detected on protected branch",
   },
   {
     pattern: /git\s+clean\s+(?!.*-n|.*--dry-run)/,
@@ -49,22 +49,22 @@ const GIT_DANGERS = [
   {
     pattern: /git\s+reset\s+--hard\s+HEAD~\d+/,
     checkBranch: true,
-    message: 'Hard reset on protected branch will lose commits',
+    message: "Hard reset on protected branch will lose commits",
   },
   {
     pattern: /git\s+checkout\s+.*--orphan/,
     checkBranch: false,
-    message: 'Creating orphan branch - this will start a new history tree',
+    message: "Creating orphan branch - this will start a new history tree",
   },
   {
     pattern: /git\s+filter-branch/,
     checkBranch: false,
-    message: 'Filter-branch rewrites history - use with extreme caution',
+    message: "Filter-branch rewrites history - use with extreme caution",
   },
   {
     pattern: /git\s+push\s+--delete\s+origin\s+(main|master|production)/,
     checkBranch: false,
-    message: 'Attempting to delete protected remote branch',
+    message: "Attempting to delete protected remote branch",
   },
 ];
 
@@ -72,29 +72,29 @@ const GIT_DANGERS = [
 const GIT_WARNINGS = [
   {
     pattern: /git\s+commit\s+.*--amend/,
-    message: 'Amending commits rewrites history - avoid if already pushed',
+    message: "Amending commits rewrites history - avoid if already pushed",
   },
   {
     pattern: /git\s+rebase/,
-    message: 'Rebasing rewrites history - avoid rebasing public branches',
+    message: "Rebasing rewrites history - avoid rebasing public branches",
   },
   {
     pattern: /git\s+add\s+\./,
-    message: 'Adding all files - ensure no sensitive data is included',
+    message: "Adding all files - ensure no sensitive data is included",
   },
   {
     pattern: /git\s+add\s+\*/,
-    message: 'Adding all files - ensure no sensitive data is included',
+    message: "Adding all files - ensure no sensitive data is included",
   },
   {
     pattern: /git\s+commit\s+.*-m\s*["'][^"']*token[^"']*["']/i,
     message:
-      'Commit message may contain sensitive information (token mentioned)',
+      "Commit message may contain sensitive information (token mentioned)",
   },
   {
     pattern: /git\s+commit\s+.*-m\s*["'][^"']*password[^"']*["']/i,
     message:
-      'Commit message may contain sensitive information (password mentioned)',
+      "Commit message may contain sensitive information (password mentioned)",
   },
 ];
 
@@ -103,8 +103,8 @@ const GIT_WARNINGS = [
  */
 function getCurrentBranch(): string | null {
   try {
-    return execSync('git rev-parse --abbrev-ref HEAD', {
-      encoding: 'utf-8',
+    return execSync("git rev-parse --abbrev-ref HEAD", {
+      encoding: "utf-8",
     }).trim();
   } catch {
     return null;
@@ -173,16 +173,16 @@ const gitSafetyHook: HookHandler = (context): HookResult => {
   // Support both camelCase and snake_case for backward compatibility
   const toolName = (context as any).toolName ?? (context as any).tool_name;
   const toolInput = (context as any).toolInput ?? (context as any).tool_input;
-  
+
   // Only process Bash commands
-  if (toolName !== 'Bash') {
+  if (toolName !== "Bash") {
     return {
       success: true,
     };
   }
 
   const command = toolInput?.command as string | undefined;
-  if (!command?.includes('git')) {
+  if (!command?.includes("git")) {
     return {
       success: true,
     };
@@ -207,14 +207,14 @@ const gitSafetyHook: HookHandler = (context): HookResult => {
 
     return {
       success: false,
-      action: 'block',
-      error: `Git safety violation:\n${validation.blocked.map((i) => `• ${i}`).join('\n')}\n\nCurrent branch: ${getCurrentBranch() || 'unknown'}`,
+      action: "block",
+      error: `Git safety violation:\n${validation.blocked.map((i) => `• ${i}`).join("\n")}\n\nCurrent branch: ${getCurrentBranch() || "unknown"}`,
     };
   }
 
   return {
     success: true,
-    action: 'continue',
+    action: "continue",
   };
 };
 

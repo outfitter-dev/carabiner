@@ -6,7 +6,7 @@
  * error handling predictability throughout the execution engine.
  */
 
-import type { HookResult } from '@carabiner/types';
+import type { HookResult } from "@carabiner/types";
 
 /**
  * Success result containing a value
@@ -180,7 +180,7 @@ export function fromHookResult(
   if (hookResult.success) {
     return success(hookResult);
   }
-  return failure(new Error(hookResult.message || 'Hook execution failed'));
+  return failure(new Error(hookResult.message || "Hook execution failed"));
 }
 
 /**
@@ -193,7 +193,7 @@ export function toHookResult<T>(result: Result<T, Error>): HookResult {
   if (isSuccess(result)) {
     return {
       success: true,
-      message: 'Execution completed successfully',
+      message: "Execution completed successfully",
     };
   }
 
@@ -208,7 +208,7 @@ export function toHookResult<T>(result: Result<T, Error>): HookResult {
  * Execution-specific error types
  */
 export class ExecutionError extends Error {
-  override name = 'ExecutionError';
+  override name = "ExecutionError";
   readonly code: string;
   readonly context?: Record<string, unknown>;
 
@@ -224,22 +224,22 @@ export class ExecutionError extends Error {
 }
 
 export class TimeoutError extends ExecutionError {
-  override name = 'TimeoutError';
+  override name = "TimeoutError";
 
   constructor(timeout: number, context?: Record<string, unknown>) {
     super(
       `Execution timed out after ${timeout}ms`,
-      'EXECUTION_TIMEOUT',
+      "EXECUTION_TIMEOUT",
       context
     );
   }
 }
 
 export class ValidationError extends ExecutionError {
-  override name = 'ValidationError';
+  override name = "ValidationError";
 
   constructor(message: string, context?: Record<string, unknown>) {
-    super(message, 'VALIDATION_ERROR', context);
+    super(message, "VALIDATION_ERROR", context);
   }
 }
 

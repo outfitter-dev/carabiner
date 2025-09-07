@@ -5,8 +5,8 @@
  * and ensure the system meets production performance requirements.
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import type { HookContext, HookHandler, HookResult } from '@carabiner/types';
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import type { HookContext, HookHandler, HookResult } from "@carabiner/types";
 
 /**
  * Performance measurement utilities
@@ -112,7 +112,7 @@ class PerformanceBenchmark {
   }
 }
 
-describe('Performance Benchmarks', () => {
+describe("Performance Benchmarks", () => {
   let benchmark: PerformanceBenchmark;
 
   beforeAll(() => {
@@ -126,10 +126,10 @@ describe('Performance Benchmarks', () => {
 
   afterAll(() => {
     [
-      'hook_execution',
-      'config_loading',
-      'json_parsing',
-      'memory_allocation',
+      "hook_execution",
+      "config_loading",
+      "json_parsing",
+      "memory_allocation",
     ].forEach((name) => {
       const stats = benchmark.getStats(name);
       if (stats.count > 0) {
@@ -140,40 +140,40 @@ describe('Performance Benchmarks', () => {
     });
   });
 
-  describe('Hook Execution Performance', () => {
-    test('should execute simple hooks within performance targets', async () => {
+  describe("Hook Execution Performance", () => {
+    test("should execute simple hooks within performance targets", async () => {
       // Simple hook handler
       const simpleHook: HookHandler = async (
         _context: HookContext
       ): Promise<HookResult> => {
         return {
           success: true,
-          message: 'Simple hook executed',
+          message: "Simple hook executed",
         };
       };
 
       // Warm up
       for (let i = 0; i < 5; i++) {
         await simpleHook({
-          event: 'pre-tool-use',
-          tool: 'Bash',
-          input: { command: 'echo test' },
+          event: "pre-tool-use",
+          tool: "Bash",
+          input: { command: "echo test" },
         });
       }
 
       // Benchmark execution
       const iterations = 100;
       for (let i = 0; i < iterations; i++) {
-        await benchmark.time('hook_execution', () =>
+        await benchmark.time("hook_execution", () =>
           simpleHook({
-            event: 'pre-tool-use',
-            tool: 'Bash',
+            event: "pre-tool-use",
+            tool: "Bash",
             input: { command: `echo test${i}` },
           })
         );
       }
 
-      const stats = benchmark.getStats('hook_execution');
+      const stats = benchmark.getStats("hook_execution");
 
       // Performance targets
       expect(stats.avg).toBeLessThan(5); // Average < 5ms
@@ -181,7 +181,7 @@ describe('Performance Benchmarks', () => {
       expect(stats.max).toBeLessThan(50); // Max < 50ms
     });
 
-    test('should handle concurrent hook executions efficiently', async () => {
+    test("should handle concurrent hook executions efficiently", async () => {
       const concurrentHook: HookHandler = async (
         context: HookContext
       ): Promise<HookResult> => {
@@ -204,8 +204,8 @@ describe('Performance Benchmarks', () => {
         promises.push(
           benchmark.time(`concurrent_${i}`, () =>
             concurrentHook({
-              event: 'pre-tool-use',
-              tool: 'Bash',
+              event: "pre-tool-use",
+              tool: "Bash",
               input: { command: `echo concurrent${i}` },
             })
           )
@@ -224,7 +224,7 @@ describe('Performance Benchmarks', () => {
       });
     });
 
-    test('should maintain performance with increasing payload sizes', async () => {
+    test("should maintain performance with increasing payload sizes", async () => {
       const payloadSizes = [1000, 10_000, 50_000];
       const performanceResults: { size: number; avgTime: number }[] = [];
 
@@ -257,8 +257,8 @@ describe('Performance Benchmarks', () => {
         for (let i = 0; i < iterations; i++) {
           await benchmark.time(`payload_${size}`, () =>
             hookWithLargePayload({
-              event: 'pre-tool-use',
-              tool: 'Bash',
+              event: "pre-tool-use",
+              tool: "Bash",
               input: { data: largePayload },
             })
           );
@@ -282,43 +282,43 @@ describe('Performance Benchmarks', () => {
     });
   });
 
-  describe('Configuration Loading Performance', () => {
-    test('should load small configurations quickly', async () => {
+  describe("Configuration Loading Performance", () => {
+    test("should load small configurations quickly", async () => {
       const smallConfig = {
-        version: '1.0.0',
+        version: "1.0.0",
         hooks: {
-          'pre-tool-use': {
-            handler: './hooks/simple.ts',
+          "pre-tool-use": {
+            handler: "./hooks/simple.ts",
             timeout: 5000,
           },
         },
         environment: {
-          NODE_ENV: 'test',
+          NODE_ENV: "test",
         },
       };
 
       for (let i = 0; i < 50; i++) {
-        await benchmark.time('config_loading', async () => {
+        await benchmark.time("config_loading", async () => {
           // Simulate config loading
           const json = JSON.stringify(smallConfig);
           const parsed = JSON.parse(json);
 
           // Basic validation
-          expect(parsed.version).toBe('1.0.0');
+          expect(parsed.version).toBe("1.0.0");
           return parsed;
         });
       }
 
-      const stats = benchmark.getStats('config_loading');
+      const stats = benchmark.getStats("config_loading");
 
       // Config loading should be very fast
       expect(stats.avg).toBeLessThan(2); // Average < 2ms
       expect(stats.max).toBeLessThan(10); // Max < 10ms
     });
 
-    test('should handle large configurations efficiently', async () => {
+    test("should handle large configurations efficiently", async () => {
       const largeConfig = {
-        version: '1.0.0',
+        version: "1.0.0",
         hooks: {} as Record<string, any>,
         environment: {} as Record<string, any>,
       };
@@ -344,7 +344,7 @@ describe('Performance Benchmarks', () => {
       expect(configString.length).toBeGreaterThan(100_000); // > 100KB
 
       for (let i = 0; i < 10; i++) {
-        await benchmark.time('large_config_loading', async () => {
+        await benchmark.time("large_config_loading", async () => {
           const parsed = JSON.parse(configString);
           expect(Object.keys(parsed.hooks)).toHaveLength(1000);
           expect(Object.keys(parsed.environment)).toHaveLength(500);
@@ -352,7 +352,7 @@ describe('Performance Benchmarks', () => {
         });
       }
 
-      const stats = benchmark.getStats('large_config_loading');
+      const stats = benchmark.getStats("large_config_loading");
 
       // Large config loading should still be reasonable
       expect(stats.avg).toBeLessThan(50); // Average < 50ms
@@ -360,8 +360,8 @@ describe('Performance Benchmarks', () => {
     });
   });
 
-  describe('JSON Processing Performance', () => {
-    test('should parse JSON efficiently across size ranges', async () => {
+  describe("JSON Processing Performance", () => {
+    test("should parse JSON efficiently across size ranges", async () => {
       const sizes = [1000, 10_000, 100_000];
 
       for (const size of sizes) {
@@ -394,12 +394,12 @@ describe('Performance Benchmarks', () => {
       }
     });
 
-    test('should stringify JSON efficiently', async () => {
+    test("should stringify JSON efficiently", async () => {
       const complexObject = {
         metadata: {
           timestamp: new Date().toISOString(),
-          version: '1.0.0',
-          generator: 'performance-test',
+          version: "1.0.0",
+          generator: "performance-test",
         },
         data: new Array(10_000).fill(null).map((_, i) => ({
           id: i,
@@ -425,14 +425,14 @@ describe('Performance Benchmarks', () => {
       };
 
       for (let i = 0; i < 10; i++) {
-        await benchmark.time('json_stringify', async () => {
+        await benchmark.time("json_stringify", async () => {
           const jsonString = JSON.stringify(complexObject);
           expect(jsonString.length).toBeGreaterThan(100_000);
           return jsonString;
         });
       }
 
-      const stats = benchmark.getStats('json_stringify');
+      const stats = benchmark.getStats("json_stringify");
 
       // JSON stringify should be reasonably fast
       expect(stats.avg).toBeLessThan(100); // Average < 100ms
@@ -440,12 +440,12 @@ describe('Performance Benchmarks', () => {
     });
   });
 
-  describe('Memory Usage Benchmarks', () => {
-    test('should maintain reasonable memory usage during operations', async () => {
+  describe("Memory Usage Benchmarks", () => {
+    test("should maintain reasonable memory usage during operations", async () => {
       const initialMemory = process.memoryUsage();
 
       for (let i = 0; i < 100; i++) {
-        await benchmark.time('memory_allocation', async () => {
+        await benchmark.time("memory_allocation", async () => {
           // Allocate and process data
           const data = new Array(1000).fill(null).map((_, j) => ({
             id: j,
@@ -474,7 +474,7 @@ describe('Performance Benchmarks', () => {
         }
       }
 
-      const memoryUsage = benchmark.getMemoryUsage('memory_allocation');
+      const memoryUsage = benchmark.getMemoryUsage("memory_allocation");
       expect(memoryUsage).not.toBeNull();
 
       // Memory delta should be reasonable
@@ -485,7 +485,7 @@ describe('Performance Benchmarks', () => {
       }
     });
 
-    test('should handle memory cleanup efficiently', async () => {
+    test("should handle memory cleanup efficiently", async () => {
       const cleanup = async () => {
         // Allocate significant memory
         const largeArray = new Array(100_000).fill(null).map((_, i) => ({
@@ -508,20 +508,20 @@ describe('Performance Benchmarks', () => {
         await new Promise((resolve) => setTimeout(resolve, 10));
       };
 
-      await benchmark.time('memory_cleanup', cleanup);
+      await benchmark.time("memory_cleanup", cleanup);
 
-      const stats = benchmark.getStats('memory_cleanup');
+      const stats = benchmark.getStats("memory_cleanup");
       expect(stats.avg).toBeLessThan(100); // Cleanup should be fast
     });
   });
 
-  describe('Startup Performance', () => {
-    test('should have fast initialization times', async () => {
+  describe("Startup Performance", () => {
+    test("should have fast initialization times", async () => {
       // Simulate module loading and initialization
       for (let i = 0; i < 10; i++) {
-        await benchmark.time('startup_simulation', async () => {
+        await benchmark.time("startup_simulation", async () => {
           // Simulate loading modules
-          const modules = ['types', 'config', 'execution', 'protocol'].map(
+          const modules = ["types", "config", "execution", "protocol"].map(
             (name) => ({
               name,
               loaded: true,
@@ -541,7 +541,7 @@ describe('Performance Benchmarks', () => {
         });
       }
 
-      const stats = benchmark.getStats('startup_simulation');
+      const stats = benchmark.getStats("startup_simulation");
 
       // Startup should be fast
       expect(stats.avg).toBeLessThan(10); // Average < 10ms

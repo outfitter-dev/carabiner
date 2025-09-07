@@ -72,21 +72,21 @@ export type {
   HookConfig,
   HookConfigLoader,
   HookConfigSettings,
-} from './config';
+} from "./config";
 export {
   ConfigLoader,
   createDefaultConfig,
   validateHookConfig,
   validatePluginConfig,
-} from './config';
+} from "./config";
 // Plugin loader and discovery
 export type {
   HotReloadEvent,
   HotReloadListener,
   LoaderOptions,
   PluginLoadResult,
-} from './loader';
-export { PluginLoader } from './loader';
+} from "./loader";
+export { PluginLoader } from "./loader";
 // Plugin interface and types
 export type {
   HookPlugin,
@@ -99,7 +99,7 @@ export type {
   PluginMetadata,
   PluginModule,
   PluginResult,
-} from './plugin';
+} from "./plugin";
 export {
   createPluginResult,
   isHookPlugin,
@@ -107,37 +107,37 @@ export {
   PluginConfigurationError,
   PluginExecutionError,
   PluginValidationError,
-} from './plugin';
+} from "./plugin";
 // Plugin registry
 export type {
   RegistryEvent,
   RegistryEventListener,
   RegistryOptions,
   RegistryStats,
-} from './registry';
-export { PluginRegistry } from './registry';
+} from "./registry";
+export { PluginRegistry } from "./registry";
 
-import type { ConfigChangeEvent } from './config';
+import type { ConfigChangeEvent } from "./config";
 // Import classes and types for internal use in createPluginSystem
-import { ConfigLoader } from './config';
-import type { HotReloadEvent } from './loader';
-import { PluginLoader } from './loader';
-import type { HookPlugin, PluginConfig } from './plugin';
-import { PluginRegistry } from './registry';
+import { ConfigLoader } from "./config";
+import type { HotReloadEvent } from "./loader";
+import { PluginLoader } from "./loader";
+import type { HookPlugin, PluginConfig } from "./plugin";
+import { PluginRegistry } from "./registry";
 
 /**
  * Package version
  */
-export const VERSION = '1.0.0';
+export const VERSION = "1.0.0";
 
 /**
  * Package metadata
  */
 export const PACKAGE_INFO = {
-  name: '@carabiner/registry',
+  name: "@carabiner/registry",
   version: VERSION,
-  description: 'Plugin registry system for Claude Code hooks',
-  repository: 'https://github.com/outfitter-dev/grapple',
+  description: "Plugin registry system for Claude Code hooks",
+  repository: "https://github.com/outfitter-dev/grapple",
 } as const;
 
 /**
@@ -227,7 +227,7 @@ export async function createPluginSystem(
     // Set up hot reload
     if (enableHotReload) {
       loaderInstance.onHotReload(async (event: HotReloadEvent) => {
-        if (event.type === 'changed' || event.type === 'added') {
+        if (event.type === "changed" || event.type === "added") {
           if (event.plugin) {
             registryInstance.unregister(event.plugin.name);
 
@@ -236,12 +236,12 @@ export async function createPluginSystem(
             );
             registryInstance.register(event.plugin, pluginConfig);
           }
-        } else if (event.type === 'removed') {
+        } else if (event.type === "removed") {
           const pluginName =
             event.path
-              .split('/')
+              .split("/")
               .pop()
-              ?.replace(/\.(plugin|hook)\.(js|ts|mjs)$/, '') || 'unknown';
+              ?.replace(/\.(plugin|hook)\.(js|ts|mjs)$/, "") || "unknown";
           registryInstance.unregister(pluginName);
         }
       });
@@ -253,7 +253,7 @@ export async function createPluginSystem(
   // Set up configuration hot reload
   if (enableHotReload) {
     configLoaderInstance.onChange(async (event: ConfigChangeEvent) => {
-      if (event.type === 'changed' && event.config) {
+      if (event.type === "changed" && event.config) {
       }
     });
   }

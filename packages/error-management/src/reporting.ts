@@ -5,15 +5,15 @@
  * sanitization, and monitoring integration
  */
 
-import { nanoid } from 'nanoid';
-import type { JsonValue } from 'type-fest';
+import { nanoid } from "nanoid";
+import type { JsonValue } from "type-fest";
 import type {
   ErrorReport,
   ErrorReportingConfig,
   ErrorSeverity,
   IGrappleError,
-} from './types.js';
-import { ErrorSeverity as Severity } from './types.js';
+} from "./types.js";
+import { ErrorSeverity as Severity } from "./types.js";
 
 /**
  * Default reporting configuration
@@ -61,12 +61,12 @@ export function sanitizeText(text: string): string {
         const replacement =
           capture.length > 4
             ? capture.substring(0, 2) +
-              '*'.repeat(capture.length - 4) +
+              "*".repeat(capture.length - 4) +
               capture.substring(capture.length - 2)
-            : '*'.repeat(capture.length);
+            : "*".repeat(capture.length);
         return match.replace(capture, replacement);
       }
-      return '[REDACTED]';
+      return "[REDACTED]";
     });
   }
 
@@ -112,20 +112,20 @@ function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
   const sanitized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       sanitized[key] = sanitizeText(value);
     } else if (
-      typeof value === 'object' &&
+      typeof value === "object" &&
       value !== null &&
       !Array.isArray(value)
     ) {
       sanitized[key] = sanitizeObject(value as Record<string, unknown>);
     } else if (Array.isArray(value)) {
       sanitized[key] = value.map((item) => {
-        if (typeof item === 'string') {
+        if (typeof item === "string") {
           return sanitizeText(item);
         }
-        if (typeof item === 'object' && item !== null) {
+        if (typeof item === "object" && item !== null) {
           return sanitizeObject(item as Record<string, unknown>);
         }
         return item;
@@ -507,21 +507,21 @@ export class StructuredLogger {
    * Log info message
    */
   info(message: string, metadata?: Record<string, unknown>): void {
-    this.log('info', message, metadata);
+    this.log("info", message, metadata);
   }
 
   /**
    * Log warning message
    */
   warn(message: string, metadata?: Record<string, unknown>): void {
-    this.log('warn', message, metadata);
+    this.log("warn", message, metadata);
   }
 
   /**
    * Log error message
    */
   error(message: string, metadata?: Record<string, unknown>): void {
-    this.log('error', message, metadata);
+    this.log("error", message, metadata);
   }
 
   /**
@@ -529,7 +529,7 @@ export class StructuredLogger {
    */
   async logError(error: IGrappleError, message?: string): Promise<void> {
     const logMessage = message ? `${message}: ${error.message}` : error.message;
-    this.log('error', logMessage, { error: error.toReport() });
+    this.log("error", logMessage, { error: error.toReport() });
 
     // Also report to error reporting system
     await this.reporter.report(error);
@@ -549,7 +549,7 @@ export class StructuredLogger {
    * Internal log method
    */
   private log(
-    _level: 'info' | 'warn' | 'error',
+    _level: "info" | "warn" | "error",
     _message: string,
     _metadata?: Record<string, unknown>
   ): void {

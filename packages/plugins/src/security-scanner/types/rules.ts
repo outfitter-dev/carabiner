@@ -3,7 +3,7 @@
  * @description Security rule types and interfaces
  */
 
-import type { Severity } from './findings.js';
+import type { Severity } from "./findings.js";
 
 /**
  * Security rule interface
@@ -24,13 +24,13 @@ export type SecurityRule = {
  * Rule category for grouping rules
  */
 export type RuleCategory =
-  | 'secrets'
-  | 'injection'
-  | 'dangerous-commands'
-  | 'configuration'
-  | 'network'
-  | 'cryptography'
-  | 'path-traversal';
+  | "secrets"
+  | "injection"
+  | "dangerous-commands"
+  | "configuration"
+  | "network"
+  | "cryptography"
+  | "path-traversal";
 
 /**
  * Rule execution context

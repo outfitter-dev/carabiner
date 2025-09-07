@@ -4,8 +4,8 @@
  * Updated to match the actual Claude Code hooks API
  */
 
-import path from 'node:path';
-import { runtimeLogger } from './logger';
+import path from "node:path";
+import { runtimeLogger } from "./logger";
 import type {
   ClaudeHookInputVariant,
   ClaudeToolHookInput,
@@ -21,7 +21,7 @@ import type {
   ToolInput,
   ToolInputMap,
   ToolName,
-} from './types';
+} from "./types";
 import {
   HookError,
   HookInputError,
@@ -29,7 +29,7 @@ import {
   isClaudeNotificationInput,
   isClaudeToolHookInput,
   isClaudeUserPromptInput,
-} from './types';
+} from "./types";
 
 /**
  * Parse JSON input from stdin
@@ -47,7 +47,7 @@ export async function parseStdinInput(): Promise<
       return {
         success: false,
         error: `Input exceeds maximum size limit (${MAX_INPUT_SIZE} bytes)`,
-        rawInput: '[INPUT TOO LARGE]',
+        rawInput: "[INPUT TOO LARGE]",
       };
     }
 
@@ -57,7 +57,7 @@ export async function parseStdinInput(): Promise<
     if (!input.trim()) {
       return {
         success: false,
-        error: 'No input received from stdin',
+        error: "No input received from stdin",
         rawInput: input,
       };
     }
@@ -66,20 +66,20 @@ export async function parseStdinInput(): Promise<
     // Using String.fromCharCode to avoid control character lint warnings
     const controlChars = [...new Array(32).keys()]
       .map((i) => String.fromCharCode(i))
-      .join('');
+      .join("");
     const sanitizedInput = input
-      .split('')
+      .split("")
       .filter(
         (c) => !controlChars.includes(c) && c !== String.fromCharCode(127)
       )
-      .join('')
+      .join("")
       .trim();
 
     if (sanitizedInput !== input.trim()) {
       return {
         success: false,
-        error: 'Input contains invalid control characters',
-        rawInput: '[SANITIZED]',
+        error: "Input contains invalid control characters",
+        rawInput: "[SANITIZED]",
       };
     }
 
@@ -93,7 +93,7 @@ export async function parseStdinInput(): Promise<
       return {
         success: false,
         error:
-          'Invalid input: missing required fields (session_id, hook_event_name, cwd)',
+          "Invalid input: missing required fields (session_id, hook_event_name, cwd)",
         rawInput: input,
       };
     }
@@ -105,7 +105,7 @@ export async function parseStdinInput(): Promise<
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown parsing error',
+      error: error instanceof Error ? error.message : "Unknown parsing error",
     };
   }
 }
@@ -122,22 +122,22 @@ export function parseHookEnvironment(): HookEnvironment {
     // Remove any null bytes or control characters
     const controlChars = [...new Array(32).keys()]
       .map((i) => String.fromCharCode(i))
-      .join('');
+      .join("");
     const extendedControlChars = [...new Array(32).keys()]
       .map((i) => String.fromCharCode(i + 127))
-      .join('');
+      .join("");
     const sanitized = claudeProjectDir
-      .split('')
+      .split("")
       .filter(
         (c) => !(controlChars.includes(c) || extendedControlChars.includes(c))
       )
-      .join('');
+      .join("");
 
     // Ensure it's an absolute path and not a path traversal
     const normalized = path.normalize(sanitized);
-    if (!path.isAbsolute(normalized) || normalized.includes('..')) {
+    if (!path.isAbsolute(normalized) || normalized.includes("..")) {
       throw new HookInputError(
-        'Invalid CLAUDE_PROJECT_DIR environment variable',
+        "Invalid CLAUDE_PROJECT_DIR environment variable",
         claudeProjectDir
       );
     }
@@ -203,7 +203,7 @@ export function createHookContext<
   if (isClaudeUserPromptInput(claudeInput)) {
     const promptContext = {
       ...baseContext,
-      toolName: 'UserPromptSubmit' as TTool,
+      toolName: "UserPromptSubmit" as TTool,
       toolInput: {} as GetToolInput<TTool>,
       toolResponse: undefined,
       userPrompt: claudeInput.prompt,
@@ -227,7 +227,7 @@ export function createHookContext<
   // Fallback for unknown event types
   return {
     ...baseContext,
-    toolName: '' as TTool,
+    toolName: "" as TTool,
     toolInput: {} as GetToolInput<TTool>,
     toolResponse: undefined,
     userPrompt: undefined,
@@ -240,103 +240,103 @@ export function createHookContext<
  */
 export function isBashToolInput(
   input: ToolInput
-): input is ToolInputMap['Bash'] {
-  return typeof input === 'object' && input !== null && 'command' in input;
+): input is ToolInputMap["Bash"] {
+  return typeof input === "object" && input !== null && "command" in input;
 }
 
 export function isWriteToolInput(
   input: ToolInput
-): input is ToolInputMap['Write'] {
+): input is ToolInputMap["Write"] {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'file_path' in input &&
-    'content' in input
+    "file_path" in input &&
+    "content" in input
   );
 }
 
 export function isEditToolInput(
   input: ToolInput
-): input is ToolInputMap['Edit'] {
+): input is ToolInputMap["Edit"] {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'file_path' in input &&
-    'old_string' in input &&
-    'new_string' in input
+    "file_path" in input &&
+    "old_string" in input &&
+    "new_string" in input
   );
 }
 
 export function isReadToolInput(
   input: ToolInput
-): input is ToolInputMap['Read'] {
-  return typeof input === 'object' && input !== null && 'file_path' in input;
+): input is ToolInputMap["Read"] {
+  return typeof input === "object" && input !== null && "file_path" in input;
 }
 
 export function isMultiEditToolInput(
   input: ToolInput
-): input is ToolInputMap['MultiEdit'] {
+): input is ToolInputMap["MultiEdit"] {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'file_path' in input &&
-    'edits' in input &&
+    "file_path" in input &&
+    "edits" in input &&
     Array.isArray(input.edits)
   );
 }
 
 export function isGlobToolInput(
   input: ToolInput
-): input is ToolInputMap['Glob'] {
-  return typeof input === 'object' && input !== null && 'pattern' in input;
+): input is ToolInputMap["Glob"] {
+  return typeof input === "object" && input !== null && "pattern" in input;
 }
 
 export function isGrepToolInput(
   input: ToolInput
-): input is ToolInputMap['Grep'] {
-  return typeof input === 'object' && input !== null && 'pattern' in input;
+): input is ToolInputMap["Grep"] {
+  return typeof input === "object" && input !== null && "pattern" in input;
 }
 
-export function isLSToolInput(input: ToolInput): input is ToolInputMap['LS'] {
-  return typeof input === 'object' && input !== null && 'path' in input;
+export function isLSToolInput(input: ToolInput): input is ToolInputMap["LS"] {
+  return typeof input === "object" && input !== null && "path" in input;
 }
 
 export function isTodoWriteToolInput(
   input: ToolInput
-): input is ToolInputMap['TodoWrite'] {
+): input is ToolInputMap["TodoWrite"] {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'todos' in input &&
+    "todos" in input &&
     Array.isArray(input.todos)
   );
 }
 
 export function isWebFetchToolInput(
   input: ToolInput
-): input is ToolInputMap['WebFetch'] {
+): input is ToolInputMap["WebFetch"] {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'url' in input &&
-    'prompt' in input
+    "url" in input &&
+    "prompt" in input
   );
 }
 
 export function isWebSearchToolInput(
   input: ToolInput
-): input is ToolInputMap['WebSearch'] {
-  return typeof input === 'object' && input !== null && 'query' in input;
+): input is ToolInputMap["WebSearch"] {
+  return typeof input === "object" && input !== null && "query" in input;
 }
 
 export function isNotebookEditToolInput(
   input: ToolInput
-): input is ToolInputMap['NotebookEdit'] {
+): input is ToolInputMap["NotebookEdit"] {
   return (
-    typeof input === 'object' &&
+    typeof input === "object" &&
     input !== null &&
-    'notebook_path' in input &&
-    'new_source' in input
+    "notebook_path" in input &&
+    "new_source" in input
   );
 }
 
@@ -375,7 +375,7 @@ export async function executeHook(
         ...result.metadata,
         duration,
         timestamp: new Date().toISOString(),
-        hookVersion: '0.2.0',
+        hookVersion: "0.2.0",
       },
     };
   } catch (error) {
@@ -388,7 +388,7 @@ export async function executeHook(
       });
     } else {
       runtimeLogger.error(
-        `Hook execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Hook execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         { error, context }
       );
     }
@@ -397,7 +397,7 @@ export async function executeHook(
       throw error instanceof HookError
         ? error
         : new HookError(
-            error instanceof Error ? error.message : 'Unknown error',
+            error instanceof Error ? error.message : "Unknown error",
             context,
             error instanceof Error ? error : undefined
           );
@@ -405,12 +405,12 @@ export async function executeHook(
 
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Unknown error',
-      block: context.event === 'PreToolUse', // Block on PreToolUse failures by default
+      message: error instanceof Error ? error.message : "Unknown error",
+      block: context.event === "PreToolUse", // Block on PreToolUse failures by default
       metadata: {
         duration,
         timestamp: new Date().toISOString(),
-        hookVersion: '0.2.0',
+        hookVersion: "0.2.0",
       },
     };
   } finally {
@@ -426,18 +426,18 @@ export async function executeHook(
  */
 export function outputHookResult(
   result: HookResult,
-  mode: HookOutputMode = 'exit-code',
+  mode: HookOutputMode = "exit-code",
   exitHandler: (code: number) => never = (code) => process.exit(code)
 ): never {
-  if (mode === 'json') {
+  if (mode === "json") {
     // Structured JSON output for advanced control
     let action: string;
     if (result.success) {
-      action = 'continue';
+      action = "continue";
     } else if (result.block) {
-      action = 'block';
+      action = "block";
     } else {
-      action = 'continue';
+      action = "continue";
     }
     const claudeOutput = {
       action,
@@ -496,7 +496,7 @@ export async function runClaudeHook(
       message:
         error instanceof Error
           ? error.message
-          : 'Unknown error during hook execution',
+          : "Unknown error during hook execution",
       block: true, // Block by default on runtime errors
     };
 
@@ -538,7 +538,7 @@ export const HookResults = {
   },
 
   skip(message?: string): HookResult {
-    return { success: true, message: message || 'Hook skipped' };
+    return { success: true, message: message || "Hook skipped" };
   },
 
   warn(message: string, data?: Record<string, unknown>): HookResult {
@@ -563,8 +563,8 @@ export async function safeHookExecution<T extends HookContext>(
     }
 
     return HookResults.failure(
-      error instanceof Error ? error.message : 'Unknown error occurred',
-      context.event === 'PreToolUse' // Block PreToolUse on errors
+      error instanceof Error ? error.message : "Unknown error occurred",
+      context.event === "PreToolUse" // Block PreToolUse on errors
     );
   }
 }
@@ -574,16 +574,16 @@ export async function safeHookExecution<T extends HookContext>(
  */
 export function validateHookContext(context: HookContext): void {
   if (!context.event) {
-    throw new HookError('Invalid hook context: missing event', context);
+    throw new HookError("Invalid hook context: missing event", context);
   }
 
   if (!context.sessionId) {
-    throw new HookError('Invalid hook context: missing session ID', context);
+    throw new HookError("Invalid hook context: missing session ID", context);
   }
 
   if (!context.cwd) {
     throw new HookError(
-      'Invalid hook context: missing current working directory',
+      "Invalid hook context: missing current working directory",
       context
     );
   }
@@ -595,31 +595,31 @@ export function validateHookContext(context: HookContext): void {
 export function createBashContext(
   hookEvent: HookEvent,
   command?: string
-): HookContext<typeof hookEvent, 'Bash'> {
+): HookContext<typeof hookEvent, "Bash"> {
   const mockInput: ClaudeToolHookInput = {
-    session_id: 'test-session',
-    transcript_path: '/tmp/transcript.md',
+    session_id: "test-session",
+    transcript_path: "/tmp/transcript.md",
     cwd: process.cwd(),
-    hook_event_name: hookEvent as 'PreToolUse' | 'PostToolUse',
-    tool_name: 'Bash',
-    tool_input: { command: command || 'echo test' },
+    hook_event_name: hookEvent as "PreToolUse" | "PostToolUse",
+    tool_name: "Bash",
+    tool_input: { command: command || "echo test" },
   };
 
-  return createHookContext(mockInput) as HookContext<typeof hookEvent, 'Bash'>;
+  return createHookContext(mockInput) as HookContext<typeof hookEvent, "Bash">;
 }
 
 export function createFileContext(
   hookEvent: HookEvent,
-  toolName: 'Write' | 'Edit' | 'Read',
+  toolName: "Write" | "Edit" | "Read",
   filePath?: string
 ): HookContext<typeof hookEvent, typeof toolName> {
   const mockInput: ClaudeToolHookInput = {
-    session_id: 'test-session',
-    transcript_path: '/tmp/transcript.md',
+    session_id: "test-session",
+    transcript_path: "/tmp/transcript.md",
     cwd: process.cwd(),
-    hook_event_name: hookEvent as 'PreToolUse' | 'PostToolUse',
+    hook_event_name: hookEvent as "PreToolUse" | "PostToolUse",
     tool_name: toolName,
-    tool_input: { file_path: filePath || '/tmp/test.txt' },
+    tool_input: { file_path: filePath || "/tmp/test.txt" },
   };
 
   return createHookContext(mockInput) as HookContext<
@@ -629,4 +629,4 @@ export function createFileContext(
 }
 
 // HookLogger is now exported from logger.ts with proper pino implementation
-export { HookLogger } from './logger';
+export { HookLogger } from "./logger";

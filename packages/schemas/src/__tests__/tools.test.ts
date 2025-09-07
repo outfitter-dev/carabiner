@@ -2,8 +2,8 @@
  * Tests for tool input validation schemas
  */
 
-import { describe, expect, test } from 'bun:test';
-import { z } from 'zod';
+import { describe, expect, test } from "bun:test";
+import { z } from "zod";
 import {
   bashToolInputSchema,
   editToolInputSchema,
@@ -21,14 +21,14 @@ import {
   webFetchToolInputSchema,
   webSearchToolInputSchema,
   writeToolInputSchema,
-} from '../tools.js';
+} from "../tools.js";
 
-describe('bashToolInputSchema', () => {
-  test('validates valid Bash inputs', () => {
+describe("bashToolInputSchema", () => {
+  test("validates valid Bash inputs", () => {
     const validInputs = [
-      { command: 'ls -la' },
-      { command: 'echo "hello"', description: 'Print hello' },
-      { command: 'npm test', description: 'Run tests', timeout: 30_000 },
+      { command: "ls -la" },
+      { command: 'echo "hello"', description: "Print hello" },
+      { command: "npm test", description: "Run tests", timeout: 30_000 },
     ];
 
     for (const input of validInputs) {
@@ -36,13 +36,13 @@ describe('bashToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid Bash inputs', () => {
+  test("rejects invalid Bash inputs", () => {
     const invalidInputs = [
       {}, // missing command
-      { command: '' }, // empty command
+      { command: "" }, // empty command
       { command: 123 }, // wrong type
-      { command: 'ls', timeout: -5 }, // negative timeout
-      { command: 'ls', timeout: 'invalid' }, // wrong timeout type
+      { command: "ls", timeout: -5 }, // negative timeout
+      { command: "ls", timeout: "invalid" }, // wrong timeout type
     ];
 
     for (const input of invalidInputs) {
@@ -51,12 +51,12 @@ describe('bashToolInputSchema', () => {
   });
 });
 
-describe('writeToolInputSchema', () => {
-  test('validates valid Write inputs', () => {
+describe("writeToolInputSchema", () => {
+  test("validates valid Write inputs", () => {
     const validInputs = [
-      { file_path: '/tmp/test.txt', content: 'Hello world' },
-      { file_path: '/home/user/file.js', content: '' }, // empty content allowed
-      { file_path: '/project/src/index.ts', content: 'export const x = 1;' },
+      { file_path: "/tmp/test.txt", content: "Hello world" },
+      { file_path: "/home/user/file.js", content: "" }, // empty content allowed
+      { file_path: "/project/src/index.ts", content: "export const x = 1;" },
     ];
 
     for (const input of validInputs) {
@@ -64,14 +64,14 @@ describe('writeToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid Write inputs', () => {
+  test("rejects invalid Write inputs", () => {
     const invalidInputs = [
       {}, // missing both fields
-      { file_path: '/tmp/test.txt' }, // missing content
-      { content: 'Hello' }, // missing file_path
-      { file_path: 'relative/path.txt', content: 'test' }, // non-absolute path
-      { file_path: '', content: 'test' }, // empty path
-      { file_path: 123, content: 'test' }, // wrong type
+      { file_path: "/tmp/test.txt" }, // missing content
+      { content: "Hello" }, // missing file_path
+      { file_path: "relative/path.txt", content: "test" }, // non-absolute path
+      { file_path: "", content: "test" }, // empty path
+      { file_path: 123, content: "test" }, // wrong type
     ];
 
     for (const input of invalidInputs) {
@@ -80,24 +80,24 @@ describe('writeToolInputSchema', () => {
   });
 });
 
-describe('editToolInputSchema', () => {
-  test('validates valid Edit inputs', () => {
+describe("editToolInputSchema", () => {
+  test("validates valid Edit inputs", () => {
     const validInputs = [
       {
-        file_path: '/tmp/test.txt',
-        old_string: 'old text',
-        new_string: 'new text',
+        file_path: "/tmp/test.txt",
+        old_string: "old text",
+        new_string: "new text",
       },
       {
-        file_path: '/home/user/file.js',
-        old_string: 'const x = 1',
-        new_string: 'const x = 2',
+        file_path: "/home/user/file.js",
+        old_string: "const x = 1",
+        new_string: "const x = 2",
         replace_all: true,
       },
       {
-        file_path: '/project/file.ts',
-        old_string: '',
-        new_string: 'added text',
+        file_path: "/project/file.ts",
+        old_string: "",
+        new_string: "added text",
       },
     ];
 
@@ -106,14 +106,14 @@ describe('editToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid Edit inputs', () => {
+  test("rejects invalid Edit inputs", () => {
     const invalidInputs = [
       {}, // missing all fields
-      { file_path: '/tmp/test.txt', old_string: 'old' }, // missing new_string
-      { file_path: '/tmp/test.txt', new_string: 'new' }, // missing old_string
-      { old_string: 'old', new_string: 'new' }, // missing file_path
-      { file_path: 'relative.txt', old_string: 'old', new_string: 'new' }, // non-absolute path
-      { file_path: 123, old_string: 'old', new_string: 'new' }, // wrong type
+      { file_path: "/tmp/test.txt", old_string: "old" }, // missing new_string
+      { file_path: "/tmp/test.txt", new_string: "new" }, // missing old_string
+      { old_string: "old", new_string: "new" }, // missing file_path
+      { file_path: "relative.txt", old_string: "old", new_string: "new" }, // non-absolute path
+      { file_path: 123, old_string: "old", new_string: "new" }, // wrong type
     ];
 
     for (const input of invalidInputs) {
@@ -122,19 +122,19 @@ describe('editToolInputSchema', () => {
   });
 });
 
-describe('multiEditInputSchema', () => {
-  test('validates valid MultiEdit inputs', () => {
+describe("multiEditInputSchema", () => {
+  test("validates valid MultiEdit inputs", () => {
     const validInputs = [
       {
-        file_path: '/tmp/test.txt',
+        file_path: "/tmp/test.txt",
         edits: [
-          { old_string: 'old1', new_string: 'new1' },
-          { old_string: 'old2', new_string: 'new2', replace_all: true },
+          { old_string: "old1", new_string: "new1" },
+          { old_string: "old2", new_string: "new2", replace_all: true },
         ],
       },
       {
-        file_path: '/home/user/file.js',
-        edits: [{ old_string: 'const x = 1', new_string: 'const x = 2' }],
+        file_path: "/home/user/file.js",
+        edits: [{ old_string: "const x = 1", new_string: "const x = 2" }],
       },
     ];
 
@@ -143,17 +143,17 @@ describe('multiEditInputSchema', () => {
     }
   });
 
-  test('rejects invalid MultiEdit inputs', () => {
+  test("rejects invalid MultiEdit inputs", () => {
     const invalidInputs = [
       {}, // missing all fields
-      { file_path: '/tmp/test.txt' }, // missing edits
+      { file_path: "/tmp/test.txt" }, // missing edits
       { edits: [] }, // missing file_path
-      { file_path: '/tmp/test.txt', edits: [] }, // empty edits array
+      { file_path: "/tmp/test.txt", edits: [] }, // empty edits array
       {
-        file_path: 'relative.txt',
-        edits: [{ old_string: 'old', new_string: 'new' }],
+        file_path: "relative.txt",
+        edits: [{ old_string: "old", new_string: "new" }],
       }, // non-absolute path
-      { file_path: '/tmp/test.txt', edits: 'not array' }, // wrong edits type
+      { file_path: "/tmp/test.txt", edits: "not array" }, // wrong edits type
     ];
 
     for (const input of invalidInputs) {
@@ -162,13 +162,13 @@ describe('multiEditInputSchema', () => {
   });
 });
 
-describe('readToolInputSchema', () => {
-  test('validates valid Read inputs', () => {
+describe("readToolInputSchema", () => {
+  test("validates valid Read inputs", () => {
     const validInputs = [
-      { file_path: '/tmp/test.txt' },
-      { file_path: '/home/user/file.js', limit: 100 },
-      { file_path: '/project/src/index.ts', limit: 50, offset: 10 },
-      { file_path: '/tmp/file.txt', offset: 0 }, // zero offset allowed
+      { file_path: "/tmp/test.txt" },
+      { file_path: "/home/user/file.js", limit: 100 },
+      { file_path: "/project/src/index.ts", limit: 50, offset: 10 },
+      { file_path: "/tmp/file.txt", offset: 0 }, // zero offset allowed
     ];
 
     for (const input of validInputs) {
@@ -176,13 +176,13 @@ describe('readToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid Read inputs', () => {
+  test("rejects invalid Read inputs", () => {
     const invalidInputs = [
       {}, // missing file_path
-      { file_path: 'relative.txt' }, // non-absolute path
-      { file_path: '/tmp/test.txt', limit: -1 }, // negative limit
-      { file_path: '/tmp/test.txt', offset: -1 }, // negative offset
-      { file_path: '/tmp/test.txt', limit: 'invalid' }, // wrong type
+      { file_path: "relative.txt" }, // non-absolute path
+      { file_path: "/tmp/test.txt", limit: -1 }, // negative limit
+      { file_path: "/tmp/test.txt", offset: -1 }, // negative offset
+      { file_path: "/tmp/test.txt", limit: "invalid" }, // wrong type
     ];
 
     for (const input of invalidInputs) {
@@ -191,12 +191,12 @@ describe('readToolInputSchema', () => {
   });
 });
 
-describe('globToolInputSchema', () => {
-  test('validates valid Glob inputs', () => {
+describe("globToolInputSchema", () => {
+  test("validates valid Glob inputs", () => {
     const validInputs = [
-      { pattern: '*.ts' },
-      { pattern: '**/*.js', path: '/project/src' },
-      { pattern: 'test-*.json', path: '' }, // empty path allowed
+      { pattern: "*.ts" },
+      { pattern: "**/*.js", path: "/project/src" },
+      { pattern: "test-*.json", path: "" }, // empty path allowed
     ];
 
     for (const input of validInputs) {
@@ -204,12 +204,12 @@ describe('globToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid Glob inputs', () => {
+  test("rejects invalid Glob inputs", () => {
     const invalidInputs = [
       {}, // missing pattern
-      { pattern: '' }, // empty pattern
+      { pattern: "" }, // empty pattern
       { pattern: 123 }, // wrong type
-      { path: '/project' }, // missing pattern
+      { path: "/project" }, // missing pattern
     ];
 
     for (const input of invalidInputs) {
@@ -218,20 +218,20 @@ describe('globToolInputSchema', () => {
   });
 });
 
-describe('grepToolInputSchema', () => {
-  test('validates valid Grep inputs', () => {
+describe("grepToolInputSchema", () => {
+  test("validates valid Grep inputs", () => {
     const validInputs = [
-      { pattern: 'search term' },
-      { pattern: 'function\\s+\\w+', path: '/project/src' },
+      { pattern: "search term" },
+      { pattern: "function\\s+\\w+", path: "/project/src" },
       {
-        pattern: 'TODO',
-        glob: '*.ts',
-        output_mode: 'content',
+        pattern: "TODO",
+        glob: "*.ts",
+        output_mode: "content",
         head_limit: 10,
         multiline: true,
       },
-      { pattern: 'test', output_mode: 'files_with_matches' },
-      { pattern: 'error', output_mode: 'count' },
+      { pattern: "test", output_mode: "files_with_matches" },
+      { pattern: "error", output_mode: "count" },
     ];
 
     for (const input of validInputs) {
@@ -239,13 +239,13 @@ describe('grepToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid Grep inputs', () => {
+  test("rejects invalid Grep inputs", () => {
     const invalidInputs = [
       {}, // missing pattern
-      { pattern: '' }, // empty pattern
-      { pattern: 'test', output_mode: 'invalid' }, // invalid output_mode
-      { pattern: 'test', head_limit: -1 }, // negative head_limit
-      { pattern: 'test', multiline: 'true' }, // wrong multiline type
+      { pattern: "" }, // empty pattern
+      { pattern: "test", output_mode: "invalid" }, // invalid output_mode
+      { pattern: "test", head_limit: -1 }, // negative head_limit
+      { pattern: "test", multiline: "true" }, // wrong multiline type
     ];
 
     for (const input of invalidInputs) {
@@ -254,12 +254,12 @@ describe('grepToolInputSchema', () => {
   });
 });
 
-describe('lsToolInputSchema', () => {
-  test('validates valid LS inputs', () => {
+describe("lsToolInputSchema", () => {
+  test("validates valid LS inputs", () => {
     const validInputs = [
-      { path: '/tmp' },
-      { path: '/project/src', ignore: ['node_modules', '.git'] },
-      { path: '/home', ignore: [] }, // empty ignore array allowed
+      { path: "/tmp" },
+      { path: "/project/src", ignore: ["node_modules", ".git"] },
+      { path: "/home", ignore: [] }, // empty ignore array allowed
     ];
 
     for (const input of validInputs) {
@@ -267,12 +267,12 @@ describe('lsToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid LS inputs', () => {
+  test("rejects invalid LS inputs", () => {
     const invalidInputs = [
       {}, // missing path
-      { path: 'relative/path' }, // non-absolute path
-      { path: '' }, // empty path
-      { path: '/tmp', ignore: 'not array' }, // wrong ignore type
+      { path: "relative/path" }, // non-absolute path
+      { path: "" }, // empty path
+      { path: "/tmp", ignore: "not array" }, // wrong ignore type
     ];
 
     for (const input of invalidInputs) {
@@ -281,17 +281,17 @@ describe('lsToolInputSchema', () => {
   });
 });
 
-describe('todoWriteToolInputSchema', () => {
-  test('validates valid TodoWrite inputs', () => {
+describe("todoWriteToolInputSchema", () => {
+  test("validates valid TodoWrite inputs", () => {
     const validInputs = [
       {
         todos: [
-          { content: 'Implement feature', status: 'pending', id: '1' },
-          { content: 'Write tests', status: 'in_progress', id: '2' },
+          { content: "Implement feature", status: "pending", id: "1" },
+          { content: "Write tests", status: "in_progress", id: "2" },
         ],
       },
       {
-        todos: [{ content: 'Fix bug', status: 'completed', id: 'bug-123' }],
+        todos: [{ content: "Fix bug", status: "completed", id: "bug-123" }],
       },
     ];
 
@@ -300,14 +300,14 @@ describe('todoWriteToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid TodoWrite inputs', () => {
+  test("rejects invalid TodoWrite inputs", () => {
     const invalidInputs = [
       {}, // missing todos
       { todos: [] }, // empty todos array
-      { todos: 'not array' }, // wrong type
-      { todos: [{ content: 'task', status: 'invalid', id: '1' }] }, // invalid status
-      { todos: [{ content: '', status: 'pending', id: '1' }] }, // empty content
-      { todos: [{ content: 'task', status: 'pending', id: '' }] }, // empty id
+      { todos: "not array" }, // wrong type
+      { todos: [{ content: "task", status: "invalid", id: "1" }] }, // invalid status
+      { todos: [{ content: "", status: "pending", id: "1" }] }, // empty content
+      { todos: [{ content: "task", status: "pending", id: "" }] }, // empty id
     ];
 
     for (const input of invalidInputs) {
@@ -316,12 +316,12 @@ describe('todoWriteToolInputSchema', () => {
   });
 });
 
-describe('webFetchToolInputSchema', () => {
-  test('validates valid WebFetch inputs', () => {
+describe("webFetchToolInputSchema", () => {
+  test("validates valid WebFetch inputs", () => {
     const validInputs = [
-      { url: 'https://example.com', prompt: 'Extract the main content' },
-      { url: 'http://api.example.com/data', prompt: 'Get the JSON response' },
-      { url: 'https://docs.site.com/api', prompt: 'Parse documentation' },
+      { url: "https://example.com", prompt: "Extract the main content" },
+      { url: "http://api.example.com/data", prompt: "Get the JSON response" },
+      { url: "https://docs.site.com/api", prompt: "Parse documentation" },
     ];
 
     for (const input of validInputs) {
@@ -329,14 +329,14 @@ describe('webFetchToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid WebFetch inputs', () => {
+  test("rejects invalid WebFetch inputs", () => {
     const invalidInputs = [
       {}, // missing both fields
-      { url: 'https://example.com' }, // missing prompt
-      { prompt: 'Extract content' }, // missing url
-      { url: 'not-a-url', prompt: 'test' }, // invalid URL
-      { url: 'https://example.com', prompt: '' }, // empty prompt
-      { url: 123, prompt: 'test' }, // wrong url type
+      { url: "https://example.com" }, // missing prompt
+      { prompt: "Extract content" }, // missing url
+      { url: "not-a-url", prompt: "test" }, // invalid URL
+      { url: "https://example.com", prompt: "" }, // empty prompt
+      { url: 123, prompt: "test" }, // wrong url type
     ];
 
     for (const input of invalidInputs) {
@@ -345,16 +345,16 @@ describe('webFetchToolInputSchema', () => {
   });
 });
 
-describe('webSearchToolInputSchema', () => {
-  test('validates valid WebSearch inputs', () => {
+describe("webSearchToolInputSchema", () => {
+  test("validates valid WebSearch inputs", () => {
     const validInputs = [
-      { query: 'TypeScript hooks' },
+      { query: "TypeScript hooks" },
       {
-        query: 'Claude Code integration',
-        allowed_domains: ['docs.anthropic.com'],
-        blocked_domains: ['spam.com'],
+        query: "Claude Code integration",
+        allowed_domains: ["docs.anthropic.com"],
+        blocked_domains: ["spam.com"],
       },
-      { query: 'search term', allowed_domains: [] }, // empty arrays allowed
+      { query: "search term", allowed_domains: [] }, // empty arrays allowed
     ];
 
     for (const input of validInputs) {
@@ -362,12 +362,12 @@ describe('webSearchToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid WebSearch inputs', () => {
+  test("rejects invalid WebSearch inputs", () => {
     const invalidInputs = [
       {}, // missing query
-      { query: '' }, // empty query
-      { query: 'test', allowed_domains: 'not array' }, // wrong type
-      { query: 'test', blocked_domains: ['valid.com', 123] }, // invalid domain in array
+      { query: "" }, // empty query
+      { query: "test", allowed_domains: "not array" }, // wrong type
+      { query: "test", blocked_domains: ["valid.com", 123] }, // invalid domain in array
     ];
 
     for (const input of invalidInputs) {
@@ -376,21 +376,21 @@ describe('webSearchToolInputSchema', () => {
   });
 });
 
-describe('notebookEditToolInputSchema', () => {
-  test('validates valid NotebookEdit inputs', () => {
+describe("notebookEditToolInputSchema", () => {
+  test("validates valid NotebookEdit inputs", () => {
     const validInputs = [
-      { notebook_path: '/tmp/notebook.ipynb', new_source: 'print("hello")' },
+      { notebook_path: "/tmp/notebook.ipynb", new_source: 'print("hello")' },
       {
-        notebook_path: '/project/analysis.ipynb',
-        new_source: '# Analysis\n\nThis is markdown',
-        cell_id: 'cell-123',
-        cell_type: 'markdown',
-        edit_mode: 'replace',
+        notebook_path: "/project/analysis.ipynb",
+        new_source: "# Analysis\n\nThis is markdown",
+        cell_id: "cell-123",
+        cell_type: "markdown",
+        edit_mode: "replace",
       },
       {
-        notebook_path: '/notebooks/test.ipynb',
-        new_source: '',
-        cell_type: 'code',
+        notebook_path: "/notebooks/test.ipynb",
+        new_source: "",
+        cell_type: "code",
       },
     ];
 
@@ -399,22 +399,22 @@ describe('notebookEditToolInputSchema', () => {
     }
   });
 
-  test('rejects invalid NotebookEdit inputs', () => {
+  test("rejects invalid NotebookEdit inputs", () => {
     const invalidInputs = [
       {}, // missing required fields
-      { notebook_path: '/tmp/notebook.ipynb' }, // missing new_source
-      { new_source: 'code' }, // missing notebook_path
-      { notebook_path: '/tmp/notebook.txt', new_source: 'code' }, // not .ipynb
-      { notebook_path: 'relative.ipynb', new_source: 'code' }, // non-absolute path
+      { notebook_path: "/tmp/notebook.ipynb" }, // missing new_source
+      { new_source: "code" }, // missing notebook_path
+      { notebook_path: "/tmp/notebook.txt", new_source: "code" }, // not .ipynb
+      { notebook_path: "relative.ipynb", new_source: "code" }, // non-absolute path
       {
-        notebook_path: '/tmp/notebook.ipynb',
-        new_source: 'code',
-        cell_type: 'invalid',
+        notebook_path: "/tmp/notebook.ipynb",
+        new_source: "code",
+        cell_type: "invalid",
       }, // invalid cell_type
       {
-        notebook_path: '/tmp/notebook.ipynb',
-        new_source: 'code',
-        edit_mode: 'invalid',
+        notebook_path: "/tmp/notebook.ipynb",
+        new_source: "code",
+        edit_mode: "invalid",
       }, // invalid edit_mode
     ];
 
@@ -426,21 +426,21 @@ describe('notebookEditToolInputSchema', () => {
   });
 });
 
-describe('toolInputSchemas map', () => {
-  test('contains all expected schemas', () => {
+describe("toolInputSchemas map", () => {
+  test("contains all expected schemas", () => {
     const expectedKeys = [
-      'Bash',
-      'Edit',
-      'MultiEdit',
-      'Write',
-      'Read',
-      'Glob',
-      'Grep',
-      'LS',
-      'TodoWrite',
-      'WebFetch',
-      'WebSearch',
-      'NotebookEdit',
+      "Bash",
+      "Edit",
+      "MultiEdit",
+      "Write",
+      "Read",
+      "Glob",
+      "Grep",
+      "LS",
+      "TodoWrite",
+      "WebFetch",
+      "WebSearch",
+      "NotebookEdit",
     ];
 
     for (const key of expectedKeys) {
@@ -452,33 +452,33 @@ describe('toolInputSchemas map', () => {
   });
 });
 
-describe('getToolInputSchema', () => {
-  test('returns correct schema for tool name', () => {
-    expect(getToolInputSchema('Bash')).toBe(bashToolInputSchema);
-    expect(getToolInputSchema('Write')).toBe(writeToolInputSchema);
-    expect(getToolInputSchema('Edit')).toBe(editToolInputSchema);
+describe("getToolInputSchema", () => {
+  test("returns correct schema for tool name", () => {
+    expect(getToolInputSchema("Bash")).toBe(bashToolInputSchema);
+    expect(getToolInputSchema("Write")).toBe(writeToolInputSchema);
+    expect(getToolInputSchema("Edit")).toBe(editToolInputSchema);
   });
 });
 
-describe('validateToolInput', () => {
-  test('validates and returns parsed input', () => {
-    const input = { command: 'ls -la', timeout: 5000 };
-    const result = validateToolInput('Bash', input);
+describe("validateToolInput", () => {
+  test("validates and returns parsed input", () => {
+    const input = { command: "ls -la", timeout: 5000 };
+    const result = validateToolInput("Bash", input);
 
     expect(result).toEqual(input);
   });
 
-  test('throws on invalid input', () => {
+  test("throws on invalid input", () => {
     const input = { command: 123 }; // invalid type
 
-    expect(() => validateToolInput('Bash', input)).toThrow(z.ZodError);
+    expect(() => validateToolInput("Bash", input)).toThrow(z.ZodError);
   });
 });
 
-describe('safeValidateToolInput', () => {
-  test('returns success for valid input', () => {
-    const input = { file_path: '/tmp/test.txt', content: 'hello' };
-    const result = safeValidateToolInput('Write', input);
+describe("safeValidateToolInput", () => {
+  test("returns success for valid input", () => {
+    const input = { file_path: "/tmp/test.txt", content: "hello" };
+    const result = safeValidateToolInput("Write", input);
 
     expect(result.success).toBe(true);
     if (result.success) {
@@ -486,9 +486,9 @@ describe('safeValidateToolInput', () => {
     }
   });
 
-  test('returns error for invalid input', () => {
+  test("returns error for invalid input", () => {
     const input = { file_path: 123 }; // invalid type
-    const result = safeValidateToolInput('Write', input);
+    const result = safeValidateToolInput("Write", input);
 
     expect(result.success).toBe(false);
     if (!result.success) {

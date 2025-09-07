@@ -9,7 +9,7 @@
 import {
   parseClaudeHookInput,
   validateAndCreateBrandedInput,
-} from '@carabiner/schemas';
+} from "@carabiner/schemas";
 import type {
   DirectoryPath,
   HookContext,
@@ -19,14 +19,14 @@ import type {
   ToolHookEvent,
   ToolInput,
   TranscriptPath,
-} from '@carabiner/types';
+} from "@carabiner/types";
 import {
   createNotificationContext,
   createToolHookContext,
   createUserPromptContext,
-} from '@carabiner/types';
-import type { HookProtocol } from '../interface';
-import { ProtocolInputError, ProtocolParseError } from '../interface';
+} from "@carabiner/types";
+import type { HookProtocol } from "../interface";
+import { ProtocolInputError, ProtocolParseError } from "../interface";
 
 /**
  * Configuration options for HttpProtocol
@@ -94,15 +94,15 @@ export class HttpProtocol implements HookProtocol {
    */
   async readInput(): Promise<unknown> {
     try {
-      const contentType = this.request.headers.get('content-type');
+      const contentType = this.request.headers.get("content-type");
 
-      if (!contentType?.includes('application/json')) {
+      if (!contentType?.includes("application/json")) {
         throw new ProtocolInputError(
-          'Request must have Content-Type: application/json'
+          "Request must have Content-Type: application/json"
         );
       }
 
-      const bodySize = this.request.headers.get('content-length');
+      const bodySize = this.request.headers.get("content-length");
       const maxSize = this.options.maxBodySize ?? 1_048_576; // 1MB default
 
       if (bodySize && Number.parseInt(bodySize, 10) > maxSize) {
@@ -114,14 +114,14 @@ export class HttpProtocol implements HookProtocol {
       const body = await this.readBodyWithLimit(this.request, maxSize);
 
       if (!body.trim()) {
-        throw new ProtocolInputError('Request body is empty');
+        throw new ProtocolInputError("Request body is empty");
       }
 
       try {
         return JSON.parse(body);
       } catch (parseError) {
         throw new ProtocolInputError(
-          'Failed to parse JSON from request body',
+          "Failed to parse JSON from request body",
           parseError
         );
       }
@@ -130,7 +130,7 @@ export class HttpProtocol implements HookProtocol {
         throw error;
       }
       throw new ProtocolInputError(
-        'Failed to read input from HTTP request',
+        "Failed to read input from HTTP request",
         error
       );
     }
@@ -191,7 +191,7 @@ export class HttpProtocol implements HookProtocol {
       return out;
     })();
 
-    return new TextDecoder('utf-8').decode(merged);
+    return new TextDecoder("utf-8").decode(merged);
   }
 
   /**
@@ -213,7 +213,7 @@ export class HttpProtocol implements HookProtocol {
           error
         );
       }
-      throw new ProtocolParseError('Failed to parse hook context');
+      throw new ProtocolParseError("Failed to parse hook context");
     }
   }
 
@@ -253,7 +253,7 @@ export class HttpProtocol implements HookProtocol {
    */
   private buildResponseHeaders(): Headers {
     const headers = new Headers({
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...this.options.responseHeaders,
     });
 
@@ -280,15 +280,15 @@ export class HttpProtocol implements HookProtocol {
     }
 
     if (methods) {
-      headers.set('Access-Control-Allow-Methods', methods.join(', '));
+      headers.set("Access-Control-Allow-Methods", methods.join(", "));
     }
 
     if (corsHeaders) {
-      headers.set('Access-Control-Allow-Headers', corsHeaders.join(', '));
+      headers.set("Access-Control-Allow-Headers", corsHeaders.join(", "));
     }
 
     if (credentials) {
-      headers.set('Access-Control-Allow-Credentials', 'true');
+      headers.set("Access-Control-Allow-Credentials", "true");
     }
   }
 
@@ -300,13 +300,13 @@ export class HttpProtocol implements HookProtocol {
     origin: string | string[] | boolean
   ): void {
     if (origin === true) {
-      headers.set('Access-Control-Allow-Origin', '*');
-    } else if (typeof origin === 'string') {
-      headers.set('Access-Control-Allow-Origin', origin);
+      headers.set("Access-Control-Allow-Origin", "*");
+    } else if (typeof origin === "string") {
+      headers.set("Access-Control-Allow-Origin", origin);
     } else if (Array.isArray(origin)) {
       // For arrays, we'd need the original request origin to match
       // This is a simplified implementation
-      headers.set('Access-Control-Allow-Origin', origin[0] || '*');
+      headers.set("Access-Control-Allow-Origin", origin[0] || "*");
     }
   }
 
@@ -320,7 +320,7 @@ export class HttpProtocol implements HookProtocol {
           type: this.error?.name,
           ...(this.error?.stack && { stack: this.error?.stack }),
         }
-      : { error: 'Hook execution failed' };
+      : { error: "Hook execution failed" };
 
     return new Response(JSON.stringify(errorBody), {
       status: 500,
@@ -343,7 +343,7 @@ export class HttpProtocol implements HookProtocol {
    * Build no result response
    */
   private buildNoResultResponse(headers: Headers): Response {
-    return new Response(JSON.stringify({ error: 'No result available' }), {
+    return new Response(JSON.stringify({ error: "No result available" }), {
       status: 500,
       headers,
     });
@@ -370,7 +370,7 @@ export class HttpProtocol implements HookProtocol {
    */
   private static addOptionsResponseCorsHeaders(
     headers: Headers,
-    corsConfig: NonNullable<HttpProtocolOptions['cors']>
+    corsConfig: NonNullable<HttpProtocolOptions["cors"]>
   ): void {
     const { origin, methods, headers: corsHeaders, credentials } = corsConfig;
 
@@ -379,10 +379,10 @@ export class HttpProtocol implements HookProtocol {
     HttpProtocol.setOptionsHeadersHeader(headers, corsHeaders);
 
     if (credentials) {
-      headers.set('Access-Control-Allow-Credentials', 'true');
+      headers.set("Access-Control-Allow-Credentials", "true");
     }
 
-    headers.set('Access-Control-Max-Age', '86400'); // 24 hours
+    headers.set("Access-Control-Max-Age", "86400"); // 24 hours
   }
 
   /**
@@ -397,11 +397,11 @@ export class HttpProtocol implements HookProtocol {
     }
 
     if (origin === true) {
-      headers.set('Access-Control-Allow-Origin', '*');
-    } else if (typeof origin === 'string') {
-      headers.set('Access-Control-Allow-Origin', origin);
+      headers.set("Access-Control-Allow-Origin", "*");
+    } else if (typeof origin === "string") {
+      headers.set("Access-Control-Allow-Origin", origin);
     } else if (Array.isArray(origin)) {
-      headers.set('Access-Control-Allow-Origin', origin.join(', '));
+      headers.set("Access-Control-Allow-Origin", origin.join(", "));
     }
   }
 
@@ -413,9 +413,9 @@ export class HttpProtocol implements HookProtocol {
     methods: string[] | undefined
   ): void {
     if (methods) {
-      headers.set('Access-Control-Allow-Methods', methods.join(', '));
+      headers.set("Access-Control-Allow-Methods", methods.join(", "));
     } else {
-      headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
     }
   }
 
@@ -427,9 +427,9 @@ export class HttpProtocol implements HookProtocol {
     corsHeaders: string[] | undefined
   ): void {
     if (corsHeaders) {
-      headers.set('Access-Control-Allow-Headers', corsHeaders.join(', '));
+      headers.set("Access-Control-Allow-Headers", corsHeaders.join(", "));
     } else {
-      headers.set('Access-Control-Allow-Headers', 'Content-Type');
+      headers.set("Access-Control-Allow-Headers", "Content-Type");
     }
   }
 
@@ -440,15 +440,15 @@ export class HttpProtocol implements HookProtocol {
     const environment = this.extractEnvironment();
     const commonProps = this.extractCommonContextProps(input, environment);
 
-    if ('tool_name' in input) {
+    if ("tool_name" in input) {
       return this.createToolContext(input, commonProps);
     }
 
-    if ('prompt' in input) {
+    if ("prompt" in input) {
       return this.createPromptContext(input, commonProps);
     }
 
-    if ('notification' in input) {
+    if ("notification" in input) {
       return this.createNotificationContext(input, commonProps);
     }
 
@@ -539,14 +539,14 @@ export class HttpProtocol implements HookProtocol {
 
     // Extract from custom headers (e.g., X-Env-*)
     for (const [key, value] of this.request.headers.entries()) {
-      if (key.toLowerCase().startsWith('x-env-')) {
-        const envKey = key.substring(6).toUpperCase().replace(/-/g, '_');
+      if (key.toLowerCase().startsWith("x-env-")) {
+        const envKey = key.substring(6).toUpperCase().replace(/-/g, "_");
         environment[envKey] = value;
       }
     }
 
     // Add some defaults
-    environment.PROTOCOL_TYPE = 'http';
+    environment.PROTOCOL_TYPE = "http";
     environment.REQUEST_METHOD = this.request.method;
     environment.REQUEST_URL = this.request.url;
 
@@ -558,7 +558,7 @@ export class HttpProtocol implements HookProtocol {
  * Factory for creating HttpProtocol instances
  */
 export class HttpProtocolFactory {
-  readonly type = 'http';
+  readonly type = "http";
 
   create({
     request,

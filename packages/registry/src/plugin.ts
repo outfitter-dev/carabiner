@@ -4,8 +4,8 @@
  * Enables composition of small, focused hooks through a plugin architecture.
  */
 
-import type { HookContext, HookEvent, HookResult } from '@carabiner/types';
-import type { z } from 'zod';
+import type { HookContext, HookEvent, HookResult } from "@carabiner/types";
+import type { z } from "zod";
 
 /**
  * Plugin execution result with enhanced metadata
@@ -51,17 +51,17 @@ export type PluginConfig = {
  */
 export type PluginCondition = {
   /** Type of condition */
-  type: 'env' | 'context' | 'tool' | 'custom';
+  type: "env" | "context" | "tool" | "custom";
   /** Field to check (for env/context/tool conditions) */
   field?: string;
   /** Operator for comparison */
   operator:
-    | 'equals'
-    | 'not_equals'
-    | 'contains'
-    | 'not_contains'
-    | 'matches'
-    | 'custom';
+    | "equals"
+    | "not_equals"
+    | "contains"
+    | "not_contains"
+    | "matches"
+    | "custom";
   /** Value to compare against */
   value?: unknown;
   /** Custom condition function (for custom type/operator) */
@@ -94,7 +94,7 @@ export type PluginMetadata = {
   engines?: {
     node?: string;
     bun?: string;
-    'claude-code'?: string;
+    "claude-code"?: string;
   };
 };
 
@@ -286,17 +286,17 @@ export type PluginExecutionOptions = {
  * Type guard to check if an object is a valid HookPlugin
  */
 export function isHookPlugin(obj: unknown): obj is HookPlugin {
-  if (typeof obj !== 'object' || obj === null) {
+  if (typeof obj !== "object" || obj === null) {
     return false;
   }
 
   const plugin = obj as Partial<HookPlugin>;
 
   return (
-    typeof plugin.name === 'string' &&
-    typeof plugin.version === 'string' &&
+    typeof plugin.name === "string" &&
+    typeof plugin.version === "string" &&
     Array.isArray(plugin.events) &&
-    typeof plugin.apply === 'function'
+    typeof plugin.apply === "function"
   );
 }
 
@@ -304,16 +304,16 @@ export function isHookPlugin(obj: unknown): obj is HookPlugin {
  * Type guard to check if an object is a PluginResult
  */
 export function isPluginResult(obj: unknown): obj is PluginResult {
-  if (typeof obj !== 'object' || obj === null) {
+  if (typeof obj !== "object" || obj === null) {
     return false;
   }
 
   const result = obj as Partial<PluginResult>;
 
   return (
-    typeof result.success === 'boolean' &&
-    typeof result.pluginName === 'string' &&
-    typeof result.pluginVersion === 'string'
+    typeof result.success === "boolean" &&
+    typeof result.pluginName === "string" &&
+    typeof result.pluginVersion === "string"
   );
 }
 
@@ -324,7 +324,7 @@ export function createPluginResult(
   plugin: HookPlugin,
   hookResult: HookResult,
   executionTime?: number,
-  memoryUsage?: PluginResult['memoryUsage']
+  memoryUsage?: PluginResult["memoryUsage"]
 ): PluginResult {
   return {
     ...hookResult,
@@ -346,7 +346,7 @@ export class PluginValidationError extends Error {
     message: string
   ) {
     super(`Plugin ${pluginName}: ${field} - ${message}`);
-    this.name = 'PluginValidationError';
+    this.name = "PluginValidationError";
   }
 }
 
@@ -360,7 +360,7 @@ export class PluginExecutionError extends Error {
     public readonly originalError?: Error
   ) {
     super(`Plugin ${pluginName}: ${message}`);
-    this.name = 'PluginExecutionError';
+    this.name = "PluginExecutionError";
 
     if (originalError) {
       this.stack = originalError.stack;
@@ -378,6 +378,6 @@ export class PluginConfigurationError extends Error {
     public readonly configField?: string
   ) {
     super(`Plugin ${pluginName} configuration error: ${message}`);
-    this.name = 'PluginConfigurationError';
+    this.name = "PluginConfigurationError";
   }
 }

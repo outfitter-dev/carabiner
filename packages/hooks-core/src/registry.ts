@@ -4,7 +4,7 @@
  * Updated to work with new stdin-based runtime system
  */
 
-import { executeHook } from './runtime';
+import { executeHook } from "./runtime";
 import type {
   HookContext,
   HookEvent,
@@ -13,7 +13,7 @@ import type {
   HookRegistryEntry,
   HookResult,
   ToolName,
-} from './types';
+} from "./types";
 
 /**
  * Central hook registry with composite key system for tool scoping
@@ -125,15 +125,15 @@ export class HookRegistry {
         );
 
         // For PreToolUse, stop on blocking failures
-        if (context.event === 'PreToolUse' && !result.success && result.block) {
+        if (context.event === "PreToolUse" && !result.success && result.block) {
           break;
         }
       } catch (error) {
         const failureResult: HookResult = {
           success: false,
           message:
-            error instanceof Error ? error.message : 'Hook execution failed',
-          block: context.event === 'PreToolUse',
+            error instanceof Error ? error.message : "Hook execution failed",
+          block: context.event === "PreToolUse",
         };
 
         results.push(failureResult);
@@ -144,7 +144,7 @@ export class HookRegistry {
           Date.now() - start
         );
 
-        if (context.event === 'PreToolUse' && failureResult.block) {
+        if (context.event === "PreToolUse" && failureResult.block) {
           break;
         }
       }
@@ -162,7 +162,7 @@ export class HookRegistry {
     const results = await this.execute(context);
 
     if (results.length === 0) {
-      return { success: true, message: 'No hooks executed' };
+      return { success: true, message: "No hooks executed" };
     }
 
     // Check for any blocking failures
@@ -183,8 +183,8 @@ export class HookRegistry {
       success: true,
       message:
         messages.length > 0
-          ? messages.join('; ')
-          : 'All hooks executed successfully',
+          ? messages.join("; ")
+          : "All hooks executed successfully",
       data: {
         hookCount: results.length,
         results: results.map((r) => ({
@@ -262,7 +262,7 @@ export class HookRegistry {
       existing.successfulExecutions++;
     } else {
       existing.failedExecutions++;
-      if (event === 'PreToolUse') {
+      if (event === "PreToolUse") {
         existing.blockedExecutions++;
       }
     }
