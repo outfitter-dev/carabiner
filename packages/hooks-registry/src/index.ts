@@ -7,7 +7,7 @@
 // Re-export hook types for convenience
 export type { HookContext, HookHandler, HookResult } from "@carabiner/types";
 export {
-	createMarkdownFormatterHook,
-	type MarkdownFormatterConfig,
-	markdownFormatterHook,
+  createMarkdownFormatterHook,
+  type MarkdownFormatterConfig,
+  markdownFormatterHook,
 } from "./hooks/markdown-formatter.js";
