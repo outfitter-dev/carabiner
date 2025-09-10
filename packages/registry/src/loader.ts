@@ -4,6 +4,8 @@
  * Supports file system discovery, module loading, and hot reload functionality.
  */
 
+/// <reference types="bun-types" />
+
 import { readdir, stat, watch } from "node:fs/promises";
 import { basename, extname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";

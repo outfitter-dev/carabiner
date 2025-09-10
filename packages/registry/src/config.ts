@@ -4,6 +4,8 @@
  * Supports JSON/TypeScript configuration files with validation and hot reload.
  */
 
+/// <reference types="bun-types" />
+
 import { access, readFile, watch } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
