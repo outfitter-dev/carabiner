@@ -7,7 +7,7 @@
 import { fromError, GrappleError, TimeoutError } from "./errors.js";
 import { reportError } from "./reporting.js";
 import {
-  type ErrorCategory,
+  ErrorCategory,
   ErrorCode,
   ErrorSeverity,
   type HealthStatus,
@@ -33,7 +33,7 @@ export function createStandardError(
     message,
     code,
     category,
-    severity: options.severity || ErrorSeverity.ERROR,
+    severity: options.severity ?? ErrorSeverity.ERROR,
     cause: options.cause,
     operation: options.operation,
     userMessage: options.userMessage,
@@ -366,7 +366,7 @@ export function validateSchema<T>(
     throw createStandardError(
       `Schema validation failed${context ? ` for ${context}` : ""}`,
       1201, // SCHEMA_VALIDATION_FAILED
-      "validation" as ErrorCategory,
+      ErrorCategory.VALIDATION,
       {
         severity: ErrorSeverity.WARNING,
         operation: context,

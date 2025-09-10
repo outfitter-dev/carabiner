@@ -42,6 +42,11 @@
  * ```
  */
 
+// ESM require compatibility for dynamic imports
+import { createRequire } from "node:module";
+
+const nodeRequire = createRequire(import.meta.url);
+
 // Error Boundaries
 export type {
   ErrorBoundaryConfig,
@@ -137,13 +142,13 @@ export function setupErrorHandling(
 ) {
   // Configure global reporter
   if (config.reporting) {
-    const { configureGlobalReporter } = require("./reporting.js");
+    const { configureGlobalReporter } = nodeRequire("./reporting.js");
     configureGlobalReporter(config.reporting);
   }
 
   // Setup common error boundaries
   if (config.boundaries) {
-    const { ErrorBoundaryRegistry } = require("./boundaries.js");
+    const { ErrorBoundaryRegistry } = nodeRequire("./boundaries.js");
     const registry = ErrorBoundaryRegistry.getInstance();
 
     for (const [name, boundaryConfig] of Object.entries(config.boundaries)) {
@@ -153,7 +158,7 @@ export function setupErrorHandling(
 
   // Create recovery manager with config
   if (config.recovery) {
-    const { ErrorRecoveryManager } = require("./recovery.js");
+    const { ErrorRecoveryManager } = nodeRequire("./recovery.js");
     return new ErrorRecoveryManager(
       config.recovery.retry,
       config.recovery.circuitBreaker

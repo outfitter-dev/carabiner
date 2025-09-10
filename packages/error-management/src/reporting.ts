@@ -38,9 +38,9 @@ const SENSITIVE_PATTERNS = [
   /password[s]?['":\s]*['"]?([^\s'"]+)/gi,
   /auth[_-]?token[s]?['":\s]*['"]?([a-zA-Z0-9_\-.]{8,})/gi,
 
-  // Personal Information
-  /email[s]?['":\s]*['"]?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi,
-  /phone[s]?['":\s]*['"]?([+]?[\d\s\-()]{10,})/gi,
+  // Personal Information - Fixed to avoid polynomial regex
+  /email[s]?['":\s]*['"]?([A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,255}\.[A-Za-z]{2,24})/gi,
+  /phone[s]?['":\s]*['"]?(\+?[0-9\s\-()]{10,20})/gi,
 
   // System Information
   /(?:file:\/\/|\/)[a-zA-Z0-9/._-]+/gi, // File paths
@@ -54,6 +54,11 @@ const SENSITIVE_PATTERNS = [
  */
 export function sanitizeText(text: string): string {
   let sanitized = text;
+  // Guard: avoid excessive processing on unbounded inputs
+  const MAX_LEN = 200_000;
+  if (sanitized.length > MAX_LEN) {
+    sanitized = sanitized.slice(0, MAX_LEN);
+  }
 
   for (const pattern of SENSITIVE_PATTERNS) {
     sanitized = sanitized.replace(pattern, (match, capture) => {
@@ -375,13 +380,44 @@ export class ErrorReporter {
           break;
         }
 
+        // Skip reports that aren't ready for retry yet
+        if (
+          report.retryMetadata?.nextAttempt &&
+          Date.now() < report.retryMetadata.nextAttempt
+        ) {
+          // Re-queue for later processing
+          this.reportQueue.push(report);
+          continue;
+        }
+
         try {
           await this.sendReport(report);
         } catch (_reportError) {
-          // Re-queue for retry if not too old (5 minutes)
+          // Re-queue with exponential backoff if not too old (5 minutes) and under retry limit
           const reportAge = Date.now() - report.reportedAt.getTime();
-          if (reportAge < 300_000) {
-            this.reportQueue.push(report);
+          const maxRetries = 5;
+          const currentRetryCount = (report.retryMetadata?.retryCount ?? 0) + 1;
+
+          if (reportAge < 300_000 && currentRetryCount <= maxRetries) {
+            // Calculate exponential backoff with jitter
+            const baseDelay = 1000; // 1 second
+            const backoffDelay = Math.min(
+              baseDelay * 2 ** (currentRetryCount - 1),
+              60_000 // Max 60 seconds
+            );
+            const jitter = Math.random() * 0.1 * backoffDelay; // 10% jitter
+            const delay = Math.floor(backoffDelay + jitter);
+
+            report.retryMetadata = {
+              retryCount: currentRetryCount,
+              nextAttempt: Date.now() + delay,
+            };
+
+            // Schedule retry
+            setTimeout(() => {
+              this.reportQueue.push(report);
+              void this.processReportQueue();
+            }, delay);
           }
         }
       }

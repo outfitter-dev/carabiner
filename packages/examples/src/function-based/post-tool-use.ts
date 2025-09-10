@@ -138,12 +138,12 @@ async function handleWritePostProcessing(
 
   // Run type checking if it's a TypeScript file
   if ([".ts", ".tsx"].includes(extname(file_path))) {
-    await runTypeCheck(file_path, actions);
+    await runTypeCheck(file_path, context.cwd, actions);
   }
 
   // Run linting if it's a code file
   if (isCodeFile(file_path)) {
-    await runLinter(file_path, actions);
+    await runLinter(file_path, context.cwd, actions);
   }
 
   // Update file statistics
@@ -372,10 +372,11 @@ async function formatFile(
 
 async function runTypeCheck(
   filePath: string,
+  cwd: string,
   actions: string[]
 ): Promise<void> {
   try {
-    await runCommand("bunx", ["tsc", "--noEmit", filePath], process.cwd());
+    await runCommand("bunx", ["tsc", "--noEmit", filePath], cwd);
     actions.push("type-checked");
   } catch (_error) {
     // Don't fail the hook for type errors, just log them
@@ -383,13 +384,13 @@ async function runTypeCheck(
   }
 }
 
-async function runLinter(filePath: string, actions: string[]): Promise<void> {
+async function runLinter(
+  filePath: string,
+  cwd: string,
+  actions: string[]
+): Promise<void> {
   try {
-    await runCommand(
-      "bunx",
-      ["@biomejs/biome", "lint", filePath],
-      process.cwd()
-    );
+    await runCommand("bunx", ["@biomejs/biome", "lint", filePath], cwd);
     actions.push("linted");
   } catch (_error) {
     actions.push("lint-warnings");
@@ -426,7 +427,7 @@ async function validateJsonSyntax(
   }
 }
 
-function logToolExecution(
+async function logToolExecution(
   context: HookContext,
   result: HookResult,
   processingTime: number

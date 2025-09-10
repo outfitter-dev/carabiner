@@ -31,7 +31,7 @@ npm install -g @carabiner/hooks-cli
 
 # Initialize hooks in your project
 
-claude-hooks init --template security
+carabiner init --template security
 
 ```
 
@@ -333,15 +333,15 @@ test('security hook blocks dangerous commands', async () => {
 
 # Generate more hooks
 
-claude-hooks generate --type PostToolUse --tool Write --name format-after-write
+carabiner generate --type PostToolUse --tool Write --name format-after-write
 
 # Test all hooks
 
-claude-hooks test
+carabiner test
 
 # Development mode with watching
 
-claude-hooks dev --watch
+carabiner dev --watch
 
 ```
 

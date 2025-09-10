@@ -144,8 +144,7 @@ describe("Result Pattern", () => {
 
     test("should handle non-Error throws", () => {
       const result = tryResult(() => {
-        // biome-ignore lint/style/useThrowOnlyError: Testing non-Error throws
-        throw "string error";
+        throw "string error"; // Testing non-Error throws intentionally
       });
 
       expect(isFailure(result)).toBe(true);

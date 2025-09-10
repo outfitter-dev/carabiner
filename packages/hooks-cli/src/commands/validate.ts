@@ -72,7 +72,6 @@ export class ValidateCommand extends BaseCommand {
         }
       }
 
-      // biome-ignore lint/nursery/noUnnecessaryConditions: hasErrors can be set to true in the validation blocks above
       if (hasErrors) {
         if (!autoFix) {
           process.stderr.write(

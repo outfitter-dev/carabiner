@@ -333,11 +333,13 @@ async function checkFileAccess(
   operation: string,
   cwd: string
 ): Promise<FileAccessResult> {
-  const { resolve } = await import("node:path");
+  const { resolve, relative, isAbsolute } = await import("node:path");
 
   // Ensure file is within workspace
   const resolvedPath = resolve(cwd, filePath);
-  if (!resolvedPath.startsWith(cwd)) {
+  const rel = relative(cwd, resolvedPath);
+  // Outside if it points outside the workspace or crosses drives (Windows)
+  if (rel.startsWith("..") || isAbsolute(rel)) {
     return {
       allowed: false,
       level: "read",

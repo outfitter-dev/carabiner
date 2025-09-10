@@ -197,8 +197,8 @@ function validateFileOperation(
     try {
       const stats = statSync(filePath);
       // Check if file is executable (Unix-like systems)
-      // biome-ignore lint/suspicious/noBitwiseOperators: Checking file permissions requires bitwise operations
       if (stats.mode && stats.mode & 0o111) {
+        // File permission check requires bitwise
         return {
           safe: false,
           issue: `Attempting to modify executable file: ${filePath}`,
@@ -217,8 +217,11 @@ function validateFileOperation(
  */
 const securityGuardHook: HookHandler = (context): HookResult => {
   // Support both camelCase and snake_case for backward compatibility
-  const toolName = (context as any).toolName ?? (context as any).tool_name;
-  const toolInput = (context as any).toolInput ?? (context as any).tool_input;
+  const contextWithFallback = context as Record<string, unknown>;
+  const toolName =
+    contextWithFallback.toolName ?? contextWithFallback.tool_name;
+  const toolInput =
+    contextWithFallback.toolInput ?? contextWithFallback.tool_input;
 
   // Handle Bash commands
   if (toolName === "Bash") {

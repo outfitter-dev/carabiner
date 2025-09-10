@@ -487,6 +487,10 @@ async function displayDevInfo(cwd: string): Promise<void> {
       branch += data.toString().trim();
     });
 
+    git.on("error", () => {
+      // Ignore git spawn errors in dev info
+    });
+
     git.on("close", (code) => {
       if (code === 0 && branch) {
         // Git branch information available for display

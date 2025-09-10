@@ -296,16 +296,14 @@ describe("Comprehensive Error Handling", () => {
 
       // Create multiple failing operations
       for (let i = 0; i < 10; i++) {
-        const promise = new Promise(async (resolve, reject) => {
+        const promise: Promise<string> = (async () => {
           const delay = Math.random() * 50;
           await new Promise((r) => setTimeout(r, delay));
-
           if (i % 3 === 0) {
-            reject(new Error(`Concurrent failure ${i}`));
-          } else {
-            resolve(`Success ${i}`);
+            throw new Error(`Concurrent failure ${i}`);
           }
-        });
+          return `Success ${i}`;
+        })();
 
         concurrentFailures.push(promise);
       }

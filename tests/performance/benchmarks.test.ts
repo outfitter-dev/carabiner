@@ -319,8 +319,8 @@ describe("Performance Benchmarks", () => {
     test("should handle large configurations efficiently", async () => {
       const largeConfig = {
         version: "1.0.0",
-        hooks: {} as Record<string, any>,
-        environment: {} as Record<string, any>,
+        hooks: {} as Record<string, unknown>,
+        environment: {} as Record<string, unknown>,
       };
 
       // Add many hook configurations

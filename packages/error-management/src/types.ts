@@ -207,6 +207,11 @@ export type ErrorReport = {
   metadata: Record<string, JsonValue>;
   /** Report generation timestamp */
   reportedAt: Date;
+  /** Retry metadata for backoff handling */
+  retryMetadata?: {
+    retryCount: number;
+    nextAttempt: number; // timestamp
+  };
 };
 
 /**
