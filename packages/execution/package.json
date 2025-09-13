@@ -7,7 +7,7 @@
     "@carabiner/hooks-core": "0.1.0-alpha",
     "@carabiner/protocol": "0.1.0-alpha",
     "@carabiner/types": "0.1.0-alpha",
-    "type-fest": "^4.41.0"
+    "type-fest": "^5.0.0"
   },
   "devDependencies": {
     "@types/bun": "*",
