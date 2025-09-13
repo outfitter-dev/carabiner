@@ -1,54 +1,55 @@
 {
   "name": "@carabiner/error-management",
-  "version": "0.1.0-beta",
   "description": "Production-ready error handling system for Grapple monorepo",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./types": {
-      "import": "./dist/types.js",
-      "types": "./dist/types.d.ts"
-    },
-    "./recovery": {
-      "import": "./dist/recovery.js",
-      "types": "./dist/recovery.d.ts"
-    },
-    "./boundaries": {
-      "import": "./dist/boundaries.js",
-      "types": "./dist/boundaries.d.ts"
-    },
-    "./reporting": {
-      "import": "./dist/reporting.js",
-      "types": "./dist/reporting.d.ts"
-    }
-  },
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "typecheck": "tsc --noEmit"
-  },
+  "version": "0.1.0-alpha",
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
   "dependencies": {
-    "type-fest": "^4.41.0",
-    "nanoid": "^5.0.9"
+    "nanoid": "^5.0.9",
+    "type-fest": "^4.41.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "^24.2.1",
+    "@types/node": "^24.3.1",
     "typescript": "^5.9.2"
   },
-  "peerDependencies": {
-    "typescript": "^5.9.2"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./recovery": {
+      "types": "./dist/recovery.d.ts",
+      "import": "./dist/recovery.js"
+    },
+    "./boundaries": {
+      "types": "./dist/boundaries.d.ts",
+      "import": "./dist/boundaries.js"
+    },
+    "./reporting": {
+      "types": "./dist/reporting.d.ts",
+      "import": "./dist/reporting.js"
+    }
   },
   "files": [
     "dist",
     "README.md"
   ],
+  "keywords": [
+    "error-handling",
+    "error-recovery",
+    "production",
+    "reliability",
+    "typescript"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "peerDependencies": {
+    "typescript": "^5.9.2"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -57,13 +58,12 @@
     "url": "https://github.com/outfitter-dev/grapple.git",
     "directory": "packages/error-management"
   },
-  "keywords": [
-    "error-handling",
-    "typescript",
-    "production",
-    "reliability",
-    "error-recovery"
-  ],
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
-  "license": "MIT"
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts"
 }

@@ -6,7 +6,9 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import type { HookContext, HookHandler, HookResult } from "@carabiner/types";
+import type { HookResult } from "@carabiner/types";
+
+type HookHandler = (context: any) => Promise<HookResult> | HookResult;
 
 /**
  * Performance measurement utilities
@@ -144,7 +146,7 @@ describe("Performance Benchmarks", () => {
     test("should execute simple hooks within performance targets", async () => {
       // Simple hook handler
       const simpleHook: HookHandler = async (
-        _context: HookContext
+        _context: any
       ): Promise<HookResult> => {
         return {
           success: true,
@@ -155,9 +157,9 @@ describe("Performance Benchmarks", () => {
       // Warm up
       for (let i = 0; i < 5; i++) {
         await simpleHook({
-          event: "pre-tool-use",
-          tool: "Bash",
-          input: { command: "echo test" },
+          event: "PreToolUse",
+          toolName: "Bash",
+          toolInput: { command: "echo test" },
         });
       }
 
@@ -166,9 +168,9 @@ describe("Performance Benchmarks", () => {
       for (let i = 0; i < iterations; i++) {
         await benchmark.time("hook_execution", () =>
           simpleHook({
-            event: "pre-tool-use",
-            tool: "Bash",
-            input: { command: `echo test${i}` },
+            event: "PreToolUse",
+            toolName: "Bash",
+            toolInput: { command: `echo test${i}` },
           })
         );
       }
@@ -183,14 +185,14 @@ describe("Performance Benchmarks", () => {
 
     test("should handle concurrent hook executions efficiently", async () => {
       const concurrentHook: HookHandler = async (
-        context: HookContext
+        context: any
       ): Promise<HookResult> => {
         // Simulate some async work
         await new Promise((resolve) => setTimeout(resolve, Math.random() * 5));
 
         return {
           success: true,
-          message: `Concurrent hook executed for ${context.tool}`,
+          message: `Concurrent hook executed for ${context.toolName}`,
           data: { timestamp: Date.now() },
         };
       };
@@ -204,9 +206,9 @@ describe("Performance Benchmarks", () => {
         promises.push(
           benchmark.time(`concurrent_${i}`, () =>
             concurrentHook({
-              event: "pre-tool-use",
-              tool: "Bash",
-              input: { command: `echo concurrent${i}` },
+              event: "PreToolUse",
+              toolName: "Bash",
+              toolInput: { command: `echo concurrent${i}` },
             })
           )
         );
@@ -236,7 +238,7 @@ describe("Performance Benchmarks", () => {
         }));
 
         const hookWithLargePayload: HookHandler = async (
-          _context: HookContext
+          _context: any
         ): Promise<HookResult> => {
           // Process the large payload
           const processed = largePayload.map((item) => ({
@@ -257,9 +259,9 @@ describe("Performance Benchmarks", () => {
         for (let i = 0; i < iterations; i++) {
           await benchmark.time(`payload_${size}`, () =>
             hookWithLargePayload({
-              event: "pre-tool-use",
-              tool: "Bash",
-              input: { data: largePayload },
+              event: "PreToolUse",
+              toolName: "Bash",
+              toolInput: { data: largePayload },
             })
           );
         }
@@ -272,12 +274,12 @@ describe("Performance Benchmarks", () => {
       for (let i = 1; i < performanceResults.length; i++) {
         const current = performanceResults[i];
         const previous = performanceResults[i - 1];
-
+        if (!(current && previous)) {
+          continue;
+        }
         const timeRatio = current.avgTime / previous.avgTime;
         const sizeRatio = current.size / previous.size;
-
-        // Time increase should be reasonable compared to size increase
-        expect(timeRatio).toBeLessThan(sizeRatio * 2); // At most 2x the size ratio
+        expect(timeRatio).toBeLessThan(sizeRatio * 2);
       }
     });
   });

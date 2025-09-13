@@ -13,4 +13,5 @@ export * from "./config";
 export * from "./factory";
 export * from "./logger";
 export * from "./sanitizer";
+export * from "./stdio";
 export * from "./types";

@@ -65,8 +65,7 @@ async function main() {
 // Run if executed directly
 if (import.meta.main) {
   main().catch((err) => {
-    // biome-ignore lint/suspicious/noConsole: CLI usage example needs console output
-    console.error(err);
+    process.stderr.write(`${String(err)}\n`);
     process.exitCode = 1;
   });
 }

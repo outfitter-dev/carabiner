@@ -9,6 +9,7 @@ export const middlewareTypeScript = (name: string): string => `/**
  */
 
 import type { HookMiddleware, HookContext, HookResult } from '@carabiner/hooks-core';
+import { stdout, stderr } from '@carabiner/hooks-core';
 
 /**
  * ${pascalCase(name)} middleware
@@ -19,7 +20,7 @@ export function ${camelCase(name)}Middleware<T extends HookContext>(): HookMiddl
     
     try {
       // Pre-processing logic
-      console.log(\`[${name}] Starting middleware for \${context.event}:\${context.toolName}\`);
+      stdout.line(\`[${name}] Starting middleware for \${context.event}:\${context.toolName}\`);
       
       // Add your pre-processing logic here
       await preProcess(context);
@@ -33,7 +34,7 @@ export function ${camelCase(name)}Middleware<T extends HookContext>(): HookMiddl
       return result;
     } catch (error) {
       // Error handling
-      console.error(\`[\${name}] Middleware error:\`, error);
+      stderr.line(\`[${name}] Middleware error: \${String(error)}\`);
       
       return {
         success: false,
@@ -74,7 +75,7 @@ async function postProcess(
   // - Result transformation
   // - Cleanup tasks
   
-  console.log(\`[${name}] Completed in \${duration}ms - \${result.success ? 'SUCCESS' : 'FAILED'}\`);
+  stdout.line(\`[${name}] Completed in \${duration}ms - \${result.success ? 'SUCCESS' : 'FAILED'}\`);
 }
 
 export default ${camelCase(name)}Middleware;
@@ -88,12 +89,13 @@ export const middlewareJavaScript = (name: string): string => `/**
  * ${pascalCase(name)} middleware
  */
 function ${camelCase(name)}Middleware() {
+  const { stdout, stderr } = require('@carabiner/hooks-core');
   return async (context, next) => {
     const startTime = Date.now();
     
     try {
       // Pre-processing logic
-      console.log(\`[${name}] Starting middleware for \${context.event}:\${context.toolName}\`);
+      stdout.line(\`[${name}] Starting middleware for \${context.event}:\${context.toolName}\`);
       
       // Add your pre-processing logic here
       await preProcess(context);
@@ -107,7 +109,7 @@ function ${camelCase(name)}Middleware() {
       return result;
     } catch (error) {
       // Error handling
-      console.error(\`[\${name}] Middleware error:\`, error);
+      stderr.line(\`[${name}] Middleware error: \${String(error)}\`);
       
       return {
         success: false,
@@ -144,7 +146,7 @@ async function postProcess(context, result, duration) {
   // - Result transformation
   // - Cleanup tasks
   
-  console.log(\`[${name}] Completed in \${duration}ms - \${result.success ? 'SUCCESS' : 'FAILED'}\`);
+  stdout.line(\`[${name}] Completed in \${duration}ms - \${result.success ? 'SUCCESS' : 'FAILED'}\`);
 }
 
 module.exports = { ${camelCase(name)}Middleware };

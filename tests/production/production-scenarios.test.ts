@@ -37,7 +37,6 @@ import {
 } from "node:fs";
 import { arch, platform, tmpdir } from "node:os";
 import { join } from "node:path";
-import type { HookConfiguration } from "@carabiner/types";
 
 /**
  * Production environment simulator
@@ -68,8 +67,8 @@ class ProductionEnvironment {
   /**
    * Create a production configuration
    */
-  createProductionConfig(): HookConfiguration {
-    const config: HookConfiguration = {
+  createProductionConfig(): any {
+    const config: any = {
       version: "1.0.0",
       hooks: {
         "pre-tool-use": {
@@ -306,7 +305,6 @@ function generateAuditId(): string {
   spawnProcess(
     command: string,
     args: string[],
-    // biome-ignore lint/suspicious/noExplicitAny: Spawn options vary by platform
     options: any = {}
   ): ChildProcess {
     const proc = spawn(command, args, options);
@@ -319,7 +317,6 @@ function generateAuditId(): string {
    */
   cleanup(): void {
     // Kill all spawned processes
-    // biome-ignore lint/complexity/noForEach: Process cleanup requires immediate execution
     this.processes.forEach((proc) => {
       if (!proc.killed) {
         proc.kill("SIGTERM");
@@ -466,8 +463,8 @@ console.log(JSON.stringify({
 
         const stats = statSync(expectedPath);
         if (platformTest.platform !== "win32") {
-          // biome-ignore lint/suspicious/noBitwiseOperators: Bitmask check for POSIX file mode is intentional
-          expect(stats.mode & 0o755).toBe(0o755);
+          const perms = stats.mode % 0o1000; // lower 9 permission bits
+          expect(perms).toBe(0o755);
         }
       }
     });
@@ -594,7 +591,10 @@ console.log(JSON.stringify({
       ];
 
       for (const envTest of environmentTests) {
-        const isAllowed = await simulatePathValidation(envTest.path, config);
+        const isAllowed = await simulatePathValidation(
+          envTest.path,
+          config as unknown
+        );
 
         if (envTest.shouldAllow) {
           expect(isAllowed).toBe(true);
@@ -670,7 +670,7 @@ console.log(JSON.stringify({
       const environments = ["development", "staging", "production"];
 
       for (const env of environments) {
-        const envConfig: HookConfiguration = {
+        const envConfig: any = {
           version: "1.0.0",
           hooks: {
             PreToolUse: {
@@ -741,7 +741,6 @@ console.log(JSON.stringify({
       expect(totalTime).toBeLessThan(5000); // Should complete within 5 seconds
 
       // Check individual execution times
-      // biome-ignore lint/complexity/noForEach: Immediate validation of results required
       results.forEach((result) => {
         expect(result.success).toBe(true);
         expect(result.executionTime).toBeLessThan(1000); // Each execution < 1s
@@ -796,7 +795,9 @@ console.log(JSON.stringify({
 type SecurityInput = { handler?: string; command?: string };
 
 function isSecurityInput(v: unknown): v is SecurityInput {
-  if (typeof v !== "object" || v === null) return false;
+  if (typeof v !== "object" || v === null) {
+    return false;
+  }
   const r = v as Record<string, unknown>;
   return typeof r.handler === "string" || typeof r.command === "string";
 }
@@ -812,7 +813,7 @@ async function simulateSecurityCheck(
 
   if (isSecurityInput(input) && input.command) {
     const dangerousCommands = ["rm -rf", "sudo", "chmod 777", ">/dev/"];
-    return dangerousCommands.some((cmd) => input.command.includes(cmd));
+    return dangerousCommands.some((cmd) => input.command!.includes(cmd));
   }
 
   return false; // Not blocked
@@ -820,9 +821,11 @@ async function simulateSecurityCheck(
 
 async function simulatePathValidation(
   path: string,
-  config: { security?: { restrictedPaths?: string[] } }
+  config: unknown
 ): Promise<boolean> {
-  const restrictedPaths = config.security?.restrictedPaths ?? [];
+  const restrictedPaths =
+    (config as { security?: { restrictedPaths?: string[] } }).security
+      ?.restrictedPaths ?? [];
 
   return !restrictedPaths.some((restricted: string) =>
     path.startsWith(restricted)

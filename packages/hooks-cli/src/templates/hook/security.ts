@@ -6,11 +6,11 @@ export const securityHookTypeScript = (
   name: string
 ): string => `#!/usr/bin/env bun
 
-import { runClaudeHook, HookResults, type HookContext } from '@carabiner/hooks-core';
+import { runClaudeHook, HookResults, type HookContext, stdout } from '@carabiner/hooks-core';
 import { SecurityValidators } from '@carabiner/hooks-validators';
 
 async function handler(ctx: HookContext) {
-  console.log(\`🔒 ${name} security hook triggered for: \${ctx.toolName}\`);
+  stdout.line(\`🔒 ${name} security hook triggered for: \${ctx.toolName}\`);
 
   try {
     // Apply security validation based on environment
@@ -76,11 +76,11 @@ export const securityHookJavaScript = (
   name: string
 ): string => `#!/usr/bin/env bun
 
-const { runClaudeHook, HookResults } = require('@carabiner/hooks-core');
+const { runClaudeHook, HookResults, stdout } = require('@carabiner/hooks-core');
 const { SecurityValidators } = require('@carabiner/hooks-validators');
 
 async function handler(ctx) {
-  console.log(\`🔒 ${name} security hook triggered for: \${ctx.toolName}\`);
+  stdout.line(\`🔒 ${name} security hook triggered for: \${ctx.toolName}\`);
 
   try {
     // Apply security validation based on environment

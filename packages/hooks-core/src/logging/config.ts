@@ -4,6 +4,7 @@
  * Provides environment-based configuration with security defaults
  */
 
+import { getEnvVar, isBun } from "../utils/env";
 import type {
   Environment,
   LoggingConfig,
@@ -15,29 +16,32 @@ import type {
  * Determine environment from NODE_ENV and other indicators
  */
 export function detectEnvironment(): Environment {
-  const nodeEnv = Bun.env.NODE_ENV?.toLowerCase();
+  const nodeEnv = getEnvVar("NODE_ENV")?.toLowerCase();
+  const bunEnv = getEnvVar("BUN_ENV")?.toLowerCase();
 
   // Explicit test environment
-  if (nodeEnv === "test" || Bun.env.BUN_ENV === "test") {
+  if (nodeEnv === "test" || bunEnv === "test") {
     return "test";
   }
 
   // Production indicators
   if (
     nodeEnv === "production" ||
-    Bun.env.NODE_ENV === "prod" ||
-    Bun.env.BUN_ENV === "production"
+    nodeEnv === "prod" ||
+    bunEnv === "production"
   ) {
     return "production";
   }
 
   // Binary distribution indicator (only if not in test environment)
-  if (!(Bun.env.DEBUG || nodeEnv || Bun.env.BUN_ENV)) {
-    // Check if we're running from a compiled binary or in a test environment
-    // In tests, we should default to development unless explicitly set
-    if (typeof Bun !== "undefined" && Bun.main && !Bun.main.includes("test")) {
-      return "production";
-    }
+  const hasDebug = getEnvVar("DEBUG") != null;
+  if (
+    isBun() &&
+    typeof globalThis.Bun?.main === "string" &&
+    !globalThis.Bun.main.includes("test") &&
+    !(hasDebug || nodeEnv || bunEnv)
+  ) {
+    return "production";
   }
 
   // Default to development
@@ -49,7 +53,8 @@ export function detectEnvironment(): Environment {
  */
 export function detectLogLevel(): LogLevel {
   // CLI debug flag takes precedence
-  if (Bun.env.DEBUG === "true" || process.argv.includes("--debug")) {
+  const debugEnv = getEnvVar("DEBUG") ?? "";
+  if (/^(1|true|yes|on)$/i.test(debugEnv) || process.argv.includes("--debug")) {
     return "debug";
   }
 
@@ -59,7 +64,10 @@ export function detectLogLevel(): LogLevel {
   }
 
   // Explicit LOG_LEVEL environment variable
-  const envLevel = Bun.env.LOG_LEVEL?.toLowerCase();
+  const envLevel = getEnvVar("LOG_LEVEL")?.trim().toLowerCase();
+  if (envLevel === "warning") {
+    return "warn";
+  }
   if (envLevel && isValidLogLevel(envLevel)) {
     return envLevel as LogLevel;
   }
@@ -104,7 +112,7 @@ export function createLoggingConfig(service: string): LoggingConfig {
       environment === "test" && !process.argv.includes("--enable-test-logs"),
     // Additional context from environment
     context: {
-      version: Bun.env.CLI_VERSION || "development",
+      version: getEnvVar("CLI_VERSION") || "development",
       nodeVersion: process.version,
       platform: process.platform,
       arch: process.arch,
@@ -166,7 +174,12 @@ export const DEFAULT_SANITIZATION: SanitizationOptions = {
     // Social security numbers
     /\b\d{3}[-.]?\d{2}[-.]?\d{4}\b/g,
     // Email addresses (partial masking)
-    /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+    /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/gi,
+    // IPv4 addresses
+    /\b(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\b/g,
+    // IPv6 addresses (compressed and full)
+    /\b([A-F0-9]{1,4}:){7}[A-F0-9]{1,4}\b/gi,
+    /\b(([A-F0-9]{1,4}:){1,7}:|:((:[A-F0-9]{1,4}){1,7}))\b/gi,
     // Phone numbers
     /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g,
     // API keys (base64-like patterns)

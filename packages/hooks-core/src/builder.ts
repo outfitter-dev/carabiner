@@ -20,32 +20,57 @@ import type {
 export class HookBuilder<TEvent extends HookEvent = HookEvent>
   implements IHookBuilder<TEvent>
 {
-  // biome-ignore lint/style/useReadonlyClassProperties: Mutated in forEvent method
-  private _event?: TEvent;
+  private readonly _event?: TEvent;
   private _toolName?: ToolName;
-  // biome-ignore lint/style/useReadonlyClassProperties: Mutated in withHandler method
   private _handler?: HookHandler<TEvent>;
   private _timeout?: number;
   private _condition?: (context: HookContext<TEvent>) => boolean;
   private _priority = 0;
   private _enabled = true;
-  // biome-ignore lint/style/useReadonlyClassProperties: Mutated in forEvent and withMiddleware methods
-  private _middleware: HookMiddleware<HookContext<TEvent>>[] = [];
+  private readonly _middleware: HookMiddleware<HookContext<TEvent>>[] = [];
+
+  constructor(params?: {
+    event?: TEvent;
+    toolName?: ToolName;
+    handler?: HookHandler<TEvent>;
+    timeout?: number;
+    condition?: (context: HookContext<TEvent>) => boolean;
+    priority?: number;
+    enabled?: boolean;
+    middleware?: HookMiddleware<HookContext<TEvent>>[];
+  }) {
+    if (params) {
+      this._event = params.event;
+      this._toolName = params.toolName;
+      this._handler = params.handler;
+      this._timeout = params.timeout;
+      this._condition = params.condition;
+      this._priority = params.priority ?? this._priority;
+      this._enabled = params.enabled ?? this._enabled;
+      if (params.middleware) {
+        this._middleware.push(...params.middleware);
+      }
+    }
+  }
 
   /**
    * Specify the hook event type
    */
   forEvent<E extends HookEvent>(event: E): HookBuilder<E> {
-    const builder = new HookBuilder<E>();
-    builder._event = event;
-    builder._toolName = this._toolName;
-    builder._timeout = this._timeout;
-    builder._priority = this._priority;
-    builder._enabled = this._enabled;
-    builder._middleware = [
-      ...(this._middleware as unknown as HookMiddleware<HookContext<E>>[]),
-    ];
-    return builder;
+    return new HookBuilder<E>({
+      event,
+      toolName: this._toolName,
+      handler: this._handler as unknown as HookHandler<E>,
+      timeout: this._timeout,
+      condition: this._condition as unknown as (
+        context: HookContext<E>
+      ) => boolean,
+      priority: this._priority,
+      enabled: this._enabled,
+      middleware: this._middleware as unknown as HookMiddleware<
+        HookContext<E>
+      >[],
+    });
   }
 
   /**
@@ -147,6 +172,34 @@ export class HookBuilder<TEvent extends HookEvent = HookEvent>
           ),
         finalHandler
       );
+    }
+
+    // Apply timeout if specified (including 0 as valid)
+    if (this._timeout !== undefined) {
+      const originalHandler = finalHandler;
+      const timeout = this._timeout;
+
+      finalHandler = async (context: HookContext<TEvent>) => {
+        const timeoutPromise = new Promise<HookResult>((_, reject) => {
+          setTimeout(
+            () =>
+              reject(new Error(`Hook execution timed out after ${timeout}ms`)),
+            timeout
+          );
+        });
+
+        try {
+          return await Promise.race([originalHandler(context), timeoutPromise]);
+        } catch (error) {
+          if (error instanceof Error && error.message.includes("timed out")) {
+            return {
+              success: false,
+              message: error.message,
+            };
+          }
+          throw error;
+        }
+      };
     }
 
     return {
@@ -308,7 +361,7 @@ export function defineHook<TEvent extends HookEvent>(
     builder = builder.withCondition(config.condition);
   }
 
-  if (config.timeout) {
+  if (config.timeout !== undefined) {
     builder = builder.withTimeout(config.timeout);
   }
 
@@ -380,7 +433,7 @@ export const middleware = {
       return {
         ...result,
         metadata: {
-          ...result.metadata,
+          ...(result.metadata ?? {}),
           duration,
         },
       };
@@ -391,14 +444,14 @@ export const middleware = {
    * Error handling middleware
    */
   errorHandling<T extends HookContext>(
-    onError?: (error: Error, context: T) => HookResult
+    onError?: (error: Error, context: T) => HookResult | Promise<HookResult>
   ): HookMiddleware<T> {
     return async (context, next) => {
       try {
         return await next(context);
       } catch (error) {
         if (onError && error instanceof Error) {
-          return onError(error, context);
+          return await onError(error, context);
         }
 
         return {

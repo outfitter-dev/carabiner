@@ -14,6 +14,7 @@ import {
   runtimeLogger as newRuntimeLogger,
 } from "./logging";
 import type { HookEvent, ToolName } from "./types";
+import { getEnvVar } from "./utils/env";
 
 /**
  * Legacy base logger - now uses the new system
@@ -27,8 +28,8 @@ export function createHookLogger(event: HookEvent, toolName?: ToolName) {
   return logger.child({
     event,
     toolName,
-    sessionId: Bun.env.CLAUDE_SESSION_ID,
-    projectDir: Bun.env.CLAUDE_PROJECT_DIR,
+    sessionId: getEnvVar("CLAUDE_SESSION_ID"),
+    projectDir: getEnvVar("CLAUDE_PROJECT_DIR"),
   });
 }
 

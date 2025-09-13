@@ -25,7 +25,7 @@ import {
  */
 async function handlePostToolUse(
   context: HookContext<"PostToolUse">
-): HookResult {
+): Promise<HookResult> {
   // Access tool response from new context structure
   // Example: process tool response if available
   // if (context.toolResponse) { /* ... */ }
@@ -52,7 +52,7 @@ async function handlePostToolUse(
  */
 async function routeToToolHandler(
   context: HookContext<"PostToolUse">
-): HookResult {
+): Promise<HookResult> {
   switch (context.toolName) {
     case "Bash":
       return await handleBashPostProcessing(
@@ -78,7 +78,7 @@ async function routeToToolHandler(
  */
 async function handleBashPostProcessing(
   context: HookContext<"PostToolUse", "Bash">
-): HookResult {
+): Promise<HookResult> {
   if (!isBashToolInput(context.toolInput)) {
     return HookResults.success(
       "Bash post-processing completed (no input to process)"
@@ -117,7 +117,7 @@ async function handleBashPostProcessing(
  */
 async function handleWritePostProcessing(
   context: HookContext<"PostToolUse", "Write">
-): HookResult {
+): Promise<HookResult> {
   if (!isWriteToolInput(context.toolInput)) {
     return HookResults.success(
       "Write post-processing completed (no input to process)"
@@ -134,7 +134,7 @@ async function handleWritePostProcessing(
   }
 
   // Format the file if it's a supported type
-  const _formatted = await formatFile(file_path, context.cwd, actions);
+  await formatFile(file_path, context.cwd, actions);
 
   // Run type checking if it's a TypeScript file
   if ([".ts", ".tsx"].includes(extname(file_path))) {
@@ -166,7 +166,7 @@ async function handleWritePostProcessing(
  */
 async function handleEditPostProcessing(
   context: HookContext<"PostToolUse", "Edit">
-): HookResult {
+): Promise<HookResult> {
   if (!isEditToolInput(context.toolInput)) {
     return HookResults.success(
       "Edit post-processing completed (no input to process)"
@@ -258,7 +258,7 @@ function handleGenericPostProcessing(context: HookContext): HookResult {
  * Utility functions
  */
 
-function analyzeBashOutput(
+async function analyzeBashOutput(
   command: string,
   output: string,
   _cwd: string,
@@ -297,7 +297,7 @@ function analyzeBashOutput(
   }
 }
 
-function handleSpecificCommands(
+async function handleSpecificCommands(
   command: string,
   cwd: string,
   actions: string[]
@@ -427,11 +427,11 @@ async function validateJsonSyntax(
   }
 }
 
-async function logToolExecution(
+function logToolExecution(
   context: HookContext,
   result: HookResult,
   processingTime: number
-): Promise<void> {
+): void {
   const _logEntry = {
     timestamp: new Date().toISOString(),
     sessionId: context.sessionId,
@@ -452,6 +452,7 @@ async function logToolExecution(
       return JSON.stringify(response).length;
     })(),
   };
+  void _logEntry;
 }
 
 async function getFileStats(
@@ -516,15 +517,18 @@ function runCommand(
       }
     });
 
-    process.on("error", reject);
+    child.on("error", reject);
   });
 }
 
 // Main execution - now uses the new stdin-based runtime
+import type { HookHandler } from "@/hooks-core";
+
 if (import.meta.main) {
   // The new runtime automatically reads JSON from stdin,
   // creates context, and calls our handler
-  runClaudeHook(handlePostToolUse, {
+  const handler: HookHandler = (ctx) => handlePostToolUse(ctx as any);
+  runClaudeHook(handler, {
     outputMode: "exit-code",
     logLevel: "info",
   });

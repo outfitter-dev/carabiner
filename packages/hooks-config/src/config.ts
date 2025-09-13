@@ -11,6 +11,7 @@ import type {
   ToolHookConfig,
   ToolName,
 } from "@carabiner/hooks-core";
+import { getEnvVar } from "@carabiner/hooks-core";
 // Note: Error management lives in a separate package. To avoid build-order
 // coupling here, we use a local error type and keep integration optional.
 
@@ -206,10 +207,8 @@ export class ConfigManager {
    * Controlled by ENABLE_ADVANCED_ERROR_MANAGEMENT env ("true" to enable)
    */
   private get advancedErrorManagementEnabled(): boolean {
-    const env = typeof Bun !== "undefined" ? Bun.env : process.env;
-    return (
-      (env?.ENABLE_ADVANCED_ERROR_MANAGEMENT || "").toLowerCase() === "true"
-    );
+    const enableAdvanced = getEnvVar("ENABLE_ADVANCED_ERROR_MANAGEMENT");
+    return (enableAdvanced || "").toLowerCase() === "true";
   }
 
   /**
@@ -746,7 +745,7 @@ export class ConfigManager {
   private applyEnvironmentOverrides(
     config: ExtendedHookConfiguration
   ): ExtendedHookConfiguration {
-    const env = Bun.env.NODE_ENV || "development";
+    const env = getEnvVar("NODE_ENV") || "development";
     const envOverrides = config.environments?.[env];
 
     if (!envOverrides) {

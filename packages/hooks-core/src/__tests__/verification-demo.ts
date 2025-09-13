@@ -62,5 +62,7 @@ async function demonstrateToolScopingFix() {
 
 // Only run demo if this file is executed directly
 if (import.meta.main) {
-  demonstrateToolScopingFix().catch(console.error);
+  demonstrateToolScopingFix().catch((err) => {
+    process.stderr.write(`${String(err)}\n`);
+  });
 }

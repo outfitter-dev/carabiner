@@ -1,10 +1,15 @@
 {
   "name": "@carabiner/hooks-validators",
-  "version": "0.1.0",
   "description": "Security and validation utilities for Carabiner hooks",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "version": "0.1.0-alpha",
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "dependencies": {
+    "@carabiner/hooks-core": "0.1.0-alpha"
+  },
+  "devDependencies": {
+    "@types/bun": "*",
+    "typescript": "^5.9.2"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -15,6 +20,14 @@
     "dist",
     "README.md"
   ],
+  "keywords": [
+    "carabiner",
+    "hooks",
+    "security",
+    "validation"
+  ],
+  "license": "MIT",
+  "main": "./dist/index.js",
   "publishConfig": {
     "access": "public"
   },
@@ -23,23 +36,10 @@
     "build:clean": "rm -rf dist",
     "build:tsc": "tsc --project tsconfig.build.json",
     "dev": "tsc --watch --project tsconfig.build.json",
+    "prepublishOnly": "bun run build",
     "test": "bun test",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build"
+    "typecheck": "tsc --noEmit"
   },
-  "keywords": [
-    "carabiner",
-    "hooks",
-    "validation",
-    "security"
-  ],
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
-  "license": "MIT",
-  "dependencies": {
-    "@carabiner/hooks-core": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "*",
-    "typescript": "^5.9.2"
-  }
+  "type": "module",
+  "types": "./dist/index.d.ts"
 }

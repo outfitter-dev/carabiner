@@ -4,6 +4,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { createTestContext } from "@carabiner/types";
+import { stdout } from "../logging/stdio";
 import {
   createBashContext,
   createFileContext,
@@ -284,10 +285,10 @@ describe("Runtime - Output Handling", () => {
     let exitCode: number | undefined;
     let consoleOutput: string | undefined;
 
-    // Mock console.log to capture JSON output
-    const originalLog = console.log;
-    console.log = (message: string) => {
-      consoleOutput = message;
+    // Mock stdout.json to capture JSON output
+    const originalJson = stdout.json;
+    stdout.json = (value: unknown) => {
+      consoleOutput = JSON.stringify(value);
     };
 
     const mockExitHandler = (code: number): never => {
@@ -305,8 +306,8 @@ describe("Runtime - Output Handling", () => {
         '{"action":"continue","message":"Test message"}'
       );
     } finally {
-      // Restore console.log
-      console.log = originalLog;
+      // Restore writer
+      stdout.json = originalJson;
     }
   });
 });

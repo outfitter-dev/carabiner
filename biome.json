@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
   "extends": ["ultracite"],
   "javascript": {
     "globals": ["Bun"]
@@ -22,15 +22,44 @@
     "rules": {
       "style": {
         "noMagicNumbers": "off",
-        "noEnum": "off"
+        "noEnum": "off",
+        "noParameterProperties": "off",
+        "useConsistentMemberAccessibility": "off",
+        "noNonNullAssertion": "off",
+        "useThrowOnlyError": "off",
+        "noNestedTernary": "off",
+        "useDefaultSwitchClause": "off",
+        "useForOf": "off"
       },
       "complexity": {
         "noVoid": "off",
         "noExcessiveCognitiveComplexity": "off",
-        "noExcessiveLinesPerFunction": "off"
+        "noExcessiveLinesPerFunction": "off",
+        "noForEach": "off",
+        "noStaticOnlyClass": "off"
       },
       "performance": {
-        "useTopLevelRegex": "off"
+        "useTopLevelRegex": "off",
+        "noBarrelFile": "off",
+        "noNamespaceImport": "off"
+      },
+      "suspicious": {
+        "useAwait": "off",
+        "noEmptyBlockStatements": "off",
+        "noConsole": "error",
+        "noEvolvingTypes": "off",
+        "noTsIgnore": "off",
+        "noExplicitAny": "off",
+        "noImplicitAnyLet": "off",
+        "useIterableCallbackReturn": "off"
+      },
+      "nursery": {
+        "noShadow": "off",
+        "noUnnecessaryConditions": "off",
+        "useMaxParams": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "off"
       }
     }
   }

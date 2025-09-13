@@ -157,7 +157,7 @@ export class ClaudeHooksCli {
     }
 
     if (values.version) {
-      console.log(this.config.version);
+      process.stdout.write(`${this.config.version}\n`);
       process.exit(0);
     }
 
@@ -267,7 +267,7 @@ export class ClaudeHooksCli {
         `Command failed: ${error instanceof Error ? error.message : error}`
       );
       if (this.config.debug && error instanceof Error && error.stack) {
-        // Stack trace would be logged here in debug mode
+        this.logger.debug(error.stack);
       }
       process.exit(1);
     }
@@ -279,43 +279,53 @@ export class ClaudeHooksCli {
   private async showHelp(): Promise<void> {
     // Register commands if not already done
     if (this.commands.size === 0) {
-      await this.registerCommands();
+      this.registerCommands();
     }
 
-    console.log("Carabiner CLI");
-    console.log("Usage: carabiner <command> [options]");
-    console.log("");
-    console.log("Available commands:");
+    process.stdout.write(`Carabiner CLI v${this.config.version}\n`);
+    process.stdout.write(
+      "\nA modern TypeScript framework for building type-safe Carabiner hooks"
+    );
+    process.stdout.write("\nUsage:\n");
+    process.stdout.write("  carabiner <command> [options]\n");
+    process.stdout.write("\nGlobal Options:\n");
+    process.stdout.write("  -h, --help         Show help information\n");
+    process.stdout.write("  -v, --version      Show version number\n");
+    process.stdout.write("  --verbose          Enable verbose logging\n");
+    process.stdout.write("  --debug            Enable debug logging\n");
+    process.stdout.write("  -w, --workspace    Set workspace directory\n");
+    process.stdout.write("\nCommands:\n");
 
     for (const command of this.commands.values()) {
-      console.log(`  ${command.name.padEnd(12)} ${command.description}`);
+      process.stdout.write(
+        `  ${command.name.padEnd(12)} ${command.description}\n`
+      );
     }
 
-    console.log("");
-    console.log("Global options:");
-    console.log("  --help       Show this help message");
-    console.log("  --version    Show version information");
-    console.log("  --verbose    Enable verbose logging");
-    console.log("  --debug      Enable debug logging");
-    console.log("  --workspace  Set workspace directory");
+    process.stdout.write(
+      "\nRun 'carabiner <command> --help' for more information on a command.\n"
+    );
   }
 
   /**
    * Show available commands
    */
   private showAvailableCommands(): void {
-    console.log("Available commands:");
+    process.stdout.write("\nAvailable commands:\n");
     for (const command of this.commands.values()) {
-      console.log(`  ${command.name} - ${command.description}`);
+      process.stdout.write(
+        `  ${command.name.padEnd(12)} ${command.description}\n`
+      );
     }
+    process.stdout.write(
+      "\nRun 'carabiner <command> --help' for more information on a command.\n"
+    );
   }
 
   /**
    * Log message (user-facing output)
    */
-  log(message: string): void {
-    console.log(message);
-  }
+  log(_message: string): void {}
 
   /**
    * Log verbose message (internal logging)

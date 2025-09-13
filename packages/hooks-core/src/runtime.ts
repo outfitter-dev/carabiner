@@ -6,6 +6,7 @@
 
 import path from "node:path";
 import { runtimeLogger } from "./logger";
+import { stdout } from "./logging/stdio";
 import type {
   ClaudeHookInputVariant,
   ClaudeToolHookInput,
@@ -30,6 +31,7 @@ import {
   isClaudeToolHookInput,
   isClaudeUserPromptInput,
 } from "./types";
+import { getEnvVar } from "./utils/env";
 
 /**
  * Parse JSON input from stdin
@@ -41,7 +43,25 @@ export async function parseStdinInput(): Promise<
   try {
     // Read from stdin with size limits for security
     const MAX_INPUT_SIZE = 1024 * 1024; // 1MB limit
-    const inputBytes = await Bun.stdin.bytes();
+    const isBun = typeof (globalThis as any).Bun?.stdin?.bytes === "function";
+    let inputBytes: Uint8Array;
+    if (isBun) {
+      inputBytes = await (globalThis as any).Bun.stdin.bytes();
+    } else {
+      inputBytes = await (async function readNodeStdin(max: number) {
+        const chunks: Buffer[] = [];
+        let total = 0;
+        for await (const chunk of process.stdin) {
+          const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+          total += buf.length;
+          if (total > max) {
+            break;
+          }
+          chunks.push(buf);
+        }
+        return new Uint8Array(Buffer.concat(chunks));
+      })(MAX_INPUT_SIZE);
+    }
 
     if (inputBytes.length > MAX_INPUT_SIZE) {
       return {
@@ -62,26 +82,11 @@ export async function parseStdinInput(): Promise<
       };
     }
 
-    // Security: Remove null bytes and control characters before parsing
-    // Using String.fromCharCode to avoid control character lint warnings
-    const controlChars = [...new Array(32).keys()]
-      .map((i) => String.fromCharCode(i))
-      .join("");
+    // Security: strip dangerous control chars but allow TAB/LF/CR for JSON formatting
     const sanitizedInput = input
-      .split("")
-      .filter(
-        (c) => !controlChars.includes(c) && c !== String.fromCharCode(127)
-      )
-      .join("")
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching control characters for sanitization
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
       .trim();
-
-    if (sanitizedInput !== input.trim()) {
-      return {
-        success: false,
-        error: "Input contains invalid control characters",
-        rawInput: "[SANITIZED]",
-      };
-    }
 
     // Parse JSON with additional validation
     const parsedData = JSON.parse(sanitizedInput) as ClaudeHookInputVariant;
@@ -115,7 +120,7 @@ export async function parseStdinInput(): Promise<
  * Enhanced with security sanitization
  */
 export function parseHookEnvironment(): HookEnvironment {
-  const claudeProjectDir = Bun.env.CLAUDE_PROJECT_DIR;
+  const claudeProjectDir = getEnvVar("CLAUDE_PROJECT_DIR");
 
   // Security: Validate CLAUDE_PROJECT_DIR path
   if (claudeProjectDir) {
@@ -444,8 +449,8 @@ export function outputHookResult(
       message: result.message,
       data: result.data,
     };
-    // biome-ignore lint/suspicious/noConsole: JSON output mode requires console output
-    console.log(JSON.stringify(claudeOutput));
+    // Use lightweight stdio helper to avoid console usage
+    stdout.json(claudeOutput);
     return exitHandler(0); // Always exit 0 for JSON mode, let JSON control behavior
   }
   // Traditional exit code mode - must use console for Claude Code communication
@@ -508,12 +513,12 @@ export async function runClaudeHook(
  * Environment detection utilities
  */
 export function isClaudeCodeEnvironment(): boolean {
-  return Boolean(Bun.env.CLAUDE_PROJECT_DIR);
+  return Boolean(getEnvVar("CLAUDE_PROJECT_DIR"));
 }
 
 export function getSessionInfo(): { projectDir?: string } {
   return {
-    projectDir: Bun.env.CLAUDE_PROJECT_DIR,
+    projectDir: getEnvVar("CLAUDE_PROJECT_DIR"),
   };
 }
 

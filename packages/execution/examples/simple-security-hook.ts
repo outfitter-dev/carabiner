@@ -49,8 +49,8 @@ type TestContext = BashContext | NonBashContext;
 
 import {
   ExecutionTimer,
-  MemoryTracker,
   MetricsCollector,
+  snapshotMemoryUsage,
 } from "../src/metrics";
 
 // Define our security hook handler
@@ -73,13 +73,18 @@ const securityHook: HookHandler = (context) => {
 
   // Define dangerous command patterns
   const dangerousPatterns = [
-    /rm\s+-rf\s*\/[^/\w]*/, // rm -rf / (but allow specific dirs)
-    /sudo\s+rm/, // sudo rm commands
-    />\s*\/dev\/null\s*2>&1/, // Output redirection to null
-    /curl.*\|\s*sh/, // Curl pipe to shell
-    /wget.*\|\s*sh/, // Wget pipe to shell
-    /:\(\)\s*\{\s*:\|:&\}\s*;:/, // Fork bomb
-    /dd\s+if=\/dev\/(zero|random)/, // Disk flooding
+    // rm -rf / (root only, anchored to end or command separators)
+    /\b(?:sudo\s+)?rm\s+-[^\S\r\n]*r[^\S\r\n]*f[^\S\r\n]*\s*\/\s*(?:$|[#;]|&&|\|\|)/i,
+    // rm -rf /* (wildcard at root)
+    /\b(?:sudo\s+)?rm\s+-[^\n]*\s+\/\*/i,
+    // Explicit override of safety guard
+    /\brm\b[^\n]*\s--no-preserve-root\b/i,
+    // Pipe-to-shell installers
+    /\b(?:curl|wget)\b[^\n]*\|\s*(?:sh|bash)\b/i,
+    // Fork bomb
+    /:\(\)\s*\{\s*:\|:&\}\s*;:/,
+    // Potential device flooding
+    /\bdd\s+if=\/dev\/(zero|random)\b/i,
   ];
 
   // Check for dangerous patterns
@@ -160,12 +165,12 @@ export async function runSecurityExample() {
 
   for (const testCase of testCases) {
     const timer = new ExecutionTimer();
-    const memoryBefore = MemoryTracker.snapshot();
+    const memoryBefore = snapshotMemoryUsage();
 
     try {
       const result = await securityHook(testCase.context);
 
-      const memoryAfter = MemoryTracker.snapshot();
+      const memoryAfter = snapshotMemoryUsage();
 
       // Collect metrics
       collector.record(
@@ -176,13 +181,9 @@ export async function runSecurityExample() {
         memoryAfter,
         { testCase: testCase.name }
       );
-      if (result.block) {
-        // Command was blocked for security reasons
-        collector.recordEvent("blocked_command", testCase.name);
-      }
+      // Additional event recording could be implemented here if needed
     } catch (_error) {
       // Error in test execution - expected for some test cases
-      collector.recordEvent("test_error", testCase.name);
     }
   }
   const stats = collector.getAggregateMetrics();

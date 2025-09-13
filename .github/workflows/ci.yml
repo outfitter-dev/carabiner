@@ -18,8 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUN_VERSION: "1.2.20"
   NODE_VERSION: "20"
+  # BUN_VERSION will be dynamically extracted from package.json in each job
 
 jobs:
   lint:
@@ -29,16 +29,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract Bun version from package.json
+        id: bun-version
+        run: echo "version=$(node scripts/get-bun-version.js)" >> $GITHUB_OUTPUT
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          bun-version: ${{ steps.bun-version.outputs.version }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Format check (ultracite)
-        run: bun x ultracite@latest check
+        run: bun x ultracite@5.3.4 check
 
   typecheck:
     name: Type Check
@@ -47,10 +51,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract Bun version from package.json
+        id: bun-version
+        run: echo "version=$(node scripts/get-bun-version.js)" >> $GITHUB_OUTPUT
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          bun-version: ${{ steps.bun-version.outputs.version }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -65,10 +73,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract Bun version from package.json
+        id: bun-version
+        run: echo "version=$(node scripts/get-bun-version.js)" >> $GITHUB_OUTPUT
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          bun-version: ${{ steps.bun-version.outputs.version }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -93,10 +105,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract Bun version from package.json
+        id: bun-version
+        run: echo "version=$(node scripts/get-bun-version.js)" >> $GITHUB_OUTPUT
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          bun-version: ${{ steps.bun-version.outputs.version }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -121,10 +137,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract Bun version from package.json
+        id: bun-version
+        run: echo "version=$(node scripts/get-bun-version.js)" >> $GITHUB_OUTPUT
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          bun-version: ${{ steps.bun-version.outputs.version }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -147,10 +167,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract Bun version from package.json
+        id: bun-version
+        run: echo "version=$(node scripts/get-bun-version.js)" >> $GITHUB_OUTPUT
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          bun-version: ${{ steps.bun-version.outputs.version }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile

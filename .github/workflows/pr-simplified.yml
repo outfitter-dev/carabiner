@@ -1,4 +1,4 @@
-name: PR Validation (Simplified)
+name: PR Validation
 
 on:
   pull_request:
@@ -8,17 +8,14 @@ permissions:
   contents: read
   pull-requests: write
   checks: write
-  statuses: write
 
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-env:
-  BUN_VERSION: "1.2.20"
+# Bun version will be dynamically extracted from package.json
 
 jobs:
-  # Single job that handles everything with conditional steps
   validate:
     name: PR Validation
     runs-on: ubuntu-latest
@@ -27,29 +24,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Detect PR Context
-        id: context
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const labels = context.payload.pull_request.labels.map(l => l.name);
-            const isStackBottom = labels.includes('stack-bottom');
-            const isStackTop = labels.includes('stack-top');
-            const skipOptional = labels.includes('skip-optional-checks');
-
-            // For PRs 54 and 63 specifically (your current stack)
-            const prNumber = context.issue.number;
-            const isKnownBottom = prNumber === 54;
-            const isKnownTop = prNumber === 63;
-
-            core.setOutput('run_full_checks', isStackBottom || isStackTop || isKnownBottom || isKnownTop ? 'true' : 'false');
-            core.setOutput('skip_optional', skipOptional && !isStackBottom && !isStackTop ? 'true' : 'false');
-            console.log(`PR #${prNumber}: full_checks=${isStackBottom || isStackTop}, skip_optional=${skipOptional}`);
+      - name: Extract Bun version from package.json
+        id: bun-version
+        run: echo "version=$(node scripts/get-bun-version.js)" >> $GITHUB_OUTPUT
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          bun-version: ${{ steps.bun-version.outputs.version }}
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -69,72 +51,11 @@ jobs:
         run: bun run typecheck
 
       - name: Run Linter
-        run: bun x ultracite@latest lint
+        run: bun x ultracite@5.3.4 check
         continue-on-error: true
 
       - name: Run Tests
-        if: steps.context.outputs.run_full_checks == 'true'
         run: bun test
 
-      - name: Skip Tests (Middle Stack)
-        if: steps.context.outputs.run_full_checks == 'false'
-        run: |
-          echo "ℹ️ Tests skipped for middle-stack PR (this is intentional)"
-          echo "::notice::Tests are run on stack bottom (#54) and top (#63) only"
-
       - name: Build Check
-        if: steps.context.outputs.run_full_checks == 'true'
         run: bun run build
-
-      - name: Skip Build (Middle Stack)
-        if: steps.context.outputs.run_full_checks == 'false'
-        run: |
-          echo "ℹ️ Build check skipped for middle-stack PR"
-          echo "::notice::Full build is validated on stack extremities"
-
-      - name: Set Success Status
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            // Create a success status for the PR
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha,
-              state: 'success',
-              description: 'All required checks passed',
-              context: 'CI / Stack Validation'
-            });
-
-  # Summary job that always reports success if we get here
-  summary:
-    name: CI Summary
-    runs-on: ubuntu-latest
-    needs: validate
-    if: always()
-    steps:
-      - name: Report Status
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const emoji = '${{ needs.validate.result }}' === 'success' ? '✅' : '⚠️';
-            const status = '${{ needs.validate.result }}' === 'success' ? 'passed' : 'completed with warnings';
-
-            const message = `${emoji} **CI ${status}**
-
-            This PR is part of a Graphite stack. Full validation runs on:
-            - Stack bottom (PR #54)
-            - Stack top (PR #63)
-
-            Middle PRs run minimal checks to reduce CI noise.`;
-
-            // Update PR status check
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha,
-              state: 'success',
-              description: `CI ${status}`,
-              context: 'CI / Summary'
-            });

@@ -1,0 +1,7 @@
+{
+  "node": "20.x",
+  "bun": "latest",
+  "biome": "2.2.4",
+  "ultracite": "5.3.4",
+  "turbo": "latest"
+}

@@ -22,7 +22,7 @@ import { ValidationError, validateHookSecurity } from "@/hooks-validators";
  */
 async function handlePreToolUse(
   context: HookContext<"PreToolUse">
-): HookResult {
+): Promise<HookResult> {
   try {
     // Route to specific tool handlers
     switch (context.toolName) {
@@ -55,7 +55,7 @@ async function handlePreToolUse(
  */
 async function handleBashValidation(
   context: HookContext<"PreToolUse", "Bash">
-): HookResult {
+): Promise<HookResult> {
   if (!isBashToolInput(context.toolInput)) {
     return HookResults.block("Invalid Bash tool input");
   }
@@ -99,7 +99,7 @@ async function handleBashValidation(
  */
 async function handleWriteValidation(
   context: HookContext<"PreToolUse", "Write">
-): HookResult {
+): Promise<HookResult> {
   if (!isWriteToolInput(context.toolInput)) {
     return HookResults.block("Invalid Write tool input");
   }
@@ -139,7 +139,7 @@ async function handleWriteValidation(
  */
 async function handleEditValidation(
   context: HookContext<"PreToolUse", "Edit">
-): HookResult {
+): Promise<HookResult> {
   if (!isEditToolInput(context.toolInput)) {
     return HookResults.block("Invalid Edit tool input");
   }
@@ -319,7 +319,9 @@ function estimateCommandDuration(command: string): number {
 if (import.meta.main) {
   // The new runtime automatically reads JSON from stdin,
   // creates context, and calls our handler
-  runClaudeHook(handlePreToolUse, {
+  const handler: import("@/hooks-core").HookHandler = (ctx) =>
+    handlePreToolUse(ctx as any);
+  runClaudeHook(handler, {
     outputMode: "exit-code", // Use traditional exit codes
     logLevel: "info",
   });

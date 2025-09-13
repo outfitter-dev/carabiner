@@ -97,7 +97,7 @@ describe("Bash Command Validator", () => {
       const context = createToolHookContext(
         "PreToolUse",
         "Bash",
-        {},
+        {} as unknown as import("@carabiner/types").ToolInput,
         createTestContextOptions()
       );
 
@@ -143,8 +143,11 @@ describe("Bash Command Validator", () => {
 
       const result = await bashCommandValidatorHook(context);
       expect(result.success).toBe(false);
-      expect(result.data?.modifiedInput?._validation_errors).toBeDefined();
-      expect(result.data?.modifiedInput._validation_errors).toHaveLength(1);
+      const modified = (result.data as any)?.modifiedInput as
+        | { _validation_errors?: unknown[] }
+        | undefined;
+      expect(modified?._validation_errors).toBeDefined();
+      expect(modified?._validation_errors?.length).toBe(1);
     });
   });
 

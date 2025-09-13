@@ -1,10 +1,16 @@
 {
   "name": "@carabiner/hooks-testing",
-  "version": "0.1.0",
   "description": "Testing utilities for Carabiner hooks",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "version": "0.1.0-alpha",
+  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "dependencies": {
+    "@carabiner/hooks-core": "0.1.0-alpha",
+    "@carabiner/hooks-validators": "0.1.0-alpha"
+  },
+  "devDependencies": {
+    "@types/bun": "*",
+    "typescript": "^5.9.2"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -15,6 +21,17 @@
     "dist",
     "README.md"
   ],
+  "keywords": [
+    "carabiner",
+    "hooks",
+    "testing",
+    "utilities"
+  ],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "peerDependencies": {
+    "bun-types": "^1.0.25"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -23,27 +40,10 @@
     "build:clean": "rm -rf dist",
     "build:tsc": "tsc --project tsconfig.build.json",
     "dev": "tsc --watch --project tsconfig.build.json",
+    "prepublishOnly": "bun run build",
     "test": "bun test",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build"
+    "typecheck": "tsc --noEmit"
   },
-  "keywords": [
-    "carabiner",
-    "hooks",
-    "testing",
-    "utilities"
-  ],
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
-  "license": "MIT",
-  "dependencies": {
-    "@carabiner/hooks-core": "workspace:*",
-    "@carabiner/hooks-validators": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "*",
-    "typescript": "^5.9.2"
-  },
-  "peerDependencies": {
-    "bun-types": "^1.0.25"
-  }
+  "type": "module",
+  "types": "./dist/index.d.ts"
 }

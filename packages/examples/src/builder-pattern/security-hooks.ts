@@ -90,8 +90,8 @@ const rateLimitWriteHook = HookBuilder.forPreToolUse()
   .withPriority(90)
   .withHandler(async (context) => {
     const rateLimitResult = await checkRateLimit(
-      context.sessionId,
-      context.toolName
+      String(context.sessionId),
+      String(context.toolName)
     );
 
     if (!rateLimitResult.allowed) {
@@ -123,13 +123,14 @@ const fileAccessControlHook = HookBuilder.forPreToolUse()
     }, "File path is required for file operations")
   )
   .withHandler(async (context) => {
-    const filePath = (context.toolInput as Record<string, unknown>).file_path;
+    const filePath = (context.toolInput as Record<string, unknown>)
+      .file_path as string;
 
     // Check file access permissions
     const accessCheck = await checkFileAccess(
-      filePath,
-      context.toolName,
-      context.cwd
+      String(filePath),
+      String(context.toolName),
+      String(context.cwd)
     );
 
     if (!accessCheck.allowed) {
@@ -137,7 +138,11 @@ const fileAccessControlHook = HookBuilder.forPreToolUse()
     }
 
     // Log file access for audit trail
-    await logFileAccess(context.sessionId, context.toolName, filePath);
+    await logFileAccess(
+      String(context.sessionId),
+      String(context.toolName),
+      String(filePath)
+    );
 
     return HookResults.success("File access authorized", {
       filePath,
@@ -155,7 +160,7 @@ const commandMonitoringHook = createHook.preToolUse("Bash", (context) => {
     typeof context.toolInput === "object" &&
     "command" in context.toolInput
   ) {
-    const command = (context.toolInput as Record<string, unknown>).command;
+    const cmd = (context.toolInput as Record<string, unknown>).command;
 
     // Monitor for suspicious command patterns
     const suspiciousPatterns = [
@@ -166,7 +171,11 @@ const commandMonitoringHook = createHook.preToolUse("Bash", (context) => {
     ];
 
     for (const { pattern, description } of suspiciousPatterns) {
-      if (pattern.test(command) && Bun.env.NODE_ENV === "production") {
+      if (
+        typeof cmd === "string" &&
+        pattern.test(cmd) &&
+        Bun.env.NODE_ENV === "production"
+      ) {
         // In production, block these suspicious commands
         return HookResults.block(`Blocked suspicious command: ${description}`);
       }
@@ -179,18 +188,20 @@ const commandMonitoringHook = createHook.preToolUse("Bash", (context) => {
 /**
  * Universal security hook - runs for ALL tools
  */
-const universalSecurityHook = createHook.preToolUse((context) => {
+const universalSecurityHook = createHook.preToolUse(async (context) => {
   // Basic universal checks
   if (context.sessionId.length < 10) {
     return HookResults.block("Invalid session ID format");
   }
 
   // Environment-based restrictions
-  if (
-    Bun.env.NODE_ENV === "production" &&
-    !context.cwd.startsWith("/safe/workspace/")
-  ) {
-    return HookResults.block("Workspace access restricted in production");
+  if (Bun.env.NODE_ENV === "production") {
+    const { resolve, relative, isAbsolute } = await import("node:path");
+    const base = "/safe/workspace";
+    const rel = relative(base, resolve(context.cwd));
+    if (rel.startsWith("..") || isAbsolute(rel)) {
+      return HookResults.block("Workspace access restricted in production");
+    }
   }
 
   return HookResults.success("Universal security check passed");
@@ -224,12 +235,12 @@ async function performAdvancedSecurityChecks(
 function validateCodeContent(content: string): void {
   // Check for potential code injection patterns
   const injectionPatterns = [
-    /eval\s*\(\s*[^)]*\$/, // Dynamic eval with variables
-    /Function\s*\(\s*[^)]*\$/, // Dynamic Function constructor
-    /setTimeout\s*\(\s*["'].*\$/, // setTimeout with string
-    /setInterval\s*\(\s*["'].*\$/, // setInterval with string
-    /document\.write\s*\(/, // DOM manipulation
-    /<script[^>]*>/, // Script tags in content
+    /eval\s*\([^)]*\)/i, // Dynamic eval
+    /new\s+Function\s*\([^)]*\)/i, // Function constructor
+    /setTimeout\s*\(\s*["'][^"']*["']\s*,/i,
+    /setInterval\s*\(\s*["'][^"']*["']\s*,/i,
+    /document\.write\s*\(/i,
+    /<script[^>]*>/i,
   ];
 
   for (const pattern of injectionPatterns) {
@@ -333,7 +344,9 @@ async function checkFileAccess(
   operation: string,
   cwd: string
 ): Promise<FileAccessResult> {
-  const { resolve, relative, isAbsolute } = await import("node:path");
+  const { resolve, relative, isAbsolute, sep, basename } = await import(
+    "node:path"
+  );
 
   // Ensure file is within workspace
   const resolvedPath = resolve(cwd, filePath);
@@ -347,23 +360,20 @@ async function checkFileAccess(
     };
   }
 
-  // Define restricted paths
-  const restrictedPaths = [
-    "node_modules/",
-    ".git/",
-    ".env",
-    "private/",
-    "secrets/",
-  ];
+  // Define restricted dirs/files
+  const restrictedDirs = ["node_modules", ".git", "private", "secrets"];
+  const restrictedFiles = [".env"];
 
-  for (const restricted of restrictedPaths) {
-    if (filePath.includes(restricted)) {
-      return {
-        allowed: false,
-        level: "read",
-        reason: `Access to ${restricted} is restricted`,
-      };
-    }
+  const segments = resolvedPath.split(sep);
+  if (
+    restrictedDirs.some((d) => segments.includes(d)) ||
+    restrictedFiles.includes(basename(resolvedPath))
+  ) {
+    return {
+      allowed: false,
+      level: "read",
+      reason: "Access to restricted path is denied",
+    };
   }
 
   // Different permissions based on operation
@@ -387,6 +397,7 @@ function logFileAccess(
     filePath,
     type: "file-access",
   };
+  void _logEntry;
 }
 
 /**

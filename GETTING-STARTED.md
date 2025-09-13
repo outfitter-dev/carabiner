@@ -7,7 +7,7 @@ Carabiner is a TypeScript framework for building type-safe hooks for AI assistan
 Install the core packages:
 
 ```bash
-bun add @carabiner/types @carabiner/hooks-core @carabiner/execution @carabiner/registry
+bun add @carabiner/types @carabiner/hooks-core @carabiner/execution
 ```
 
 For development, also install:
@@ -112,7 +112,7 @@ test('my hook blocks dangerous operations', async () => {
     toolInput: { file_path: '.env' }
   });
 
-  const result = await myFirstHook(context);
+  const result = await myHook(context);
   
   expect(result.success).toBe(false);
   expect(result.message).toContain('blocked');

@@ -61,6 +61,16 @@ export {
 } from "./runtime";
 // Export all types
 export type * from "./types";
+// Export environment utilities
+export {
+  getEnv,
+  getEnvVar,
+  isBun,
+  isDebug,
+  isDevelopment,
+  isProduction,
+  isTest,
+} from "./utils/env";
 
 // Version export (derived from package.json)
 import type { PackageJson } from "type-fest";
