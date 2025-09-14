@@ -1,5 +1,5 @@
 /**
- * @outfitter/types - Type system foundation for Claude Code hooks
+ * @carabiner/types - Type system foundation for Claude Code hooks
  *
  * This package provides:
  * - Branded types for compile-time safety and runtime validation
