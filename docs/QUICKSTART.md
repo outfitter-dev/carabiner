@@ -10,6 +10,7 @@ Welcome to Grapple, the production-ready TypeScript library for building Carabin
 - [Tool Scoping](#tool-scoping)
 - [Testing Your Hooks](#testing-your-hooks)
 - [Next Steps](#next-steps)
+- [CLI Usage](#cli-usage)
 
 ## Installation
 
@@ -160,6 +161,32 @@ Add the hook to your Claude Code settings. Create or edit `.claude/settings.json
     }
   }
 }
+```
+
+## CLI Usage
+
+Carabiner ships a CLI for discovering, installing, running, and publishing hooks.
+
+```bash
+# List hooks discovered from project, global, and built-ins
+carabiner list
+
+# Run a hook by name (reads JSON from stdin)
+echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}' | carabiner bash-command-validator
+
+# Interactive discovery + install
+carabiner browse
+carabiner add bash-command-validator
+
+# Validate and publish a hook
+carabiner publish --npm
+```
+
+The CLI is available as a Node ESM entry (`bin/carabiner.mjs`) and as a standalone Bun binary. To build the binary locally:
+
+```bash
+bun run build:bin
+./carabiner-binary --help
 ```
 
 ## Understanding Hook Events

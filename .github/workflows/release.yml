@@ -98,33 +98,11 @@ jobs:
           # Update root package.json
           current_version=$(node -p "require('./package.json').version")
 
-          # Calculate new version
-          IFS='.' read -ra VERSION_PARTS <<< "$current_version"
-          major=${VERSION_PARTS[0]}
-          minor=${VERSION_PARTS[1]}
-          patch=${VERSION_PARTS[2]}
-
-          case $bump_type in
-            major)
-              major=$((major + 1))
-              minor=0
-              patch=0
-              ;;
-            minor)
-              minor=$((minor + 1))
-              patch=0
-              ;;
-            patch)
-              patch=$((patch + 1))
-              ;;
-            prerelease)
-              # Use semver CLI to compute next pre-release, preserving/setting preid=beta
-              new_version="$(bunx --yes semver -i prerelease "$current_version" --preid beta)"
-              ;;
-          esac
-
-          if [[ "$bump_type" != "prerelease" ]]; then
-            new_version="$major.$minor.$patch"
+          # Compute next version using semver CLI (handles pre-release/build metadata safely)
+          if [[ "$bump_type" == "prerelease" ]]; then
+            new_version="$(bunx --yes semver -i prerelease "$current_version" --preid beta)"
+          else
+            new_version="$(bunx --yes semver -i "$bump_type" "$current_version")"
           fi
 
           echo "New version: $new_version"
@@ -185,15 +163,15 @@ jobs:
 
           # Group commits by type
           echo "### Features" >> CHANGELOG_TEMP.md
-          git log --format='* %s (%h)' $range | grep -E '^.*feat(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -E '^feat(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
 
           echo "" >> CHANGELOG_TEMP.md
           echo "### Bug Fixes" >> CHANGELOG_TEMP.md
-          git log --format='* %s (%h)' $range | grep -E '^.*fix(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -E '^fix(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
 
           echo "" >> CHANGELOG_TEMP.md
           echo "### Other Changes" >> CHANGELOG_TEMP.md
-          git log --format='* %s (%h)' $range | grep -vE '^.*(feat|fix)(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -vE '^(feat|fix)(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
 
           # Prepend to existing changelog
           if [ -f CHANGELOG.md ]; then

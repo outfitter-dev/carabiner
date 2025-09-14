@@ -6,7 +6,7 @@
 export type {
   MockContextOptions,
   MockEnvironmentConfig,
-} from "./mock";
+} from "@/hooks-testing/src/mock";
 // Export mock utilities
 export {
   createMockContext,
@@ -15,13 +15,13 @@ export {
   mockEnv,
   mockToolInputs,
   TestUtils,
-} from "./mock";
+} from "@/hooks-testing/src/mock";
 export type {
   HookTestConfig,
   TestExecutionResult,
   TestSuiteConfig,
   TestSuiteResult,
-} from "./test-framework";
+} from "@/hooks-testing/src/test-framework";
 // Export test framework
 export {
   HookTest,
@@ -32,7 +32,7 @@ export {
   test,
   testBuilders,
   testRunner,
-} from "./test-framework";
+} from "@/hooks-testing/src/test-framework";
 
 // Version export (derived from package.json)
 import pkg from "../package.json" with { type: "json" };

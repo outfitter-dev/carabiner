@@ -27,6 +27,13 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Agent/conductor artifacts (exclude from linting/formatting)
 .conductor/
+.carabiner/
+
+# Testing environments
+.sandbox/
+!.sandbox/runner.ts
+!.sandbox/README.md
+.claude-test/
 
 # Environment files
 .env
@@ -38,3 +45,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .turbo/
 **/.turbo/
 .conductor/
+.carabiner/
+carabiner-binary
