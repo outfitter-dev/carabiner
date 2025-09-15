@@ -1,5 +1,5 @@
 /**
- * @outfitter/hooks-testing
+ * @carabiner/hooks-testing
  * Testing utilities for Claude Code hooks
  */
 
