@@ -1,3 +1,3 @@
 # packages/CLAUDE.md
 
-Base instructions: @.agent/prompts/CORE.md @.agent/rules/IMPORTANT.md @.agent/rules/DEVELOPMENT.md
+Base instructions: @.agents/prompts/CORE.md @.agents/rules/IMPORTANT.md @.agents/rules/DEVELOPMENT.md
