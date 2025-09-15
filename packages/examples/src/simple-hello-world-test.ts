@@ -23,7 +23,7 @@ async function runSimpleTest() {
     parameters: {
       command: 'echo "Hello from Carabiner!"',
     },
-    sessionId: "test-" + Date.now(),
+    sessionId: `test-${Date.now()}`,
     timestamp: Date.now(),
     environment: {},
   };
