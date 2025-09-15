@@ -17,11 +17,63 @@ import type { HookManifest } from "../types/manifest";
 /**
  * Create package.json for npm publishing
  */
-function createPackageJson(manifest: HookManifest): Record<string, any> {
+function createPackageJson(manifest: HookManifest, hookDir: string): Record<string, any> {
   const base = manifest.name.replace(/[^a-z0-9-]/gi, "-").toLowerCase();
   const pkgName = manifest.name.startsWith("@carabiner/")
     ? manifest.name.toLowerCase()
     : `@carabiner/hook-${base}`;
+
+  // Determine main entry point based on actual files
+  let mainEntry = "index.js";
+  if (manifest.files?.main && existsSync(join(hookDir, manifest.files.main))) {
+    mainEntry = manifest.files.main;
+  } else if (existsSync(join(hookDir, "dist/index.js"))) {
+    mainEntry = "dist/index.js";
+  } else if (existsSync(join(hookDir, "index.js"))) {
+    mainEntry = "index.js";
+  }
+
+  // Build files list based on actual files present
+  const filesList: string[] = [];
+  const possibleFiles = [
+    mainEntry,
+    "index.ts",
+    "manifest.json",
+    "README.md",
+    "LICENSE",
+    "dist/**/*",
+  ];
+
+  for (const file of possibleFiles) {
+    if (file.includes("*")) {
+      // Handle glob patterns like dist/**/*
+      const baseDir = file.split("/")[0];
+      if (baseDir && existsSync(join(hookDir, baseDir))) {
+        filesList.push(file);
+      }
+    } else if (existsSync(join(hookDir, file))) {
+      filesList.push(file);
+    }
+  }
+
+  // Add types if they exist
+  let typesEntry: string | undefined;
+  if (manifest.files?.types && existsSync(join(hookDir, manifest.files.types))) {
+    typesEntry = manifest.files.types;
+    if (!filesList.includes(typesEntry)) {
+      filesList.push(typesEntry);
+    }
+  } else if (existsSync(join(hookDir, "index.d.ts"))) {
+    typesEntry = "index.d.ts";
+    if (!filesList.includes(typesEntry)) {
+      filesList.push(typesEntry);
+    }
+  } else if (existsSync(join(hookDir, "dist/index.d.ts"))) {
+    typesEntry = "dist/index.d.ts";
+    if (!filesList.includes(typesEntry)) {
+      filesList.push(typesEntry);
+    }
+  }
 
   return {
     name: pkgName,
@@ -29,8 +81,8 @@ function createPackageJson(manifest: HookManifest): Record<string, any> {
     description: manifest.description,
     author: manifest.author,
     license: manifest.license || "MIT",
-    main: manifest.files?.main || "index.js",
-    types: manifest.files?.types,
+    main: mainEntry,
+    types: typesEntry,
     keywords: [
       "carabiner",
       "carabiner-hook",
@@ -38,7 +90,7 @@ function createPackageJson(manifest: HookManifest): Record<string, any> {
       "hooks",
       ...(manifest.tags || []),
     ],
-    files: ["index.js", "index.ts", "manifest.json", "README.md", "LICENSE"],
+    files: filesList,
     repository: manifest.repository,
     carabiner: {
       manifest,
@@ -321,19 +373,22 @@ export async function publishHook(
   );
 
   // Publish to specified targets
-  let success = false;
+  const results: { [key: string]: boolean } = {};
+  const targetsRequested: string[] = [];
 
   if (options.npm) {
-    success = await publishToNpm(hookDir);
-    if (success) {
+    targetsRequested.push('npm');
+    results.npm = await publishToNpm(hookDir);
+    if (results.npm) {
       console.log(`✅ Published to npm as @carabiner/hook-${manifest.name}`);
       console.log(`   Install with: carabiner add ${manifest.name}`);
     }
   }
 
   if (options.github) {
-    success = await publishToGitHub(hookDir);
-    if (success) {
+    targetsRequested.push('github');
+    results.github = await publishToGitHub(hookDir);
+    if (results.github) {
       console.log(`✅ Created GitHub release v${manifest.version}`);
     }
   }
@@ -341,6 +396,7 @@ export async function publishHook(
   if (options.registry) {
     // TODO: Publish to custom Carabiner registry
     console.log("📝 Custom registry publishing coming soon!");
+    // Don't include in results since it's not implemented yet
   }
 
   if (!(options.npm || options.github || options.registry)) {
@@ -350,9 +406,14 @@ Choose a publishing target:
   carabiner publish --github   Create GitHub release
   carabiner publish --registry https://registry.carabiner.dev
 `);
+    return false; // No targets requested
   }
 
-  return success;
+  // Return true only if all requested publishes succeeded
+  const overallSuccess = targetsRequested.length > 0 &&
+    targetsRequested.every(target => results[target] === true);
+
+  return overallSuccess;
 }
 
 /**

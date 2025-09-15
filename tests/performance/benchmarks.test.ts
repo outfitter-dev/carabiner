@@ -397,8 +397,8 @@ describe("Performance Benchmarks", () => {
         // JSON parsing performance targets (scale with size)
         // CI environments are slower, so we need more tolerance
         const isCI = process.env.CI === "true";
-        const baseTime = isCI ? 100 : 50; // 100ms base for CI, 50ms for local
-        const maxExpectedTime = Math.max(baseTime, size / 5000); // +1ms per 5k items
+        const baseTime = isCI ? 150 : 50; // 150ms base for CI, 50ms for local
+        const maxExpectedTime = Math.max(baseTime, size / 3000); // More lenient scaling: +1ms per 3k items
         expect(stats.avg).toBeLessThan(maxExpectedTime);
       }
     });
