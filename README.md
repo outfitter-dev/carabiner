@@ -269,13 +269,33 @@ const typedHook: HookHandler<'PreToolUse'> = async (context) => {
 - **PostResponse**: After response sent
 - **OnError**: Error handling
 
+## 🧰 CLI
+
+Use the Carabiner CLI to discover, install, run, and publish hooks:
+
+```bash
+# List and run hooks
+carabiner list
+carabiner bash-command-validator
+
+# Discover and install
+carabiner browse
+carabiner add bash-command-validator
+
+# Publish a hook
+carabiner publish --npm
+```
+
+The CLI is available via Node (ESM) or as a Bun-compiled standalone binary. See Quickstart for setup.
+
 ## 📚 Documentation
 
-- [Getting Started Guide](./GETTING-STARTED.md)
+- [Quickstart](./docs/QUICKSTART.md)
 - [API Reference](./docs/api-reference/)
 - [Configuration Guide](./docs/configuration.md)
 - [Testing Guide](./docs/testing.md)
 - [Example Hooks](./packages/examples/)
+ - [Registry + CLI Guide](./docs/registry/README.md)
 
 ## 🤝 Contributing
 

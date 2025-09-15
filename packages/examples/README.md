@@ -24,6 +24,18 @@ echo '{"session_id":"test-123","hook_event_name":"PreToolUse","tool_name":"Bash"
 
 ```
 
+### Using the CLI with Built-in Examples
+
+If `@carabiner/hooks-examples` is installed, the `carabiner` CLI can resolve built-in example hooks directly:
+
+```bash
+# List hooks from project, global, and built-ins
+carabiner list
+
+# Run the Bash command validator example
+carabiner bash-command-validator
+```
+
 ## 📁 Example Categories
 
 ### 1. Function-Based API (`src/function-based/`)

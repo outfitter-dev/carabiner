@@ -23,8 +23,8 @@
     "ultracite": "^5.3.4"
   },
   "engines": {
-    "node": ">=20",
-    "bun": "1.2.21"
+    "node": ">=22.0.0",
+    "bun": ">=1.0.0"
   },
   "homepage": "https://github.com/outfitter-dev/carabiner#readme",
   "keywords": [
@@ -42,6 +42,7 @@
   "scripts": {
     "build": "turbo build",
     "build:all": "turbo build",
+    "build:bin": "bun --cwd packages/hooks-cli run build:bin",
     "build:packages": "turbo build --filter='./packages/*'",
     "changeset": "changeset",
     "changeset:publish": "bun run build:packages && changeset publish",
@@ -68,6 +69,10 @@
     "lint:packages": "find packages -name 'package.json' -path '*/packages/*/package.json' -exec dirname {} \\; | xargs -I {} bash -c 'cd \"{}\" && publint'",
     "prepare": "lefthook install",
     "release:check": "bun run ci:full && bun run lint:packages",
+    "sandbox": "bun run .sandbox/runner.ts",
+    "sandbox:bench": "bun run .sandbox/runner.ts bench",
+    "sandbox:list": "bun run .sandbox/runner.ts list",
+    "sandbox:test": "bun run .sandbox/runner.ts test",
     "setup:tests": "bun scripts/setup-tests.ts",
     "sync:versions": "bun scripts/sync-biome-version.ts",
     "syncpack:check": "syncpack lint",

@@ -4,16 +4,21 @@
   "version": "0.1.0-alpha",
   "author": "Matt Galligan <matt.galligan@gmail.com>",
   "bin": {
-    "carabiner": "./dist/cli.js"
+    "carabiner": "./bin/carabiner.mjs"
   },
   "dependencies": {
     "@carabiner/hooks-config": "0.1.0-alpha",
     "@carabiner/hooks-core": "0.1.0-alpha",
-    "@carabiner/hooks-validators": "0.1.0-alpha"
+    "@carabiner/hooks-validators": "0.1.0-alpha",
+    "@inquirer/prompts": "^7.2.1"
   },
   "devDependencies": {
     "@types/bun": "*",
     "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "bun": ">=1.0.0"
   },
   "exports": {
     ".": {
@@ -23,6 +28,7 @@
   },
   "files": [
     "dist",
+    "bin",
     "templates",
     "README.md"
   ],
@@ -39,6 +45,7 @@
   },
   "scripts": {
     "build": "bun run build:clean && bun run build:tsc",
+    "build:bin": "bun build --compile --target=bun --outfile=../../carabiner-binary ./bin/carabiner.ts",
     "build:clean": "rm -rf dist",
     "build:tsc": "tsc --project tsconfig.build.json",
     "dev": "tsc --watch --project tsconfig.build.json",
