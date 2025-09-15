@@ -270,10 +270,14 @@ export default async function auditLogger(context: HookContext): Promise<HookRes
 
 function hashUserId(userId: string): string {
   // Simple hash for demo - use proper crypto in production
-  return userId.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0).toString(16);
+  return userId
+    .split("")
+    .reduce((a, b) => {
+      a = a * 31 + b.charCodeAt(0);
+      // Keep within safe integer space without bitwise ops
+      return Math.imul(a, 1);
+    }, 0)
+    .toString(16);
 }
 
 function hashInput(input: any): string {

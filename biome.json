@@ -13,11 +13,43 @@
   "files": {
     "ignoreUnknown": true,
     "includes": ["**/*.{js,ts,jsx,tsx,json,jsonc}"],
-    "experimentalScannerIgnores": ["**/.conductor/**"]
+    "experimentalScannerIgnores": [
+      "**/.conductor/**",
+      ".carabiner/**",
+      "packages/**/bin/**/*.mjs"
+    ]
   },
   "vcs": {
     "useIgnoreFile": true
   },
+  "overrides": [
+    {
+      "includes": ["packages/**/bin/**/*.mjs"],
+      "linter": {
+        "enabled": false
+      },
+      "formatter": {
+        "enabled": false
+      }
+    },
+    {
+      "includes": [
+        "packages/hooks-cli/bin/**/*.{js,mjs,ts}",
+        "packages/hooks-cli/src/**/*.{js,ts,tsx}"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off",
+            "noAssignInExpressions": "off"
+          },
+          "nursery": {
+            "useConsistentTypeDefinitions": "off"
+          }
+        }
+      }
+    }
+  ],
   "linter": {
     "rules": {
       "style": {

@@ -1,2 +1,10 @@
 # Test files that require special patterns
 tests/production/production-scenarios.test.ts.conductor/
+
+# Local hooks and generated content
+.carabiner/**
+# Build outputs
+**/dist/**
+**/build/**
+# Binaries and compiled CLI shims
+packages/**/bin/**/*.mjs
