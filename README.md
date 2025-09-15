@@ -64,6 +64,22 @@ packages/
 
 ## 🎯 Quick Start
 
+> **New to Carabiner?** Start with our [**Hello World Tutorial**](./docs/hello-world.md) - build your first hook in under 5 minutes!
+
+### Your First Hook in 30 Seconds
+
+```typescript
+import { createHook, HookResults } from '@carabiner/hooks-core';
+
+// Create a simple hook that runs before any tool
+const myFirstHook = createHook.preToolUse(async (context) => {
+  console.log(`🎯 Tool ${context.tool} is about to run!`);
+  return HookResults.success();
+});
+
+// That's it! Your hook is ready to use
+```
+
 ### Function-Based API (Simple & Clean)
 
 ```typescript
