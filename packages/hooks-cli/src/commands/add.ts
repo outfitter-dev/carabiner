@@ -54,7 +54,10 @@ async function fetchFromRegistry(
         return {
           name: hookName,
           description: pkg.description,
-          author: pkg.author?.name || pkg.author,
+          author:
+            typeof pkg.author === "object"
+              ? pkg.author?.name || ""
+              : pkg.author || "",
           version: pkg.version,
           source: `npm:${hookName}`,
           dependencies: pkg.carabiner?.dependencies,
@@ -74,7 +77,10 @@ async function fetchFromRegistry(
         return {
           name: hookName,
           description: pkg.description,
-          author: pkg.author?.name || pkg.author,
+          author:
+            typeof pkg.author === "object"
+              ? pkg.author?.name || ""
+              : pkg.author || "",
           version: pkg.version,
           source: `npm:${officialName}`,
           dependencies: pkg.carabiner?.dependencies,
@@ -97,7 +103,10 @@ async function fetchFromRegistry(
           return {
             name: hookName,
             description: pkg.description,
-            author: pkg.author?.name || pkg.author,
+            author:
+              typeof pkg.author === "object"
+                ? pkg.author?.name || ""
+                : pkg.author || "",
             version: pkg.version,
             source: `npm:${pkg.name}`,
             dependencies: pkg.carabiner?.dependencies,
@@ -163,7 +172,9 @@ export async function installHook(
   console.log(`📦 Installing ${hookName}...`);
 
   // Check if hook already exists
-  const hookDir = join(targetDir, hookName.split("/").pop()!);
+  const parts = hookName.split("/");
+  const hookBaseName = parts.at(-1) || hookName;
+  const hookDir = join(targetDir, hookBaseName);
   if (existsSync(hookDir) && !options.force) {
     console.error("❌ Hook already exists. Use --force to overwrite.");
     return false;
@@ -292,7 +303,12 @@ if (import.meta.main) {
     withDependencies: !args.includes("--no-deps"),
   };
 
-  installHook(hookName, options).then((success) => {
-    process.exit(success ? 0 : 1);
-  });
+  installHook(hookName, options)
+    .then((success) => {
+      process.exit(success ? 0 : 1);
+    })
+    .catch((error) => {
+      console.error(`Installation failed: ${error.message}`);
+      process.exit(1);
+    });
 }
