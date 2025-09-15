@@ -169,11 +169,13 @@ async function publishToNpm(hookDir: string): Promise<boolean> {
   );
 
   // Create package.json
-  const packageJson = createPackageJson(manifest);
-  writeFileSync(
-    join(hookDir, "package.json"),
-    JSON.stringify(packageJson, null, 2)
-  );
+  const pkgPath = join(hookDir, "package.json");
+  if (existsSync(pkgPath)) {
+    console.error("package.json already exists; refusing to overwrite. Specify fields in manifest.json or remove package.json.");
+    return false;
+  }
+  const packageJson = createPackageJson(manifest, hookDir);
+  writeFileSync(pkgPath, JSON.stringify(packageJson, null, 2));
 
   // Create README if not exists
   if (!existsSync(join(hookDir, "README.md"))) {

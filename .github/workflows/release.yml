@@ -163,15 +163,15 @@ jobs:
 
           # Group commits by type
           echo "### Features" >> CHANGELOG_TEMP.md
-          git log --format='* %s (%h)' $range | grep -E '^feat(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -Ei '^\* (feat(\(.+\))?:)' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
 
           echo "" >> CHANGELOG_TEMP.md
           echo "### Bug Fixes" >> CHANGELOG_TEMP.md
-          git log --format='* %s (%h)' $range | grep -E '^fix(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -Ei '^\* (fix(\(.+\))?:)' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
 
           echo "" >> CHANGELOG_TEMP.md
           echo "### Other Changes" >> CHANGELOG_TEMP.md
-          git log --format='* %s (%h)' $range | grep -vE '^(feat|fix)(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
+          git log --format='* %s (%h)' $range | grep -viE '^\* (feat|fix)(\(.+\))?:' >> CHANGELOG_TEMP.md || echo "None" >> CHANGELOG_TEMP.md
 
           # Prepend to existing changelog
           if [ -f CHANGELOG.md ]; then
