@@ -2,7 +2,8 @@
   "name": "@carabiner/hooks-testing",
   "description": "Testing utilities for Carabiner hooks",
   "version": "0.1.0-alpha",
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "author": "Outfitter Dev <hello@outfitter.dev>",
+  "bugs": "https://github.com/outfitter-dev/carabiner/issues",
   "dependencies": {
     "@carabiner/hooks-core": "0.1.0-alpha",
     "@carabiner/hooks-validators": "0.1.0-alpha"
@@ -21,10 +22,16 @@
     "dist",
     "README.md"
   ],
+  "homepage": "https://github.com/outfitter-dev/carabiner/tree/main/packages/hooks-testing#readme",
   "keywords": [
+    "ai-tools",
+    "automation",
     "carabiner",
+    "claude-code",
+    "developer-tools",
     "hooks",
     "testing",
+    "typescript",
     "utilities"
   ],
   "license": "MIT",
@@ -34,6 +41,11 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/outfitter-dev/carabiner.git",
+    "directory": "packages/hooks-testing"
   },
   "scripts": {
     "build": "bun run build:clean && bun run build:tsc",

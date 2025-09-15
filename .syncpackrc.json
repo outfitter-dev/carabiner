@@ -1,4 +1,58 @@
 {
   "$schema": "./node_modules/syncpack/schema.json",
-  "indent": "  "
+  "indent": "  ",
+  "semverGroups": [
+    {
+      "label": "Use caret ranges for external dependencies",
+      "packages": ["**"],
+      "dependencies": ["**", "!@carabiner/*"],
+      "dependencyTypes": ["dev", "prod"],
+      "range": "^"
+    },
+    {
+      "label": "Internal workspace packages use exact versions",
+      "packages": ["**"],
+      "dependencies": ["@carabiner/*"],
+      "dependencyTypes": ["prod", "peer"],
+      "range": ""
+    }
+  ],
+  "versionGroups": [
+    {
+      "label": "Ensure TypeScript version consistency",
+      "packages": ["**"],
+      "dependencies": ["typescript"],
+      "policy": "same"
+    },
+    {
+      "label": "Ensure type-fest version consistency",
+      "packages": ["**"],
+      "dependencies": ["type-fest"],
+      "policy": "same"
+    },
+    {
+      "label": "Ensure ultracite version consistency",
+      "packages": ["**"],
+      "dependencies": ["ultracite"],
+      "policy": "same"
+    },
+    {
+      "label": "Ensure @types/node version consistency",
+      "packages": ["**"],
+      "dependencies": ["@types/node"],
+      "policy": "same"
+    },
+    {
+      "label": "Ensure @types/bun version consistency",
+      "packages": ["**"],
+      "dependencies": ["@types/bun"],
+      "policy": "same"
+    },
+    {
+      "label": "Ensure bun-types version consistency",
+      "packages": ["**"],
+      "dependencies": ["bun-types"],
+      "policy": "same"
+    }
+  ]
 }

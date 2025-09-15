@@ -2,10 +2,11 @@
   "name": "@carabiner/hooks-cli",
   "description": "CLI tools for Carabiner hooks development",
   "version": "0.1.0-alpha",
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "author": "Outfitter Dev <hello@outfitter.dev>",
   "bin": {
     "carabiner": "./bin/carabiner.mjs"
   },
+  "bugs": "https://github.com/outfitter-dev/carabiner/issues",
   "dependencies": {
     "@carabiner/hooks-config": "0.1.0-alpha",
     "@carabiner/hooks-core": "0.1.0-alpha",
@@ -32,16 +33,26 @@
     "templates",
     "README.md"
   ],
+  "homepage": "https://github.com/outfitter-dev/carabiner/tree/main/packages/hooks-cli#readme",
   "keywords": [
+    "ai-tools",
+    "automation",
     "carabiner",
+    "claude-code",
     "cli",
-    "development-tools",
-    "hooks"
+    "developer-tools",
+    "hooks",
+    "typescript"
   ],
   "license": "MIT",
   "main": "./dist/index.js",
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/outfitter-dev/carabiner.git",
+    "directory": "packages/hooks-cli"
   },
   "scripts": {
     "build": "bun run build:clean && bun run build:tsc",
