@@ -3,11 +3,18 @@
   "indent": "  ",
   "semverGroups": [
     {
-      "label": "Use caret ranges for all dependencies",
+      "label": "Use caret ranges for external dependencies",
       "packages": ["**"],
-      "dependencies": ["**"],
-      "dependencyTypes": ["dev", "prod", "peer"],
+      "dependencies": ["**", "!@carabiner/*"],
+      "dependencyTypes": ["dev", "prod"],
       "range": "^"
+    },
+    {
+      "label": "Internal workspace packages use exact versions",
+      "packages": ["**"],
+      "dependencies": ["@carabiner/*"],
+      "dependencyTypes": ["prod", "peer"],
+      "range": ""
     }
   ],
   "versionGroups": [
@@ -39,6 +46,12 @@
       "label": "Ensure @types/bun version consistency",
       "packages": ["**"],
       "dependencies": ["@types/bun"],
+      "policy": "same"
+    },
+    {
+      "label": "Ensure bun-types version consistency",
+      "packages": ["**"],
+      "dependencies": ["bun-types"],
       "policy": "same"
     }
   ]

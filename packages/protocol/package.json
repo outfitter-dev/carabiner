@@ -9,7 +9,7 @@
     "@carabiner/types": "0.1.0-alpha"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "*",
     "typescript": "^5.9.2"
   },
   "exports": {
@@ -21,7 +21,7 @@
   "files": [
     "dist"
   ],
-  "homepage": "https://github.com/outfitter-dev/carabiner#readme",
+  "homepage": "https://github.com/outfitter-dev/carabiner/tree/main/packages/protocol#readme",
   "keywords": [
     "abstraction",
     "ai-tools",
