@@ -41,6 +41,11 @@
       "import": "./dist/audit-logger/index.js"
     }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": [
     "audit",
     "carabiner",

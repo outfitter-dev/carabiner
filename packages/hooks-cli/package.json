@@ -30,7 +30,8 @@
     "dist",
     "bin",
     "templates",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "keywords": [
     "carabiner",

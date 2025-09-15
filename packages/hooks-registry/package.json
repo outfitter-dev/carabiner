@@ -29,7 +29,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "keywords": [
     "claude-code",
@@ -40,6 +41,9 @@
   ],
   "license": "MIT",
   "main": "./dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
     "markdownlint-cli2": "^0.18.1",
     "prettier": "^3.6.2"

@@ -9,7 +9,15 @@
       "@carabiner/hooks-validators",
       "@carabiner/hooks-config",
       "@carabiner/hooks-testing",
-      "@carabiner/hooks-cli"
+      "@carabiner/hooks-cli",
+      "@carabiner/execution",
+      "@carabiner/protocol",
+      "@carabiner/types",
+      "@carabiner/schemas",
+      "@carabiner/error-management",
+      "@carabiner/hooks-registry",
+      "@carabiner/registry",
+      "@carabiner/plugins"
     ]
   ],
   "access": "public",
