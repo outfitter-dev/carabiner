@@ -2,7 +2,8 @@
   "name": "@carabiner/hooks-core",
   "description": "Core TypeScript types and runtime utilities for Carabiner hooks",
   "version": "0.1.0-alpha",
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "author": "Outfitter Dev <hello@outfitter.dev>",
+  "bugs": "https://github.com/outfitter-dev/carabiner/issues",
   "dependencies": {
     "pino": "^9.8.0"
   },
@@ -31,8 +32,13 @@
     "dist",
     "README.md"
   ],
+  "homepage": "https://github.com/outfitter-dev/carabiner#readme",
   "keywords": [
+    "ai-tools",
+    "automation",
     "carabiner",
+    "claude-code",
+    "developer-tools",
     "hooks",
     "types",
     "typescript"
@@ -44,6 +50,11 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/outfitter-dev/carabiner.git",
+    "directory": "packages/hooks-core"
   },
   "scripts": {
     "build": "bun run build:clean && bun run build:tsc",

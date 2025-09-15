@@ -2,7 +2,8 @@
   "name": "@carabiner/types",
   "description": "Type system foundation for Carabiner hooks",
   "version": "0.1.0-alpha",
-  "author": "Matt Galligan <matt@outfitter.dev>",
+  "author": "Outfitter Dev <hello@outfitter.dev>",
+  "bugs": "https://github.com/outfitter-dev/carabiner/issues",
   "dependencies": {
     "type-fest": "^4.41.0"
   },
@@ -36,15 +37,25 @@
     "dist",
     "src"
   ],
+  "homepage": "https://github.com/outfitter-dev/carabiner#readme",
   "keywords": [
+    "ai-tools",
+    "automation",
     "branded-types",
     "carabiner",
+    "claude-code",
+    "developer-tools",
     "hooks",
     "types",
     "typescript"
   ],
   "license": "MIT",
   "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/outfitter-dev/carabiner.git",
+    "directory": "packages/types"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --project tsconfig.build.json --watch",

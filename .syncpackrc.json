@@ -1,4 +1,45 @@
 {
   "$schema": "./node_modules/syncpack/schema.json",
-  "indent": "  "
+  "indent": "  ",
+  "semverGroups": [
+    {
+      "label": "Use caret ranges for all dependencies",
+      "packages": ["**"],
+      "dependencies": ["**"],
+      "dependencyTypes": ["dev", "prod", "peer"],
+      "range": "^"
+    }
+  ],
+  "versionGroups": [
+    {
+      "label": "Ensure TypeScript version consistency",
+      "packages": ["**"],
+      "dependencies": ["typescript"],
+      "policy": "same"
+    },
+    {
+      "label": "Ensure type-fest version consistency",
+      "packages": ["**"],
+      "dependencies": ["type-fest"],
+      "policy": "same"
+    },
+    {
+      "label": "Ensure ultracite version consistency",
+      "packages": ["**"],
+      "dependencies": ["ultracite"],
+      "policy": "same"
+    },
+    {
+      "label": "Ensure @types/node version consistency",
+      "packages": ["**"],
+      "dependencies": ["@types/node"],
+      "policy": "same"
+    },
+    {
+      "label": "Ensure @types/bun version consistency",
+      "packages": ["**"],
+      "dependencies": ["@types/bun"],
+      "policy": "same"
+    }
+  ]
 }

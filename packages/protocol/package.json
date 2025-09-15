@@ -2,8 +2,8 @@
   "name": "@carabiner/protocol",
   "description": "Protocol abstraction layer for Carabiner hooks I/O",
   "version": "0.1.0-alpha",
-  "author": "Outfitter",
-  "bugs": "https://github.com/outfitter-dev/grapple/issues",
+  "author": "Outfitter Dev <hello@outfitter.dev>",
+  "bugs": "https://github.com/outfitter-dev/carabiner/issues",
   "dependencies": {
     "@carabiner/schemas": "0.1.0-alpha",
     "@carabiner/types": "0.1.0-alpha"
@@ -21,13 +21,18 @@
   "files": [
     "dist"
   ],
-  "homepage": "https://github.com/outfitter-dev/grapple/tree/main/packages/protocol#readme",
+  "homepage": "https://github.com/outfitter-dev/carabiner#readme",
   "keywords": [
     "abstraction",
+    "ai-tools",
+    "automation",
     "carabiner",
+    "claude-code",
+    "developer-tools",
     "hooks",
     "io",
-    "protocol"
+    "protocol",
+    "typescript"
   ],
   "license": "MIT",
   "main": "./dist/index.js",
@@ -37,7 +42,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/outfitter-dev/grapple.git",
+    "url": "git+https://github.com/outfitter-dev/carabiner.git",
     "directory": "packages/protocol"
   },
   "scripts": {

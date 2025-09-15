@@ -2,7 +2,8 @@
   "name": "@carabiner/execution",
   "description": "Simplified execution engine for Carabiner hooks",
   "version": "0.1.0-alpha",
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "author": "Outfitter Dev <hello@outfitter.dev>",
+  "bugs": "https://github.com/outfitter-dev/carabiner/issues",
   "dependencies": {
     "@carabiner/hooks-core": "0.1.0-alpha",
     "@carabiner/protocol": "0.1.0-alpha",
@@ -24,8 +25,13 @@
     "dist/",
     "README.md"
   ],
+  "homepage": "https://github.com/outfitter-dev/carabiner#readme",
   "keywords": [
+    "ai-tools",
+    "automation",
     "carabiner",
+    "claude-code",
+    "developer-tools",
     "execution",
     "hooks",
     "typescript"
@@ -38,7 +44,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/outfitter-dev/grapple.git",
+    "url": "git+https://github.com/outfitter-dev/carabiner.git",
     "directory": "packages/execution"
   },
   "scripts": {
