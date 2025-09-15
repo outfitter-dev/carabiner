@@ -17,7 +17,10 @@ import type { HookManifest } from "../types/manifest";
 /**
  * Create package.json for npm publishing
  */
-function createPackageJson(manifest: HookManifest, hookDir: string): Record<string, any> {
+function createPackageJson(
+  manifest: HookManifest,
+  hookDir: string
+): Record<string, any> {
   const base = manifest.name.replace(/[^a-z0-9-]/gi, "-").toLowerCase();
   const pkgName = manifest.name.startsWith("@carabiner/")
     ? manifest.name.toLowerCase()
@@ -58,7 +61,10 @@ function createPackageJson(manifest: HookManifest, hookDir: string): Record<stri
 
   // Add types if they exist
   let typesEntry: string | undefined;
-  if (manifest.files?.types && existsSync(join(hookDir, manifest.files.types))) {
+  if (
+    manifest.files?.types &&
+    existsSync(join(hookDir, manifest.files.types))
+  ) {
     typesEntry = manifest.files.types;
     if (!filesList.includes(typesEntry)) {
       filesList.push(typesEntry);
@@ -223,7 +229,9 @@ async function publishToNpm(hookDir: string): Promise<boolean> {
   // Create package.json
   const pkgPath = join(hookDir, "package.json");
   if (existsSync(pkgPath)) {
-    console.error("package.json already exists; refusing to overwrite. Specify fields in manifest.json or remove package.json.");
+    console.error(
+      "package.json already exists; refusing to overwrite. Specify fields in manifest.json or remove package.json."
+    );
     return false;
   }
   const packageJson = createPackageJson(manifest, hookDir);
@@ -377,7 +385,7 @@ export async function publishHook(
   const targetsRequested: string[] = [];
 
   if (options.npm) {
-    targetsRequested.push('npm');
+    targetsRequested.push("npm");
     results.npm = await publishToNpm(hookDir);
     if (results.npm) {
       console.log(`✅ Published to npm as @carabiner/hook-${manifest.name}`);
@@ -386,7 +394,7 @@ export async function publishHook(
   }
 
   if (options.github) {
-    targetsRequested.push('github');
+    targetsRequested.push("github");
     results.github = await publishToGitHub(hookDir);
     if (results.github) {
       console.log(`✅ Created GitHub release v${manifest.version}`);
@@ -410,8 +418,9 @@ Choose a publishing target:
   }
 
   // Return true only if all requested publishes succeeded
-  const overallSuccess = targetsRequested.length > 0 &&
-    targetsRequested.every(target => results[target] === true);
+  const overallSuccess =
+    targetsRequested.length > 0 &&
+    targetsRequested.every((target) => results[target] === true);
 
   return overallSuccess;
 }
