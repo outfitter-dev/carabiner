@@ -2,13 +2,14 @@
   "name": "@carabiner/schemas",
   "description": "Zod validation schemas for Carabiner hooks",
   "version": "0.1.0-alpha",
-  "author": "Matt Galligan <matt@outfitter.dev>",
+  "author": "Outfitter Dev <hello@outfitter.dev>",
+  "bugs": "https://github.com/outfitter-dev/carabiner/issues",
   "dependencies": {
     "@carabiner/types": "0.1.0-alpha",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "*",
     "typescript": "^5.9.2"
   },
   "exports": {
@@ -34,10 +35,16 @@
     "README.md",
     "LICENSE"
   ],
+  "homepage": "https://github.com/outfitter-dev/carabiner#readme",
   "keywords": [
+    "ai-tools",
+    "automation",
     "carabiner",
+    "claude-code",
+    "developer-tools",
     "hooks",
     "schemas",
+    "typescript",
     "validation",
     "zod"
   ],
@@ -45,6 +52,11 @@
   "main": "./dist/index.js",
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/outfitter-dev/carabiner.git",
+    "directory": "packages/schemas"
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Base instructions: @.agent/prompts/CORE.md
+Base instructions: @.agents/prompts/CORE.md
 
 ## Repository Overview
 
@@ -10,7 +10,7 @@ Carabiner is a modern TypeScript monorepo for building type-safe Carabiner hooks
 
 ## Important Rules
 
-@.agent/rules/IMPORTANT.md
+@.agents/rules/IMPORTANT.md
 
 ## Important Patterns
 

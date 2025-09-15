@@ -2,7 +2,8 @@
   "name": "@carabiner/hooks-config",
   "description": "Configuration management for Carabiner hooks",
   "version": "0.1.0-alpha",
-  "author": "Matt Galligan <matt.galligan@gmail.com>",
+  "author": "Outfitter Dev <hello@outfitter.dev>",
+  "bugs": "https://github.com/outfitter-dev/carabiner/issues",
   "dependencies": {
     "@carabiner/error-management": "0.1.0-alpha",
     "@carabiner/hooks-core": "0.1.0-alpha"
@@ -22,15 +23,26 @@
     "README.md",
     "LICENSE"
   ],
+  "homepage": "https://github.com/outfitter-dev/carabiner/tree/main/packages/hooks-config#readme",
   "keywords": [
+    "ai-tools",
+    "automation",
     "carabiner",
+    "claude-code",
     "configuration",
-    "hooks"
+    "developer-tools",
+    "hooks",
+    "typescript"
   ],
   "license": "MIT",
   "main": "./dist/index.js",
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/outfitter-dev/carabiner.git",
+    "directory": "packages/hooks-config"
   },
   "scripts": {
     "build": "bun run build:clean && bun run build:tsc",
