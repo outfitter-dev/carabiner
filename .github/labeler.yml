@@ -24,7 +24,7 @@ labels:
   documentation:
     - "**/*.md"
     - docs/**/*
-    - .agent/**/*.md
+    - .agents/**/*.md
 
   tests:
     - "**/*.test.ts"

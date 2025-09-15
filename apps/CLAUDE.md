@@ -1,3 +1,3 @@
 # apps/CLAUDE.md
 
-@.agent/rules/DEVELOPMENT.md
+@.agents/rules/DEVELOPMENT.md
