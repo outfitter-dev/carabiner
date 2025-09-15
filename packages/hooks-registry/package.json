@@ -41,10 +41,6 @@
   ],
   "license": "MIT",
   "main": "./dist/index.js",
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
-  },
   "peerDependencies": {
     "markdownlint-cli2": "^0.18.1",
     "prettier": "^3.6.2"
@@ -56,6 +52,10 @@
     "prettier": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",
