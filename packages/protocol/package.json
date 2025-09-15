@@ -19,7 +19,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "homepage": "https://github.com/outfitter-dev/carabiner/tree/main/packages/protocol#readme",
   "keywords": [
@@ -38,7 +40,7 @@
   "main": "./dist/index.js",
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.org"
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",

@@ -32,7 +32,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "README.md",
+    "LICENSE"
   ],
   "homepage": "https://github.com/outfitter-dev/carabiner#readme",
   "keywords": [
@@ -50,7 +51,8 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",

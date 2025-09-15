@@ -1,5 +1,9 @@
 # Carabiner - Type-Safe Hooks Framework for AI Assistants
 
+[![npm version](https://badge.fury.io/js/@carabiner%2Fhooks-core.svg)](https://badge.fury.io/js/@carabiner%2Fhooks-core)
+[![npm downloads](https://img.shields.io/npm/dt/@carabiner/hooks-core.svg)](https://www.npmjs.com/package/@carabiner/hooks-core)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A comprehensive, production-ready TypeScript monorepo for building type-safe, maintainable hooks with modern development practices and enterprise-grade tooling.
 
 ## 🚀 Overview

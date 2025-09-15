@@ -20,6 +20,11 @@
       "import": "./dist/index.js"
     }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": [
     "architecture",
     "carabiner",
@@ -31,11 +36,12 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/outfitter-dev/grapple",
+    "url": "https://github.com/outfitter-dev/carabiner.git",
     "directory": "packages/registry"
   },
   "scripts": {
