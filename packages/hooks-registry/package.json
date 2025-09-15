@@ -42,7 +42,8 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
     "markdownlint-cli2": "^0.18.1",

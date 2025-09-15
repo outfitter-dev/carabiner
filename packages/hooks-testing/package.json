@@ -41,7 +41,8 @@
     "bun-types": "^1.0.25"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",
