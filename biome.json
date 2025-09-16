@@ -48,6 +48,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["packages/examples/src/**/*.{js,ts}"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
     }
   ],
   "linter": {
