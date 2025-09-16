@@ -1,18 +1,19 @@
-# Carabiner - Type-Safe Hooks Framework for AI Assistants
+# Carabiner - Type-Safe Hooks Framework for Claude Code
 
 [![npm version](https://badge.fury.io/js/@carabiner%2Fhooks-core.svg)](https://badge.fury.io/js/@carabiner%2Fhooks-core)
 [![npm downloads](https://img.shields.io/npm/dt/@carabiner/hooks-core.svg)](https://www.npmjs.com/package/@carabiner/hooks-core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive, production-ready TypeScript monorepo for building type-safe, maintainable hooks with modern development practices and enterprise-grade tooling.
+A comprehensive TypeScript framework for building type-safe Claude Code hooks, built on top of the official `@anthropic-ai/claude-code` SDK for maximum compatibility and type safety.
 
 ## 🚀 Overview
 
-Transform AI assistant hook development from manual shell scripting to **type-safe, testable, maintainable TypeScript applications**. This framework provides everything you need to build production-ready hooks with confidence.
+Transform Claude Code hook development from manual shell scripting to **type-safe, testable, maintainable TypeScript applications**. Built directly on the official Claude Code SDK, this framework ensures full compatibility with all Claude Code features while providing a superior developer experience.
 
 ### ✨ Key Benefits
 
-- **🛡️ Type Safety**: Compile-time validation with full IntelliSense support
+- **🛡️ SDK Integration**: Built on `@anthropic-ai/claude-code` for guaranteed compatibility
+- **📘 Full Type Safety**: Complete TypeScript types for all hooks and tools via the SDK
 - **🔧 Multiple APIs**: Function-based, Builder pattern, and Declarative approaches
 - **🔐 Security**: Built-in validators and environment-specific protections
 - **🧪 Testing**: Complete mock framework and testing utilities
@@ -35,12 +36,14 @@ bun add -d @carabiner/hooks-testing @carabiner/hooks-validators
 
 All packages are available on npm under the `@carabiner` scope:
 
-- **Core**: `@carabiner/hooks-core` - Core hook functionality  
+- **Core**: `@carabiner/hooks-core` - Core hook functionality with SDK integration
 - **Types**: `@carabiner/types` - TypeScript type definitions
 - **Execution**: `@carabiner/execution` - Hook execution engine
 - **Testing**: `@carabiner/hooks-testing` - Testing utilities
 - **Validators**: `@carabiner/hooks-validators` - Security validators
 - **Registry**: `@carabiner/hooks-registry` - Pre-built hooks collection
+
+The core package includes and re-exports all necessary types from `@anthropic-ai/claude-code`, ensuring you have access to the full Claude Code type system.
 
 ## 🏗️ Architecture
 
@@ -268,26 +271,59 @@ registry.register('PostToolUse', testRunnerHook);
 
 ## 🏗️ Architecture
 
-### Type-Safe Foundation
+### Claude Code SDK Integration
+
+Carabiner is built directly on top of the official `@anthropic-ai/claude-code` SDK, ensuring full compatibility with all Claude Code features:
 
 ```typescript
-import type { HookHandler, HookContext, HookResult } from '@carabiner/types';
+// Import SDK types directly
+import type {
+  HookInput,
+  HookJSONOutput,
+  PreToolUseHookInput,
+  BashInput
+} from '@carabiner/hooks-core';
 
-// Full type safety and IntelliSense
-const typedHook: HookHandler<'PreToolUse'> = async (context) => {
-  // TypeScript knows context structure
-  const { toolName, toolInput } = context;
-  return { success: true };
+// All SDK types are re-exported for convenience
+const handler: HookCallback = async (input, toolUseID, options) => {
+  if (input.hook_event_name === 'PreToolUse') {
+    const toolInput = input as PreToolUseHookInput;
+    // Full type safety with SDK types
+    return {
+      continue: true,
+      systemMessage: `Processing ${toolInput.tool_name}...`
+    };
+  }
+  return { continue: true };
 };
 ```
 
-### Event Types
+### Type-Safe Foundation
+
+```typescript
+import type { HookHandler, HookContext, HookResult } from '@carabiner/hooks-core';
+
+// Full type safety and IntelliSense
+const typedHook: HookHandler<PreToolUseHookInput> = async (input, toolUseID, options) => {
+  // TypeScript knows exact input structure from SDK
+  const { tool_name, tool_input } = input;
+  return { continue: true };
+};
+```
+
+### Event Types (from SDK)
+
+All hook events are defined by the Claude Code SDK:
 
 - **PreToolUse**: Before tool execution
-- **PostToolUse**: After tool completion  
-- **PreResponse**: Before sending response
-- **PostResponse**: After response sent
-- **OnError**: Error handling
+- **PostToolUse**: After tool completion
+- **UserPromptSubmit**: When user submits a prompt
+- **SessionStart**: When session begins
+- **SessionEnd**: When session ends
+- **Stop**: When execution stops
+- **SubagentStop**: When subagent stops
+- **PreCompact**: Before compacting history
+- **Notification**: For notifications
 
 ## 🧰 CLI
 

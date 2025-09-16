@@ -505,7 +505,7 @@ export async function runClaudeHook(
       block: true, // Block by default on runtime errors
     };
 
-    outputHookResult(result, options.outputMode);
+    outputHookResult(result);
   }
 }
 
