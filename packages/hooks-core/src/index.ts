@@ -3,33 +3,33 @@
  * Core TypeScript types and runtime utilities for Claude Code hooks
  */
 
-// Export builder pattern
-export {
-  createHook,
-  type DeclarativeHookConfig,
-  defineHook,
-  HookBuilder,
-  hook,
-  middleware,
-} from "./builder";
+// Export builder pattern - temporarily disabled during SDK migration
+// export {
+//   createHook,
+//   type DeclarativeHookConfig,
+//   defineHook,
+//   HookBuilder,
+//   hook,
+//   middleware,
+// } from "./builder";
 // Export production logging system
 export * from "./logging";
-// Export registry
-export {
-  createHookRegistry,
-  executeHooks,
-  executeHooksAndCombine,
-  getHookStats,
-  globalRegistry,
-  HookRegistry,
-  hasHooksForEvent,
-  registerHook,
-  registerHooks,
-} from "./registry";
+// Export registry - temporarily disabled during SDK migration
+// export {
+//   createHookRegistry,
+//   executeHooks,
+//   executeHooksAndCombine,
+//   getHookStats,
+//   globalRegistry,
+//   HookRegistry,
+//   hasHooksForEvent,
+//   registerHook,
+//   registerHooks,
+// } from "./registry";
 // Export runtime utilities
 export {
-  createBashContext,
-  createFileContext,
+  createBashInput,
+  createFileInput,
   createHookContext,
   executeHook,
   getSessionInfo,
@@ -41,7 +41,6 @@ export {
   isEditToolInput,
   isGlobToolInput,
   isGrepToolInput,
-  isLSToolInput,
   isMultiEditToolInput,
   isNotebookEditToolInput,
   isReadToolInput,
@@ -57,7 +56,7 @@ export {
   parseToolInput,
   runClaudeHook,
   safeHookExecution,
-  validateHookContext,
+  validateHookInput,
 } from "./runtime";
 // Export all types
 export type * from "./types";
