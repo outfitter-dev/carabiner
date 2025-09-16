@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-/* eslint-disable no-console */
 /**
  * Simple test for Hello World - ready to run!
  * Run with: bun run packages/examples/src/simple-hello-world-test.ts
@@ -17,14 +16,15 @@ async function runSimpleTest() {
   registry.register(bashGreeterHook);
 
   // Create a simple context (minimal required fields)
+  const now = Date.now();
   const testContext = {
     event: "PreToolUse" as const,
     tool: "Bash" as const,
     parameters: {
       command: 'echo "Hello from Carabiner!"',
     },
-    sessionId: `test-${Date.now()}`,
-    timestamp: Date.now(),
+    sessionId: `test-${now}`,
+    timestamp: now,
     environment: {},
   };
 
