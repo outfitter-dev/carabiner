@@ -42,9 +42,8 @@ describe("Function-based PreToolUse Hook", () => {
     const result = await handlePreToolUse(context);
 
     // Assert
-    expect(result.success).toBe(true);
-    expect(result.message).toContain("validation passed");
-    expect(result.block).toBeUndefined();
+    expect(result.continue).toBe(true);
+    expect(result.systemMessage).toContain("validation passed");
     expect(result.data).toBeDefined();
     expect(result.data?.command).toBeDefined();
   });
@@ -57,9 +56,8 @@ describe("Function-based PreToolUse Hook", () => {
     const result = await handlePreToolUse(context);
 
     // Assert
-    expect(result.success).toBe(false);
-    expect(result.block).toBe(true);
-    expect(result.message).toContain("Security validation failed");
+    expect(result.continue).toBe(false);
+    expect(result.systemMessage).toContain("Security validation failed");
   });
 
   test("should validate file write operations", async () => {
@@ -75,7 +73,7 @@ describe("Function-based PreToolUse Hook", () => {
     const result = await handlePreToolUse(context);
 
     // Assert
-    expect(result.success).toBe(true);
+    expect(result.continue).toBe(true);
     expect(result.data?.filePath).toBe("test-file.ts");
     expect(result.data?.contentSize).toBe(
       new TextEncoder().encode(testContent).length
