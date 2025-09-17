@@ -9,18 +9,120 @@ import { runtimeLogger } from "./logger";
 import { stdout } from "./logging/stdio";
 import type {
   GetToolInput,
-  HookCallback,
+  HookContext,
   HookEnvironment,
   HookExecutionOptions,
+  HookHandler,
   HookInput,
   HookJSONOutput,
+  HookMetadata,
+  HookEvent,
+  HookResult,
   PreToolUseHookInput,
   StdinParseResult,
   ToolInput,
   ToolInputMap,
   ToolName,
 } from "./types";
-import { HookError, HookInputError, HookTimeoutError } from "./types";
+import {
+  HookError,
+  HookInputError,
+  HookTimeoutError,
+} from "./types";
+import {
+  getDefaultHookProvider,
+  requireHookProvider,
+  type HookProviderAdapter,
+  type HookProviderId,
+  type NormalizedHookContext,
+} from "./providers";
+
+type ClaudeProviderAdapter = HookProviderAdapter<HookInput, HookJSONOutput>;
+
+function resolveProvider(
+  options: HookExecutionOptions = {}
+): ClaudeProviderAdapter {
+  if (options.provider) {
+    return options.provider;
+  }
+
+  if (options.providerId) {
+    return requireHookProvider(options.providerId) as ClaudeProviderAdapter;
+  }
+
+  const provider = getDefaultHookProvider();
+  if (!provider) {
+    throw new Error(
+      "No hook provider is registered. Ensure registerDefaultHookProviders() has executed."
+    );
+  }
+  return provider as ClaudeProviderAdapter;
+}
+
+function ensureHookInput(
+  inputOrEvent: HookInput | HookEvent,
+  environment: HookEnvironment
+): HookInput {
+  if (typeof inputOrEvent !== "string") {
+    return inputOrEvent;
+  }
+
+  const event = inputOrEvent;
+  const base = {
+    hook_event_name: event,
+    session_id: process.env.CLAUDE_SESSION_ID ?? "local-session",
+    transcript_path:
+      process.env.CLAUDE_TRANSCRIPT_PATH ?? "./claude-transcript.md",
+    cwd: environment.CLAUDE_PROJECT_DIR ?? process.cwd(),
+  } as HookInput;
+
+  if (event === "PreToolUse" || event === "PostToolUse") {
+    const toolName = process.env.CLAUDE_TOOL_NAME ?? "Unknown";
+    const toolInputRaw = process.env.TOOL_INPUT;
+    const toolResponseRaw = process.env.TOOL_OUTPUT;
+
+    base.tool_name = toolName;
+
+    if (toolInputRaw) {
+      try {
+        base.tool_input = JSON.parse(toolInputRaw);
+      } catch {
+        runtimeLogger.warn("Failed to parse TOOL_INPUT from environment");
+      }
+    }
+
+    if (event === "PostToolUse" && toolResponseRaw) {
+      try {
+        base.tool_response = JSON.parse(toolResponseRaw);
+      } catch {
+        runtimeLogger.warn("Failed to parse TOOL_OUTPUT from environment");
+      }
+    }
+  }
+
+  if (event === "UserPromptSubmit") {
+    base.prompt = process.env.USER_PROMPT ?? "";
+  }
+
+  return base;
+}
+
+function toHookContext(
+  normalized: NormalizedHookContext<HookInput>
+): HookContext {
+  const tool = normalized.tool;
+  const toolName = tool?.name as ToolName | undefined;
+  const toolInput = tool?.input as GetToolInput<ToolName> | undefined;
+
+  return {
+    ...normalized,
+    tool,
+    toolName,
+    toolInput,
+    toolResponse: tool?.response,
+    rawInput: normalized.raw,
+  } satisfies HookContext;
+}
 
 // Note: These type guards are kept for potential future use
 // function isPreToolUse(input: HookInput): input is PreToolUseHookInput {
@@ -168,11 +270,27 @@ export function parseToolInput<T extends ToolName>(
  * Create hook context from Claude Code JSON input
  */
 export function createHookContext(
-  claudeInput: HookInput,
-  overrides?: Partial<HookInput>
-): HookInput {
-  // Preserve original input and allow shallow overrides (rarely needed)
-  return { ...(claudeInput as any), ...(overrides as any) };
+  providerInput: HookInput,
+  overrides?: Partial<HookInput>,
+  options: {
+    environment?: HookEnvironment;
+    providerId?: HookProviderId;
+    provider?: ClaudeProviderAdapter;
+  } = {}
+): HookContext {
+  const provider = resolveProvider({
+    provider: options.provider,
+    providerId: options.providerId,
+  });
+
+  const environment = options.environment ?? parseHookEnvironment();
+  const baseInput = ensureHookInput(providerInput, environment);
+  const mergedInput = overrides
+    ? ({ ...baseInput, ...overrides } as HookInput)
+    : baseInput;
+
+  const normalized = provider.fromProviderInput(mergedInput, environment);
+  return toHookContext(normalized);
 }
 
 /**
@@ -280,44 +398,60 @@ export function isNotebookEditToolInput(
  * Execute hook with timeout and error handling
  */
 export async function executeHook(
-  handler: HookCallback,
-  input: HookInput,
+  handler: HookHandler,
+  context: HookContext,
   options: HookExecutionOptions = {}
-): Promise<HookJSONOutput> {
-  const { timeout = 30_000, throwOnError = false } = options as {
-    timeout?: number;
-    throwOnError?: boolean;
-  };
+): Promise<HookResult> {
+  const { timeout = 30_000, throwOnError = false } = options;
+  const abortController = new AbortController();
+  const execOptions = { signal: abortController.signal };
+  const startedAt = Date.now();
 
   let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      abortController.abort();
+      reject(new HookTimeoutError(timeout, context.rawInput));
+    }, timeout);
+  });
+
   try {
-    // Create timeout promise with clearable timer
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = setTimeout(
-        () => reject(new HookTimeoutError(timeout, input)),
-        timeout
-      );
-    });
+    const handlerPromise = Promise.resolve(
+      handler(context, undefined, execOptions)
+    );
 
-    // Create proper options with signal
-    const execOptions = { signal: new AbortController().signal };
-
-    // Execute handler with timeout
-    const result = await Promise.race<HookJSONOutput>([
-      Promise.resolve(handler(input, undefined, execOptions)),
+    const result = await Promise.race<HookResult | HookJSONOutput>([
+      handlerPromise,
       timeoutPromise,
     ]);
-    return result;
+
+    const duration = Date.now() - startedAt;
+    const metadata: HookMetadata = {
+      duration,
+      timestamp: new Date().toISOString(),
+      provider: context.metadata.provider,
+    };
+
+    const normalized = result as HookResult;
+
+    return {
+      ...normalized,
+      metadata: {
+        ...metadata,
+        ...(normalized.metadata ?? {}),
+      },
+    } satisfies HookResult;
   } catch (error) {
     if (error instanceof HookTimeoutError) {
       runtimeLogger.error(`Hook execution timed out after ${timeout}ms`, {
         timeout,
-        input,
+        context,
       });
     } else {
       runtimeLogger.error(
         `Hook execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        { error, input }
+        { error, context }
       );
     }
 
@@ -326,17 +460,24 @@ export async function executeHook(
         ? error
         : new HookError(
             error instanceof Error ? error.message : "Unknown error",
-            input,
+            context.rawInput,
             error instanceof Error ? error : undefined
           );
     }
 
+    const failureMetadata: HookMetadata = {
+      duration: Date.now() - startedAt,
+      timestamp: new Date().toISOString(),
+      provider: context.metadata.provider,
+    };
+
     return {
       continue: false,
-      systemMessage: error instanceof Error ? error.message : "Unknown error",
-    };
+      systemMessage:
+        error instanceof Error ? error.message : "Unknown error during hook execution",
+      metadata: failureMetadata,
+    } satisfies HookResult;
   } finally {
-    // Always clear the timeout to prevent memory leaks
     if (timer) {
       clearTimeout(timer);
     }
@@ -358,34 +499,55 @@ export function outputHookResult(
  * Main hook execution function - reads from stdin, executes hook, outputs result
  */
 export async function runClaudeHook(
-  handler: HookCallback,
+  handler: HookHandler,
   options: HookExecutionOptions = {}
 ): Promise<never> {
+  const provider = resolveProvider(options);
+  let normalizedContext: NormalizedHookContext<HookInput> | null = null;
+
   try {
-    // Parse stdin input
     const parseResult = await parseStdinInput();
 
     if (!parseResult.success) {
       throw new HookInputError(parseResult.error, parseResult.rawInput);
     }
 
-    // Create context from Claude input
-    const input = createHookContext(parseResult.data);
+    const environment = parseHookEnvironment();
+    normalizedContext = provider.fromProviderInput(
+      parseResult.data,
+      environment
+    );
 
-    // Execute the hook
-    const result = await executeHook(handler, input, options);
+    const context = toHookContext(normalizedContext);
 
-    // Output result to Claude
-    outputHookResult(result);
+    validateHookInput(context.rawInput);
+
+    const result = await executeHook(handler, context, options);
+    const providerResult = provider.toProviderOutput(result, normalizedContext);
+
+    outputHookResult(providerResult);
   } catch (error) {
-    const result: HookJSONOutput = {
+    const failure: HookResult = {
       continue: false,
       systemMessage:
         error instanceof Error
           ? error.message
           : "Unknown error during hook execution",
+      metadata: {
+        timestamp: new Date().toISOString(),
+        provider: provider.metadata,
+      },
     };
-    outputHookResult(result);
+
+    if (normalizedContext) {
+      const providerResult = provider.toProviderOutput(
+        failure,
+        normalizedContext
+      );
+      outputHookResult(providerResult);
+    } else {
+      outputHookResult(failure);
+    }
   }
 }
 
@@ -406,13 +568,13 @@ export function getSessionInfo(): { projectDir?: string } {
  * Hook result builders for common scenarios
  */
 export const HookResults = {
-  success(systemMessage?: string): HookJSONOutput {
+  success(systemMessage?: string): HookResult {
     return { continue: true, systemMessage };
   },
-  failure(systemMessage: string): HookJSONOutput {
+  failure(systemMessage: string): HookResult {
     return { continue: false, systemMessage };
   },
-  block(systemMessage: string, suppressOutput = false): HookJSONOutput {
+  block(systemMessage: string, suppressOutput = false): HookResult {
     return {
       continue: false,
       systemMessage,
@@ -420,10 +582,13 @@ export const HookResults = {
       ...(suppressOutput && { suppressOutput }),
     };
   },
-  skip(systemMessage?: string): HookJSONOutput {
-    return { continue: true, systemMessage: systemMessage || "Hook skipped" };
+  skip(systemMessage?: string): HookResult {
+    return {
+      continue: true,
+      systemMessage: systemMessage || "Hook skipped",
+    };
   },
-  warn(systemMessage: string): HookJSONOutput {
+  warn(systemMessage: string): HookResult {
     return { continue: true, systemMessage };
   },
 };
@@ -432,23 +597,46 @@ export const HookResults = {
  * Utility for safe hook execution with error boundaries
  */
 export async function safeHookExecution(
-  handler: HookCallback,
-  input: HookInput,
-  fallback?: () => HookJSONOutput
-): Promise<HookJSONOutput> {
+  handler: HookHandler,
+  context: HookContext,
+  fallback?: () => HookResult
+): Promise<HookResult> {
   try {
     const result = await Promise.resolve(
-      handler(input, undefined, { signal: new AbortController().signal })
+      handler(context, undefined, { signal: new AbortController().signal })
     );
-    return result;
+
+    const normalized = result as HookResult;
+    return {
+      ...normalized,
+      metadata: {
+        provider: context.metadata.provider,
+        ...(normalized.metadata ?? {}),
+      },
+    } satisfies HookResult;
   } catch (error) {
     if (fallback) {
-      return fallback();
+      const fallbackResult = fallback();
+      return {
+        ...fallbackResult,
+        metadata: {
+          provider: context.metadata.provider,
+          ...(fallbackResult.metadata ?? {}),
+        },
+      } satisfies HookResult;
     }
 
-    return HookResults.failure(
+    const failure = HookResults.failure(
       error instanceof Error ? error.message : "Unknown error occurred"
     );
+
+    return {
+      ...failure,
+      metadata: {
+        provider: context.metadata.provider,
+        ...(failure.metadata ?? {}),
+      },
+    } satisfies HookResult;
   }
 }
 

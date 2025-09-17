@@ -23,3 +23,12 @@ This note tracks overall progress across the `gt-v0.2/` stack. Update the checkl
 | `docs-provider-howto` | `bun run lint:md` |
 
 Update this file as branches land so future agents have a single reference.
+
+## Runtime Adapter Slice Notes
+
+- **2025-09-18** — In progress.
+  - `runClaudeHook`, `executeHook`, and `safeHookExecution` now resolve the active provider and operate on the normalized `HookContext`. Results are converted back via the adapter before hitting stdout.
+  - `HookHandler`, `HookContext`, `HookResults`, the builder, and registry were updated to work with the normalized context and carry provider metadata.
+  - Unit tests cover the new context flow and metadata propagation (`packages/hooks-core/src/__tests__/runtime.test.ts`).
+  - Documentation work to finalize for this branch: expand `docs/adapter-runtime-refactor.md` with the new execution diagram, refresh `packages/hooks-core/README.md` runtime section, and add CLI guidance for `createHookContext` overrides.
+  - Before submitting: run `bun run type-check` (expecting legacy failures outside hooks-core) and `bun test --filter hooks-core`.
