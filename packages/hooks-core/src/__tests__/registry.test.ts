@@ -5,7 +5,11 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { HookRegistry } from "../registry";
 import { HookResults } from "../runtime";
-import type { HookContext, HookHandler, HookRegistryEntry } from "../types";
+import type {
+  HookHandler,
+  HookRegistryEntry,
+  PreToolUseHookInput,
+} from "../types";
 
 describe("HookRegistry", () => {
   let registry: HookRegistry;
@@ -98,7 +102,7 @@ describe("HookRegistry", () => {
         handler: async () => HookResults.success("bash"),
         priority: 0,
         enabled: true,
-        tool: "Bash",
+        matcher: "Bash",
       };
 
       registry.register(universalHook);
@@ -126,7 +130,7 @@ describe("HookRegistry", () => {
       registry.register(hook);
       expect(registry.getHooks("PreToolUse")).toHaveLength(1);
 
-      registry.unregister("PreToolUse", handler);
+      registry.unregister("PreToolUse");
       expect(registry.getHooks("PreToolUse")).toHaveLength(0);
     });
 
@@ -149,7 +153,7 @@ describe("HookRegistry", () => {
       registry.registerAll(hooks);
       expect(registry.getHooks("PreToolUse")).toHaveLength(2);
 
-      registry.clear("PreToolUse");
+      registry.unregister("PreToolUse");
       expect(registry.getHooks("PreToolUse")).toHaveLength(0);
     });
 
@@ -195,22 +199,20 @@ describe("HookRegistry", () => {
 
       registry.register(hook);
 
-      const context: HookContext = {
-        event: "PreToolUse",
-        toolName: "Bash",
-        sessionId: "test",
-        transcriptPath: "/test",
+      const input: PreToolUseHookInput = {
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        session_id: "test",
+        transcript_path: "/test",
         cwd: "/test",
-        toolInput: { command: "test" },
-        environment: {},
-        rawInput: {} as any,
+        tool_input: { command: "test" },
       };
 
-      const results = await registry.execute(context);
+      const results = await registry.execute(input);
 
       expect(executed).toBe(true);
       expect(results).toHaveLength(1);
-      expect(results[0].success).toBe(true);
+      expect(results[0].continue).toBe(true);
     });
 
     test("should not execute disabled hooks", async () => {
@@ -228,18 +230,16 @@ describe("HookRegistry", () => {
 
       registry.register(hook);
 
-      const context: HookContext = {
-        event: "PreToolUse",
-        toolName: "Bash",
-        sessionId: "test",
-        transcriptPath: "/test",
+      const input: PreToolUseHookInput = {
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        session_id: "test",
+        transcript_path: "/test",
         cwd: "/test",
-        toolInput: { command: "test" },
-        environment: {},
-        rawInput: {} as any,
+        tool_input: { command: "test" },
       };
 
-      const results = await registry.execute(context);
+      const results = await registry.execute(input);
 
       expect(executed).toBe(false);
       expect(results).toHaveLength(0);
@@ -271,18 +271,16 @@ describe("HookRegistry", () => {
       registry.register(hook1);
       registry.register(hook2);
 
-      const context: HookContext = {
-        event: "PreToolUse",
-        toolName: "Bash",
-        sessionId: "test",
-        transcriptPath: "/test",
+      const input: PreToolUseHookInput = {
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        session_id: "test",
+        transcript_path: "/test",
         cwd: "/test",
-        toolInput: { command: "test" },
-        environment: {},
-        rawInput: {} as any,
+        tool_input: { command: "test" },
       };
 
-      await registry.execute(context);
+      await registry.execute(input);
 
       expect(executionOrder).toEqual([2, 1]); // Higher priority executes first
     });
@@ -299,22 +297,20 @@ describe("HookRegistry", () => {
 
       registry.register(hook);
 
-      const context: HookContext = {
-        event: "PreToolUse",
-        toolName: "Bash",
-        sessionId: "test",
-        transcriptPath: "/test",
+      const input: PreToolUseHookInput = {
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        session_id: "test",
+        transcript_path: "/test",
         cwd: "/test",
-        toolInput: { command: "test" },
-        environment: {},
-        rawInput: {} as any,
+        tool_input: { command: "test" },
       };
 
-      const results = await registry.execute(context);
+      const results = await registry.execute(input);
 
       expect(results).toHaveLength(1);
-      expect(results[0].success).toBe(false);
-      expect(results[0].message).toContain("Hook error");
+      expect(results[0].continue).toBe(false);
+      expect(results[0].systemMessage).toContain("Hook error");
     });
   });
 
@@ -329,18 +325,16 @@ describe("HookRegistry", () => {
 
       registry.register(hook);
 
-      const context: HookContext = {
-        event: "PreToolUse",
-        toolName: "Bash",
-        sessionId: "test",
-        transcriptPath: "/test",
+      const input: PreToolUseHookInput = {
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        session_id: "test",
+        transcript_path: "/test",
         cwd: "/test",
-        toolInput: { command: "test" },
-        environment: {},
-        rawInput: {} as any,
+        tool_input: { command: "test" },
       };
 
-      await registry.execute(context);
+      await registry.execute(input);
       const stats = registry.getStats("PreToolUse");
 
       expect(stats).toHaveLength(1);
@@ -359,18 +353,16 @@ describe("HookRegistry", () => {
 
       registry.register(hook);
 
-      const context: HookContext = {
-        event: "PreToolUse",
-        toolName: "Bash",
-        sessionId: "test",
-        transcriptPath: "/test",
+      const input: PreToolUseHookInput = {
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        session_id: "test",
+        transcript_path: "/test",
         cwd: "/test",
-        toolInput: { command: "test" },
-        environment: {},
-        rawInput: {} as any,
+        tool_input: { command: "test" },
       };
 
-      await registry.execute(context);
+      await registry.execute(input);
       const initialStats = registry.getStats("PreToolUse");
       expect(initialStats).toHaveLength(1);
       expect(initialStats[0].totalExecutions).toBe(1);
@@ -406,7 +398,7 @@ describe("HookRegistry", () => {
         },
         priority: 0,
         enabled: true,
-        tool: "Bash",
+        matcher: "Bash",
       };
 
       const writeHook: HookRegistryEntry = {
@@ -417,25 +409,23 @@ describe("HookRegistry", () => {
         },
         priority: 0,
         enabled: true,
-        tool: "Write",
+        matcher: "Write",
       };
 
       registry.register(universalHook);
       registry.register(bashHook);
       registry.register(writeHook);
 
-      const bashContext: HookContext = {
-        event: "PreToolUse",
-        toolName: "Bash",
-        sessionId: "test",
-        transcriptPath: "/test",
+      const bashInput: PreToolUseHookInput = {
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        session_id: "test",
+        transcript_path: "/test",
         cwd: "/test",
-        toolInput: { command: "test" },
-        environment: {},
-        rawInput: {} as any,
+        tool_input: { command: "test" },
       };
 
-      await registry.execute(bashContext);
+      await registry.execute(bashInput);
 
       expect(results).toContain("universal");
       expect(results).toContain("bash");

@@ -5,30 +5,35 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { createHook, HookBuilder, HookRegistry } from "../index.ts";
-import type { HookResult } from "../types.ts";
+import type {
+  HookJSONOutput,
+  PostToolUseHookInput,
+  PreToolUseHookInput,
+} from "../types.ts";
 
-// Mock context helper that matches the actual HookContext structure
-function createMockContext(
+// Mock input helper that matches the actual HookInput structure
+function createMockInput(
   event: "PreToolUse" | "PostToolUse",
   options: { toolName?: string } = {}
-) {
-  return {
-    event,
-    toolName: options.toolName || "Bash",
-    sessionId: "test-session-123",
-    transcriptPath: "/test/transcript",
+): PreToolUseHookInput | PostToolUseHookInput {
+  const baseInput = {
+    session_id: "test-session-123",
+    transcript_path: "/test/transcript",
     cwd: process.cwd(),
-    toolInput: { command: "echo test" },
-    environment: {},
-    rawInput: {
-      session_id: "test-session-123",
-      transcript_path: "/test/transcript",
-      cwd: process.cwd(),
-      hook_event_name: event,
-      tool_name: options.toolName || "Bash",
-      tool_input: { command: "echo test" },
-    },
+    hook_event_name: event,
+    tool_name: options.toolName || "Bash",
+    tool_input: { command: "echo test" },
   };
+
+  if (event === "PostToolUse") {
+    return {
+      ...baseInput,
+      hook_event_name: "PostToolUse",
+      tool_response: "Command executed successfully",
+    } as PostToolUseHookInput;
+  }
+
+  return baseInput as PreToolUseHookInput;
 }
 
 describe("Tool Scoping Fix - Registry Core", () => {
@@ -39,7 +44,7 @@ describe("Tool Scoping Fix - Registry Core", () => {
   });
 
   test("tool-specific hooks only execute for specified tool", async () => {
-    const bashHandler = mock().mockResolvedValue({ success: true });
+    const bashHandler = mock().mockResolvedValue({ continue: true });
 
     const bashHook = HookBuilder.forPreToolUse()
       .forTool("Bash")
@@ -49,21 +54,19 @@ describe("Tool Scoping Fix - Registry Core", () => {
     registry.register(bashHook);
 
     // Should execute for Bash
-    await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Bash" })
-    );
+    await registry.execute(createMockInput("PreToolUse", { toolName: "Bash" }));
     expect(bashHandler).toHaveBeenCalledTimes(1);
 
     // Should NOT execute for Write
     bashHandler.mockClear();
     await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Write" })
+      createMockInput("PreToolUse", { toolName: "Write" })
     );
     expect(bashHandler).not.toHaveBeenCalled();
   });
 
   test("universal hooks execute for all tools", async () => {
-    const universalHandler = mock().mockResolvedValue({ success: true });
+    const universalHandler = mock().mockResolvedValue({ continue: true });
 
     const universalHook = HookBuilder.forPreToolUse()
       .withHandler(universalHandler)
@@ -72,28 +75,24 @@ describe("Tool Scoping Fix - Registry Core", () => {
     registry.register(universalHook);
 
     // Should execute for any tool
-    await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Bash" })
-    );
+    await registry.execute(createMockInput("PreToolUse", { toolName: "Bash" }));
     expect(universalHandler).toHaveBeenCalledTimes(1);
 
     universalHandler.mockClear();
     await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Write" })
+      createMockInput("PreToolUse", { toolName: "Write" })
     );
     expect(universalHandler).toHaveBeenCalledTimes(1);
 
     universalHandler.mockClear();
-    await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Edit" })
-    );
+    await registry.execute(createMockInput("PreToolUse", { toolName: "Edit" }));
     expect(universalHandler).toHaveBeenCalledTimes(1);
   });
 
   test("mixed universal and tool-specific hooks execute correctly", async () => {
-    const universalHandler = mock().mockResolvedValue({ success: true });
-    const bashHandler = mock().mockResolvedValue({ success: true });
-    const writeHandler = mock().mockResolvedValue({ success: true });
+    const universalHandler = mock().mockResolvedValue({ continue: true });
+    const bashHandler = mock().mockResolvedValue({ continue: true });
+    const writeHandler = mock().mockResolvedValue({ continue: true });
 
     registry.register(
       HookBuilder.forPreToolUse().withHandler(universalHandler).build()
@@ -112,9 +111,7 @@ describe("Tool Scoping Fix - Registry Core", () => {
     );
 
     // For Bash: both universal and bash-specific should run
-    await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Bash" })
-    );
+    await registry.execute(createMockInput("PreToolUse", { toolName: "Bash" }));
     expect(universalHandler).toHaveBeenCalledTimes(1);
     expect(bashHandler).toHaveBeenCalledTimes(1);
     expect(writeHandler).not.toHaveBeenCalled();
@@ -124,7 +121,7 @@ describe("Tool Scoping Fix - Registry Core", () => {
     bashHandler.mockClear();
     writeHandler.mockClear();
     await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Write" })
+      createMockInput("PreToolUse", { toolName: "Write" })
     );
     expect(universalHandler).toHaveBeenCalledTimes(1);
     expect(bashHandler).not.toHaveBeenCalled();
@@ -134,9 +131,7 @@ describe("Tool Scoping Fix - Registry Core", () => {
     universalHandler.mockClear();
     bashHandler.mockClear();
     writeHandler.mockClear();
-    await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Edit" })
-    );
+    await registry.execute(createMockInput("PreToolUse", { toolName: "Edit" }));
     expect(universalHandler).toHaveBeenCalledTimes(1);
     expect(bashHandler).not.toHaveBeenCalled();
     expect(writeHandler).not.toHaveBeenCalled();
@@ -147,22 +142,22 @@ describe("Tool Scoping Fix - Registry Core", () => {
 
     const universalLow = mock().mockImplementation(() => {
       results.push("universal-low");
-      return { success: true };
+      return { continue: true };
     });
 
     const universalHigh = mock().mockImplementation(() => {
       results.push("universal-high");
-      return { success: true };
+      return { continue: true };
     });
 
     const bashLow = mock().mockImplementation(() => {
       results.push("bash-low");
-      return { success: true };
+      return { continue: true };
     });
 
     const bashHigh = mock().mockImplementation(() => {
       results.push("bash-high");
-      return { success: true };
+      return { continue: true };
     });
 
     // Register hooks with different priorities
@@ -193,9 +188,7 @@ describe("Tool Scoping Fix - Registry Core", () => {
         .build()
     );
 
-    await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Bash" })
-    );
+    await registry.execute(createMockInput("PreToolUse", { toolName: "Bash" }));
 
     // Should execute in priority order: universal-high(10), bash-high(5), bash-low(2), universal-low(1)
     expect(results).toEqual([
@@ -230,20 +223,20 @@ describe("Tool Scoping Fix - Registry Core", () => {
 });
 
 describe("Tool Scoping Fix - Builder Pattern", () => {
-  test("builder includes tool field in output", () => {
+  test("builder includes matcher field in output", () => {
     const bashHook = HookBuilder.forPreToolUse()
       .forTool("Bash")
       .withHandler(mock())
       .build();
 
-    expect(bashHook.tool).toBe("Bash");
+    expect(bashHook.matcher).toBe("Bash");
     expect(bashHook.event).toBe("PreToolUse");
 
     const universalHook = HookBuilder.forPreToolUse()
       .withHandler(mock())
       .build();
 
-    expect(universalHook.tool).toBeUndefined();
+    expect(universalHook.matcher).toBeUndefined();
     expect(universalHook.event).toBe("PreToolUse");
   });
 
@@ -255,7 +248,7 @@ describe("Tool Scoping Fix - Builder Pattern", () => {
       .enabled(true)
       .build();
 
-    expect(hook.tool).toBe("Write");
+    expect(hook.matcher).toBe("Write");
     expect(hook.priority).toBe(5);
     expect(hook.enabled).toBe(true);
     expect(hook.event).toBe("PreToolUse");
@@ -266,24 +259,24 @@ describe("Tool Scoping Fix - Function-Based API", () => {
   test("createHook.preToolUse supports both universal and tool-specific syntax", () => {
     // Universal hook syntax
     const universalHook = createHook.preToolUse(mock());
-    expect(universalHook.tool).toBeUndefined();
+    expect(universalHook.matcher).toBeUndefined();
     expect(universalHook.event).toBe("PreToolUse");
 
     // Tool-specific syntax
     const bashHook = createHook.preToolUse("Bash", mock());
-    expect(bashHook.tool).toBe("Bash");
+    expect(bashHook.matcher).toBe("Bash");
     expect(bashHook.event).toBe("PreToolUse");
   });
 
   test("createHook.postToolUse supports both universal and tool-specific syntax", () => {
     // Universal hook syntax
     const universalHook = createHook.postToolUse(mock());
-    expect(universalHook.tool).toBeUndefined();
+    expect(universalHook.matcher).toBeUndefined();
     expect(universalHook.event).toBe("PostToolUse");
 
     // Tool-specific syntax
     const writeHook = createHook.postToolUse("Write", mock());
-    expect(writeHook.tool).toBe("Write");
+    expect(writeHook.matcher).toBe("Write");
     expect(writeHook.event).toBe("PostToolUse");
   });
 
@@ -311,24 +304,22 @@ describe("Tool Scoping Fix - Integration Tests", () => {
     const logs: string[] = [];
 
     // Universal logging hook (logs all tools)
-    const universalLogger = createHook.preToolUse((context) => {
-      logs.push(`[UNIVERSAL] ${context.event} for ${context.toolName}`);
-      return { success: true };
+    const universalLogger = createHook.preToolUse((input) => {
+      logs.push(`[UNIVERSAL] ${input.hook_event_name} for ${input.tool_name}`);
+      return { continue: true };
     });
 
     // Bash-specific enhanced logging
-    const bashLogger = createHook.preToolUse("Bash", (context) => {
-      logs.push(`[BASH-SPECIFIC] Enhanced logging for ${context.toolName}`);
-      return { success: true };
+    const bashLogger = createHook.preToolUse("Bash", (input) => {
+      logs.push(`[BASH-SPECIFIC] Enhanced logging for ${input.tool_name}`);
+      return { continue: true };
     });
 
     registry.register(universalLogger);
     registry.register(bashLogger);
 
     // Test Bash execution (should trigger both)
-    await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Bash" })
-    );
+    await registry.execute(createMockInput("PreToolUse", { toolName: "Bash" }));
     expect(logs).toContain("[UNIVERSAL] PreToolUse for Bash");
     expect(logs).toContain("[BASH-SPECIFIC] Enhanced logging for Bash");
 
@@ -336,62 +327,62 @@ describe("Tool Scoping Fix - Integration Tests", () => {
 
     // Test Write execution (should trigger only universal)
     await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Write" })
+      createMockInput("PreToolUse", { toolName: "Write" })
     );
     expect(logs).toContain("[UNIVERSAL] PreToolUse for Write");
     expect(logs).not.toContain("[BASH-SPECIFIC]");
   });
 
   test("security validation scenario: block dangerous commands only for Bash", async () => {
-    const _results: HookResult[] = [];
+    const _results: HookJSONOutput[] = [];
 
     // Universal hook (allows all)
     const universalHook = createHook.preToolUse(() => {
-      return { success: true, message: "Universal validation passed" };
+      return { continue: true, systemMessage: "Universal validation passed" };
     });
 
     // Bash-specific security hook (blocks rm -rf)
-    const bashSecurityHook = createHook.preToolUse("Bash", (context) => {
-      const command = context.toolInput?.command || "";
+    const bashSecurityHook = createHook.preToolUse("Bash", (input) => {
+      const command = (input as PreToolUseHookInput).tool_input?.command || "";
       if (command.includes("rm -rf")) {
         return {
-          success: false,
-          block: true,
-          message: "Dangerous command blocked",
+          continue: false,
+          systemMessage: "Dangerous command blocked",
         };
       }
-      return { success: true, message: "Bash security check passed" };
+      return { continue: true, systemMessage: "Bash security check passed" };
     });
 
     registry.register(universalHook);
     registry.register(bashSecurityHook);
 
     // Test safe Bash command (should pass both)
-    const safeBashContext = createMockContext("PreToolUse", {
+    const safeBashInput = createMockInput("PreToolUse", {
       toolName: "Bash",
-    });
-    safeBashContext.toolInput = { command: 'echo "hello world"' };
-    const safeBashResults = await registry.execute(safeBashContext);
+    }) as PreToolUseHookInput;
+    safeBashInput.tool_input = { command: 'echo "hello world"' };
+    const safeBashResults = await registry.execute(safeBashInput);
     expect(safeBashResults).toHaveLength(2);
-    expect(safeBashResults.every((r) => r.success)).toBe(true);
+    expect(safeBashResults.every((r) => r.continue)).toBe(true);
 
     // Test dangerous Bash command (should be blocked)
-    const dangerousBashContext = createMockContext("PreToolUse", {
+    const dangerousBashInput = createMockInput("PreToolUse", {
       toolName: "Bash",
-    });
-    dangerousBashContext.toolInput = { command: "rm -rf /" };
-    const dangerousBashResults = await registry.execute(dangerousBashContext);
+    }) as PreToolUseHookInput;
+    dangerousBashInput.tool_input = { command: "rm -rf /" };
+    const dangerousBashResults = await registry.execute(dangerousBashInput);
     expect(dangerousBashResults).toHaveLength(2);
-    expect(dangerousBashResults[0].success).toBe(true); // Universal passes
-    expect(dangerousBashResults[1].success).toBe(false); // Bash security blocks
-    expect(dangerousBashResults[1].block).toBe(true);
+    expect(dangerousBashResults[0].continue).toBe(true); // Universal passes
+    expect(dangerousBashResults[1].continue).toBe(false); // Bash security blocks
 
     // Test Write tool with dangerous-looking content (should pass - no Bash security)
-    const writeContext = createMockContext("PreToolUse", { toolName: "Write" });
-    writeContext.toolInput = { file_path: "script.sh", content: "rm -rf /" };
-    const writeResults = await registry.execute(writeContext);
+    const writeInput = createMockInput("PreToolUse", {
+      toolName: "Write",
+    }) as PreToolUseHookInput;
+    writeInput.tool_input = { file_path: "script.sh", content: "rm -rf /" };
+    const writeResults = await registry.execute(writeInput);
     expect(writeResults).toHaveLength(1); // Only universal hook
-    expect(writeResults[0].success).toBe(true);
+    expect(writeResults[0].continue).toBe(true);
   });
 
   test("performance monitoring: tool-specific vs universal hooks", async () => {
@@ -403,7 +394,7 @@ describe("Tool Scoping Fix - Integration Tests", () => {
     registry.register(
       createHook.preToolUse(() => {
         universalExecutions++;
-        return { success: true };
+        return { continue: true };
       })
     );
 
@@ -411,7 +402,7 @@ describe("Tool Scoping Fix - Integration Tests", () => {
     registry.register(
       createHook.preToolUse("Bash", () => {
         bashExecutions++;
-        return { success: true };
+        return { continue: true };
       })
     );
 
@@ -419,20 +410,16 @@ describe("Tool Scoping Fix - Integration Tests", () => {
     registry.register(
       createHook.preToolUse("Write", () => {
         writeExecutions++;
-        return { success: true };
+        return { continue: true };
       })
     );
 
     // Execute for different tools
+    await registry.execute(createMockInput("PreToolUse", { toolName: "Bash" }));
     await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Bash" })
+      createMockInput("PreToolUse", { toolName: "Write" })
     );
-    await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Write" })
-    );
-    await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Edit" })
-    );
+    await registry.execute(createMockInput("PreToolUse", { toolName: "Edit" }));
 
     // Universal should execute for all
     expect(universalExecutions).toBe(3);
@@ -457,7 +444,7 @@ describe("Tool Scoping Fix - Error Scenarios", () => {
     registry.register(
       createHook.preToolUse(() => {
         results.push("universal");
-        return { success: true };
+        return { continue: true };
       })
     );
 
@@ -465,7 +452,7 @@ describe("Tool Scoping Fix - Error Scenarios", () => {
     registry.register(
       createHook.preToolUse("Bash", () => {
         results.push("bash-blocker");
-        return { success: false, block: true, message: "Blocked by bash hook" };
+        return { continue: false, systemMessage: "Blocked by bash hook" };
       })
     );
 
@@ -473,13 +460,11 @@ describe("Tool Scoping Fix - Error Scenarios", () => {
     registry.register(
       createHook.preToolUse("Bash", () => {
         results.push("bash-after-blocker");
-        return { success: true };
+        return { continue: true };
       })
     );
 
-    await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Bash" })
-    );
+    await registry.execute(createMockInput("PreToolUse", { toolName: "Bash" }));
 
     expect(results).toContain("universal");
     expect(results).toContain("bash-blocker");
@@ -497,24 +482,23 @@ describe("Tool Scoping Fix - Error Scenarios", () => {
       })
     );
 
-    // Bash hook that should still execute despite universal error
+    // Bash hook that should not execute due to universal error stopping execution
     registry.register(
       createHook.preToolUse("Bash", () => {
         results.push("bash-after-error");
-        return { success: true };
+        return { continue: true };
       })
     );
 
     const hookResults = await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Bash" })
+      createMockInput("PreToolUse", { toolName: "Bash" })
     );
 
     expect(results).toContain("universal-error");
     expect(results).not.toContain("bash-after-error"); // Execution stopped due to blocking error
 
     expect(hookResults).toHaveLength(1);
-    expect(hookResults[0].success).toBe(false);
-    expect(hookResults[0].block).toBe(true); // PreToolUse errors should block
+    expect(hookResults[0].continue).toBe(false);
   });
 });
 
@@ -524,35 +508,35 @@ describe("Tool Scoping Fix - Backward Compatibility", () => {
 
     // Old pattern: builder without forTool (should be universal)
     const oldBuilderHook = HookBuilder.forPreToolUse()
-      .withHandler(mock().mockResolvedValue({ success: true }))
+      .withHandler(mock().mockResolvedValue({ continue: true }))
       .build();
 
     registry.register(oldBuilderHook);
 
     // Should work for any tool
     const bashResult = await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Bash" })
+      createMockInput("PreToolUse", { toolName: "Bash" })
     );
     const writeResult = await registry.execute(
-      createMockContext("PreToolUse", { toolName: "Write" })
+      createMockInput("PreToolUse", { toolName: "Write" })
     );
 
     expect(bashResult).toHaveLength(1);
     expect(writeResult).toHaveLength(1);
-    expect(bashResult[0].success).toBe(true);
-    expect(writeResult[0].success).toBe(true);
+    expect(bashResult[0].continue).toBe(true);
+    expect(writeResult[0].continue).toBe(true);
   });
 
   test("manual hook registry entries work with new system", () => {
     const registry = new HookRegistry();
 
-    // Manual registry entry (old style - no tool field)
+    // Manual registry entry (old style - no matcher field)
     registry.register({
       event: "PreToolUse",
-      handler: mock().mockResolvedValue({ success: true }),
+      handler: mock().mockResolvedValue({ continue: true }),
       priority: 0,
       enabled: true,
-      // No tool field - should be universal
+      // No matcher field - should be universal
     });
 
     const bashHooks = registry.getHooks("PreToolUse", "Bash");
