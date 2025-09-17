@@ -65,8 +65,11 @@ import type {
   HookEvent,
   HookInput,
   HookJSONOutput,
+  NotificationHookInput,
   PostToolUseHookInput,
+  PreCompactHookInput,
   PreToolUseHookInput,
+  SessionEndHookInput,
   SessionStartHookInput,
   StopHookInput,
   SubagentStopHookInput,
@@ -205,12 +208,9 @@ export type HookContext<
 };
 
 /**
- * Hook execution result - enhanced to support SDK output types
+ * Hook execution result - aligned with SDK output types
  */
-export type HookResult = {
-  success: boolean;
-  output?: HookJSONOutput; // SDK output type
-  message?: string;
+export type HookResult = HookJSONOutput & {
   metadata?: {
     duration?: number;
     timestamp?: string;
@@ -337,11 +337,13 @@ export class HookTimeoutError extends HookError {
  * Builder pattern types for fluent hook creation
  */
 export type HookBuilder<TInput extends HookInput = HookInput> = {
-  forEvent<E extends HookEvent>(event: E): HookBuilder;
+  forEvent<E extends HookEvent>(event: E): HookBuilder<TInput>;
   withMatcher(matcher: string): HookBuilder<TInput>;
   withHandler(handler: HookHandler<TInput>): HookBuilder<TInput>;
   withTimeout(timeout: number): HookBuilder<TInput>;
-  withCondition(condition: (input: TInput) => boolean): HookBuilder<TInput>;
+  withCondition(
+    condition: (input: TInput) => boolean | Promise<boolean>
+  ): HookBuilder<TInput>;
   build(): HookRegistryEntry<TInput>;
 };
 
@@ -392,6 +394,24 @@ export function isSubagentStopInput(
   input: HookInput
 ): input is SubagentStopHookInput {
   return input.hook_event_name === "SubagentStop";
+}
+
+export function isSessionEndInput(
+  input: HookInput
+): input is SessionEndHookInput {
+  return input.hook_event_name === "SessionEnd";
+}
+
+export function isPreCompactInput(
+  input: HookInput
+): input is PreCompactHookInput {
+  return input.hook_event_name === "PreCompact";
+}
+
+export function isNotificationInput(
+  input: HookInput
+): input is NotificationHookInput {
+  return input.hook_event_name === "Notification";
 }
 
 /**

@@ -3,369 +3,233 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { createTestContext } from "@carabiner/types";
 import { stdout } from "../logging/stdio";
 import {
-  createBashContext,
-  createFileContext,
+  createBashInput,
+  createFileInput,
   createHookContext,
   executeHook,
   HookResults,
   outputHookResult,
   safeHookExecution,
 } from "../runtime";
-import type { HookContext, HookHandler } from "../types";
+import type { HookCallback } from "../types";
 
-describe("Runtime - Context Creation", () => {
-  test("should create Bash context correctly", () => {
-    const context = createBashContext("PreToolUse", "echo test");
+describe("Runtime - Input Creation", () => {
+  test("should create Bash input correctly", () => {
+    const input = createBashInput("PreToolUse", "echo test");
 
-    expect(context.event).toBe("PreToolUse");
-    expect(context.toolName).toBe("Bash");
-    expect(context.sessionId).toBe("test-session");
-    expect(context.toolInput).toEqual({ command: "echo test" });
+    expect(input.hook_event_name).toBe("PreToolUse");
+    expect(input.tool_name).toBe("Bash");
+    expect(input.session_id).toBe("test-session");
+    expect(input.tool_input).toEqual({ command: "echo test" });
   });
 
-  test("should create File context for Write operation", () => {
-    const context = createFileContext("PostToolUse", "Write", "test.ts");
+  test("should create File input for Write operation", () => {
+    const input = createFileInput("PostToolUse", "Write", "test.ts");
 
-    expect(context.event).toBe("PostToolUse");
-    expect(context.toolName).toBe("Write");
-    expect(context.toolInput.file_path).toBe("test.ts");
+    expect(input.hook_event_name).toBe("PostToolUse");
+    expect(input.tool_name).toBe("Write");
+    expect(input.tool_input.file_path).toBe("test.ts");
   });
 
-  test("should create File context for Edit operation", () => {
-    const context = createFileContext("PreToolUse", "Edit", "test.ts");
+  test("should create File input for Edit operation", () => {
+    const input = createFileInput("PreToolUse", "Edit", "test.ts");
 
-    expect(context.event).toBe("PreToolUse");
-    expect(context.toolName).toBe("Edit");
-    expect(context.toolInput.file_path).toBe("test.ts");
+    expect(input.hook_event_name).toBe("PreToolUse");
+    expect(input.tool_name).toBe("Edit");
+    expect(input.tool_input.file_path).toBe("test.ts");
   });
 
-  test("should create File context for Read operation", () => {
-    const context = createFileContext("PreToolUse", "Read", "test.ts");
+  test("should create File input for Read operation", () => {
+    const input = createFileInput("PreToolUse", "Read", "test.ts");
 
-    expect(context.event).toBe("PreToolUse");
-    expect(context.toolName).toBe("Read");
-    expect(context.toolInput.file_path).toBe("test.ts");
+    expect(input.hook_event_name).toBe("PreToolUse");
+    expect(input.tool_name).toBe("Read");
+    expect(input.tool_input.file_path).toBe("test.ts");
+  });
+
+  test("should pass-through input creation", () => {
+    const originalInput = {
+      hook_event_name: "SessionStart" as const,
+      session_id: "my-session",
+      transcript_path: "/my/transcript.md",
+      cwd: "/my/cwd",
+    };
+
+    const input = createHookContext(originalInput);
+
+    expect(input).toMatchObject(originalInput);
   });
 });
 
 describe("Runtime - Hook Execution", () => {
   test("should execute successful hook", async () => {
-    const handler: HookHandler = async (_context) => {
-      return HookResults.success("Hook executed", { test: true });
+    const handler: HookCallback = async (_input) => {
+      return HookResults.success("Hook executed");
     };
 
-    const context = createTestContext({
-      hookEventName: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test-session",
-      transcriptPath: "/test/transcript.md",
-      cwd: "/test/workspace",
-      toolInput: { command: "test" },
-    });
+    const input = createBashInput("PreToolUse", "test command");
+    const result = await safeHookExecution(handler, input);
 
-    const result = await safeHookExecution(handler, context);
-
-    expect(result.success).toBe(true);
-    expect(result.message).toBe("Hook executed");
-    expect(result.data).toEqual({ test: true });
+    expect(result.continue).toBe(true);
+    expect(result.systemMessage).toBe("Hook executed");
   });
 
   test("should handle hook errors properly", async () => {
-    const handler: HookHandler = async () => {
-      throw new Error("Test error");
+    const handler: HookCallback = async () => {
+      throw new Error("Hook failed");
     };
 
-    const context = createTestContext({
-      hookEventName: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test-session",
-      transcriptPath: "/test/transcript.md",
-      cwd: "/test/workspace",
-      toolInput: { command: "test" },
-    });
+    const input = createBashInput("PreToolUse", "test command");
+    const result = await safeHookExecution(handler, input);
 
-    const result = await safeHookExecution(handler, context);
-
-    expect(result.success).toBe(false);
-    expect(result.message).toContain("Test error");
+    expect(result.continue).toBe(false);
+    expect(result.systemMessage).toBe("Hook failed");
   });
 
-  test("should handle blocking results for PreToolUse", async () => {
-    const handler: HookHandler = async () => {
-      return HookResults.block("Operation blocked");
+  test("should handle security blocking", async () => {
+    const handler: HookCallback = async (input) => {
+      if ("tool_input" in input && input.tool_input.command === "rm -rf /") {
+        return HookResults.block("Dangerous command blocked");
+      }
+      return HookResults.success();
     };
 
-    const context = createTestContext({
-      hookEventName: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test-session",
-      transcriptPath: "/test/transcript.md",
-      cwd: "/test/workspace",
-      toolInput: { command: "rm -rf /" },
-    });
+    const input = createBashInput("PreToolUse", "rm -rf /");
+    const result = await safeHookExecution(handler, input);
 
-    const result = await safeHookExecution(handler, context);
-
-    expect(result.success).toBe(false);
-    expect(result.block).toBe(true);
-    expect(result.message).toBe("Operation blocked");
+    expect(result.continue).toBe(false);
+    expect(result.systemMessage).toBe("Dangerous command blocked");
+    expect(result.stopReason).toBe("blocked");
   });
 
-  test("should handle skip results", async () => {
-    const handler: HookHandler = async () => {
-      return HookResults.skip("Hook skipped");
+  test("should handle hook with fallback", async () => {
+    const handler: HookCallback = async () => {
+      throw new Error("Primary hook failed");
     };
 
-    const context: HookContext = {
-      event: "SessionStart",
-      sessionId: "test",
-      transcriptPath: "/test",
-      cwd: "/test",
-      toolInput: {},
-      environment: {},
-      rawInput: {} as any,
-    };
+    const fallback = () => HookResults.success("Fallback executed");
 
-    const result = await safeHookExecution(handler, context);
+    const input = createBashInput("PreToolUse", "test command");
+    const result = await safeHookExecution(handler, input, fallback);
 
-    expect(result.success).toBe(true);
-    expect(result.message).toBe("Hook skipped");
-  });
-});
-
-describe("Runtime - createHookContext", () => {
-  test("should create context from raw input", () => {
-    const rawInput = {
-      session_id: "test-123",
-      transcript_path: "/transcript",
-      cwd: "/workspace",
-      hook_event_name: "PreToolUse",
-      tool_name: "Bash",
-      tool_input: { command: "ls -la" },
-    };
-
-    const context = createHookContext(rawInput);
-
-    expect(context.event).toBe("PreToolUse");
-    expect(context.toolName).toBe("Bash");
-    expect(context.sessionId).toBe("test-123");
-    expect(context.cwd).toBe("/workspace");
-    expect(context.toolInput).toEqual({ command: "ls -la" });
-  });
-
-  test("should handle SessionStart event", () => {
-    const rawInput = {
-      session_id: "test-123",
-      transcript_path: "/transcript",
-      cwd: "/workspace",
-      hook_event_name: "SessionStart",
-      message: "Session started",
-    };
-
-    const context = createHookContext(rawInput);
-
-    expect(context.event).toBe("SessionStart");
-    expect(context.toolName).toBe("SessionStart"); // SessionStart sets toolName to event name
-    expect(context.sessionId).toBe("test-123");
-  });
-
-  test("should handle UserPromptSubmit event", () => {
-    const rawInput = {
-      session_id: "test-123",
-      transcript_path: "/transcript",
-      cwd: "/workspace",
-      hook_event_name: "UserPromptSubmit",
-      prompt: "Test prompt", // Changed from user_prompt to prompt
-    };
-
-    const context = createHookContext(rawInput);
-
-    expect(context.event).toBe("UserPromptSubmit");
-    expect(context.userPrompt).toBe("Test prompt");
+    expect(result.continue).toBe(true);
+    expect(result.systemMessage).toBe("Fallback executed");
   });
 });
 
 describe("Runtime - HookResults Utility", () => {
   test("should create success result", () => {
-    const result = HookResults.success("Success message", { data: "test" });
+    const result = HookResults.success("Success message");
 
-    expect(result.success).toBe(true);
-    expect(result.message).toBe("Success message");
-    expect(result.data).toEqual({ data: "test" });
-    expect(result.block).toBeUndefined();
+    expect(result.continue).toBe(true);
+    expect(result.systemMessage).toBe("Success message");
   });
 
   test("should create failure result", () => {
     const result = HookResults.failure("Failure message");
 
-    expect(result.success).toBe(false);
-    expect(result.message).toBe("Failure message");
-    expect(result.block).toBe(false); // Default is false, not undefined
+    expect(result.continue).toBe(false);
+    expect(result.systemMessage).toBe("Failure message");
   });
 
   test("should create block result", () => {
     const result = HookResults.block("Blocked message");
 
-    expect(result.success).toBe(false);
-    expect(result.message).toBe("Blocked message");
-    expect(result.block).toBe(true);
+    expect(result.continue).toBe(false);
+    expect(result.systemMessage).toBe("Blocked message");
+    expect(result.stopReason).toBe("blocked");
   });
 
   test("should create skip result", () => {
     const result = HookResults.skip("Skip message");
 
-    expect(result.success).toBe(true);
-    expect(result.message).toBe("Skip message");
-    // skip is not a property in the result, it's just a success with a message
+    expect(result.continue).toBe(true);
+    expect(result.systemMessage).toBe("Skip message");
   });
 
   test("should create warn result", () => {
-    const result = HookResults.warn("Warning message", { level: "warning" });
+    const result = HookResults.warn("Warning message");
 
-    expect(result.success).toBe(true);
-    expect(result.message).toBe("Warning message");
-    expect(result.data).toEqual({ level: "warning" });
+    expect(result.continue).toBe(true);
+    expect(result.systemMessage).toBe("Warning message");
   });
 });
 
 describe("Runtime - Output Handling", () => {
   test("should be testable with custom exit handler", () => {
-    const result = HookResults.success("Test message");
     let exitCode: number | undefined;
-
-    const mockExitHandler = (code: number): never => {
+    const mockExit = (code: number) => {
       exitCode = code;
-      throw new Error(`Mock exit with code ${code}`);
+      return undefined as never;
     };
 
-    expect(() => {
-      outputHookResult(result, "exit-code", mockExitHandler);
-    }).toThrow("Mock exit with code 0");
+    const result = { continue: true, systemMessage: "Success" };
+
+    try {
+      outputHookResult(result, mockExit);
+    } catch {
+      // Expected to throw since it calls never-returning exit handler
+    }
 
     expect(exitCode).toBe(0);
   });
 
-  test("should handle blocking errors with exit code 2", () => {
-    const result = HookResults.block("Blocked operation");
-    let exitCode: number | undefined;
+  test("should handle output via stdout", () => {
+    const originalStdout = stdout.json;
+    let capturedOutput: any;
 
-    const mockExitHandler = (code: number): never => {
-      exitCode = code;
-      throw new Error(`Mock exit with code ${code}`);
+    stdout.json = (data: any) => {
+      capturedOutput = data;
+      return originalStdout.call(stdout, data);
     };
 
-    expect(() => {
-      outputHookResult(result, "exit-code", mockExitHandler);
-    }).toThrow("Mock exit with code 2");
-
-    expect(exitCode).toBe(2);
-  });
-
-  test("should handle non-blocking errors with exit code 1", () => {
-    const result = HookResults.failure("Non-blocking error");
-    let exitCode: number | undefined;
-
-    const mockExitHandler = (code: number): never => {
-      exitCode = code;
-      throw new Error(`Mock exit with code ${code}`);
-    };
-
-    expect(() => {
-      outputHookResult(result, "exit-code", mockExitHandler);
-    }).toThrow("Mock exit with code 1");
-
-    expect(exitCode).toBe(1);
-  });
-
-  test("should handle JSON mode with custom exit handler", () => {
-    const result = HookResults.success("Test message");
-    let exitCode: number | undefined;
-    let consoleOutput: string | undefined;
-
-    // Mock stdout.json to capture JSON output
-    const originalJson = stdout.json;
-    stdout.json = (value: unknown) => {
-      consoleOutput = JSON.stringify(value);
-    };
-
-    const mockExitHandler = (code: number): never => {
-      exitCode = code;
-      throw new Error(`Mock exit with code ${code}`);
-    };
+    const result = { continue: false, systemMessage: "Failed" };
 
     try {
-      expect(() => {
-        outputHookResult(result, "json", mockExitHandler);
-      }).toThrow("Mock exit with code 0"); // JSON mode always exits 0
-
-      expect(exitCode).toBe(0);
-      expect(consoleOutput).toBe(
-        '{"action":"continue","message":"Test message"}'
-      );
-    } finally {
-      // Restore writer
-      stdout.json = originalJson;
+      outputHookResult(result, () => undefined as never);
+    } catch {
+      // Expected to throw
     }
+
+    expect(capturedOutput).toEqual(result);
+
+    // Restore original function
+    stdout.json = originalStdout;
   });
 });
 
 describe("Runtime - executeHook", () => {
-  test("should execute hook successfully and clear timeout", async () => {
-    const handler: HookHandler = async () => {
-      return HookResults.success("Hook executed successfully");
+  test("should execute handler successfully", async () => {
+    const handler: HookCallback = async () => {
+      return HookResults.success("Success");
     };
 
-    const context: HookContext = {
-      event: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test",
-      transcriptPath: "/test",
-      cwd: "/test",
-      toolInput: { command: "echo test" },
-      environment: {},
-      rawInput: {} as any,
-    };
+    const input = createBashInput("PreToolUse", "test command");
+    const result = await executeHook(handler, input, { timeout: 1000 });
 
-    const result = await executeHook(handler, context, { timeout: 1000 });
-
-    expect(result.success).toBe(true);
-    expect(result.message).toBe("Hook executed successfully");
-    expect(result.metadata?.duration).toBeGreaterThanOrEqual(0);
-    expect(result.metadata?.timestamp).toBeDefined();
+    expect(result.continue).toBe(true);
+    expect(result.systemMessage).toBe("Success");
   });
 
-  test("should timeout and clear timer properly", async () => {
-    const handler: HookHandler = async () => {
-      // Simulate slow hook that exceeds timeout
-      await new Promise((resolve) => setTimeout(resolve, 100));
+  test("should timeout and return failure", async () => {
+    const handler: HookCallback = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Longer than timeout
       return HookResults.success("Should not reach here");
     };
 
-    const context: HookContext = {
-      event: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test",
-      transcriptPath: "/test",
-      cwd: "/test",
-      toolInput: { command: "echo test" },
-      environment: {},
-      rawInput: {} as any,
-    };
-
-    const result = await executeHook(handler, context, {
+    const input = createBashInput("PreToolUse", "test command");
+    const result = await executeHook(handler, input, {
       timeout: 50,
       throwOnError: false,
     });
 
-    expect(result.success).toBe(false);
-    expect(result.message).toContain("timed out");
-    expect(result.metadata?.duration).toBeGreaterThanOrEqual(50);
+    expect(result.continue).toBe(false);
+    expect(result.systemMessage).toContain("timed out");
   });
 
-  test("should complete before timeout and clear timer", async () => {
+  test("should complete before timeout", async () => {
     let timerCleared = false;
     const originalClearTimeout = globalThis.clearTimeout;
 
@@ -376,28 +240,16 @@ describe("Runtime - executeHook", () => {
     };
 
     try {
-      const handler: HookHandler = async () => {
-        // Complete quickly, well before timeout
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        return HookResults.success("Completed quickly");
+      const handler: HookCallback = async () => {
+        return HookResults.success("Fast execution");
       };
 
-      const context: HookContext = {
-        event: "PreToolUse",
-        toolName: "Bash",
-        sessionId: "test",
-        transcriptPath: "/test",
-        cwd: "/test",
-        toolInput: { command: "echo test" },
-        environment: {},
-        rawInput: {} as any,
-      };
+      const input = createBashInput("PreToolUse", "test command");
+      const result = await executeHook(handler, input, { timeout: 1000 });
 
-      const result = await executeHook(handler, context, { timeout: 1000 });
-
-      expect(result.success).toBe(true);
-      expect(result.message).toBe("Completed quickly");
-      expect(timerCleared).toBe(true); // Verify timer was cleared
+      expect(result.continue).toBe(true);
+      expect(result.systemMessage).toBe("Fast execution");
+      expect(timerCleared).toBe(true);
     } finally {
       // Restore original clearTimeout
       globalThis.clearTimeout = originalClearTimeout;
@@ -414,29 +266,19 @@ describe("Runtime - executeHook", () => {
     };
 
     try {
-      const handler: HookHandler = async () => {
+      const handler: HookCallback = async () => {
         throw new Error("Handler error");
       };
 
-      const context: HookContext = {
-        event: "PreToolUse",
-        toolName: "Bash",
-        sessionId: "test",
-        transcriptPath: "/test",
-        cwd: "/test",
-        toolInput: { command: "echo test" },
-        environment: {},
-        rawInput: {} as any,
-      };
-
-      const result = await executeHook(handler, context, {
+      const input = createBashInput("PreToolUse", "test command");
+      const result = await executeHook(handler, input, {
         timeout: 1000,
         throwOnError: false,
       });
 
-      expect(result.success).toBe(false);
-      expect(result.message).toBe("Handler error");
-      expect(timerCleared).toBe(true); // Timer should be cleared even on errors
+      expect(result.continue).toBe(false);
+      expect(result.systemMessage).toBe("Handler error");
+      expect(timerCleared).toBe(true);
     } finally {
       globalThis.clearTimeout = originalClearTimeout;
     }
