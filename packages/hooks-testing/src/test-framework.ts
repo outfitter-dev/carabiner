@@ -4,11 +4,10 @@
  */
 
 import type {
-  HookContext,
-  HookHandler,
-  HookResult,
+  HookCallback,
+  HookInput,
+  HookJSONOutput,
 } from "@carabiner/hooks-core";
-import { executeHook } from "@carabiner/hooks-core";
 import type { MockEnvironmentConfig } from "./mock";
 import { mockEnv } from "./mock";
 
@@ -31,15 +30,15 @@ export type TestSuiteConfig = {
 export type HookTestConfig = {
   name: string;
   description?: string;
-  context: HookContext;
+  input: HookInput;
   environment?: MockEnvironmentConfig;
   timeout?: number;
   skip?: boolean;
   only?: boolean;
-  expectedResult?: Partial<HookResult>;
+  expectedResult?: Partial<HookJSONOutput>;
   customAssertions?: (
-    result: HookResult,
-    context: HookContext
+    result: HookJSONOutput,
+    input: HookInput
   ) => void | Promise<void>;
 };
 
@@ -51,7 +50,7 @@ export type TestExecutionResult = {
   passed: boolean;
   duration: number;
   error?: Error;
-  result?: HookResult;
+  result?: HookJSONOutput;
   skipped?: boolean;
 };
 
@@ -98,12 +97,12 @@ export class HookTestRunner {
   /**
    * Add a test to the current suite
    */
-  test(handler: HookHandler, testConfig: HookTestConfig): void {
+  test(callback: HookCallback, testConfig: HookTestConfig): void {
     if (!this.currentSuite) {
       throw new Error("test() must be called within a suite()");
     }
 
-    this.currentSuite.addTest(handler, testConfig);
+    this.currentSuite.addTest(callback, testConfig);
   }
 
   /**
@@ -171,8 +170,8 @@ export class TestSuite {
   /**
    * Add test to suite
    */
-  addTest(handler: HookHandler, testConfig: HookTestConfig): void {
-    this.tests.push(new HookTest(handler, testConfig));
+  addTest(callback: HookCallback, testConfig: HookTestConfig): void {
+    this.tests.push(new HookTest(callback, testConfig));
   }
 
   /**
@@ -274,7 +273,7 @@ export class TestSuite {
  */
 export class HookTest {
   constructor(
-    private readonly handler: HookHandler,
+    private readonly callback: HookCallback,
     public config: HookTestConfig
   ) {}
 
@@ -293,7 +292,9 @@ export class HookTest {
 
       // Execute hook with timeout
       const result = await Promise.race([
-        executeHook(this.handler, this.config.context),
+        this.callback(this.config.input, undefined, {
+          signal: new AbortController().signal,
+        }),
         new Promise<never>((_, reject) =>
           setTimeout(
             () => reject(new Error(`Test timeout after ${timeout}ms`)),
@@ -329,7 +330,7 @@ export class HookTest {
   /**
    * Perform test assertions
    */
-  private async performAssertions(result: HookResult): Promise<void> {
+  private async performAssertions(result: HookJSONOutput): Promise<void> {
     // Check expected result if specified
     if (this.config.expectedResult) {
       for (const [key, expectedValue] of Object.entries(
@@ -359,7 +360,7 @@ export class HookTest {
     // Run custom assertions
     if (this.config.customAssertions) {
       await Promise.resolve(
-        this.config.customAssertions(result, this.config.context)
+        this.config.customAssertions(result, this.config.input)
       );
     }
   }
@@ -373,19 +374,22 @@ export const testBuilders = {
    * Build security validation test
    */
   securityValidation(
-    _handler: HookHandler,
-    maliciousContext: HookContext,
+    _callback: HookCallback,
+    maliciousInput: HookInput,
     expectedBlocked = true
   ): HookTestConfig {
     return {
       name: `should ${expectedBlocked ? "block" : "allow"} security validation`,
-      context: maliciousContext,
+      input: maliciousInput,
       expectedResult: {
-        success: !expectedBlocked,
-        block: expectedBlocked,
+        continue: !expectedBlocked,
+        suppressOutput: expectedBlocked,
       },
-      customAssertions: (result: HookResult) => {
-        if (expectedBlocked && !result.message?.includes("blocked")) {
+      customAssertions: (result: HookJSONOutput) => {
+        if (
+          expectedBlocked &&
+          !(result as any).systemMessage?.includes("blocked")
+        ) {
           throw new Error("Expected blocking message in result");
         }
       },
@@ -396,15 +400,17 @@ export const testBuilders = {
    * Build performance test
    */
   performance(
-    _handler: HookHandler,
-    context: HookContext,
+    _callback: HookCallback,
+    input: HookInput,
     maxDurationMs: number
   ): HookTestConfig {
     return {
       name: `should complete within ${maxDurationMs}ms`,
-      context,
-      customAssertions: (result: HookResult) => {
-        const duration = result.metadata?.duration;
+      input,
+      customAssertions: (result: HookJSONOutput) => {
+        // Note: Duration tracking would need to be added externally
+        // since HookJSONOutput doesn't include metadata by default
+        const duration = (result as any).metadata?.duration;
         if (duration && duration > maxDurationMs) {
           throw new Error(
             `Expected execution under ${maxDurationMs}ms, took ${duration}ms`
@@ -418,17 +424,17 @@ export const testBuilders = {
    * Build error handling test
    */
   errorHandling(
-    _handler: HookHandler,
-    faultyContext: HookContext
+    _callback: HookCallback,
+    faultyInput: HookInput
   ): HookTestConfig {
     return {
       name: "should handle errors gracefully",
-      context: faultyContext,
+      input: faultyInput,
       expectedResult: {
-        success: false,
+        continue: false,
       },
-      customAssertions: (result: HookResult) => {
-        if (!result.message) {
+      customAssertions: (result: HookJSONOutput) => {
+        if (!(result as any).systemMessage) {
           throw new Error("Expected error message in result");
         }
       },
@@ -439,16 +445,16 @@ export const testBuilders = {
    * Build success case test
    */
   successCase(
-    _handler: HookHandler,
-    context: HookContext,
+    _callback: HookCallback,
+    input: HookInput,
     expectedMessage?: string
   ): HookTestConfig {
     return {
       name: "should succeed with valid input",
-      context,
+      input,
       expectedResult: {
-        success: true,
-        ...(expectedMessage && { message: expectedMessage }),
+        continue: true,
+        ...(expectedMessage && { systemMessage: expectedMessage }),
       },
     };
   },
@@ -466,8 +472,8 @@ export function suite(config: TestSuiteConfig, suiteFn: () => void): void {
   testRunner.suite(config, suiteFn);
 }
 
-export function test(handler: HookHandler, config: HookTestConfig): void {
-  testRunner.test(handler, config);
+export function test(callback: HookCallback, config: HookTestConfig): void {
+  testRunner.test(callback, config);
 }
 
 /**

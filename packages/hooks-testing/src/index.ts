@@ -4,13 +4,18 @@
  */
 
 export type {
-  MockContextOptions,
   MockEnvironmentConfig,
+  MockInputOptions,
+  // Backward compatibility - deprecated
+  MockInputOptions as MockContextOptions,
 } from "@/hooks-testing/src/mock";
 // Export mock utilities
 export {
-  createMockContext,
-  createMockContextFor,
+  createMockInput,
+  // Backward compatibility - deprecated
+  createMockInput as createMockContext,
+  createMockInputFor,
+  createMockInputFor as createMockContextFor,
   MockEnvironment,
   mockEnv,
   mockToolInputs,
