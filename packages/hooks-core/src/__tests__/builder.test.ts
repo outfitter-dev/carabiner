@@ -11,7 +11,7 @@ import {
   middleware,
 } from "../builder";
 import { HookResults } from "../runtime";
-import type { HookContext } from "../types";
+import type { PreToolUseHookInput } from "../types";
 
 describe("HookBuilder", () => {
   test("should build basic hook", () => {
@@ -34,7 +34,7 @@ describe("HookBuilder", () => {
       .build();
 
     expect(built.event).toBe("PreToolUse");
-    expect(built.tool).toBe("Bash");
+    expect(built.matcher).toBe("Bash");
   });
 
   test("should build hook with priority", () => {
@@ -73,35 +73,37 @@ describe("HookBuilder", () => {
 
     const built = new HookBuilder()
       .forEvent("PreToolUse")
-      .withCondition((context) => {
+      .withCondition((input) => {
         conditionChecked = true;
-        return context.toolName === "Bash";
+        return "tool_name" in input && input.tool_name === "Bash";
       })
       .withHandler(async () => HookResults.success("test"))
       .build();
 
-    const bashContext: HookContext = {
-      event: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test",
-      transcriptPath: "/test",
+    const bashInput: PreToolUseHookInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      session_id: "test",
+      transcript_path: "/test",
       cwd: "/test",
-      toolInput: { command: "test" },
-      environment: {},
-      rawInput: {} as any,
+      tool_input: { command: "test" },
     };
 
-    const result = await built.handler(bashContext);
+    const result = await built.handler(bashInput, undefined, {
+      signal: new AbortController().signal,
+    });
     expect(conditionChecked).toBe(true);
-    expect(result.success).toBe(true);
+    expect(result.continue).toBe(true);
 
-    const writeContext: HookContext = {
-      ...bashContext,
-      toolName: "Write",
+    const writeInput: PreToolUseHookInput = {
+      ...bashInput,
+      tool_name: "Write",
     };
 
-    const writeResult = await built.handler(writeContext);
-    expect(writeResult.message).toContain("skipped");
+    const writeResult = await built.handler(writeInput, undefined, {
+      signal: new AbortController().signal,
+    });
+    expect(writeResult.systemMessage).toContain("skipped");
   });
 
   test("should throw error when building without event", () => {
@@ -160,7 +162,7 @@ describe("createHook - Functional API", () => {
     );
 
     expect(hook.event).toBe("PreToolUse");
-    expect(hook.tool).toBeUndefined();
+    expect(hook.matcher).toBeUndefined();
   });
 
   test("should create tool-specific PreToolUse hook", () => {
@@ -169,7 +171,7 @@ describe("createHook - Functional API", () => {
     );
 
     expect(hook.event).toBe("PreToolUse");
-    expect(hook.tool).toBe("Bash");
+    expect(hook.matcher).toBe("Bash");
   });
 
   test("should create universal PostToolUse hook", () => {
@@ -178,7 +180,7 @@ describe("createHook - Functional API", () => {
     );
 
     expect(hook.event).toBe("PostToolUse");
-    expect(hook.tool).toBeUndefined();
+    expect(hook.matcher).toBeUndefined();
   });
 
   test("should create tool-specific PostToolUse hook", () => {
@@ -187,7 +189,7 @@ describe("createHook - Functional API", () => {
     );
 
     expect(hook.event).toBe("PostToolUse");
-    expect(hook.tool).toBe("Write");
+    expect(hook.matcher).toBe("Write");
   });
 
   test("should create SessionStart hook", () => {
@@ -209,25 +211,25 @@ describe("createHook - Functional API", () => {
   test("should create conditional hook", async () => {
     const hook = createHook.conditional(
       "PreToolUse",
-      (context) => context.toolName === "Bash",
+      (input) => "tool_name" in input && input.tool_name === "Bash",
       async () => HookResults.success("conditional")
     );
 
     expect(hook.event).toBe("PreToolUse");
 
-    const bashContext: HookContext = {
-      event: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test",
-      transcriptPath: "/test",
+    const bashInput: PreToolUseHookInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      session_id: "test",
+      transcript_path: "/test",
       cwd: "/test",
-      toolInput: { command: "test" },
-      environment: {},
-      rawInput: {} as any,
+      tool_input: { command: "test" },
     };
 
-    const result = await hook.handler(bashContext);
-    expect(result.success).toBe(true);
+    const result = await hook.handler(bashInput, undefined, {
+      signal: new AbortController().signal,
+    });
+    expect(result.continue).toBe(true);
   });
 
   test("should throw error when tool-specific hook missing handler", () => {
@@ -259,7 +261,7 @@ describe("defineHook - Declarative API", () => {
     });
 
     expect(hook.event).toBe("PostToolUse");
-    expect(hook.tool).toBe("Edit");
+    expect(hook.matcher).toBe("Edit");
   });
 
   test("should define hook with condition", async () => {
@@ -267,27 +269,27 @@ describe("defineHook - Declarative API", () => {
 
     const hook = defineHook({
       event: "PreToolUse",
-      condition: (context) => {
+      condition: (input) => {
         conditionChecked = true;
-        return context.sessionId === "allowed";
+        return input.session_id === "allowed";
       },
       handler: async () => HookResults.success("test"),
     });
 
-    const context: HookContext = {
-      event: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "allowed",
-      transcriptPath: "/test",
+    const input: PreToolUseHookInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      session_id: "allowed",
+      transcript_path: "/test",
       cwd: "/test",
-      toolInput: { command: "test" },
-      environment: {},
-      rawInput: {} as any,
+      tool_input: { command: "test" },
     };
 
-    const result = await hook.handler(context);
+    const result = await hook.handler(input, undefined, {
+      signal: new AbortController().signal,
+    });
     expect(conditionChecked).toBe(true);
-    expect(result.success).toBe(true);
+    expect(result.continue).toBe(true);
   });
 
   test("should define hook with middleware", async () => {
@@ -297,19 +299,19 @@ describe("defineHook - Declarative API", () => {
       middleware: [middleware.timing()],
     });
 
-    const context: HookContext = {
-      event: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test",
-      transcriptPath: "/test",
+    const input: PreToolUseHookInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      session_id: "test",
+      transcript_path: "/test",
       cwd: "/test",
-      toolInput: { command: "test" },
-      environment: {},
-      rawInput: {} as any,
+      tool_input: { command: "test" },
     };
 
-    const result = await hook.handler(context);
-    expect(result.success).toBe(true);
+    const result = await hook.handler(input, undefined, {
+      signal: new AbortController().signal,
+    });
+    expect(result.continue).toBe(true);
     expect(result.metadata?.duration).toBeDefined();
   });
 });
@@ -325,18 +327,18 @@ describe("Middleware", () => {
       })
       .build();
 
-    const context: HookContext = {
-      event: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test",
-      transcriptPath: "/test",
+    const input: PreToolUseHookInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      session_id: "test",
+      transcript_path: "/test",
       cwd: "/test",
-      toolInput: { command: "test" },
-      environment: {},
-      rawInput: {} as any,
+      tool_input: { command: "test" },
     };
 
-    const result = await hook.handler(context);
+    const result = await hook.handler(input, undefined, {
+      signal: new AbortController().signal,
+    });
     expect(result.metadata?.duration).toBeGreaterThan(9);
   });
 
@@ -349,21 +351,20 @@ describe("Middleware", () => {
       })
       .build();
 
-    const context: HookContext = {
-      event: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test",
-      transcriptPath: "/test",
+    const input: PreToolUseHookInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      session_id: "test",
+      transcript_path: "/test",
       cwd: "/test",
-      toolInput: { command: "test" },
-      environment: {},
-      rawInput: {} as any,
+      tool_input: { command: "test" },
     };
 
-    const result = await hook.handler(context);
-    expect(result.success).toBe(false);
-    expect(result.message).toContain("Test error");
-    expect(result.block).toBe(true); // PreToolUse errors should block
+    const result = await hook.handler(input, undefined, {
+      signal: new AbortController().signal,
+    });
+    expect(result.continue).toBe(false);
+    expect(result.systemMessage).toContain("Test error");
   });
 
   test("should apply validation middleware", async () => {
@@ -371,50 +372,56 @@ describe("Middleware", () => {
       .forEvent("PreToolUse")
       .withMiddleware(
         middleware.validation(
-          (context) => context.toolName === "Bash",
+          (input) => "tool_name" in input && input.tool_name === "Bash",
           "Only Bash is allowed"
         )
       )
       .withHandler(async () => HookResults.success("test"))
       .build();
 
-    const bashContext: HookContext = {
-      event: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test",
-      transcriptPath: "/test",
+    const bashInput: PreToolUseHookInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      session_id: "test",
+      transcript_path: "/test",
       cwd: "/test",
-      toolInput: { command: "test" },
-      environment: {},
-      rawInput: {} as any,
+      tool_input: { command: "test" },
     };
 
-    const bashResult = await hook.handler(bashContext);
-    expect(bashResult.success).toBe(true);
+    const bashResult = await hook.handler(bashInput, undefined, {
+      signal: new AbortController().signal,
+    });
+    expect(bashResult.continue).toBe(true);
 
-    const writeContext: HookContext = {
-      ...bashContext,
-      toolName: "Write",
+    const writeInput: PreToolUseHookInput = {
+      ...bashInput,
+      tool_name: "Write",
     };
 
-    const writeResult = await hook.handler(writeContext);
-    expect(writeResult.success).toBe(false);
-    expect(writeResult.message).toBe("Only Bash is allowed");
+    const writeResult = await hook.handler(writeInput, undefined, {
+      signal: new AbortController().signal,
+    });
+    expect(writeResult.continue).toBe(false);
+    expect(writeResult.systemMessage).toBe("Only Bash is allowed");
   });
 
   test("should apply multiple middleware in order", async () => {
     const executionOrder: string[] = [];
 
-    const middleware1 = async (context: any, next: any) => {
+    const middleware1 = async (input: any, toolUseId: any, next: any) => {
       executionOrder.push("middleware1-before");
-      const result = await next(context);
+      const result = await next(input, toolUseId, {
+        signal: new AbortController().signal,
+      });
       executionOrder.push("middleware1-after");
       return result;
     };
 
-    const middleware2 = async (context: any, next: any) => {
+    const middleware2 = async (input: any, toolUseId: any, next: any) => {
       executionOrder.push("middleware2-before");
-      const result = await next(context);
+      const result = await next(input, toolUseId, {
+        signal: new AbortController().signal,
+      });
       executionOrder.push("middleware2-after");
       return result;
     };
@@ -429,18 +436,18 @@ describe("Middleware", () => {
       })
       .build();
 
-    const context: HookContext = {
-      event: "PreToolUse",
-      toolName: "Bash",
-      sessionId: "test",
-      transcriptPath: "/test",
+    const input: PreToolUseHookInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      session_id: "test",
+      transcript_path: "/test",
       cwd: "/test",
-      toolInput: { command: "test" },
-      environment: {},
-      rawInput: {} as any,
+      tool_input: { command: "test" },
     };
 
-    await hook.handler(context);
+    await hook.handler(input, undefined, {
+      signal: new AbortController().signal,
+    });
 
     expect(executionOrder).toEqual([
       "middleware1-before",

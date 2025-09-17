@@ -4,14 +4,15 @@
  */
 
 import type {
-  ClaudeHookInputVariant,
-  ClaudeToolHookInput,
   GetToolInput,
-  HookContext,
   HookEnvironment,
-  HookEvent,
+  HookInput,
+  PostToolUseHookInput,
+  PreToolUseHookInput,
+  SessionStartHookInput,
   ToolInput,
   ToolName,
+  UserPromptSubmitHookInput,
 } from "@carabiner/hooks-core";
 
 /**
@@ -28,13 +29,13 @@ export type MockEnvironmentConfig = {
 };
 
 /**
- * Mock hook context options
+ * Mock hook input options - creates HookInput objects instead of HookContext
  */
-export type MockContextOptions<
-  TEvent extends HookEvent = HookEvent,
+export type MockInputOptions<
+  TInput extends HookInput = HookInput,
   TTool extends ToolName = ToolName,
 > = {
-  event: TEvent;
+  event: TInput["hook_event_name"];
   toolName?: TTool;
   sessionId?: string;
   workspacePath?: string;
@@ -155,150 +156,200 @@ export class MockEnvironment {
 }
 
 /**
- * Create mock hook context
+ * Create mock hook input
  */
-export function createMockContext<
-  TEvent extends HookEvent = HookEvent,
-  TTool extends ToolName = ToolName,
->(options: MockContextOptions<TEvent, TTool>): HookContext<TEvent, TTool> {
+export function createMockInput<TInput extends HookInput = HookInput>(
+  options: MockInputOptions<TInput>
+): TInput {
   const {
     event,
-    toolName = "Bash" as TTool,
+    toolName = "Bash",
     sessionId = "test-session-123",
     workspacePath = process.cwd(),
-    toolInput = {} as GetToolInput<TTool>,
-    toolOutput: _toolOutput,
+    toolInput = {},
+    toolOutput,
     userPrompt,
-    environment = {},
   } = options;
 
-  const mockEnvironment: HookEnvironment = {
-    CLAUDE_PROJECT_DIR: workspacePath,
-    ...environment,
-  };
-
-  const rawInput: ClaudeHookInputVariant = {
-    hook_event_name: event === "PreToolUse" ? "PreToolUse" : "PostToolUse",
-    tool_name: toolName,
-    tool_input: toolInput as Record<string, unknown>,
+  // Base fields for all hook inputs
+  const baseInput = {
     session_id: sessionId,
     transcript_path: "/tmp/test-transcript.txt",
     cwd: workspacePath,
-    user_prompt: userPrompt,
-  } as ClaudeToolHookInput;
-
-  return {
-    event,
-    sessionId,
-    transcriptPath: "/tmp/test-transcript.txt",
-    toolName,
-    cwd: workspacePath,
-    toolInput,
-    userPrompt,
-    environment: mockEnvironment,
-    rawInput,
   };
+
+  // Create the appropriate hook input based on event type
+  if (event === "PreToolUse") {
+    return {
+      ...baseInput,
+      hook_event_name: "PreToolUse",
+      tool_name: toolName,
+      tool_input: toolInput as Record<string, unknown>,
+    } as TInput;
+  }
+  if (event === "PostToolUse") {
+    return {
+      ...baseInput,
+      hook_event_name: "PostToolUse",
+      tool_name: toolName,
+      tool_input: toolInput as Record<string, unknown>,
+      tool_response: toolOutput || "Mock tool response",
+    } as TInput;
+  }
+  if (event === "UserPromptSubmit") {
+    return {
+      ...baseInput,
+      hook_event_name: "UserPromptSubmit",
+      prompt: userPrompt || "test prompt",
+    } as TInput;
+  }
+  if (event === "SessionStart") {
+    return {
+      ...baseInput,
+      hook_event_name: "SessionStart",
+    } as TInput;
+  }
+  if (event === "SessionEnd") {
+    return {
+      ...baseInput,
+      hook_event_name: "SessionEnd",
+    } as TInput;
+  }
+  if (event === "Stop") {
+    return {
+      ...baseInput,
+      hook_event_name: "Stop",
+    } as TInput;
+  }
+  if (event === "SubagentStop") {
+    return {
+      ...baseInput,
+      hook_event_name: "SubagentStop",
+    } as TInput;
+  }
+  if (event === "PreCompact") {
+    return {
+      ...baseInput,
+      hook_event_name: "PreCompact",
+    } as TInput;
+  }
+  return {
+    ...baseInput,
+    hook_event_name: "Notification",
+  } as TInput;
 }
 
 /**
- * Create mock contexts for specific tools
+ * Create mock hook inputs for specific tools and events
  */
-export const createMockContextFor = {
+export const createMockInputFor = {
   /**
-   * Create Bash tool context
+   * Create Bash tool input for PreToolUse/PostToolUse
    */
-  bash<TEvent extends HookEvent>(
-    event: TEvent,
+  bash(
+    event: "PreToolUse" | "PostToolUse",
     command = "echo test",
-    options: Partial<MockContextOptions<TEvent, "Bash">> = {}
-  ): HookContext<TEvent, "Bash"> {
-    return createMockContext({
+    options: Omit<
+      Partial<MockInputOptions>,
+      "event" | "toolName" | "toolInput"
+    > = {}
+  ): PreToolUseHookInput | PostToolUseHookInput {
+    return createMockInput({
       event,
-      toolName: "Bash",
+      toolName: "Bash" as const,
       toolInput: { command },
       ...options,
-    });
+    }) as PreToolUseHookInput | PostToolUseHookInput;
   },
 
   /**
-   * Create Write tool context
+   * Create Write tool input for PreToolUse/PostToolUse
    */
-  write<TEvent extends HookEvent>(
-    event: TEvent,
+  write(
+    event: "PreToolUse" | "PostToolUse",
     filePath = "test.txt",
     content = "test content",
-    options: Partial<MockContextOptions<TEvent, "Write">> = {}
-  ): HookContext<TEvent, "Write"> {
-    return createMockContext({
+    options: Omit<
+      Partial<MockInputOptions>,
+      "event" | "toolName" | "toolInput"
+    > = {}
+  ): PreToolUseHookInput | PostToolUseHookInput {
+    return createMockInput({
       event,
-      toolName: "Write",
+      toolName: "Write" as const,
       toolInput: { file_path: filePath, content },
       ...options,
-    });
+    }) as PreToolUseHookInput | PostToolUseHookInput;
   },
 
   /**
-   * Create Edit tool context
+   * Create Edit tool input for PreToolUse/PostToolUse
    */
-  edit<TEvent extends HookEvent>(
-    event: TEvent,
+  edit(
+    event: "PreToolUse" | "PostToolUse",
     filePath = "test.txt",
     oldString = "old",
     newString = "new",
-    options: Partial<MockContextOptions<TEvent, "Edit">> = {}
-  ): HookContext<TEvent, "Edit"> {
-    return createMockContext({
+    options: Omit<
+      Partial<MockInputOptions>,
+      "event" | "toolName" | "toolInput"
+    > = {}
+  ): PreToolUseHookInput | PostToolUseHookInput {
+    return createMockInput({
       event,
-      toolName: "Edit",
+      toolName: "Edit" as const,
       toolInput: {
         file_path: filePath,
         old_string: oldString,
         new_string: newString,
       },
       ...options,
-    });
+    }) as PreToolUseHookInput | PostToolUseHookInput;
   },
 
   /**
-   * Create Read tool context
+   * Create Read tool input for PreToolUse/PostToolUse
    */
-  read<TEvent extends HookEvent>(
-    event: TEvent,
+  read(
+    event: "PreToolUse" | "PostToolUse",
     filePath = "test.txt",
-    options: Partial<MockContextOptions<TEvent, "Read">> = {}
-  ): HookContext<TEvent, "Read"> {
-    return createMockContext({
+    options: Omit<
+      Partial<MockInputOptions>,
+      "event" | "toolName" | "toolInput"
+    > = {}
+  ): PreToolUseHookInput | PostToolUseHookInput {
+    return createMockInput({
       event,
-      toolName: "Read",
+      toolName: "Read" as const,
       toolInput: { file_path: filePath },
       ...options,
-    });
+    }) as PreToolUseHookInput | PostToolUseHookInput;
   },
 
   /**
-   * Create SessionStart context
+   * Create SessionStart input
    */
   sessionStart(
-    options: Partial<MockContextOptions<"SessionStart">> = {}
-  ): HookContext<"SessionStart"> {
-    return createMockContext({
-      event: "SessionStart",
+    options: Omit<Partial<MockInputOptions>, "event"> = {}
+  ): SessionStartHookInput {
+    return createMockInput({
+      event: "SessionStart" as const,
       ...options,
-    });
+    }) as SessionStartHookInput;
   },
 
   /**
-   * Create UserPromptSubmit context
+   * Create UserPromptSubmit input
    */
   userPromptSubmit(
     userPrompt = "test prompt",
-    options: Partial<MockContextOptions<"UserPromptSubmit">> = {}
-  ): HookContext<"UserPromptSubmit"> {
-    return createMockContext({
-      event: "UserPromptSubmit",
+    options: Omit<Partial<MockInputOptions>, "event"> = {}
+  ): UserPromptSubmitHookInput {
+    return createMockInput({
+      event: "UserPromptSubmit" as const,
       userPrompt,
       ...options,
-    });
+    }) as UserPromptSubmitHookInput;
   },
 };
 
