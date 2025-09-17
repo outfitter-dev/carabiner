@@ -14,6 +14,8 @@ export {
 } from "./builder";
 // Export production logging system
 export * from "./logging";
+// Export provider adapters and registry helpers
+export * from "./providers";
 // Export registry
 export {
   createHookRegistry,
