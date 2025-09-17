@@ -5,7 +5,7 @@ This note tracks overall progress across the `gt-v0.2/` stack. Update the checkl
 ## Branch Status
 
 - [x] `gt-v0.2/docs-setup-adapter-vision` – architecture plan committed (PR #95)
-- [ ] `gt-v0.2/feat-hooks-core-provider-interface`
+- [x] `gt-v0.2/feat-hooks-core-provider-interface`
 - [ ] `gt-v0.2/refactor-runtime-use-adapter`
 - [ ] `gt-v0.2/refactor-testing-adapter-mocks`
 - [ ] `gt-v0.2/refactor-examples-adapter-runtime`
@@ -23,4 +23,3 @@ This note tracks overall progress across the `gt-v0.2/` stack. Update the checkl
 | `docs-provider-howto` | `bun run lint:md` |
 
 Update this file as branches land so future agents have a single reference.
-

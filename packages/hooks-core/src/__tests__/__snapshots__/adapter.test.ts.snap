@@ -1,0 +1,179 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`claudeProviderAdapter.fromProviderInput normalizes PreToolUse input 1`] = `
+{
+  "cwd": "/workspace/project",
+  "environment": {
+    "CLAUDE_PROJECT_DIR": "/claude/project",
+  },
+  "event": "PreToolUse",
+  "metadata": {
+    "provider": {
+      "displayName": "Anthropic Claude Code",
+      "id": "claude",
+      "links": {
+        "docs": "https://docs.anthropic.com/claude/reference/claude-code-hooks",
+        "homepage": "https://www.anthropic.com/claude",
+      },
+      "name": "Claude Code",
+      "runtime": "claude-code",
+      "supports": {
+        "capabilities": [
+          "mcp",
+          "tool-use",
+        ],
+        "events": [
+          "PreToolUse",
+          "PostToolUse",
+          "UserPromptSubmit",
+          "SessionStart",
+          "SessionEnd",
+          "Notification",
+          "Stop",
+          "SubagentStop",
+          "PreCompact",
+        ],
+        "tools": [
+          "Agent",
+          "Bash",
+          "BashOutput",
+          "Edit",
+          "MultiEdit",
+          "Write",
+          "Read",
+          "Glob",
+          "Grep",
+          "KillShell",
+          "NotebookEdit",
+          "TodoWrite",
+          "WebFetch",
+          "WebSearch",
+          "ExitPlanMode",
+          "ListMcpResources",
+          "ReadMcpResource",
+        ],
+      },
+      "version": "1.0.115",
+    },
+    "receivedAt": "<iso-timestamp>",
+  },
+  "raw": {
+    "cwd": "/workspace/project",
+    "hook_event_name": "PreToolUse",
+    "session_id": "session-123",
+    "tool_input": {
+      "command": "echo 'hello world'",
+      "stdin": "",
+    },
+    "tool_name": "Bash",
+    "transcript_path": "/tmp/transcript.md",
+  },
+  "sessionId": "session-123",
+  "tool": {
+    "input": {
+      "command": "echo 'hello world'",
+      "stdin": "",
+    },
+    "name": "Bash",
+  },
+  "transcriptPath": "/tmp/transcript.md",
+  "userPrompt": undefined,
+}
+`;
+
+exports[`claudeProviderAdapter.fromProviderInput captures PostToolUse tool response 1`] = `
+{
+  "cwd": "/workspace/project",
+  "environment": {
+    "CLAUDE_PROJECT_DIR": "/claude/project",
+  },
+  "event": "PostToolUse",
+  "metadata": {
+    "provider": {
+      "displayName": "Anthropic Claude Code",
+      "id": "claude",
+      "links": {
+        "docs": "https://docs.anthropic.com/claude/reference/claude-code-hooks",
+        "homepage": "https://www.anthropic.com/claude",
+      },
+      "name": "Claude Code",
+      "runtime": "claude-code",
+      "supports": {
+        "capabilities": [
+          "mcp",
+          "tool-use",
+        ],
+        "events": [
+          "PreToolUse",
+          "PostToolUse",
+          "UserPromptSubmit",
+          "SessionStart",
+          "SessionEnd",
+          "Notification",
+          "Stop",
+          "SubagentStop",
+          "PreCompact",
+        ],
+        "tools": [
+          "Agent",
+          "Bash",
+          "BashOutput",
+          "Edit",
+          "MultiEdit",
+          "Write",
+          "Read",
+          "Glob",
+          "Grep",
+          "KillShell",
+          "NotebookEdit",
+          "TodoWrite",
+          "WebFetch",
+          "WebSearch",
+          "ExitPlanMode",
+          "ListMcpResources",
+          "ReadMcpResource",
+        ],
+      },
+      "version": "1.0.115",
+    },
+    "receivedAt": "<iso-timestamp>",
+  },
+  "raw": {
+    "cwd": "/workspace/project",
+    "hook_event_name": "PostToolUse",
+    "session_id": "session-456",
+    "tool_input": {
+      "command": "ls",
+      "stdin": "",
+    },
+    "tool_name": "Bash",
+    "tool_response": {
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": 
+"README.md
+"
+,
+    },
+    "transcript_path": "/tmp/transcript.md",
+  },
+  "sessionId": "session-456",
+  "tool": {
+    "input": {
+      "command": "ls",
+      "stdin": "",
+    },
+    "name": "Bash",
+    "response": {
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": 
+"README.md
+"
+,
+    },
+  },
+  "transcriptPath": "/tmp/transcript.md",
+  "userPrompt": undefined,
+}
+`;
