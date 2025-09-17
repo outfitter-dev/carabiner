@@ -421,7 +421,7 @@ function validateBashToolSecurity(
   context: HookContext,
   options: SecurityOptions
 ): void {
-  if (isBashToolInput(context.toolInput)) {
+  if (context.toolInput && isBashToolInput(context.toolInput)) {
     validateBashCommand(context.toolInput.command, options);
   }
 }
@@ -433,7 +433,7 @@ function validateWriteToolSecurity(
   context: HookContext,
   options: SecurityOptions
 ): void {
-  if (isWriteToolInput(context.toolInput)) {
+  if (context.toolInput && isWriteToolInput(context.toolInput)) {
     validateFilePath(context.toolInput.file_path, context.cwd, options);
     validateFileContent(
       context.toolInput.content,
@@ -450,7 +450,7 @@ function validateEditToolSecurity(
   context: HookContext,
   options: SecurityOptions
 ): void {
-  if (isEditToolInput(context.toolInput)) {
+  if (context.toolInput && isEditToolInput(context.toolInput)) {
     validateFilePath(context.toolInput.file_path, context.cwd, options);
     validateFileContent(
       context.toolInput.new_string,
