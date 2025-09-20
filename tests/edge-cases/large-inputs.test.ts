@@ -318,7 +318,7 @@ describe("Large Input Edge Cases", () => {
           continue;
         }
         const ratio = curr / prev;
-        const sizeRatio = sizes[i] / sizes[i - 1];
+        const sizeRatio = sizes[i]! / sizes[i - 1]!;
 
         // Allow some slack for performance variance
         expect(ratio).toBeLessThan(sizeRatio * 5); // At most 5x slower per size increase
@@ -365,7 +365,7 @@ describe("Large Input Edge Cases", () => {
 
   describe("Resource Cleanup Tests", () => {
     test("should properly clean up resources after large operations", async () => {
-      const _initialMemory = process.memoryUsage().heapUsed;
+      process.memoryUsage().heapUsed;
       const resources: any[] = [];
 
       try {

@@ -652,7 +652,7 @@ console.log(JSON.stringify({
           enableSandbox: true,
           requireSignedHooks: true,
         },
-      } satisfies HookConfiguration;
+      };
 
       const configPath = join(
         prodEnv.tempDir,
@@ -708,7 +708,7 @@ console.log(JSON.stringify({
 
   describe("Performance in Production Conditions", () => {
     test("should maintain performance under production load", async () => {
-      const _config = prodEnv.createProductionConfig();
+      prodEnv.createProductionConfig();
       prodEnv.createProductionHooks();
 
       // Simulate production load

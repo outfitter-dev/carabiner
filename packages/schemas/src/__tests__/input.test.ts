@@ -124,7 +124,7 @@ describe("baseClaudeHookInputSchema", () => {
       session_id: "test-session-123",
       transcript_path: "/tmp/transcript.md",
       cwd: "/project",
-      hook_event_name: "SessionStart",
+      hook_event_name: "SessionStart" as const,
     };
 
     expect(() => baseClaudeHookInputSchema.parse(validInput)).not.toThrow();
@@ -138,31 +138,31 @@ describe("baseClaudeHookInputSchema", () => {
         session_id: "ab",
         transcript_path: "/tmp/transcript.md",
         cwd: "/project",
-        hook_event_name: "PreToolUse",
+        hook_event_name: "PreToolUse" as const,
       }, // session_id too short
       {
         session_id: "test-session",
         transcript_path: "relative.md",
         cwd: "/project",
-        hook_event_name: "PreToolUse",
+        hook_event_name: "PreToolUse" as const,
       }, // non-absolute transcript_path
       {
         session_id: "test-session",
         transcript_path: "/tmp/file.txt",
         cwd: "/project",
-        hook_event_name: "PreToolUse",
+        hook_event_name: "PreToolUse" as const,
       }, // transcript_path not .md
       {
         session_id: "test-session",
         transcript_path: "/tmp/transcript.md",
         cwd: "relative",
-        hook_event_name: "PreToolUse",
+        hook_event_name: "PreToolUse" as const,
       }, // non-absolute cwd
       {
         session_id: "test session",
         transcript_path: "/tmp/transcript.md",
         cwd: "/project",
-        hook_event_name: "PreToolUse",
+        hook_event_name: "PreToolUse" as const,
       }, // invalid session_id format
     ];
 
@@ -214,7 +214,7 @@ describe("claudeToolHookInputSchema", () => {
         session_id: "test-session-123",
         transcript_path: "/tmp/transcript.md",
         cwd: "/project",
-        hook_event_name: "PreToolUse",
+        hook_event_name: "PreToolUse" as const,
         // missing tool_name
         tool_input: { command: "ls" },
       },
@@ -245,7 +245,7 @@ describe("claudeUserPromptInputSchema", () => {
         session_id: "test-session-123",
         transcript_path: "/tmp/transcript.md",
         cwd: "/project",
-        hook_event_name: "PreToolUse", // wrong event type
+        hook_event_name: "PreToolUse" as const, // wrong event type
         prompt: "Test prompt",
       },
       {
@@ -272,7 +272,7 @@ describe("claudeNotificationInputSchema", () => {
         session_id: "test-session-123",
         transcript_path: "/tmp/transcript.md",
         cwd: "/project",
-        hook_event_name: "SessionStart",
+        hook_event_name: "SessionStart" as const,
       },
       {
         session_id: "test-session-123",
@@ -301,7 +301,7 @@ describe("claudeNotificationInputSchema", () => {
         session_id: "test-session-123",
         transcript_path: "/tmp/transcript.md",
         cwd: "/project",
-        hook_event_name: "PreToolUse", // wrong event type
+        hook_event_name: "PreToolUse" as const, // wrong event type
       },
     ];
 
@@ -320,7 +320,7 @@ describe("claudeHookInputSchema (discriminated union)", () => {
         session_id: "test-session-123",
         transcript_path: "/tmp/transcript.md",
         cwd: "/project",
-        hook_event_name: "PreToolUse",
+        hook_event_name: "PreToolUse" as const,
         tool_name: "Bash",
         tool_input: { command: "ls" },
       },
@@ -335,7 +335,7 @@ describe("claudeHookInputSchema (discriminated union)", () => {
         session_id: "test-session-123",
         transcript_path: "/tmp/transcript.md",
         cwd: "/project",
-        hook_event_name: "SessionStart",
+        hook_event_name: "SessionStart" as const,
       },
     ];
 
@@ -474,7 +474,7 @@ describe("parsing functions", () => {
         session_id: "test-session-123",
         transcript_path: "/tmp/transcript.md",
         cwd: "/project",
-        hook_event_name: "PreToolUse",
+        hook_event_name: "PreToolUse" as const,
         tool_name: "Bash",
         tool_input: { command: "ls" },
       };
@@ -495,7 +495,7 @@ describe("parsing functions", () => {
         session_id: "test-session-123",
         transcript_path: "/tmp/transcript.md",
         cwd: "/project",
-        hook_event_name: "SessionStart",
+        hook_event_name: "SessionStart" as const,
       };
 
       const result = safeParseClaudeHookInput(input);
@@ -519,7 +519,7 @@ describe("type guard functions", () => {
       session_id: "test-session-123",
       transcript_path: "/tmp/transcript.md",
       cwd: "/project",
-      hook_event_name: "SessionStart",
+      hook_event_name: "SessionStart" as const,
     };
 
     const invalidInput = { invalid: "data" };
@@ -542,7 +542,7 @@ describe("type guard functions", () => {
       session_id: "test-session-123",
       transcript_path: "/tmp/transcript.md",
       cwd: "/project",
-      hook_event_name: "SessionStart", // not a tool event
+      hook_event_name: "SessionStart" as const, // not a tool event
     };
 
     expect(isValidToolHookInput(validInput)).toBe(true);
@@ -556,14 +556,14 @@ describe("validateAndCreateBrandedInput", () => {
       session_id: "test-session-123",
       transcript_path: "/tmp/transcript.md",
       cwd: "/project",
-      hook_event_name: "SessionStart",
+      hook_event_name: "SessionStart" as const,
     };
 
     const result = await validateAndCreateBrandedInput(input);
 
     expect(result.session_id).toBe("test-session-123");
     expect(result.transcript_path).toBe("/tmp/transcript.md");
-    expect(result.cwd).toBe("/project");
+    expect(result.cwd).toBe("/project" as any);
 
     // Branded types should be present
     expect(typeof result.sessionId).toBe("string");
@@ -576,7 +576,7 @@ describe("validateAndCreateBrandedInput", () => {
       session_id: "ab", // too short for SessionId
       transcript_path: "/tmp/transcript.md",
       cwd: "/project",
-      hook_event_name: "SessionStart",
+      hook_event_name: "SessionStart" as const,
     };
 
     await expect(validateAndCreateBrandedInput(input)).rejects.toThrow();

@@ -25,7 +25,7 @@
   "private": true,
   "scripts": {
     "test": "echo 'Temporarily disabled - examples need SDK migration'",
-    "typecheck": "echo 'Temporarily disabled - examples need type fixes'"
+    "typecheck": "tsc --noEmit"
   },
   "type": "module"
 }

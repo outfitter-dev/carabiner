@@ -172,8 +172,8 @@ async function main() {
     }
   );
 
-  const output = await proc.stdout.text();
-  const error = await proc.stderr.text();
+  const output = await (proc.stdout as any).text();
+  const error = await (proc.stderr as any).text();
 
   // Clean up temp file
   try {

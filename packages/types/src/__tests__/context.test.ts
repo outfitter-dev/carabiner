@@ -346,7 +346,7 @@ describe("Context creation functions", () => {
 
     test("uses default environment when not provided", () => {
       const options = createBaseOptions();
-      options.environment = undefined;
+      (options as any).environment = undefined;
 
       const context = createUserPromptContext("Help with React", options);
 

@@ -130,7 +130,9 @@ describe("StdinProtocol", () => {
       // Wait for promise to reject promptly (well under the configured timeout)
       const error = await readPromise;
       expect(error).toBeInstanceOf(ProtocolInputError);
-      expect(error.message).toContain("Protocol destroyed while reading");
+      if (error instanceof ProtocolInputError) {
+        expect(error.message).toContain("Protocol destroyed while reading");
+      }
       expect(Date.now() - start).toBeLessThan(200);
 
       expect(destroyCalled).toBe(true);

@@ -5,16 +5,13 @@
  * Demonstrates how the new system works with actual Claude input format
  */
 
-import type {
-  ClaudeToolHookInput,
-  HookContext,
-  HookResult,
-} from "@carabiner/hooks-core";
+import type { HookContext, HookResult } from "@carabiner/hooks-core";
 import {
   createHookContext,
   HookResults,
   runClaudeHook,
 } from "@carabiner/hooks-core";
+import type { ClaudeToolHookInput } from "@carabiner/schemas";
 
 function hasCommand(input: unknown): input is { command: string } {
   return (
@@ -43,12 +40,13 @@ function exampleHook(context: HookContext): HookResult {
 
   const timestamp = new Date().toISOString();
   return {
-    ...HookResults.success(`${context.event} hook completed successfully`, {
-      processedAt: timestamp,
-    }),
+    ...HookResults.success(`${context.event} hook completed successfully`),
     metadata: {
       hookVersion: "0.2.0",
       timestamp,
+    },
+    providerState: {
+      processedAt: timestamp,
     },
   };
 }
@@ -56,13 +54,13 @@ function exampleHook(context: HookContext): HookResult {
 /**
  * Test function that simulates Claude Code input
  */
-export function testNewRuntime(): void {
+export async function testNewRuntime(): Promise<void> {
   // Example 1: PreToolUse hook input
   const preToolUseInput: ClaudeToolHookInput = {
     session_id: "test-session-123",
     transcript_path: "/tmp/claude-transcript.md",
     cwd: "/Users/developer/project",
-    hook_event_name: "PreToolUse",
+    hook_event_name: "PreToolUse" as const,
     tool_name: "Bash",
     tool_input: {
       command: 'echo "Hello from Claude Code!"',
@@ -70,10 +68,10 @@ export function testNewRuntime(): void {
       timeout: 5000,
     },
     matcher: "bash-command",
-  };
+  } as ClaudeToolHookInput;
 
   // Create context from Claude input
-  const context = createHookContext(preToolUseInput);
+  const context = createHookContext(preToolUseInput as any);
 
   // Execute hook
   const result = exampleHook(context);
@@ -108,7 +106,6 @@ if (import.meta.main) {
   } else {
     // For actual hook execution, use the new runtime
     void runClaudeHook(exampleHookScript, {
-      outputMode: "exit-code",
       logLevel: "info",
       timeout: 30_000,
     });

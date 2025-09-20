@@ -31,8 +31,7 @@ describe("HOOK_EVENTS constant", () => {
   test("is readonly tuple", () => {
     // This should cause a TypeScript error if HOOK_EVENTS is not readonly
     // We don't actually execute the push to avoid mutating the array during tests
-    // @ts-expect-error - HOOK_EVENTS should be readonly
-    // HOOK_EVENTS.push('InvalidEvent');
+    // HOOK_EVENTS.push('InvalidEvent'); // This would error if uncommented
 
     // Instead, just verify the array is properly typed
     expect(HOOK_EVENTS.length).toBe(6);

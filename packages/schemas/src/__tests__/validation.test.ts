@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import { createSessionId } from "@carabiner/types";
 import { z } from "zod";
 import {
   type CompleteValidationResult,
@@ -60,7 +61,7 @@ describe("validateClaudeInput", () => {
       session_id: "test-session-123",
       transcript_path: "/tmp/transcript.md",
       cwd: "/project",
-      hook_event_name: "PreToolUse",
+      hook_event_name: "PreToolUse" as const,
       tool_name: "Bash",
       tool_input: { command: "ls" },
     };
@@ -69,11 +70,11 @@ describe("validateClaudeInput", () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.original).toEqual(input);
-      expect(result.data.event).toBe("PreToolUse");
-      expect(typeof result.data.sessionId).toBe("string");
-      expect(typeof result.data.transcriptPath).toBe("string");
-      expect(typeof result.data.cwd).toBe("string");
+      expect(result.data!.original).toEqual(input);
+      expect(result.data!.event).toBe("PreToolUse");
+      expect(typeof result.data!.sessionId).toBe("string");
+      expect(typeof result.data!.transcriptPath).toBe("string");
+      expect(typeof result.data!.cwd).toBe("string");
     }
   });
 
@@ -88,8 +89,8 @@ describe("validateClaudeInput", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeInstanceOf(ValidationError);
     if (!result.success) {
-      expect(result.error.field).toBe("Claude hook input");
-      expect(result.error.issues.length).toBeGreaterThan(0);
+      expect((result.error as any).field).toBe("Claude hook input");
+      expect((result.error as any).issues.length).toBeGreaterThan(0);
     }
   });
 
@@ -151,7 +152,7 @@ describe("validateToolInputForTool", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeInstanceOf(ValidationError);
     if (!result.success) {
-      expect(result.error.field).toBe("Bash tool input");
+      expect((result.error as any).field).toBe("Bash tool input");
     }
   });
 
@@ -198,8 +199,8 @@ describe("validateGenericToolInput", () => {
       const result = validateGenericToolInput(input);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.field).toBe("tool_input");
-        expect(result.error.message).toContain("must be an object");
+        expect((result.error as any).field).toBe("tool_input");
+        expect((result.error as any).message).toContain("must be an object");
       }
     }
 
@@ -220,7 +221,7 @@ describe("validateCompleteHookInput", () => {
       session_id: "test-session-123",
       transcript_path: "/tmp/transcript.md",
       cwd: "/project",
-      hook_event_name: "PreToolUse",
+      hook_event_name: "PreToolUse" as const,
       tool_name: "Bash",
       tool_input: { command: "ls -la" },
     };
@@ -254,7 +255,7 @@ describe("validateCompleteHookInput", () => {
       session_id: "test-session-123",
       transcript_path: "/tmp/transcript.md",
       cwd: "/project",
-      hook_event_name: "PreToolUse",
+      hook_event_name: "PreToolUse" as const,
       tool_name: "UnknownTool",
       tool_input: { custom_field: "value" },
     };
@@ -271,7 +272,7 @@ describe("validateCompleteHookInput", () => {
       session_id: "ab", // too short - caught by schema first
       transcript_path: "/tmp/transcript.md",
       cwd: "/project",
-      hook_event_name: "PreToolUse",
+      hook_event_name: "PreToolUse" as const,
       tool_name: "Bash",
       tool_input: { command: 123 }, // wrong type
     };
@@ -289,7 +290,7 @@ describe("validateCompleteHookInput", () => {
       session_id: "test-session-123",
       transcript_path: "/tmp/transcript.md",
       cwd: "/project",
-      hook_event_name: "PreToolUse",
+      hook_event_name: "PreToolUse" as const,
       tool_name: "UnknownTool",
       tool_input: "not an object", // invalid
     };
@@ -402,9 +403,9 @@ describe("ValidationUtils", () => {
       const results = ValidationUtils.validateBatch(inputs);
 
       expect(results).toHaveLength(3);
-      expect(results[0].success).toBe(true);
-      expect(results[1].success).toBe(true);
-      expect(results[2].success).toBe(false);
+      expect(results[0]!.success).toBe(true);
+      expect(results[1]!.success).toBe(true);
+      expect(results[2]!.success).toBe(false);
     });
 
     test("handles empty array", () => {
@@ -441,12 +442,12 @@ describe("Type system consistency", () => {
     const result = validateClaudeInput(input);
 
     if (result.success) {
-      const validated: ValidatedClaudeInput = result.data;
+      const validated: ValidatedClaudeInput = result.data!;
 
       // Should have both original and branded versions
       expect(validated.original.session_id).toBe("test-session-123");
       expect(typeof validated.sessionId).toBe("string");
-      expect(validated.sessionId).toBe("test-session-123"); // Same value, different type
+      expect(validated.sessionId).toBe(createSessionId("test-session-123")); // Same value, different type
     }
   });
 

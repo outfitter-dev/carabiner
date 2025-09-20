@@ -6,7 +6,7 @@
  * Uses working APIs from @/hooks-core with proper tool scoping and stdin-based runtime
  */
 
-import type { HookContext, HookResult, ToolName } from "@/hooks-core";
+import type { HookContext, HookHandler, HookResult } from "@/hooks-core";
 import {
   createHook,
   HookBuilder,
@@ -18,6 +18,33 @@ import {
   SecurityValidationError,
   SecurityValidators,
 } from "@/hooks-validators";
+
+function didContinue(result: HookResult): boolean {
+  if ("continue" in result && result.continue === false) {
+    return false;
+  }
+  if ("stopReason" in result && result.stopReason === "blocked") {
+    return false;
+  }
+  return true;
+}
+
+async function invokeHook(
+  handler: HookHandler,
+  context: HookContext
+): Promise<HookResult> {
+  return handler(context, undefined, {
+    signal: new AbortController().signal,
+  });
+}
+
+function successResult(
+  message?: string,
+  providerState?: Record<string, unknown>
+): HookResult {
+  const base = HookResults.success(message);
+  return providerState ? { ...base, providerState } : base;
+}
 
 /**
  * Security-focused PreToolUse hook using builder pattern
@@ -39,7 +66,7 @@ const securityPreToolUseHook = HookBuilder.forPreToolUse()
     const toolName = (context as any).tool_name || (context as any).toolName;
     return (
       Bun.env.NODE_ENV === "production" ||
-      ["Bash", "Write", "Edit"].includes(toolName)
+      (toolName !== undefined && ["Bash", "Write", "Edit"].includes(toolName))
     );
   })
   .withHandler(async (context) => {
@@ -70,18 +97,17 @@ const securityPreToolUseHook = HookBuilder.forPreToolUse()
       // Additional security checks
       await performAdvancedSecurityChecks(normalizedContext);
 
-      return {
-        continue: true,
-        systemMessage: `Security validation passed for ${normalizedContext.toolName}`,
-        providerState: {
+      return successResult(
+        `Security validation passed for ${normalizedContext.toolName ?? "unknown"}`,
+        {
           securityLevel: environment === "production" ? "high" : "medium",
           checksPerformed: [
             "basic-validation",
             "advanced-patterns",
             "context-analysis",
           ],
-        },
-      };
+        }
+      );
     } catch (error) {
       if (error instanceof SecurityValidationError) {
         return HookResults.block(error.message, true);
@@ -100,7 +126,7 @@ const rateLimitWriteHook = HookBuilder.forPreToolUse()
   .withHandler(async (context) => {
     const rateLimitResult = await checkRateLimit(
       String(context.sessionId),
-      String(context.toolName)
+      String(context.toolName ?? "unknown")
     );
 
     if (!rateLimitResult.allowed) {
@@ -110,7 +136,7 @@ const rateLimitWriteHook = HookBuilder.forPreToolUse()
       );
     }
 
-    return HookResults.success("Rate limit check passed", {
+    return successResult("Rate limit check passed", {
       remainingRequests: rateLimitResult.remaining,
       resetTime: rateLimitResult.resetTime,
     });
@@ -122,8 +148,9 @@ const rateLimitWriteHook = HookBuilder.forPreToolUse()
  */
 const fileAccessControlHook = HookBuilder.forPreToolUse()
   // No forTool() call - this is a universal hook that runs for ALL tools
-  .withCondition((context) =>
-    ["Write", "Edit", "Read"].includes(context.toolName)
+  .withCondition(
+    (context) =>
+      !!context.toolName && ["Write", "Edit", "Read"].includes(context.toolName)
   )
   .withMiddleware(
     middleware.validation((context) => {
@@ -133,13 +160,17 @@ const fileAccessControlHook = HookBuilder.forPreToolUse()
     }, "File path is required for file operations")
   )
   .withHandler(async (context) => {
-    const filePath = (context.toolInput as Record<string, unknown>)
-      .file_path as string;
+    const filePath = (context.toolInput as Record<string, unknown> | undefined)
+      ?.file_path as string | undefined;
+
+    if (!filePath) {
+      return HookResults.block("Missing file path for file operation");
+    }
 
     // Check file access permissions
     const accessCheck = await checkFileAccess(
       String(filePath),
-      String(context.toolName),
+      String(context.toolName ?? "unknown"),
       String(context.cwd)
     );
 
@@ -150,11 +181,11 @@ const fileAccessControlHook = HookBuilder.forPreToolUse()
     // Log file access for audit trail
     await logFileAccess(
       String(context.sessionId),
-      String(context.toolName),
+      String(context.toolName ?? "unknown"),
       String(filePath)
     );
 
-    return HookResults.success("File access authorized", {
+    return successResult("File access authorized", {
       filePath,
       accessLevel: accessCheck.level,
     });
@@ -418,69 +449,78 @@ function logFileAccess(
  * This shows how tool scoping actually works now
  */
 async function runSecurityPipeline(context: HookContext): Promise<HookResult> {
-  // Type guard to ensure we have PreToolUse context
   if (context.event !== "PreToolUse") {
     return HookResults.skip("Pipeline only runs on PreToolUse events");
   }
 
-  // After type guard, narrow the context type
-  const preToolContext = context as HookContext<"PreToolUse", ToolName>;
+  const toolName = context.toolName;
+  if (!toolName) {
+    return HookResults.success("No tool specified; skipping pipeline");
+  }
+
   const results: string[] = [];
 
-  // Universal security check (runs for ALL tools)
-  const universalResult = await universalSecurityHook.handler(preToolContext);
-  if (!universalResult.success) {
+  const universalResult = await invokeHook(
+    universalSecurityHook.handler as HookHandler,
+    context
+  );
+  if (!didContinue(universalResult)) {
     return universalResult;
   }
   results.push("universal-check");
 
-  // Tool-specific checks
-  switch (preToolContext.toolName) {
+  const runHook = async (
+    handler: HookHandler,
+    label: string
+  ): Promise<HookResult | null> => {
+    const result = await invokeHook(handler, context);
+    if (!didContinue(result)) {
+      return result;
+    }
+    results.push(label);
+    return null;
+  };
+
+  const bashHandlers: [HookHandler, string][] = [
+    [securityPreToolUseHook.handler as HookHandler, "bash-security"],
+    [commandMonitoringHook.handler as HookHandler, "command-monitoring"],
+  ];
+
+  const writeHandlers: [HookHandler, string][] = [
+    [rateLimitWriteHook.handler as HookHandler, "write-rate-limit"],
+    [fileAccessControlHook.handler as HookHandler, "file-access"],
+  ];
+
+  switch (toolName) {
     case "Bash": {
-      // Bash-specific security and command monitoring
-      const bashSecurityResult =
-        await securityPreToolUseHook.handler(preToolContext);
-      if (!bashSecurityResult.success) {
-        return bashSecurityResult;
+      for (const [handler, label] of bashHandlers) {
+        const failure = await runHook(handler, label);
+        if (failure) {
+          return failure;
+        }
       }
-
-      const commandResult = await commandMonitoringHook.handler(preToolContext);
-      if (!commandResult.success) {
-        return commandResult;
-      }
-
-      results.push("bash-security", "command-monitoring");
       break;
     }
 
     case "Write": {
-      // Write-specific rate limiting and file access control
-      const writeRateLimitResult =
-        await rateLimitWriteHook.handler(preToolContext);
-      if (!writeRateLimitResult.success) {
-        return writeRateLimitResult;
+      for (const [handler, label] of writeHandlers) {
+        const failure = await runHook(handler, label);
+        if (failure) {
+          return failure;
+        }
       }
-
-      const fileAccessResult =
-        await fileAccessControlHook.handler(preToolContext);
-      if (!fileAccessResult.success) {
-        return fileAccessResult;
-      }
-
-      results.push("write-rate-limit", "file-access");
       break;
     }
 
     case "Edit":
     case "Read": {
-      // File access control for all file operations
-      const editFileAccessResult =
-        await fileAccessControlHook.handler(preToolContext);
-      if (!editFileAccessResult.success) {
-        return editFileAccessResult;
+      const failure = await runHook(
+        fileAccessControlHook.handler as HookHandler,
+        "file-access"
+      );
+      if (failure) {
+        return failure;
       }
-
-      results.push("file-access");
       break;
     }
 
@@ -488,13 +528,10 @@ async function runSecurityPipeline(context: HookContext): Promise<HookResult> {
       results.push("generic-tool");
   }
 
-  return HookResults.success(
-    `Security pipeline completed for ${preToolContext.toolName}`,
-    {
-      checksPerformed: results,
-      toolScoping: `This demonstrates that tool scoping works - different hooks ran for ${preToolContext.toolName}`,
-    }
-  );
+  return successResult(`Security pipeline completed for ${toolName}`, {
+    checksPerformed: results,
+    toolScoping: `Different hooks ran for ${toolName} demonstrating tool scoping`,
+  });
 }
 
 /**
@@ -503,10 +540,7 @@ async function runSecurityPipeline(context: HookContext): Promise<HookResult> {
  */
 if (import.meta.main) {
   // The new runtime automatically reads JSON from stdin, creates context, and calls our handler
-  runClaudeHook(runSecurityPipeline, {
-    outputMode: "exit-code", // Use traditional exit codes
-    logLevel: "info",
-  });
+  runClaudeHook(runSecurityPipeline);
 }
 
 export {

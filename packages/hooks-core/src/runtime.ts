@@ -4,19 +4,26 @@
  * Updated to match the actual Claude Code hooks API
  */
 
-import path from "node:path";
+import * as path from "node:path";
 import { runtimeLogger } from "./logger";
 import { stdout } from "./logging/stdio";
+import {
+  getDefaultHookProvider,
+  type HookProviderAdapter,
+  type HookProviderId,
+  type NormalizedHookContext,
+  requireHookProvider,
+} from "./providers";
 import type {
   GetToolInput,
   HookContext,
   HookEnvironment,
+  HookEvent,
   HookExecutionOptions,
   HookHandler,
   HookInput,
   HookJSONOutput,
   HookMetadata,
-  HookEvent,
   HookResult,
   PreToolUseHookInput,
   StdinParseResult,
@@ -24,18 +31,7 @@ import type {
   ToolInputMap,
   ToolName,
 } from "./types";
-import {
-  HookError,
-  HookInputError,
-  HookTimeoutError,
-} from "./types";
-import {
-  getDefaultHookProvider,
-  requireHookProvider,
-  type HookProviderAdapter,
-  type HookProviderId,
-  type NormalizedHookContext,
-} from "./providers";
+import { HookError, HookInputError, HookTimeoutError } from "./types";
 
 type ClaudeProviderAdapter = HookProviderAdapter<HookInput, HookJSONOutput>;
 
@@ -81,11 +77,11 @@ function ensureHookInput(
     const toolInputRaw = process.env.TOOL_INPUT;
     const toolResponseRaw = process.env.TOOL_OUTPUT;
 
-    base.tool_name = toolName;
+    (base as any).tool_name = toolName;
 
     if (toolInputRaw) {
       try {
-        base.tool_input = JSON.parse(toolInputRaw);
+        (base as any).tool_input = JSON.parse(toolInputRaw);
       } catch {
         runtimeLogger.warn("Failed to parse TOOL_INPUT from environment");
       }
@@ -93,7 +89,7 @@ function ensureHookInput(
 
     if (event === "PostToolUse" && toolResponseRaw) {
       try {
-        base.tool_response = JSON.parse(toolResponseRaw);
+        (base as any).tool_response = JSON.parse(toolResponseRaw);
       } catch {
         runtimeLogger.warn("Failed to parse TOOL_OUTPUT from environment");
       }
@@ -101,7 +97,7 @@ function ensureHookInput(
   }
 
   if (event === "UserPromptSubmit") {
-    base.prompt = process.env.USER_PROMPT ?? "";
+    (base as any).prompt = process.env.USER_PROMPT ?? "";
   }
 
   return base;
@@ -226,10 +222,10 @@ export function parseHookEnvironment(): HookEnvironment {
   // Security: Validate CLAUDE_PROJECT_DIR path
   if (claudeProjectDir) {
     // Remove any null bytes or control characters
-    const controlChars = [...new Array(32).keys()]
+    const controlChars = Array.from(new Array(32).keys())
       .map((i) => String.fromCharCode(i))
       .join("");
-    const extendedControlChars = [...new Array(32).keys()]
+    const extendedControlChars = Array.from(new Array(32).keys())
       .map((i) => String.fromCharCode(i + 127))
       .join("");
     const sanitized = claudeProjectDir
@@ -269,15 +265,15 @@ export function parseToolInput<T extends ToolName>(
 /**
  * Create hook context from Claude Code JSON input
  */
-export function createHookContext(
-  providerInput: HookInput,
-  overrides?: Partial<HookInput>,
+export function createHookContext<T extends HookInput = HookInput>(
+  providerInput: T,
+  overrides?: Partial<T>,
   options: {
     environment?: HookEnvironment;
     providerId?: HookProviderId;
     provider?: ClaudeProviderAdapter;
   } = {}
-): HookContext {
+): HookContext<T> {
   const provider = resolveProvider({
     provider: options.provider,
     providerId: options.providerId,
@@ -286,11 +282,11 @@ export function createHookContext(
   const environment = options.environment ?? parseHookEnvironment();
   const baseInput = ensureHookInput(providerInput, environment);
   const mergedInput = overrides
-    ? ({ ...baseInput, ...overrides } as HookInput)
+    ? ({ ...baseInput, ...overrides } as T)
     : baseInput;
 
   const normalized = provider.fromProviderInput(mergedInput, environment);
-  return toHookContext(normalized);
+  return toHookContext(normalized) as HookContext<T>;
 }
 
 /**
@@ -474,7 +470,9 @@ export async function executeHook(
     return {
       continue: false,
       systemMessage:
-        error instanceof Error ? error.message : "Unknown error during hook execution",
+        error instanceof Error
+          ? error.message
+          : "Unknown error during hook execution",
       metadata: failureMetadata,
     } satisfies HookResult;
   } finally {
@@ -509,7 +507,10 @@ export async function runClaudeHook(
     const parseResult = await parseStdinInput();
 
     if (!parseResult.success) {
-      throw new HookInputError(parseResult.error, parseResult.rawInput);
+      throw new HookInputError(
+        parseResult.error,
+        "rawInput" in parseResult ? parseResult.rawInput : undefined
+      );
     }
 
     const environment = parseHookEnvironment();

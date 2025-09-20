@@ -4,7 +4,12 @@
  * Run with: bun run packages/examples/src/simple-hello-world-test.ts
  */
 
-import { HookRegistry } from "@carabiner/hooks-core";
+import { type HookContext, HookRegistry } from "@carabiner/hooks-core";
+import type {
+  DirectoryPath,
+  SessionId,
+  TranscriptPath,
+} from "@carabiner/types";
 import { bashGreeterHook, helloWorldHook } from "./hello-world.js";
 
 async function runSimpleTest() {
@@ -17,31 +22,60 @@ async function runSimpleTest() {
 
   // Create a simple context (minimal required fields)
   const now = Date.now();
-  const testContext = {
-    event: "PreToolUse" as const,
-    tool: "Bash" as const,
-    parameters: {
+  const rawInput = {
+    hook_event_name: "PreToolUse" as const,
+    tool_name: "Bash",
+    tool_input: {
       command: 'echo "Hello from Carabiner!"',
     },
-    sessionId: `test-${now}`,
-    timestamp: now,
-    environment: {},
+    session_id: `test-${now}`,
+    transcript_path: "/tmp/transcript.jsonl",
+    cwd: process.cwd(),
+  };
+
+  const testContext: HookContext = {
+    event: "PreToolUse" as const,
+    toolName: "Bash" as const,
+    toolInput: {
+      command: 'echo "Hello from Carabiner!"',
+    },
+    sessionId: `test-${now}` as SessionId,
+    transcriptPath: "/tmp/transcript.jsonl" as TranscriptPath,
+    cwd: process.cwd() as DirectoryPath,
+    environment: { CLAUDE_PROJECT_DIR: process.cwd() },
+    rawInput: rawInput as any,
+    raw: rawInput,
+    metadata: {
+      provider: {
+        id: "test" as any,
+        name: "Test Provider",
+        version: "1.0.0",
+        runtime: "test",
+        supports: {
+          events: ["PreToolUse"],
+          tools: ["Bash"],
+          capabilities: [],
+        },
+      },
+      receivedAt: new Date().toISOString(),
+    },
   };
 
   console.log("📝 Executing hooks for Bash command...\n");
 
   // Debug: Check registered hooks
-  const hooks = registry.getHooks("PreToolUse");
+  const hooks = registry.getHooks("PreToolUse", "Bash");
   console.log(`Number of registered hooks: ${hooks.length}`);
 
-  // Execute the hooks (pass event and context)
-  const results = await registry.execute("PreToolUse", testContext);
+  // Execute the hooks (pass context only)
+  const results = await registry.execute(testContext);
 
   console.log("\n📊 Hook Results:");
   results.forEach((result, index) => {
-    console.log(`  ${index + 1}. Status: ${result.status}`);
-    if (result.message) {
-      console.log(`     Message: ${result.message}`);
+    const continueValue = "continue" in result ? result.continue : true;
+    console.log(`  ${index + 1}. Continue: ${continueValue}`);
+    if ("systemMessage" in result && result.systemMessage) {
+      console.log(`     Message: ${result.systemMessage}`);
     }
   });
 

@@ -4,30 +4,50 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import type { HookContext } from "@carabiner/types";
+import { createHookContext } from "@carabiner/hooks-core";
+import type { HookEvent } from "@carabiner/types";
 import { gitSafetyPlugin } from "../git-safety/index";
 
-const createBashContext = (command: string): HookContext =>
-  ({
-    event: "PreToolUse",
-    toolName: "Bash",
-    toolInput: { command },
-    sessionId: "test-session" as any,
-    transcriptPath: "/tmp/transcript" as any,
-    cwd: "/test/repo" as any,
-    environment: {},
-  }) as any;
+type TestHookContext = ReturnType<typeof createHookContext>;
 
-const createNonBashContext = (): HookContext =>
-  ({
-    event: "PreToolUse",
+type ContextOptions = {
+  event?: HookEvent;
+  toolName?: string;
+  toolInput?: Record<string, unknown>;
+  cwd?: string;
+};
+
+const createContext = ({
+  event = "PreToolUse",
+  toolName = "Bash",
+  toolInput = { command: "echo" },
+  cwd = "/test/repo",
+}: ContextOptions = {}): TestHookContext => {
+  const overrides: Record<string, unknown> = {
+    session_id: "test-session",
+    transcript_path: "/tmp/transcript",
+    cwd,
+    tool_name: toolName,
+    tool_input: toolInput,
+  };
+
+  if (event === "PostToolUse") {
+    overrides.tool_response = overrides.tool_response ?? { stdout: "" };
+  }
+
+  return createHookContext(event, overrides, {
+    environment: { CLAUDE_PROJECT_DIR: cwd },
+  });
+};
+
+const createBashContext = (command: string): TestHookContext =>
+  createContext({ toolInput: { command } });
+
+const createNonBashContext = (): TestHookContext =>
+  createContext({
     toolName: "Write",
     toolInput: { file_path: "/test/file.txt", content: "test" },
-    sessionId: "test-session" as any,
-    transcriptPath: "/tmp/transcript" as any,
-    cwd: "/test/repo" as any,
-    environment: {},
-  }) as any;
+  });
 
 describe("Git Safety Plugin", () => {
   describe("Basic Functionality", () => {
@@ -48,8 +68,10 @@ describe("Git Safety Plugin", () => {
     });
 
     test("should ignore non-PreToolUse events", async () => {
-      const context = createBashContext("git status");
-      context.event = "PostToolUse";
+      const context = createContext({
+        event: "PostToolUse",
+        toolInput: { command: "git status" },
+      });
 
       const result = await gitSafetyPlugin.apply(context);
 

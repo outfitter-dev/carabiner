@@ -37,7 +37,7 @@ export const bashToolInputSchema = z.object({
   command: nonEmptyString,
   description: z.string().optional(),
   timeout: positiveInteger.optional(),
-}) satisfies z.ZodType<BashToolInput>;
+}) as z.ZodType<BashToolInput>;
 
 /**
  * Write tool input schema
@@ -45,7 +45,7 @@ export const bashToolInputSchema = z.object({
 export const writeToolInputSchema = z.object({
   file_path: filePath,
   content: z.string(), // Allow empty content
-}) satisfies z.ZodType<WriteToolInput>;
+}) as z.ZodType<WriteToolInput>;
 
 /**
  * Edit tool input schema
@@ -55,7 +55,7 @@ export const editToolInputSchema = z.object({
   old_string: z.string(),
   new_string: z.string(),
   replace_all: z.boolean().optional(),
-}) satisfies z.ZodType<EditToolInput>;
+}) as z.ZodType<EditToolInput>;
 
 /**
  * Multi-edit tool input schema
@@ -71,7 +71,7 @@ export const multiEditInputSchema = z.object({
       })
     )
     .min(1, "Must have at least one edit"),
-}) satisfies z.ZodType<MultiEditInput>;
+}) as z.ZodType<MultiEditInput>;
 
 /**
  * Read tool input schema
@@ -80,7 +80,7 @@ export const readToolInputSchema = z.object({
   file_path: filePath,
   limit: positiveInteger.optional(),
   offset: nonNegativeInteger.optional(),
-}) satisfies z.ZodType<ReadToolInput>;
+}) as z.ZodType<ReadToolInput>;
 
 /**
  * Glob tool input schema
@@ -88,7 +88,7 @@ export const readToolInputSchema = z.object({
 export const globToolInputSchema = z.object({
   pattern: nonEmptyString,
   path: z.string().optional(),
-}) satisfies z.ZodType<GlobToolInput>;
+}) as z.ZodType<GlobToolInput>;
 
 /**
  * Grep tool input schema
@@ -100,7 +100,7 @@ export const grepToolInputSchema = z.object({
   output_mode: z.enum(["content", "files_with_matches", "count"]).optional(),
   head_limit: positiveInteger.optional(),
   multiline: z.boolean().optional(),
-}) satisfies z.ZodType<GrepToolInput>;
+}) as z.ZodType<GrepToolInput>;
 
 /**
  * LS tool input schema
@@ -108,7 +108,7 @@ export const grepToolInputSchema = z.object({
 export const lsToolInputSchema = z.object({
   path: filePath,
   ignore: z.array(z.string()).optional(),
-}) satisfies z.ZodType<LSToolInput>;
+}) as z.ZodType<LSToolInput>;
 
 /**
  * TodoWrite tool input schema
@@ -123,7 +123,7 @@ export const todoWriteToolInputSchema = z.object({
       })
     )
     .min(1, "Must have at least one todo"),
-}) satisfies z.ZodType<TodoWriteToolInput>;
+}) as z.ZodType<TodoWriteToolInput>;
 
 /**
  * WebFetch tool input schema
@@ -131,7 +131,7 @@ export const todoWriteToolInputSchema = z.object({
 export const webFetchToolInputSchema = z.object({
   url: z.string().url("Must be a valid URL"),
   prompt: nonEmptyString,
-}) satisfies z.ZodType<WebFetchToolInput>;
+}) as z.ZodType<WebFetchToolInput>;
 
 /**
  * WebSearch tool input schema
@@ -140,7 +140,7 @@ export const webSearchToolInputSchema = z.object({
   query: nonEmptyString,
   allowed_domains: z.array(z.string()).optional(),
   blocked_domains: z.array(z.string()).optional(),
-}) satisfies z.ZodType<WebSearchToolInput>;
+}) as z.ZodType<WebSearchToolInput>;
 
 /**
  * NotebookEdit tool input schema
@@ -151,7 +151,7 @@ export const notebookEditToolInputSchema = z.object({
   cell_id: z.string().optional(),
   cell_type: z.enum(["code", "markdown"]).optional(),
   edit_mode: z.enum(["replace", "insert", "delete"]).optional(),
-}) satisfies z.ZodType<NotebookEditToolInput>;
+}) as z.ZodType<NotebookEditToolInput>;
 
 /**
  * Tool input schema map

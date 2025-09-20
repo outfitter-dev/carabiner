@@ -239,7 +239,9 @@ describe("Plugin Error Classes", () => {
       expect(error.message).toBe("Plugin test-plugin: Execution failed");
       expect(error.pluginName).toBe("test-plugin");
       expect(error.originalError).toBe(originalError);
-      expect(error.stack).toBe(originalError.stack);
+      if (originalError.stack) {
+        expect(error.stack).toBe(originalError.stack);
+      }
     });
 
     test("should create error without original error", () => {

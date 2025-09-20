@@ -6,12 +6,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { createHook, HookBuilder, HookRegistry } from "../index.ts";
 import {
-  createHookContext,
   createBashInput,
+  createHookContext,
   HookResults,
   isBashToolInput,
 } from "../runtime.ts";
-import type { HookJSONOutput, HookContext } from "../types.ts";
+import type { HookContext, HookJSONOutput } from "../types.ts";
 
 // Mock input helper that matches the actual HookInput structure
 function createMockContext(
@@ -46,7 +46,9 @@ describe("Tool Scoping Fix - Registry Core", () => {
     registry.register(bashHook);
 
     // Should execute for Bash
-    await registry.execute(createMockContext("PreToolUse", { toolName: "Bash" }));
+    await registry.execute(
+      createMockContext("PreToolUse", { toolName: "Bash" })
+    );
     expect(bashHandler).toHaveBeenCalledTimes(1);
 
     // Should NOT execute for Write
@@ -67,7 +69,9 @@ describe("Tool Scoping Fix - Registry Core", () => {
     registry.register(universalHook);
 
     // Should execute for any tool
-    await registry.execute(createMockContext("PreToolUse", { toolName: "Bash" }));
+    await registry.execute(
+      createMockContext("PreToolUse", { toolName: "Bash" })
+    );
     expect(universalHandler).toHaveBeenCalledTimes(1);
 
     universalHandler.mockClear();
@@ -77,7 +81,9 @@ describe("Tool Scoping Fix - Registry Core", () => {
     expect(universalHandler).toHaveBeenCalledTimes(1);
 
     universalHandler.mockClear();
-    await registry.execute(createMockContext("PreToolUse", { toolName: "Edit" }));
+    await registry.execute(
+      createMockContext("PreToolUse", { toolName: "Edit" })
+    );
     expect(universalHandler).toHaveBeenCalledTimes(1);
   });
 
@@ -103,7 +109,9 @@ describe("Tool Scoping Fix - Registry Core", () => {
     );
 
     // For Bash: both universal and bash-specific should run
-    await registry.execute(createMockContext("PreToolUse", { toolName: "Bash" }));
+    await registry.execute(
+      createMockContext("PreToolUse", { toolName: "Bash" })
+    );
     expect(universalHandler).toHaveBeenCalledTimes(1);
     expect(bashHandler).toHaveBeenCalledTimes(1);
     expect(writeHandler).not.toHaveBeenCalled();
@@ -123,7 +131,9 @@ describe("Tool Scoping Fix - Registry Core", () => {
     universalHandler.mockClear();
     bashHandler.mockClear();
     writeHandler.mockClear();
-    await registry.execute(createMockContext("PreToolUse", { toolName: "Edit" }));
+    await registry.execute(
+      createMockContext("PreToolUse", { toolName: "Edit" })
+    );
     expect(universalHandler).toHaveBeenCalledTimes(1);
     expect(bashHandler).not.toHaveBeenCalled();
     expect(writeHandler).not.toHaveBeenCalled();
@@ -180,7 +190,9 @@ describe("Tool Scoping Fix - Registry Core", () => {
         .build()
     );
 
-    await registry.execute(createMockContext("PreToolUse", { toolName: "Bash" }));
+    await registry.execute(
+      createMockContext("PreToolUse", { toolName: "Bash" })
+    );
 
     // Should execute in priority order: universal-high(10), bash-high(5), bash-low(2), universal-low(1)
     expect(results).toEqual([
@@ -313,7 +325,9 @@ describe("Tool Scoping Fix - Integration Tests", () => {
     registry.register(bashLogger);
 
     // Test Bash execution (should trigger both)
-    await registry.execute(createMockContext("PreToolUse", { toolName: "Bash" }));
+    await registry.execute(
+      createMockContext("PreToolUse", { toolName: "Bash" })
+    );
     expect(logs).toContain("[UNIVERSAL] PreToolUse for Bash");
     expect(logs).toContain("[BASH-SPECIFIC] Enhanced logging for Bash");
 
@@ -352,24 +366,18 @@ describe("Tool Scoping Fix - Integration Tests", () => {
 
     // Test safe Bash command (should pass both)
     const safeBashResults = await registry.execute(
-      createHookContext(
-        createBashInput("PreToolUse", "echo safe"),
-        {
-          tool_input: { command: 'echo "hello world"' },
-        }
-      )
+      createHookContext(createBashInput("PreToolUse", "echo safe"), {
+        tool_input: { command: 'echo "hello world"' },
+      })
     );
     expect(safeBashResults).toHaveLength(2);
     expect(safeBashResults.every((r) => r.continue)).toBe(true);
 
     // Test dangerous Bash command (should be blocked)
     const dangerousBashResults = await registry.execute(
-      createHookContext(
-        createBashInput("PreToolUse", "echo dangerous"),
-        {
-          tool_input: { command: "rm -rf /" },
-        }
-      )
+      createHookContext(createBashInput("PreToolUse", "echo dangerous"), {
+        tool_input: { command: "rm -rf /" },
+      })
     );
     expect(dangerousBashResults).toHaveLength(2);
     expect(dangerousBashResults[0].continue).toBe(true); // Universal passes
@@ -377,13 +385,10 @@ describe("Tool Scoping Fix - Integration Tests", () => {
 
     // Test Write tool with dangerous-looking content (should pass - no Bash security)
     const writeResults = await registry.execute(
-      createHookContext(
-        createBashInput("PreToolUse", "echo write"),
-        {
-          tool_name: "Write",
-          tool_input: { file_path: "script.sh", content: "rm -rf /" },
-        }
-      )
+      createHookContext(createBashInput("PreToolUse", "echo write"), {
+        tool_name: "Write",
+        tool_input: { file_path: "script.sh", content: "rm -rf /" },
+      })
     );
     expect(writeResults).toHaveLength(1); // Only universal hook
     expect(writeResults[0].continue).toBe(true);
@@ -419,11 +424,15 @@ describe("Tool Scoping Fix - Integration Tests", () => {
     );
 
     // Execute for different tools
-    await registry.execute(createMockContext("PreToolUse", { toolName: "Bash" }));
+    await registry.execute(
+      createMockContext("PreToolUse", { toolName: "Bash" })
+    );
     await registry.execute(
       createMockContext("PreToolUse", { toolName: "Write" })
     );
-    await registry.execute(createMockContext("PreToolUse", { toolName: "Edit" }));
+    await registry.execute(
+      createMockContext("PreToolUse", { toolName: "Edit" })
+    );
 
     // Universal should execute for all
     expect(universalExecutions).toBe(3);
@@ -468,7 +477,9 @@ describe("Tool Scoping Fix - Error Scenarios", () => {
       })
     );
 
-    await registry.execute(createMockContext("PreToolUse", { toolName: "Bash" }));
+    await registry.execute(
+      createMockContext("PreToolUse", { toolName: "Bash" })
+    );
 
     expect(results).toContain("universal");
     expect(results).toContain("bash-blocker");
