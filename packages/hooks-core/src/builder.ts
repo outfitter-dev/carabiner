@@ -199,8 +199,10 @@ export class HookBuilder<TInput extends HookInput = HookInput>
         toolUseId?: string,
         _options?: { signal?: AbortSignal }
       ) => {
+        let timeoutId: NodeJS.Timeout | undefined;
+
         const timeoutPromise = new Promise<HookJSONOutput>((_, reject) => {
-          setTimeout(
+          timeoutId = setTimeout(
             () =>
               reject(new Error(`Hook execution timed out after ${timeout}ms`)),
             timeout
@@ -208,13 +210,25 @@ export class HookBuilder<TInput extends HookInput = HookInput>
         });
 
         try {
-          return await Promise.race([
+          const result = await Promise.race([
             originalHandler(input, toolUseId, {
               signal: new AbortController().signal,
             }),
             timeoutPromise,
           ]);
+
+          // Clear the timeout if the handler completes successfully
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+
+          return result;
         } catch (error) {
+          // Clear the timeout on error as well
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+
           if (error instanceof Error && error.message.includes("timed out")) {
             return {
               continue: false,
