@@ -8,6 +8,7 @@ import type {
   HookJSONOutput,
   PostToolUseHookInput,
   PreToolUseHookInput,
+  ToolInput,
 } from "../types";
 import {
   isPostToolUseInput,
@@ -84,7 +85,7 @@ function resolveToolContext(
     const preInput = input as PreToolUseHookInput;
     return {
       name: preInput.tool_name,
-      input: preInput.tool_input,
+      input: preInput.tool_input as ToolInput | Record<string, unknown>,
     };
   }
 
@@ -92,7 +93,7 @@ function resolveToolContext(
     const postInput = input as PostToolUseHookInput;
     return {
       name: postInput.tool_name,
-      input: postInput.tool_input,
+      input: postInput.tool_input as ToolInput | Record<string, unknown>,
       response: postInput.tool_response,
     };
   }
