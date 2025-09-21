@@ -217,18 +217,8 @@ export class HookBuilder<TInput extends HookInput = HookInput>
             timeoutPromise,
           ]);
 
-          // Clear the timeout if the handler completes successfully
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-          }
-
           return result;
         } catch (error) {
-          // Clear the timeout on error as well
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-          }
-
           if (error instanceof Error && error.message.includes("timed out")) {
             return {
               continue: false,
@@ -236,6 +226,10 @@ export class HookBuilder<TInput extends HookInput = HookInput>
             };
           }
           throw error;
+        } finally {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
         }
       };
     }
