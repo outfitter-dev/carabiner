@@ -500,10 +500,13 @@ export async function runClaudeHook(
   handler: HookHandler,
   options: HookExecutionOptions = {}
 ): Promise<never> {
-  const provider = resolveProvider(options);
+  let provider: ClaudeProviderAdapter | undefined;
   let normalizedContext: NormalizedHookContext<HookInput> | null = null;
 
   try {
+    const resolvedProvider = resolveProvider(options);
+    provider = resolvedProvider;
+
     const parseResult = await parseStdinInput();
 
     if (!parseResult.success) {
@@ -514,7 +517,7 @@ export async function runClaudeHook(
     }
 
     const environment = parseHookEnvironment();
-    normalizedContext = provider.fromProviderInput(
+    normalizedContext = resolvedProvider.fromProviderInput(
       parseResult.data,
       environment
     );
@@ -524,7 +527,10 @@ export async function runClaudeHook(
     validateHookInput(context.rawInput);
 
     const result = await executeHook(handler, context, options);
-    const providerResult = provider.toProviderOutput(result, normalizedContext);
+    const providerResult = resolvedProvider.toProviderOutput(
+      result,
+      normalizedContext
+    );
 
     outputHookResult(providerResult);
   } catch (error) {
@@ -536,11 +542,11 @@ export async function runClaudeHook(
           : "Unknown error during hook execution",
       metadata: {
         timestamp: new Date().toISOString(),
-        provider: provider.metadata,
+        ...(provider ? { provider: provider.metadata } : {}),
       },
     };
 
-    if (normalizedContext) {
+    if (normalizedContext && provider) {
       const providerResult = provider.toProviderOutput(
         failure,
         normalizedContext

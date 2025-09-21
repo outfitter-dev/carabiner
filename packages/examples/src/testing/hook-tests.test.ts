@@ -50,6 +50,7 @@ import {
   createMockContext,
   createMockContextFor,
   mockEnv,
+  TestUtils,
 } from "@/hooks-testing";
 import { securityPreToolUseHook } from "../builder-pattern/security-hooks";
 // Import our example hooks
@@ -216,12 +217,15 @@ describe("Hook Testing Framework Examples", () => {
         },
       },
       async () => {
-        const context = createMockContextFor.edit(
+        const input = createMockContextFor.edit(
           "PreToolUse",
           "test.ts",
           "old code",
           "new code"
         );
+        const context = createHookContext(
+          input
+        ) as HookContext<PreToolUseHookInput>;
         const result = await handlePreToolUse(context);
         expect(didContinue(result)).toBe(true);
         return result;
@@ -258,8 +262,6 @@ describe("Hook Testing Framework Examples", () => {
     // Should not throw
   });
 });
-=======
->>>>>>> 76b953d (refactor: migrate examples to normalized helper API and fix TypeScript errors)
 
 /**
  * Builder pattern hook testing

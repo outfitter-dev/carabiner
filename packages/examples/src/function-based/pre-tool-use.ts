@@ -97,7 +97,7 @@ async function handlePreToolUse(
 async function handleBashValidation(
   context: HookContext<PreToolUseHookInput>
 ): Promise<HookResult> {
-  if (!isBashToolInput(context.toolInput)) {
+  if (!(context.toolInput && isBashToolInput(context.toolInput))) {
     return HookResults.block("Invalid Bash tool input", true);
   }
 
@@ -142,7 +142,7 @@ async function handleBashValidation(
 async function handleWriteValidation(
   context: HookContext<PreToolUseHookInput>
 ): Promise<HookResult> {
-  if (!isWriteToolInput(context.toolInput)) {
+  if (!(context.toolInput && isWriteToolInput(context.toolInput))) {
     return HookResults.block("Invalid Write tool input", true);
   }
 
@@ -182,7 +182,7 @@ async function handleWriteValidation(
 async function handleEditValidation(
   context: HookContext<PreToolUseHookInput>
 ): Promise<HookResult> {
-  if (!isEditToolInput(context.toolInput)) {
+  if (!(context.toolInput && isEditToolInput(context.toolInput))) {
     return HookResults.block("Invalid Edit tool input", true);
   }
 
