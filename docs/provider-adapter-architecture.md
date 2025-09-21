@@ -36,4 +36,4 @@ The v0.2 stack introduces a provider adapter layer so Carabiner can normalize Cl
 - Documentation, testing utilities, and starter templates all reference the normalized helpers.
 - Future providers can register themselves without touching core runtime code.
 
-Track remaining tasks in `.agents/logs/202509191649-handoff.md` as branches land.
+Track remaining tasks in [.agents/handoff.md](../.agents/handoff.md) as branches land.
