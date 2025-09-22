@@ -88,7 +88,7 @@ describe("Function-based PreToolUse Hook", () => {
 
     // Assert
     expect(didContinue(result)).toBe(false);
-    expect(getSystemMessage(result)).toContain("Security validation failed");
+    expect(getSystemMessage(result)).toContain("Validation failed");
   });
 
   test("should validate file write operations", async () => {
@@ -169,7 +169,9 @@ describe("Function-based PreToolUse Hook", () => {
 
     // Assert
     expect(didContinue(result)).toBe(false);
-    expect("suppressOutput" in result ? result.suppressOutput : false).toBe(true);
+    expect("suppressOutput" in result ? result.suppressOutput : false).toBe(
+      true
+    );
     expect(getSystemMessage(result)).toContain("Invalid");
   });
 });
@@ -258,7 +260,9 @@ describe("Builder Pattern Security Hook", () => {
     const result = await executeHook(securityPreToolUseHook.handler, context);
 
     expect(didContinue(result)).toBe(false);
-    expect("suppressOutput" in result ? result.suppressOutput : false).toBe(true);
+    expect("suppressOutput" in result ? result.suppressOutput : false).toBe(
+      true
+    );
     expect(getSystemMessage(result)).toContain("dangerous command pattern");
   });
 });
@@ -301,7 +305,9 @@ describe("Custom Hook Scenarios", () => {
     );
     const jsResult = await executeHook(customValidationHook.handler, jsContext);
     expect(didContinue(jsResult)).toBe(false);
-    expect("suppressOutput" in jsResult ? jsResult.suppressOutput : false).toBe(true);
+    expect("suppressOutput" in jsResult ? jsResult.suppressOutput : false).toBe(
+      true
+    );
   });
 
   test("should test hook with middleware", async () => {

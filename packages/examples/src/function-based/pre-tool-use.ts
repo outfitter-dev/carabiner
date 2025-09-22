@@ -217,6 +217,23 @@ function validateBashCommand(
   command: string,
   _cwd: string
 ): { allowed: boolean; reason?: string } {
+  // Block dangerous system commands
+  const dangerousSystemPatterns = [
+    /rm\s+-rf\s+\//,  // rm -rf /
+    /rm\s+-rf\s+\*/,  // rm -rf *
+    /sudo\s+rm/,       // sudo rm
+    /dd\s+if=.*of=\/dev\/(sda|sdb|hda)/,  // dd to disk
+  ];
+
+  for (const pattern of dangerousSystemPatterns) {
+    if (pattern.test(command)) {
+      return {
+        allowed: false,
+        reason: `Dangerous system command blocked: ${pattern.source}`,
+      };
+    }
+  }
+
   // Example: Block commands that could modify git history
   const dangerousGitPatterns = [
     /git\s+rebase.*-i/,
