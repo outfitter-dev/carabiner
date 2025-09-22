@@ -6,7 +6,18 @@
  * minimal impact on execution performance.
  */
 
-import type { HookContext, HookEvent, HookResult } from "@carabiner/types";
+import type {
+  HookContext as CoreHookContext,
+  HookResult as CoreHookResult,
+} from "@carabiner/hooks-core";
+import type {
+  HookContext as TypesHookContext,
+  HookResult as TypesHookResult,
+} from "@carabiner/types";
+
+type CompatibleHookContext = TypesHookContext | CoreHookContext;
+type CompatibleHookResult = TypesHookResult | CoreHookResult;
+type MetricsHookEvent = CompatibleHookContext["event"];
 
 /**
  * Execution timing information
@@ -48,7 +59,7 @@ export type ExecutionMetrics = {
   /** Unique execution ID */
   readonly id: string;
   /** Hook event that was executed */
-  readonly event: HookEvent;
+  readonly event: MetricsHookEvent;
   /** Tool name (if applicable) */
   readonly toolName?: string;
   /** Whether execution was successful */
@@ -96,7 +107,7 @@ export type AggregateMetrics = {
   /** Most common error codes */
   readonly topErrors: Array<{ code: string; count: number }>;
   /** Breakdown by hook event */
-  readonly eventBreakdown: Record<HookEvent, number>;
+  readonly eventBreakdown: Partial<Record<MetricsHookEvent, number>>;
   /** Average memory usage */
   readonly averageMemoryUsage: MemoryUsage;
   /** Time range of collected metrics */
@@ -246,8 +257,8 @@ export class MetricsCollector {
    * @param additionalContext - Additional context data
    */
   record(
-    context: HookContext,
-    result: HookResult,
+    context: CompatibleHookContext,
+    result: CompatibleHookResult,
     timing: ExecutionTiming,
     memoryBefore: MemoryUsage,
     memoryAfter: MemoryUsage,
@@ -256,14 +267,14 @@ export class MetricsCollector {
     if (!this.enabled) {
       return;
     }
+    const success = result.success !== false;
+    const message = "message" in result ? result.message : undefined;
     const metrics: ExecutionMetrics = {
       id: this.generateId(),
       event: context.event,
       toolName: "toolName" in context ? context.toolName : undefined,
-      success: result.success,
-      errorCode: result.success
-        ? undefined
-        : this.extractErrorCode(result.message),
+      success,
+      errorCode: success ? undefined : this.extractErrorCode(message),
       timing,
       memoryBefore,
       memoryAfter,
@@ -341,7 +352,7 @@ export class MetricsCollector {
     }
 
     // Count events
-    const eventCounts: Partial<Record<HookEvent, number>> = {};
+    const eventCounts: Partial<Record<MetricsHookEvent, number>> = {};
     for (const metric of metricsToAnalyze) {
       const count = eventCounts[metric.event] || 0;
       eventCounts[metric.event] = count + 1;
@@ -363,7 +374,7 @@ export class MetricsCollector {
         .map(([code, count]) => ({ code, count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10),
-      eventBreakdown: eventCounts as Record<HookEvent, number>,
+      eventBreakdown: eventCounts,
       averageMemoryUsage: this.calculateAverageMemoryUsage(metricsToAnalyze),
       timeRange: timeRange || {
         start: Math.min(...metricsToAnalyze.map((m) => m.timestamp)),
@@ -452,7 +463,7 @@ export class MetricsCollector {
       minDuration: 0,
       maxDuration: 0,
       topErrors: [],
-      eventBreakdown: {} as Record<HookEvent, number>,
+      eventBreakdown: {} as Partial<Record<MetricsHookEvent, number>>,
       averageMemoryUsage: { heapUsed: 0, heapTotal: 0, external: 0, rss: 0 },
       timeRange: timeRange || { start: 0, end: 0 },
     };

@@ -4,13 +4,6 @@
  */
 
 import type { LiteralUnion, Simplify } from "type-fest";
-import type {
-  HookProviderAdapter,
-  HookProviderId,
-  HookProviderMetadata,
-  NormalizedHookContext,
-  NormalizedToolContext,
-} from "./providers";
 
 // Re-export all Claude Code SDK types for convenience
 export type {
@@ -176,6 +169,46 @@ export type UnknownToolInput = Record<string, unknown>;
  */
 export type ToolInput = ToolInputMap[keyof ToolInputMap] | UnknownToolInput;
 
+export type HookProviderId = LiteralUnion<"claude", string>;
+
+export type HookProviderMetadata = {
+  readonly id: HookProviderId;
+  readonly name: string;
+  readonly displayName?: string;
+  readonly version: string;
+  readonly runtime: string;
+  readonly supports: {
+    readonly events: readonly HookEvent[];
+    readonly tools?: readonly ToolName[];
+    readonly capabilities?: readonly string[];
+  };
+  readonly links?: {
+    readonly homepage?: string;
+    readonly docs?: string;
+  };
+};
+
+export type NormalizedToolContext = {
+  readonly name?: ToolName;
+  readonly input?: ToolInput | Record<string, unknown>;
+  readonly response?: unknown;
+};
+
+export type NormalizedHookContext<TProviderInput = unknown> = {
+  readonly event: HookEvent;
+  readonly sessionId: string;
+  readonly cwd: string;
+  readonly transcriptPath?: string;
+  readonly userPrompt?: string;
+  readonly environment: HookEnvironment;
+  readonly tool?: NormalizedToolContext;
+  readonly raw: TProviderInput;
+  readonly metadata: {
+    readonly provider: HookProviderMetadata;
+    readonly receivedAt: string;
+  };
+};
+
 type MaybePromise<T> = T | Promise<T>;
 
 /**
@@ -219,9 +252,38 @@ export type HookMetadata = {
   provider?: HookProviderMetadata;
 };
 
+type LegacyHookResultCompat = {
+  /** @deprecated use continue */
+  success?: boolean;
+  /** @deprecated use systemMessage */
+  message?: string;
+  /** @deprecated use stopReason === "blocked" */
+  block?: boolean;
+  /** @deprecated provide structured metadata instead */
+  data?: Record<string, unknown>;
+};
+
 export type HookResult = HookJSONOutput & {
   metadata?: HookMetadata;
   providerState?: Record<string, unknown>;
+} & LegacyHookResultCompat;
+
+export type NormalizedHookResult = HookResult;
+
+export type HookProviderAdapter<
+  TProviderInput = unknown,
+  TProviderOutput = HookJSONOutput,
+> = {
+  readonly id: HookProviderId;
+  readonly metadata: HookProviderMetadata;
+  fromProviderInput(
+    input: TProviderInput,
+    environment?: HookEnvironment
+  ): NormalizedHookContext<TProviderInput>;
+  toProviderOutput(
+    result: NormalizedHookResult,
+    context: NormalizedHookContext<TProviderInput>
+  ): TProviderOutput;
 };
 
 /**

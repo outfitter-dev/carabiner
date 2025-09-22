@@ -13,7 +13,7 @@
 const args = Bun.argv.slice(2);
 
 // Help text
-if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
+if (args[0] === "--help" || args[0] === "-h") {
   // Prefer help from source so it's always in sync
   const { renderHelp } = await import("../src/help.ts");
   console.log(renderHelp());
@@ -131,6 +131,17 @@ process.stdin.on('end', () => {
 // Main execution
 async function main() {
   const command = args[0];
+
+  if (!command) {
+    console.error(
+      JSON.stringify({
+        status: "failure",
+        message: "No hook command provided",
+        blocking: true,
+      })
+    );
+    process.exit(1);
+  }
 
   if (command === "list") {
     listHooks();

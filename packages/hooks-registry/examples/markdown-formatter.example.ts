@@ -7,8 +7,11 @@
  */
 
 import { HookExecutor } from "@carabiner/execution";
-import { createMarkdownFormatterHook } from "@carabiner/hooks-registry";
 import { StdinProtocol } from "@carabiner/protocol";
+// Preferred for consumers:
+// import { createMarkdownFormatterHook } from "@carabiner/hooks-registry";
+// Local development in this repo:
+import { createMarkdownFormatterHook } from "../src/hooks/markdown-formatter";
 
 // Example 1: Basic usage with auto-detection
 const basicHook = createMarkdownFormatterHook();

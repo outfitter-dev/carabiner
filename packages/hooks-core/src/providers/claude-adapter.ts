@@ -128,6 +128,10 @@ function denormalizeHookResult(result: NormalizedHookResult): HookJSONOutput {
   const {
     providerState: _providerState,
     metadata: _metadata,
+    success: _legacySuccess,
+    message: _legacyMessage,
+    block: _legacyBlock,
+    data: _legacyData,
     ...json
   } = result;
   return { ...json } as HookJSONOutput;

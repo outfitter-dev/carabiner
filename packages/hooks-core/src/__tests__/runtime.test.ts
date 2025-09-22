@@ -14,48 +14,83 @@ import {
   outputHookResult,
   safeHookExecution,
 } from "../runtime";
-import type { HookHandler } from "../types";
+import type {
+  HookHandler,
+  HookResult,
+  PostToolUseHookInput,
+  PreToolUseHookInput,
+  SessionStartHookInput,
+} from "../types";
+
+function expectSyncResult(result: HookResult) {
+  if ((result as { async?: boolean }).async === true) {
+    throw new Error("Expected synchronous hook result");
+  }
+  return result as Extract<HookResult, { continue?: boolean }>;
+}
 
 describe("Runtime - Input Creation", () => {
   test("should create Bash input correctly", () => {
-    const input = createBashInput("PreToolUse", "echo test");
+    const input = createBashInput(
+      "PreToolUse",
+      "echo test"
+    ) as PreToolUseHookInput;
 
     expect(input.hook_event_name).toBe("PreToolUse");
     expect(input.tool_name).toBe("Bash");
     expect(input.session_id).toBe("test-session");
-    expect(input.tool_input).toEqual({ command: "echo test" });
+    expect((input.tool_input as { command: string }).command).toBe("echo test");
   });
 
   test("should create File input for Write operation", () => {
-    const input = createFileInput("PostToolUse", "Write", "test.ts");
+    const input = createFileInput(
+      "PostToolUse",
+      "Write",
+      "test.ts"
+    ) as PostToolUseHookInput;
 
     expect(input.hook_event_name).toBe("PostToolUse");
     expect(input.tool_name).toBe("Write");
-    expect(input.tool_input.file_path).toBe("test.ts");
+    expect((input.tool_input as { file_path: string }).file_path).toBe(
+      "test.ts"
+    );
   });
 
   test("should create File input for Edit operation", () => {
-    const input = createFileInput("PreToolUse", "Edit", "test.ts");
+    const input = createFileInput(
+      "PreToolUse",
+      "Edit",
+      "test.ts"
+    ) as PreToolUseHookInput;
 
     expect(input.hook_event_name).toBe("PreToolUse");
     expect(input.tool_name).toBe("Edit");
-    expect(input.tool_input.file_path).toBe("test.ts");
+    expect((input.tool_input as { file_path: string }).file_path).toBe(
+      "test.ts"
+    );
   });
 
   test("should create File input for Read operation", () => {
-    const input = createFileInput("PreToolUse", "Read", "test.ts");
+    const input = createFileInput(
+      "PreToolUse",
+      "Read",
+      "test.ts"
+    ) as PreToolUseHookInput;
 
     expect(input.hook_event_name).toBe("PreToolUse");
     expect(input.tool_name).toBe("Read");
-    expect(input.tool_input.file_path).toBe("test.ts");
+    expect((input.tool_input as { file_path: string }).file_path).toBe(
+      "test.ts"
+    );
   });
 
   test("should pass-through input creation", () => {
-    const originalInput = {
-      hook_event_name: "SessionStart" as const,
+    const originalInput: SessionStartHookInput = {
+      hook_event_name: "SessionStart",
       session_id: "my-session",
       transcript_path: "/my/transcript.md",
       cwd: "/my/cwd",
+      source: "startup",
     };
 
     const context = createHookContext(originalInput);
@@ -98,10 +133,11 @@ describe("Runtime - Hook Execution", () => {
       createBashInput("PreToolUse", "test command")
     );
     const result = await safeHookExecution(handler, context);
+    const sync = expectSyncResult(result);
 
-    expect(result.continue).toBe(true);
-    expect(result.systemMessage).toBe("Hook executed");
-    expect(result.metadata?.provider?.id).toBe("claude");
+    expect(sync.continue).toBe(true);
+    expect(sync.systemMessage).toBe("Hook executed");
+    expect(sync.metadata?.provider?.id).toBe("claude");
   });
 
   test("should handle hook errors properly", async () => {
@@ -113,10 +149,11 @@ describe("Runtime - Hook Execution", () => {
       createBashInput("PreToolUse", "test command")
     );
     const result = await safeHookExecution(handler, context);
+    const sync = expectSyncResult(result);
 
-    expect(result.continue).toBe(false);
-    expect(result.systemMessage).toBe("Hook failed");
-    expect(result.metadata?.provider?.id).toBe("claude");
+    expect(sync.continue).toBe(false);
+    expect(sync.systemMessage).toBe("Hook failed");
+    expect(sync.metadata?.provider?.id).toBe("claude");
   });
 
   test("should handle security blocking", async () => {
@@ -138,11 +175,12 @@ describe("Runtime - Hook Execution", () => {
       createBashInput("PreToolUse", "rm -rf /")
     );
     const result = await safeHookExecution(handler, context);
+    const sync = expectSyncResult(result);
 
-    expect(result.continue).toBe(false);
-    expect(result.systemMessage).toBe("Dangerous command blocked");
-    expect(result.stopReason).toBe("blocked");
-    expect(result.metadata?.provider?.id).toBe("claude");
+    expect(sync.continue).toBe(false);
+    expect(sync.systemMessage).toBe("Dangerous command blocked");
+    expect(sync.stopReason).toBe("blocked");
+    expect(sync.metadata?.provider?.id).toBe("claude");
   });
 
   test("should handle hook with fallback", async () => {
@@ -156,10 +194,11 @@ describe("Runtime - Hook Execution", () => {
       createBashInput("PreToolUse", "test command")
     );
     const result = await safeHookExecution(handler, context, fallback);
+    const sync = expectSyncResult(result);
 
-    expect(result.continue).toBe(true);
-    expect(result.systemMessage).toBe("Fallback executed");
-    expect(result.metadata?.provider?.id).toBe("claude");
+    expect(sync.continue).toBe(true);
+    expect(sync.systemMessage).toBe("Fallback executed");
+    expect(sync.metadata?.provider?.id).toBe("claude");
   });
 });
 
@@ -167,37 +206,42 @@ describe("Runtime - HookResults Utility", () => {
   test("should create success result", () => {
     const result = HookResults.success("Success message");
 
-    expect(result.continue).toBe(true);
-    expect(result.systemMessage).toBe("Success message");
+    const sync = expectSyncResult(result);
+    expect(sync.continue).toBe(true);
+    expect(sync.systemMessage).toBe("Success message");
   });
 
   test("should create failure result", () => {
     const result = HookResults.failure("Failure message");
 
-    expect(result.continue).toBe(false);
-    expect(result.systemMessage).toBe("Failure message");
+    const sync = expectSyncResult(result);
+    expect(sync.continue).toBe(false);
+    expect(sync.systemMessage).toBe("Failure message");
   });
 
   test("should create block result", () => {
     const result = HookResults.block("Blocked message");
 
-    expect(result.continue).toBe(false);
-    expect(result.systemMessage).toBe("Blocked message");
-    expect(result.stopReason).toBe("blocked");
+    const sync = expectSyncResult(result);
+    expect(sync.continue).toBe(false);
+    expect(sync.systemMessage).toBe("Blocked message");
+    expect(sync.stopReason).toBe("blocked");
   });
 
   test("should create skip result", () => {
     const result = HookResults.skip("Skip message");
 
-    expect(result.continue).toBe(true);
-    expect(result.systemMessage).toBe("Skip message");
+    const sync = expectSyncResult(result);
+    expect(sync.continue).toBe(true);
+    expect(sync.systemMessage).toBe("Skip message");
   });
 
   test("should create warn result", () => {
     const result = HookResults.warn("Warning message");
 
-    expect(result.continue).toBe(true);
-    expect(result.systemMessage).toBe("Warning message");
+    const sync = expectSyncResult(result);
+    expect(sync.continue).toBe(true);
+    expect(sync.systemMessage).toBe("Warning message");
   });
 });
 
@@ -254,10 +298,11 @@ describe("Runtime - executeHook", () => {
       createBashInput("PreToolUse", "test command")
     );
     const result = await executeHook(handler, context, { timeout: 1000 });
+    const sync = expectSyncResult(result);
 
-    expect(result.continue).toBe(true);
-    expect(result.systemMessage).toBe("Success");
-    expect(result.metadata?.provider?.id).toBe("claude");
+    expect(sync.continue).toBe(true);
+    expect(sync.systemMessage).toBe("Success");
+    expect(sync.metadata?.provider?.id).toBe("claude");
   });
 
   test("should timeout and return failure", async () => {
@@ -274,9 +319,10 @@ describe("Runtime - executeHook", () => {
       throwOnError: false,
     });
 
-    expect(result.continue).toBe(false);
-    expect(result.systemMessage).toContain("timed out");
-    expect(result.metadata?.provider?.id).toBe("claude");
+    const sync = expectSyncResult(result);
+    expect(sync.continue).toBe(false);
+    expect(sync.systemMessage).toContain("timed out");
+    expect(sync.metadata?.provider?.id).toBe("claude");
   });
 
   test("should complete before timeout", async () => {
@@ -298,11 +344,12 @@ describe("Runtime - executeHook", () => {
         createBashInput("PreToolUse", "test command")
       );
       const result = await executeHook(handler, context, { timeout: 1000 });
+      const sync = expectSyncResult(result);
 
-      expect(result.continue).toBe(true);
-      expect(result.systemMessage).toBe("Fast execution");
+      expect(sync.continue).toBe(true);
+      expect(sync.systemMessage).toBe("Fast execution");
       expect(timerCleared).toBe(true);
-      expect(result.metadata?.provider?.id).toBe("claude");
+      expect(sync.metadata?.provider?.id).toBe("claude");
     } finally {
       // Restore original clearTimeout
       globalThis.clearTimeout = originalClearTimeout;
@@ -331,10 +378,11 @@ describe("Runtime - executeHook", () => {
         throwOnError: false,
       });
 
-      expect(result.continue).toBe(false);
-      expect(result.systemMessage).toBe("Handler error");
+      const sync = expectSyncResult(result);
+      expect(sync.continue).toBe(false);
+      expect(sync.systemMessage).toBe("Handler error");
       expect(timerCleared).toBe(true);
-      expect(result.metadata?.provider?.id).toBe("claude");
+      expect(sync.metadata?.provider?.id).toBe("claude");
     } finally {
       globalThis.clearTimeout = originalClearTimeout;
     }
