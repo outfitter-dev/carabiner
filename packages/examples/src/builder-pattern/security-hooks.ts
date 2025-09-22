@@ -31,18 +31,26 @@ const securityPreToolUseHook = HookBuilder.forPreToolUse()
   .withMiddleware(middleware.timing())
   .withMiddleware(
     middleware.errorHandling((error, _context) => {
-      return HookResults.block(`Security check failed: ${error.message}`);
+      return HookResults.block(`Security check failed: ${error.message}`, true);
     })
   )
   .withCondition((context) => {
     // Only run security checks in production or for sensitive tools
+    const toolName = (context as any).tool_name || (context as any).toolName;
     return (
       Bun.env.NODE_ENV === "production" ||
-      ["Bash", "Write", "Edit"].includes(context.toolName)
+      ["Bash", "Write", "Edit"].includes(toolName)
     );
   })
   .withHandler(async (context) => {
     try {
+      // Normalize context to ensure compatibility
+      const normalizedContext = {
+        ...context,
+        toolName: (context as any).tool_name || (context as any).toolName,
+        toolInput: (context as any).tool_input || (context as any).toolInput,
+      };
+
       // Apply environment-specific security validation
       const environment =
         (Bun.env.NODE_ENV as "development" | "production" | "test") ||
@@ -50,32 +58,33 @@ const securityPreToolUseHook = HookBuilder.forPreToolUse()
 
       switch (environment) {
         case "production":
-          SecurityValidators.production(context);
+          SecurityValidators.production(normalizedContext);
           break;
         case "development":
-          SecurityValidators.development(context);
+          SecurityValidators.development(normalizedContext);
           break;
         default:
-          SecurityValidators.strict(context);
+          SecurityValidators.strict(normalizedContext);
       }
 
       // Additional security checks
-      await performAdvancedSecurityChecks(context);
+      await performAdvancedSecurityChecks(normalizedContext);
 
-      return HookResults.success(
-        `Security validation passed for ${context.toolName}`,
-        {
+      return {
+        continue: true,
+        systemMessage: `Security validation passed for ${normalizedContext.toolName}`,
+        providerState: {
           securityLevel: environment === "production" ? "high" : "medium",
           checksPerformed: [
             "basic-validation",
             "advanced-patterns",
             "context-analysis",
           ],
-        }
-      );
+        },
+      };
     } catch (error) {
       if (error instanceof SecurityValidationError) {
-        return HookResults.block(error.message);
+        return HookResults.block(error.message, true);
       }
       throw error; // Let middleware handle other errors
     }
@@ -96,7 +105,8 @@ const rateLimitWriteHook = HookBuilder.forPreToolUse()
 
     if (!rateLimitResult.allowed) {
       return HookResults.block(
-        `Rate limit exceeded: ${rateLimitResult.message}`
+        `Rate limit exceeded: ${rateLimitResult.message}`,
+        true
       );
     }
 
@@ -177,7 +187,10 @@ const commandMonitoringHook = createHook.preToolUse("Bash", (context) => {
         Bun.env.NODE_ENV === "production"
       ) {
         // In production, block these suspicious commands
-        return HookResults.block(`Blocked suspicious command: ${description}`);
+        return HookResults.block(
+          `Blocked suspicious command: ${description}`,
+          true
+        );
       }
     }
   }
@@ -191,7 +204,7 @@ const commandMonitoringHook = createHook.preToolUse("Bash", (context) => {
 const universalSecurityHook = createHook.preToolUse(async (context) => {
   // Basic universal checks
   if (context.sessionId.length < 10) {
-    return HookResults.block("Invalid session ID format");
+    return HookResults.block("Invalid session ID format", true);
   }
 
   // Environment-based restrictions

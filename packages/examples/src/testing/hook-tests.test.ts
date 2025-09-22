@@ -276,12 +276,13 @@ describe("Custom Hook Scenarios", () => {
     const customValidationHook = HookBuilder.forPreToolUse()
       .forTool("Write")
       .withHandler((context) => {
-        const filePath = (context.toolInput as Record<string, unknown>)
-          .file_path;
+        const toolInput =
+          (context as any).tool_input || (context as any).toolInput;
+        const filePath = (toolInput as Record<string, unknown>).file_path;
 
         // Custom validation: only allow .ts files
         if (!filePath.endsWith(".ts")) {
-          return HookResults.block("Only TypeScript files allowed");
+          return HookResults.block("Only TypeScript files allowed", true);
         }
 
         return HookResults.success("TypeScript file validated");

@@ -412,8 +412,13 @@ export const HookResults = {
   failure(systemMessage: string): HookJSONOutput {
     return { continue: false, systemMessage };
   },
-  block(systemMessage: string): HookJSONOutput {
-    return { continue: false, systemMessage, stopReason: "blocked" };
+  block(systemMessage: string, suppressOutput = false): HookJSONOutput {
+    return {
+      continue: false,
+      systemMessage,
+      stopReason: "blocked",
+      ...(suppressOutput && { suppressOutput }),
+    };
   },
   skip(systemMessage?: string): HookJSONOutput {
     return { continue: true, systemMessage: systemMessage || "Hook skipped" };
