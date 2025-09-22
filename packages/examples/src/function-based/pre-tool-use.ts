@@ -6,7 +6,12 @@
  * Uses the new stdin-based Claude Code hooks runtime (JSON input via stdin)
  */
 
-import type { HookContext, HookResult } from "@/hooks-core";
+import type {
+  HookContext,
+  HookHandler,
+  HookResult,
+  PreToolUseHookInput,
+} from "@/hooks-core";
 import {
   HookResults,
   isBashToolInput,
@@ -20,12 +25,37 @@ import {
   validateHookSecurity,
 } from "@/hooks-validators";
 
+// Normalized helper functions
+function successResult(
+  message?: string,
+  providerState?: Record<string, unknown>
+): HookResult {
+  const base = HookResults.success(message);
+  return providerState ? { ...base, providerState } : base;
+}
+
+function blockResult(
+  message?: string,
+  providerState?: Record<string, unknown>
+): HookResult {
+  const base = HookResults.block(message || "Operation blocked");
+  return providerState ? { ...base, providerState } : base;
+}
+
+function failureResult(
+  message?: string,
+  providerState?: Record<string, unknown>
+): HookResult {
+  const base = HookResults.failure(message || "Operation failed");
+  return providerState ? { ...base, providerState } : base;
+}
+
 /**
  * Main hook handler using function-based approach
  * Now receives context from stdin JSON input
  */
 async function handlePreToolUse(
-  context: HookContext<"PreToolUse">
+  context: HookContext<PreToolUseHookInput>
 ): Promise<HookResult> {
   try {
     // Get tool name from context (handle both raw and normalized formats)
@@ -42,17 +72,11 @@ async function handlePreToolUse(
     // Route to specific tool handlers
     switch (toolName) {
       case "Bash":
-        return await handleBashValidation(
-          normalizedContext as HookContext<"PreToolUse", "Bash">
-        );
+        return await handleBashValidation(normalizedContext);
       case "Write":
-        return await handleWriteValidation(
-          normalizedContext as HookContext<"PreToolUse", "Write">
-        );
+        return await handleWriteValidation(normalizedContext);
       case "Edit":
-        return await handleEditValidation(
-          normalizedContext as HookContext<"PreToolUse", "Edit">
-        );
+        return await handleEditValidation(normalizedContext);
       default:
         return await handleGenericValidation(normalizedContext);
     }
@@ -61,7 +85,8 @@ async function handlePreToolUse(
       error instanceof ValidationError ||
         error instanceof SecurityValidationError
         ? error.message
-        : "Security validation failed"
+        : "Security validation failed",
+      true
     );
   }
 }
@@ -70,9 +95,9 @@ async function handlePreToolUse(
  * Handle Bash tool validation
  */
 async function handleBashValidation(
-  context: HookContext<"PreToolUse", "Bash">
+  context: HookContext<PreToolUseHookInput>
 ): Promise<HookResult> {
-  if (!isBashToolInput(context.toolInput)) {
+  if (!(context.toolInput && isBashToolInput(context.toolInput))) {
     return HookResults.block("Invalid Bash tool input", true);
   }
 
@@ -81,7 +106,7 @@ async function handleBashValidation(
   // Custom validation logic first - provides specific messages
   const validationResult = await validateBashCommand(command, context.cwd);
   if (!validationResult.allowed) {
-    return HookResults.block(validationResult.reason ?? "Validation failed");
+    return blockResult(validationResult.reason ?? "Validation failed");
   }
 
   // Apply additional security validation
@@ -94,38 +119,30 @@ async function handleBashValidation(
     });
   } catch (error) {
     // If security validation fails, return with "Validation failed" message
-    return HookResults.block("Validation failed");
+    return HookResults.block("Validation failed", true);
   }
 
   // Check timeout
   if (timeout && timeout > 300_000) {
     // 5 minutes
-    return {
-      continue: false,
-      systemMessage: "Command timeout too long (max 5 minutes)",
-      providerState: {
-        requestedTimeout: timeout,
-        maxAllowed: 300_000,
-      },
-    };
+    return failureResult("Command timeout too long (max 5 minutes)", {
+      requestedTimeout: timeout,
+      maxAllowed: 300_000,
+    });
   }
-  return {
-    continue: true,
-    systemMessage: "Bash validation passed",
-    providerState: {
-      command: command.slice(0, 100),
-      estimatedDuration: estimateCommandDuration(command),
-    },
-  };
+  return successResult("Bash validation passed", {
+    command: command.slice(0, 100),
+    estimatedDuration: estimateCommandDuration(command),
+  });
 }
 
 /**
  * Handle Write tool validation
  */
 async function handleWriteValidation(
-  context: HookContext<"PreToolUse", "Write">
+  context: HookContext<PreToolUseHookInput>
 ): Promise<HookResult> {
-  if (!isWriteToolInput(context.toolInput)) {
+  if (!(context.toolInput && isWriteToolInput(context.toolInput))) {
     return HookResults.block("Invalid Write tool input", true);
   }
 
@@ -141,39 +158,31 @@ async function handleWriteValidation(
   // Custom validation for write operations
   const validation = await validateFileWrite(file_path, content, context.cwd);
   if (!validation.allowed) {
-    return HookResults.block(validation.reason ?? "File validation failed");
+    return blockResult(validation.reason ?? "File validation failed");
   }
 
   // Check file size
   const contentSize = new TextEncoder().encode(content).length;
   if (contentSize > 1_048_576) {
     // 1MB
-    return {
-      continue: false,
-      systemMessage: "File content too large (max 1MB)",
-      providerState: {
-        size: contentSize,
-        maxSize: 1_048_576,
-      },
-    };
+    return failureResult("File content too large (max 1MB)", {
+      size: contentSize,
+      maxSize: 1_048_576,
+    });
   }
-  return {
-    continue: true,
-    systemMessage: "Write validation passed",
-    providerState: {
-      filePath: file_path,
-      contentSize,
-    },
-  };
+  return successResult("Write validation passed", {
+    filePath: file_path,
+    contentSize,
+  });
 }
 
 /**
  * Handle Edit tool validation
  */
 async function handleEditValidation(
-  context: HookContext<"PreToolUse", "Edit">
+  context: HookContext<PreToolUseHookInput>
 ): Promise<HookResult> {
-  if (!isEditToolInput(context.toolInput)) {
+  if (!(context.toolInput && isEditToolInput(context.toolInput))) {
     return HookResults.block("Invalid Edit tool input", true);
   }
 
@@ -194,28 +203,26 @@ async function handleEditValidation(
     context.cwd
   );
   if (!validation.allowed) {
-    return HookResults.block(validation.reason ?? "Edit validation failed");
+    return blockResult(validation.reason ?? "Edit validation failed");
   }
 
   // Warn about large replacements
   // if (old_string.length > 10_000 || new_string.length > 10_000) {
   //   console.warn('Large replacement detected');
   // }
-  return {
-    continue: true,
-    systemMessage: "Edit validation passed",
-    providerState: {
-      filePath: file_path,
-      replaceAll: replace_all,
-      replacementSize: new_string.length - old_string.length,
-    },
-  };
+  return successResult("Edit validation passed", {
+    filePath: file_path,
+    replaceAll: replace_all,
+    replacementSize: new_string.length - old_string.length,
+  });
 }
 
 /**
  * Handle generic tool validation
  */
-function handleGenericValidation(context: HookContext): HookResult {
+function handleGenericValidation(
+  context: HookContext<PreToolUseHookInput>
+): HookResult {
   // Apply basic security validation
   try {
     validateHookSecurity(context, {
@@ -226,7 +233,7 @@ function handleGenericValidation(context: HookContext): HookResult {
   }
 
   const toolName = (context as any).tool_name || (context as any).toolName;
-  return HookResults.success(
+  return successResult(
     `Generic validation passed for ${toolName || "unknown tool"}`
   );
 }
@@ -374,10 +381,9 @@ function estimateCommandDuration(command: string): number {
 if (import.meta.main) {
   // The new runtime automatically reads JSON from stdin,
   // creates context, and calls our handler
-  const handler: import("@/hooks-core").HookHandler = (ctx) =>
-    handlePreToolUse(ctx as any);
+  const handler: HookHandler = (ctx) =>
+    handlePreToolUse(ctx as HookContext<PreToolUseHookInput>);
   runClaudeHook(handler, {
-    outputMode: "exit-code", // Use traditional exit codes
     logLevel: "info",
   });
 }

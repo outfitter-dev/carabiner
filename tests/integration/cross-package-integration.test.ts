@@ -268,8 +268,9 @@ export default async function(context) {
     test("should execute complete hook workflow with metrics", async () => {
       // Test the complete flow from configuration loading to hook execution
       const { ConfigManager } = await import("@carabiner/hooks-config");
-      const { globalMetrics, clearExecutionMetrics, getExecutionStats } =
-        await import("@carabiner/execution");
+      const { clearExecutionMetrics, getExecutionStats } = await import(
+        "@carabiner/execution"
+      );
 
       // Clear any existing metrics
       clearExecutionMetrics();
@@ -340,7 +341,7 @@ export default async function(context) {
       const loadedConfig = await configManager.load();
 
       expect(loadedConfig.PreToolUse).toBeDefined();
-      expect(loadedConfig.PreToolUse.Bash).toBeDefined();
+      expect(loadedConfig.PreToolUse?.Bash).toBeDefined();
 
       // Verify metrics collection is available
       const initialMetrics = getExecutionStats();
@@ -398,7 +399,7 @@ export default async function(context) {
 
       // Configuration should load successfully even with failing hooks
       expect(loadedConfig).toBeDefined();
-      expect(loadedConfig.PreToolUse.Bash.command).toBe(
+      expect(loadedConfig.PreToolUse?.Bash?.command).toBe(
         "bun run ./hooks/failing-hook.ts"
       );
     });
@@ -457,9 +458,7 @@ export default async function(context) {
 
   describe("Performance Integration", () => {
     test("should track performance across package boundaries", async () => {
-      const { globalMetrics, clearExecutionMetrics } = await import(
-        "@carabiner/execution"
-      );
+      const { clearExecutionMetrics } = await import("@carabiner/execution");
 
       // Clear existing metrics
       clearExecutionMetrics();

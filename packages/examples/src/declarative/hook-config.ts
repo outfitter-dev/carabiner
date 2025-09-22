@@ -9,6 +9,7 @@
 import type {
   DeclarativeHookConfig,
   HookContext,
+  HookHandler,
   HookResult,
 } from "@/hooks-core";
 import {
@@ -24,6 +25,48 @@ import {
   validateToolInput,
 } from "@/hooks-validators";
 
+function successResult(
+  message?: string,
+  providerState?: Record<string, unknown>
+): HookResult {
+  const base = HookResults.success(message);
+  return providerState ? { ...base, providerState } : base;
+}
+
+function blockResult(
+  message?: string,
+  providerState?: Record<string, unknown>
+): HookResult {
+  const base = HookResults.block(message || "Operation blocked");
+  return providerState ? { ...base, providerState } : base;
+}
+
+function getMessage(result: HookResult): string {
+  if ("systemMessage" in result && typeof result.systemMessage === "string") {
+    return result.systemMessage;
+  }
+  return "";
+}
+
+function didContinue(result: HookResult): boolean {
+  if ("continue" in result && result.continue === false) {
+    return false;
+  }
+  if ("stopReason" in result && result.stopReason === "blocked") {
+    return false;
+  }
+  return true;
+}
+
+async function invokeHandler(
+  handler: HookHandler,
+  context: HookContext
+): Promise<HookResult> {
+  return handler(context, undefined, {
+    signal: new AbortController().signal,
+  });
+}
+
 /**
  * Development environment hooks configuration
  */
@@ -35,11 +78,9 @@ const developmentHooks: DeclarativeHookConfig[] = [
       // Apply lenient validation for development
       try {
         SecurityValidators.development(context);
-        return HookResults.success("Development validation passed");
+        return successResult("Development validation passed");
       } catch (_error) {
-        return HookResults.success(
-          "Development validation completed with warnings"
-        );
+        return successResult("Development validation completed with warnings");
       }
     },
     priority: 50,
@@ -55,12 +96,12 @@ const developmentHooks: DeclarativeHookConfig[] = [
     handler: async (context) => {
       const filePath = (context.toolInput as { file_path?: string })?.file_path;
       if (!filePath) {
-        return HookResults.success("No file to format");
+        return successResult("No file to format");
       }
 
       try {
         await formatFile(filePath);
-        return HookResults.success(`File formatted: ${filePath}`);
+        return successResult(`File formatted: ${filePath}`);
       } catch (error) {
         return HookResults.failure(
           `Formatting failed: ${error instanceof Error ? error.message : error}`
@@ -78,7 +119,7 @@ const developmentHooks: DeclarativeHookConfig[] = [
       // Display helpful development information
       await displayDevInfo(context.cwd);
 
-      return HookResults.success("Development session initialized");
+      return successResult("Development session initialized");
     },
     enabled: true,
     timeout: 10_000,
@@ -101,7 +142,7 @@ const productionHooks: DeclarativeHookConfig[] = [
         // Additional production checks
         performProductionChecks(context);
 
-        return HookResults.success("Production security validation passed", {
+        return successResult("Production security validation passed", {
           securityLevel: "strict",
           environment: "production",
         });
@@ -128,13 +169,13 @@ const productionHooks: DeclarativeHookConfig[] = [
       await auditLog({
         timestamp: new Date().toISOString(),
         sessionId: context.sessionId,
-        toolName: context.toolName,
+        toolName: context.toolName ?? "unknown",
         cwd: context.cwd,
         success: true, // PostToolUse implies successful execution
         environment: "production",
       });
 
-      return HookResults.success("Audit log recorded");
+      return successResult("Audit log recorded");
     },
     enabled: true,
     timeout: 5000,
@@ -161,7 +202,7 @@ const productionHooks: DeclarativeHookConfig[] = [
         environment: "production",
       });
 
-      return HookResults.success("Production session initialized");
+      return successResult("Production session initialized");
     },
     enabled: true,
     timeout: 15_000,
@@ -179,7 +220,7 @@ const testingHooks: DeclarativeHookConfig[] = [
       // Use test-specific validation
       SecurityValidators.test(context);
 
-      return HookResults.success("Test validation passed");
+      return successResult("Test validation passed");
     },
     enabled: true,
     timeout: 3000,
@@ -213,7 +254,7 @@ const testingHooks: DeclarativeHookConfig[] = [
       };
       void testData;
 
-      return HookResults.success("Test data captured");
+      return successResult("Test data captured");
     },
     enabled: true,
     timeout: 2000,
@@ -230,9 +271,18 @@ const universalHooks: DeclarativeHookConfig[] = [
     event: "PreToolUse",
     // No tool specified - this runs for ALL tools
     handler: async (context) => {
+      const toolName = context.toolName;
+      if (!toolName) {
+        return successResult("No tool specified; skipping validation");
+      }
+
       // Validate tool input structure
+      if (!context.toolInput) {
+        return blockResult("No tool input provided");
+      }
+
       const validation = await validateToolInput(
-        context.toolName,
+        toolName,
         context.toolInput,
         context
       );
@@ -246,7 +296,7 @@ const universalHooks: DeclarativeHookConfig[] = [
         // warnings available for use if needed
       }
 
-      return HookResults.success("Input validation passed", {
+      return successResult("Input validation passed", {
         warnings: validation.warnings?.length ?? 0,
         toolScoping: "This universal hook runs for ALL tools",
       });
@@ -277,7 +327,7 @@ const universalHooks: DeclarativeHookConfig[] = [
         }
       }
 
-      return HookResults.success("Bash command monitoring completed", {
+      return successResult("Bash command monitoring completed", {
         toolScoping: "This hook only runs for Bash commands",
       });
     },
@@ -310,7 +360,7 @@ const universalHooks: DeclarativeHookConfig[] = [
         // Large output warning would be logged here
       }
 
-      return HookResults.success("Performance monitoring completed", {
+      return successResult("Performance monitoring completed", {
         outputSize,
         large: outputSize > 100_000,
         toolScoping: "This universal hook runs for ALL tools",
@@ -386,15 +436,19 @@ async function runDeclarativeHooks(context: HookContext): Promise<HookResult> {
 
   for (const hookConfig of relevantHooks) {
     try {
-      const result = await hookConfig.handler(context);
+      const result = await invokeHandler(
+        hookConfig.handler as HookHandler,
+        context
+      );
+      const success = didContinue(result);
       results.push({
         type: hookConfig.tool ? `${hookConfig.tool}-specific` : "universal",
-        success: result.success,
-        message: result.message ?? "",
+        success,
+        message: getMessage(result),
       });
 
       // If any hook blocks, stop execution
-      if (!result.success && result.block) {
+      if (!success) {
         return result;
       }
     } catch (error) {
@@ -403,14 +457,14 @@ async function runDeclarativeHooks(context: HookContext): Promise<HookResult> {
       );
       results.push({
         type: hookConfig.tool ? `${hookConfig.tool}-specific` : "universal",
-        success: false,
-        message: errorResult.message ?? "",
+        success: didContinue(errorResult),
+        message: getMessage(errorResult),
       });
     }
   }
 
-  return HookResults.success(
-    `Declarative hooks completed for ${context.toolName}`,
+  return successResult(
+    `Declarative hooks completed for ${context.toolName ?? "unknown"}`,
     {
       hookResults: results,
       toolScoping: `Ran ${relevantHooks.length} hooks based on tool scoping`,
@@ -566,10 +620,7 @@ if (import.meta.main) {
   initializeHooks();
 
   // Use the new stdin-based runtime
-  runClaudeHook(runDeclarativeHooks, {
-    outputMode: "exit-code",
-    logLevel: "info",
-  });
+  runClaudeHook(runDeclarativeHooks);
 }
 
 export {

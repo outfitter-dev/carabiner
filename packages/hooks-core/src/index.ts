@@ -62,6 +62,23 @@ export {
 } from "./runtime";
 // Export all types
 export type * from "./types";
+// Re-export Claude SDK types for compatibility
+export type {
+  AsyncHookJSONOutput,
+  HookCallback,
+  HookEnvironment,
+  HookInput,
+  HookJSONOutput,
+  NotificationHookInput,
+  PostToolUseHookInput,
+  PreCompactHookInput,
+  PreToolUseHookInput,
+  SessionEndHookInput,
+  SessionStartHookInput,
+  StopHookInput,
+  SubagentStopHookInput,
+  UserPromptSubmitHookInput,
+} from "./types";
 // Export environment utilities
 export {
   getEnv,

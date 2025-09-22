@@ -10,7 +10,12 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join } from "node:path";
-import type { HookContext, HookResult } from "@/hooks-core";
+import type {
+  HookContext,
+  HookHandler,
+  HookResult,
+  PostToolUseHookInput,
+} from "@/hooks-core";
 import {
   HookResults,
   isBashToolInput,
@@ -19,12 +24,31 @@ import {
   runClaudeHook,
 } from "@/hooks-core";
 
+// Normalized helper functions
+function didContinue(result: HookResult): boolean {
+  if ("continue" in result && result.continue === false) {
+    return false;
+  }
+  if ("stopReason" in result && result.stopReason === "blocked") {
+    return false;
+  }
+  return true;
+}
+
+function successResult(
+  message?: string,
+  providerState?: Record<string, unknown>
+): HookResult {
+  const base = HookResults.success(message);
+  return providerState ? { ...base, providerState } : base;
+}
+
 /**
  * Main hook handler for post-tool processing
  * Now receives context from stdin JSON input including tool response
  */
 async function handlePostToolUse(
-  context: HookContext<"PostToolUse">
+  context: HookContext<PostToolUseHookInput>
 ): Promise<HookResult> {
   // Access tool response from new context structure
   // Example: process tool response if available
@@ -51,21 +75,19 @@ async function handlePostToolUse(
  * Route to appropriate tool handler
  */
 async function routeToToolHandler(
-  context: HookContext<"PostToolUse">
+  context: HookContext<PostToolUseHookInput>
 ): Promise<HookResult> {
+  if (!context.toolName) {
+    return await handleGenericPostProcessing(context);
+  }
+
   switch (context.toolName) {
     case "Bash":
-      return await handleBashPostProcessing(
-        context as HookContext<"PostToolUse", "Bash">
-      );
+      return await handleBashPostProcessing(context);
     case "Write":
-      return await handleWritePostProcessing(
-        context as HookContext<"PostToolUse", "Write">
-      );
+      return await handleWritePostProcessing(context);
     case "Edit":
-      return await handleEditPostProcessing(
-        context as HookContext<"PostToolUse", "Edit">
-      );
+      return await handleEditPostProcessing(context);
     case "Read":
       return await handleReadPostProcessing(context);
     default:
@@ -77,10 +99,10 @@ async function routeToToolHandler(
  * Handle Bash tool post-processing
  */
 async function handleBashPostProcessing(
-  context: HookContext<"PostToolUse", "Bash">
+  context: HookContext<PostToolUseHookInput>
 ): Promise<HookResult> {
-  if (!isBashToolInput(context.toolInput)) {
-    return HookResults.success(
+  if (!(context.toolInput && isBashToolInput(context.toolInput))) {
+    return successResult(
       "Bash post-processing completed (no input to process)"
     );
   }
@@ -105,10 +127,15 @@ async function handleBashPostProcessing(
       ? `Bash post-processing completed: ${actions.join(", ")}`
       : "Bash post-processing completed";
 
-  return HookResults.success(message, {
+  return successResult(message, {
     command: command.slice(0, 100),
     actionsPerformed: actions,
-    outputSize: output?.length || 0,
+    outputSize:
+      typeof output === "string"
+        ? output.length
+        : output
+          ? JSON.stringify(output).length
+          : 0,
   });
 }
 
@@ -116,10 +143,10 @@ async function handleBashPostProcessing(
  * Handle Write tool post-processing
  */
 async function handleWritePostProcessing(
-  context: HookContext<"PostToolUse", "Write">
+  context: HookContext<PostToolUseHookInput>
 ): Promise<HookResult> {
-  if (!isWriteToolInput(context.toolInput)) {
-    return HookResults.success(
+  if (!(context.toolInput && isWriteToolInput(context.toolInput))) {
+    return successResult(
       "Write post-processing completed (no input to process)"
     );
   }
@@ -154,7 +181,7 @@ async function handleWritePostProcessing(
       ? `Write post-processing completed: ${actions.join(", ")}`
       : "Write post-processing completed";
 
-  return HookResults.success(message, {
+  return successResult(message, {
     filePath: file_path,
     fileSize: fileStats.size,
     actionsPerformed: actions,
@@ -165,10 +192,10 @@ async function handleWritePostProcessing(
  * Handle Edit tool post-processing
  */
 async function handleEditPostProcessing(
-  context: HookContext<"PostToolUse", "Edit">
+  context: HookContext<PostToolUseHookInput>
 ): Promise<HookResult> {
-  if (!isEditToolInput(context.toolInput)) {
-    return HookResults.success(
+  if (!(context.toolInput && isEditToolInput(context.toolInput))) {
+    return successResult(
       "Edit post-processing completed (no input to process)"
     );
   }
@@ -195,7 +222,7 @@ async function handleEditPostProcessing(
       ? `Edit post-processing completed: ${actions.join(", ")}`
       : "Edit post-processing completed";
 
-  return HookResults.success(message, {
+  return successResult(message, {
     filePath: file_path,
     actionsPerformed: actions,
   });
@@ -204,7 +231,9 @@ async function handleEditPostProcessing(
 /**
  * Handle Read tool post-processing
  */
-function handleReadPostProcessing(context: HookContext): HookResult {
+function handleReadPostProcessing(
+  context: HookContext<PostToolUseHookInput>
+): HookResult {
   // For read operations, we might want to log access or update cache
   const output = context.toolResponse;
   const outputSize = (() => {
@@ -222,7 +251,7 @@ function handleReadPostProcessing(context: HookContext): HookResult {
     // Large output detected - could implement compression or warning
   }
 
-  return HookResults.success("Read post-processing completed", {
+  return successResult("Read post-processing completed", {
     outputSize,
     timestamp: new Date().toISOString(),
   });
@@ -231,12 +260,14 @@ function handleReadPostProcessing(context: HookContext): HookResult {
 /**
  * Handle generic tool post-processing
  */
-function handleGenericPostProcessing(context: HookContext): HookResult {
+function handleGenericPostProcessing(
+  context: HookContext<PostToolUseHookInput>
+): HookResult {
   // Basic logging and cleanup
   const output = context.toolResponse;
 
-  return HookResults.success(
-    `Generic post-processing completed for ${context.toolName}`,
+  return successResult(
+    `Generic post-processing completed for ${context.toolName || "unknown tool"}`,
     {
       toolName: context.toolName,
       hasOutput: Boolean(output),
@@ -428,16 +459,17 @@ async function validateJsonSyntax(
 }
 
 function logToolExecution(
-  context: HookContext,
+  context: HookContext<PostToolUseHookInput>,
   result: HookResult,
   processingTime: number
 ): void {
+  const success = didContinue(result);
   const _logEntry = {
     timestamp: new Date().toISOString(),
     sessionId: context.sessionId,
     event: context.event,
     toolName: context.toolName,
-    success: result.success,
+    success,
     processingTime,
     cwd: context.cwd,
     hasOutput: Boolean(context.toolResponse),
@@ -522,14 +554,12 @@ function runCommand(
 }
 
 // Main execution - now uses the new stdin-based runtime
-import type { HookHandler } from "@/hooks-core";
-
 if (import.meta.main) {
   // The new runtime automatically reads JSON from stdin,
   // creates context, and calls our handler
-  const handler: HookHandler = (ctx) => handlePostToolUse(ctx as any);
+  const handler: HookHandler = (ctx) =>
+    handlePostToolUse(ctx as HookContext<PostToolUseHookInput>);
   runClaudeHook(handler, {
-    outputMode: "exit-code",
     logLevel: "info",
   });
 }

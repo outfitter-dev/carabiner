@@ -246,40 +246,40 @@ export const createMockInputFor = {
   /**
    * Create Bash tool input for PreToolUse/PostToolUse
    */
-  bash(
-    event: "PreToolUse" | "PostToolUse",
+  bash<T extends "PreToolUse" | "PostToolUse">(
+    event: T,
     command = "echo test",
     options: Omit<
       Partial<MockInputOptions>,
       "event" | "toolName" | "toolInput"
     > = {}
-  ): PreToolUseHookInput | PostToolUseHookInput {
+  ): T extends "PreToolUse" ? PreToolUseHookInput : PostToolUseHookInput {
     return createMockInput({
       event,
       toolName: "Bash" as const,
       toolInput: { command },
       ...options,
-    }) as PreToolUseHookInput | PostToolUseHookInput;
+    }) as T extends "PreToolUse" ? PreToolUseHookInput : PostToolUseHookInput;
   },
 
   /**
    * Create Write tool input for PreToolUse/PostToolUse
    */
-  write(
-    event: "PreToolUse" | "PostToolUse",
+  write<T extends "PreToolUse" | "PostToolUse">(
+    event: T,
     filePath = "test.txt",
     content = "test content",
     options: Omit<
       Partial<MockInputOptions>,
       "event" | "toolName" | "toolInput"
     > = {}
-  ): PreToolUseHookInput | PostToolUseHookInput {
+  ): T extends "PreToolUse" ? PreToolUseHookInput : PostToolUseHookInput {
     return createMockInput({
       event,
       toolName: "Write" as const,
       toolInput: { file_path: filePath, content },
       ...options,
-    }) as PreToolUseHookInput | PostToolUseHookInput;
+    }) as T extends "PreToolUse" ? PreToolUseHookInput : PostToolUseHookInput;
   },
 
   /**

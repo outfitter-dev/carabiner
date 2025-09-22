@@ -538,7 +538,7 @@ export class HttpProtocol implements HookProtocol {
     const environment: Record<string, string> = {};
 
     // Extract from custom headers (e.g., X-Env-*)
-    for (const [key, value] of this.request.headers.entries()) {
+    for (const [key, value] of Array.from(this.request.headers.entries())) {
       if (key.toLowerCase().startsWith("x-env-")) {
         const envKey = key.substring(6).toUpperCase().replace(/-/g, "_");
         environment[envKey] = value;

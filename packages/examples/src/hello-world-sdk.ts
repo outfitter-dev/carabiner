@@ -21,11 +21,9 @@ export const helloWorldHook: HookCallback = async (
   _toolUseID,
   _options
 ) => {
-  const time = new Date().toLocaleTimeString();
-
   // Type-safe check for PreToolUse event
   if (input.hook_event_name === "PreToolUse") {
-    const toolInput = input as PreToolUseHookInput;
+    // Could process tool input here if needed
   }
 
   // Return SDK-compliant output

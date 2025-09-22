@@ -56,10 +56,7 @@ export type NormalizedHookContext<TProviderInput = unknown> = {
   };
 };
 
-export type NormalizedHookResult = HookResult & {
-  /** Providers may return extra state to round-trip through the adapter. */
-  readonly providerState?: Record<string, unknown>;
-};
+export type NormalizedHookResult = HookResult;
 
 export type HookProviderAdapter<
   TProviderInput = unknown,

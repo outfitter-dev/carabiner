@@ -89,8 +89,8 @@ describe("Plugin System Integration", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(2);
-      expect(results[0].pluginName).toBe("high-priority");
-      expect(results[1].pluginName).toBe("low-priority");
+      expect(results[0]!.pluginName).toBe("high-priority");
+      expect(results[1]!.pluginName).toBe("low-priority");
 
       await registry.shutdown();
     });
@@ -108,9 +108,9 @@ describe("Plugin System Integration", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0].pluginName).toBe("blocking");
-      expect(results[0].success).toBe(false);
-      expect(results[0].block).toBe(true);
+      expect(results[0]!.pluginName).toBe("blocking");
+      expect(results[0]!.success).toBe(false);
+      expect(results[0]!.block).toBe(true);
 
       await registry.shutdown();
     });
@@ -128,8 +128,8 @@ describe("Plugin System Integration", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(2);
-      expect(results[0].success).toBe(false);
-      expect(results[1].success).toBe(true);
+      expect(results[0]!.success).toBe(false);
+      expect(results[1]!.success).toBe(true);
 
       await registry.shutdown();
     });
@@ -183,7 +183,7 @@ describe("Plugin System Integration", () => {
       const result = await loader.load(configPath);
 
       expect(result.config.plugins).toHaveLength(1);
-      expect(result.config.plugins[0].name).toBe("test-plugin");
+      expect(result.config.plugins[0]!.name).toBe("test-plugin");
       expect(result.config.settings.defaultTimeout).toBe(10_000);
       expect(result.source).toBe(configPath);
 
@@ -215,8 +215,8 @@ export default {
       const loader = new ConfigLoader({ baseDir: tempDir });
       const result = await loader.load(configPath);
 
-      expect(result.config.plugins[0].name).toBe("typescript-plugin");
-      expect(result.config.rules["typescript-plugin"].setting1).toBe("value1");
+      expect(result.config.plugins[0]!.name).toBe("typescript-plugin");
+      expect(result.config.rules["typescript-plugin"]!.setting1).toBe("value1");
       expect(result.config.settings.defaultTimeout).toBe(8000);
 
       await loader.cleanup();
@@ -408,8 +408,8 @@ export default {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0].success).toBe(false);
-      expect(results[0].message).toContain("Plugin execution failed");
+      expect(results[0]!.success).toBe(false);
+      expect(results[0]!.message).toContain("Plugin execution failed");
 
       await registry.shutdown();
     });

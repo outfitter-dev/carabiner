@@ -36,14 +36,7 @@ describe("TestProtocol", () => {
 
   describe("parseContext", () => {
     test("should parse valid tool hook input", async () => {
-      const input = {
-        session_id: "test-session-123",
-        transcript_path: "/tmp/transcript.md",
-        cwd: "/test/dir",
-        hook_event_name: "PreToolUse",
-        tool_name: "Bash",
-        tool_input: { command: 'echo "test"' },
-      };
+      const input = createToolHookInput();
 
       const protocol = new TestProtocol(input);
       const context = await protocol.parseContext(input);
@@ -55,14 +48,7 @@ describe("TestProtocol", () => {
     });
 
     test("should include custom environment variables", async () => {
-      const input = {
-        session_id: "test-session-123",
-        transcript_path: "/tmp/transcript.md",
-        cwd: "/test/dir",
-        hook_event_name: "PreToolUse",
-        tool_name: "Bash",
-        tool_input: { command: 'echo "test"' },
-      };
+      const input = createToolHookInput();
 
       const protocol = new TestProtocol(input, {
         environment: { CUSTOM_VAR: "custom-value" },
@@ -70,8 +56,7 @@ describe("TestProtocol", () => {
 
       const context = await protocol.parseContext(input);
 
-      expect(context.environment.CUSTOM_VAR).toBe("custom-value");
-      expect(context.environment).toBeDefined();
+      expect(context.environment).toMatchObject({ CUSTOM_VAR: "custom-value" });
     });
 
     test("should throw ProtocolParseError on invalid input by default", async () => {
@@ -94,14 +79,7 @@ describe("TestProtocol", () => {
     });
 
     test("should capture timing when enabled", async () => {
-      const input = {
-        session_id: "test-session-123",
-        transcript_path: "/tmp/transcript.md",
-        cwd: "/test/dir",
-        hook_event_name: "PreToolUse",
-        tool_name: "Bash",
-        tool_input: { command: 'echo "test"' },
-      };
+      const input = createToolHookInput();
 
       const protocol = new TestProtocol(input, { captureTiming: true });
 
@@ -245,7 +223,8 @@ describe("Test Input Utilities", () => {
     expect(input.session_id).toBe("test-session-123");
     expect(input.hook_event_name).toBe("PreToolUse");
     expect(input.tool_name).toBe("Write");
-    expect(input.tool_input.file_path).toBe("/test/file.txt");
+    const writeToolInput = input.tool_input as { file_path?: string };
+    expect(writeToolInput?.file_path).toBe("/test/file.txt");
   });
 
   test("should create valid user prompt input", () => {

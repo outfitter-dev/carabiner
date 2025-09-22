@@ -446,7 +446,7 @@ describe("Type system consistency", () => {
 
     // Check that ToolInputMap has all expected keys
     type ToolInputMapKeys = keyof ToolInputMap;
-    const toolMapKeys: ToolInputMapKeys[] = expectedTools;
+    const toolMapKeys: ToolInputMapKeys[] = [...expectedTools];
 
     // This should compile without issues
     expect(toolMapKeys.length).toBe(12);

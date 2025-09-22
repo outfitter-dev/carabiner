@@ -371,13 +371,14 @@ const toolInput = JSON.parse(process.env.TOOL_INPUT || '{}');
 **After (Working)**:
 
 ```typescript
-// ✅ Reads JSON from stdin automatically
+// ✅ Reads JSON from stdin automatically and normalizes context
 runClaudeHook(async (context) => {
-  // All data comes from Claude Code's JSON input
-  console.log(context.sessionId); // From session_id
-  console.log(context.cwd); // From cwd
-  console.log(context.toolInput); // From tool_input
-  console.log(context.toolResponse); // From tool_response
+  // All data comes from the provider adapter
+  console.log(context.sessionId); // Claude session_id
+  console.log(context.cwd); // cwd
+  console.log(context.toolName); // tool_name (if applicable)
+  console.log(context.toolInput); // tool_input mapped to typed helper
+  console.log(context.metadata.provider.id); // "claude"
 
   return HookResults.success('Processed stdin input');
 });
@@ -399,11 +400,16 @@ HookBuilder.forPreToolUse().withHandler(handler);
 
 ### ✅ Corrected Context Properties
 
-**Changed Properties**:
+**Context highlights**:
 
-- `context.workspacePath` → `context.cwd` (matches Claude Code's JSON structure)
-- `context.toolOutput` → `context.toolResponse` (consistent with tool_response field)
-- Metadata is on the **result**, not context: `result.metadata.duration`
+- `context` is provider-agnostic and includes metadata about which adapter executed the hook.
+- Tool helpers (`context.toolName`, `context.toolInput`, `context.toolResponse`) are populated automatically when the provider supplies tool data.
+- Metadata now lives on the **result**: `result.metadata.duration`, `result.metadata.provider`.
+
+**Helpers**:
+
+- `createHookContext(hookInput)` still accepts raw provider payloads for tests.
+- `createHookContext('PreToolUse', overrides)` builds a minimal payload using environment variables and optional overrides—handy for CLI scripts.
 
 ## Examples
 

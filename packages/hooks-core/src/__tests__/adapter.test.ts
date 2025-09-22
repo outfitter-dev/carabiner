@@ -85,7 +85,7 @@ describe("claudeProviderAdapter.fromProviderInput", () => {
     expect(context.environment).toEqual(TEST_ENVIRONMENT);
     expect(context.tool).toEqual({
       name: "Bash",
-      input: input.tool_input,
+      input: input.tool_input as Record<string, unknown>,
       response: undefined,
     });
     expect(context.metadata.provider).toEqual(CLAUDE_PROVIDER_METADATA);
@@ -103,7 +103,7 @@ describe("claudeProviderAdapter.fromProviderInput", () => {
 
     expect(context.tool).toEqual({
       name: "Bash",
-      input: input.tool_input,
+      input: input.tool_input as Record<string, unknown>,
       response: input.tool_response,
     });
 

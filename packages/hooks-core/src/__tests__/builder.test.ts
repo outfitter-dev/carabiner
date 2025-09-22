@@ -10,8 +10,41 @@ import {
   hook,
   middleware,
 } from "../builder";
+import { claudeProviderAdapter } from "../providers";
 import { HookResults } from "../runtime";
-import type { PreToolUseHookInput } from "../types";
+import type { HookContext, PreToolUseHookInput } from "../types";
+
+// Helper function to create proper HookContext from PreToolUseHookInput
+function createHookContext(input: PreToolUseHookInput): HookContext {
+  const normalized = claudeProviderAdapter.fromProviderInput(input, {
+    CLAUDE_PROJECT_DIR: process.cwd(),
+  });
+  return {
+    ...normalized,
+    toolName: normalized.tool?.name,
+    toolInput: normalized.tool?.input,
+    rawInput: input,
+  } as HookContext;
+}
+
+// Helper function to check continue status
+function didContinue(result: any): boolean {
+  if ("continue" in result && result.continue === false) {
+    return false;
+  }
+  if ("stopReason" in result && result.stopReason === "blocked") {
+    return false;
+  }
+  return true;
+}
+
+// Helper function to get system message
+function getSystemMessage(result: any): string | undefined {
+  if ("systemMessage" in result && typeof result.systemMessage === "string") {
+    return result.systemMessage;
+  }
+  return;
+}
 
 describe("HookBuilder", () => {
   test("should build basic hook", () => {
@@ -89,21 +122,23 @@ describe("HookBuilder", () => {
       tool_input: { command: "test" },
     };
 
-    const result = await built.handler(bashInput, undefined, {
+    const bashContext = createHookContext(bashInput);
+    const result = await built.handler(bashContext, undefined, {
       signal: new AbortController().signal,
     });
     expect(conditionChecked).toBe(true);
-    expect(result.continue).toBe(true);
+    expect(didContinue(result)).toBe(true);
 
     const writeInput: PreToolUseHookInput = {
       ...bashInput,
       tool_name: "Write",
     };
 
-    const writeResult = await built.handler(writeInput, undefined, {
+    const writeContext = createHookContext(writeInput);
+    const writeResult = await built.handler(writeContext, undefined, {
       signal: new AbortController().signal,
     });
-    expect(writeResult.systemMessage).toContain("skipped");
+    expect(getSystemMessage(writeResult)).toContain("skipped");
   });
 
   test("should throw error when building without event", () => {
@@ -226,10 +261,11 @@ describe("createHook - Functional API", () => {
       tool_input: { command: "test" },
     };
 
-    const result = await hook.handler(bashInput, undefined, {
+    const bashContext = createHookContext(bashInput);
+    const result = await hook.handler(bashContext, undefined, {
       signal: new AbortController().signal,
     });
-    expect(result.continue).toBe(true);
+    expect(didContinue(result)).toBe(true);
   });
 
   test("should throw error when tool-specific hook missing handler", () => {
@@ -269,9 +305,9 @@ describe("defineHook - Declarative API", () => {
 
     const hook = defineHook({
       event: "PreToolUse",
-      condition: (input) => {
+      condition: (context) => {
         conditionChecked = true;
-        return input.session_id === "allowed";
+        return context.sessionId === "allowed";
       },
       handler: async () => HookResults.success("test"),
     });
@@ -308,10 +344,11 @@ describe("defineHook - Declarative API", () => {
       tool_input: { command: "test" },
     };
 
-    const result = await hook.handler(input, undefined, {
+    const context = createHookContext(input);
+    const result = await hook.handler(context, undefined, {
       signal: new AbortController().signal,
     });
-    expect(result.continue).toBe(true);
+    expect(didContinue(result)).toBe(true);
     expect(result.metadata?.duration).toBeDefined();
   });
 });
@@ -336,7 +373,8 @@ describe("Middleware", () => {
       tool_input: { command: "test" },
     };
 
-    const result = await hook.handler(input, undefined, {
+    const context = createHookContext(input);
+    const result = await hook.handler(context, undefined, {
       signal: new AbortController().signal,
     });
     expect(result.metadata?.duration).toBeGreaterThan(9);
@@ -360,11 +398,12 @@ describe("Middleware", () => {
       tool_input: { command: "test" },
     };
 
-    const result = await hook.handler(input, undefined, {
+    const context = createHookContext(input);
+    const result = await hook.handler(context, undefined, {
       signal: new AbortController().signal,
     });
-    expect(result.continue).toBe(false);
-    expect(result.systemMessage).toContain("Test error");
+    expect(didContinue(result)).toBe(false);
+    expect(getSystemMessage(result)).toContain("Test error");
   });
 
   test("should apply validation middleware", async () => {
@@ -372,7 +411,7 @@ describe("Middleware", () => {
       .forEvent("PreToolUse")
       .withMiddleware(
         middleware.validation(
-          (input) => "tool_name" in input && input.tool_name === "Bash",
+          (context) => context.toolName === "Bash",
           "Only Bash is allowed"
         )
       )
@@ -388,21 +427,23 @@ describe("Middleware", () => {
       tool_input: { command: "test" },
     };
 
-    const bashResult = await hook.handler(bashInput, undefined, {
+    const bashContext = createHookContext(bashInput);
+    const bashResult = await hook.handler(bashContext, undefined, {
       signal: new AbortController().signal,
     });
-    expect(bashResult.continue).toBe(true);
+    expect(didContinue(bashResult)).toBe(true);
 
     const writeInput: PreToolUseHookInput = {
       ...bashInput,
       tool_name: "Write",
     };
 
-    const writeResult = await hook.handler(writeInput, undefined, {
+    const writeContext = createHookContext(writeInput);
+    const writeResult = await hook.handler(writeContext, undefined, {
       signal: new AbortController().signal,
     });
-    expect(writeResult.continue).toBe(false);
-    expect(writeResult.systemMessage).toBe("Only Bash is allowed");
+    expect(didContinue(writeResult)).toBe(false);
+    expect(getSystemMessage(writeResult)).toBe("Only Bash is allowed");
   });
 
   test("should apply multiple middleware in order", async () => {
@@ -445,7 +486,8 @@ describe("Middleware", () => {
       tool_input: { command: "test" },
     };
 
-    await hook.handler(input, undefined, {
+    const context = createHookContext(input);
+    await hook.handler(context, undefined, {
       signal: new AbortController().signal,
     });
 

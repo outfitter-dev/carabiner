@@ -4,6 +4,13 @@
  */
 
 import type { LiteralUnion, Simplify } from "type-fest";
+import type {
+  HookProviderAdapter,
+  HookProviderId,
+  HookProviderMetadata,
+  NormalizedHookContext,
+  NormalizedToolContext,
+} from "./providers";
 
 // Re-export all Claude Code SDK types for convenience
 export type {
@@ -169,6 +176,8 @@ export type UnknownToolInput = Record<string, unknown>;
  */
 export type ToolInput = ToolInputMap[keyof ToolInputMap] | UnknownToolInput;
 
+type MaybePromise<T> = T | Promise<T>;
+
 /**
  * Get input type for a specific tool name
  */
@@ -182,15 +191,8 @@ export type GetToolInput<T extends ToolName> = T extends keyof ToolInputMap
 export type HookContext<
   TInput extends HookInput = HookInput,
   TTool extends ToolName = ToolName,
-> = {
-  readonly event: TInput["hook_event_name"];
-  readonly sessionId: TInput extends { session_id: string }
-    ? TInput["session_id"]
-    : string;
-  readonly transcriptPath: TInput extends { transcript_path: string }
-    ? TInput["transcript_path"]
-    : string;
-  readonly cwd: TInput extends { cwd: string } ? TInput["cwd"] : string;
+> = NormalizedHookContext<TInput> & {
+  readonly tool?: NormalizedToolContext;
   readonly toolName?: TInput extends PreToolUseHookInput | PostToolUseHookInput
     ? TTool
     : undefined;
@@ -210,27 +212,32 @@ export type HookContext<
 /**
  * Hook execution result - aligned with SDK output types
  */
+export type HookMetadata = {
+  duration?: number;
+  timestamp?: string;
+  hookVersion?: string;
+  provider?: HookProviderMetadata;
+};
+
 export type HookResult = HookJSONOutput & {
-  metadata?: {
-    duration?: number;
-    timestamp?: string;
-    hookVersion?: string;
-  };
+  metadata?: HookMetadata;
+  providerState?: Record<string, unknown>;
 };
 
 /**
  * Hook handler function signature using SDK types
  */
-export type HookHandler<TInput extends HookInput = HookInput> = (
-  input: TInput,
+export type HookHandler<TContext extends HookContext = HookContext> = (
+  context: TContext,
   toolUseID: string | undefined,
   options: { signal: AbortSignal }
-) => Promise<HookJSONOutput>;
+) => MaybePromise<HookResult>;
 
 /**
  * Typed hook handler for specific event types
  */
-export type TypedHookHandler<TInput extends HookInput> = HookHandler<TInput>;
+export type TypedHookHandler<TContext extends HookContext> =
+  HookHandler<TContext>;
 
 /**
  * Hook configuration for a specific tool
@@ -265,14 +272,16 @@ export type HookExecutionOptions = {
   throwOnError?: boolean;
   captureOutput?: boolean;
   logLevel?: "debug" | "info" | "warn" | "error";
+  providerId?: HookProviderId;
+  provider?: HookProviderAdapter<HookInput, HookJSONOutput>;
 };
 
 /**
  * Hook registry entry
  */
-export type HookRegistryEntry<TInput extends HookInput = HookInput> = {
+export type HookRegistryEntry<TContext extends HookContext = HookContext> = {
   event: HookEvent;
-  handler: HookHandler<TInput>;
+  handler: HookHandler<TContext>;
   priority?: number;
   enabled?: boolean;
   matcher?: string; // Pattern matching for specific tools/conditions
@@ -281,15 +290,15 @@ export type HookRegistryEntry<TInput extends HookInput = HookInput> = {
 /**
  * Utility types for hook composition
  */
-export type HookMiddleware<TInput extends HookInput = HookInput> = (
-  input: TInput,
+export type HookMiddleware<TContext extends HookContext = HookContext> = (
+  context: TContext,
   toolUseID: string | undefined,
-  next: HookHandler<TInput>
-) => Promise<HookJSONOutput>;
+  next: HookHandler<TContext>
+) => MaybePromise<HookResult>;
 
-export type ConditionalHook<TInput extends HookInput = HookInput> = {
-  condition: (input: TInput) => boolean | Promise<boolean>;
-  handler: HookHandler<TInput>;
+export type ConditionalHook<TContext extends HookContext = HookContext> = {
+  condition: (context: TContext) => boolean | Promise<boolean>;
+  handler: HookHandler<TContext>;
 };
 
 /**
@@ -336,15 +345,15 @@ export class HookTimeoutError extends HookError {
 /**
  * Builder pattern types for fluent hook creation
  */
-export type HookBuilder<TInput extends HookInput = HookInput> = {
-  forEvent<E extends HookEvent>(event: E): HookBuilder<TInput>;
-  withMatcher(matcher: string): HookBuilder<TInput>;
-  withHandler(handler: HookHandler<TInput>): HookBuilder<TInput>;
-  withTimeout(timeout: number): HookBuilder<TInput>;
+export type HookBuilder<TContext extends HookContext = HookContext> = {
+  forEvent<E extends HookEvent>(event: E): HookBuilder<TContext>;
+  withMatcher(matcher: string): HookBuilder<TContext>;
+  withHandler(handler: HookHandler<TContext>): HookBuilder<TContext>;
+  withTimeout(timeout: number): HookBuilder<TContext>;
   withCondition(
-    condition: (input: TInput) => boolean | Promise<boolean>
-  ): HookBuilder<TInput>;
-  build(): HookRegistryEntry<TInput>;
+    condition: (context: TContext) => boolean | Promise<boolean>
+  ): HookBuilder<TContext>;
+  build(): HookRegistryEntry<TContext>;
 };
 
 /**

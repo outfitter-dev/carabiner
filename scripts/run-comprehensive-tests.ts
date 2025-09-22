@@ -115,7 +115,7 @@ class ComprehensiveTestRunner {
       // Generate execution plan
       const plan = this.orchestrator.generateExecutionPlan();
       plan.phases.forEach((phase, _index) => {
-        const _status = phase.condition !== false ? "✅" : "⏭️ ";
+        phase.condition !== false ? "✅" : "⏭️ ";
       });
 
       // Execute test phases
@@ -222,7 +222,7 @@ class ComprehensiveTestRunner {
 
       result.duration = Date.now() - startTime;
 
-      const _status = result.success ? "✅" : "❌";
+      result.success ? "✅" : "❌";
 
       if (result.errors.length > 0 && this.options.verbose) {
         result.errors.forEach((_error) => {});
@@ -329,10 +329,10 @@ class ComprehensiveTestRunner {
       const passMatch = summaryLine.match(/(\d+) pass/);
       const failMatch = summaryLine.match(/(\d+) fail/);
 
-      if (passMatch) {
+      if (passMatch?.[1]) {
         testsPassed = Number.parseInt(passMatch[1], 10);
       }
-      if (failMatch) {
+      if (failMatch?.[1]) {
         testsFailed = Number.parseInt(failMatch[1], 10);
       }
       testsRun = testsPassed + testsFailed;
@@ -379,8 +379,8 @@ class ComprehensiveTestRunner {
 
       if (percentages && percentages.length >= 2) {
         return {
-          functionsCovered: Number.parseFloat(percentages[0]),
-          linesCovered: Number.parseFloat(percentages[1]),
+          functionsCovered: Number.parseFloat(percentages[0]!),
+          linesCovered: Number.parseFloat(percentages[1]!),
           branchesCovered: percentages[2]
             ? Number.parseFloat(percentages[2])
             : 0,
@@ -643,7 +643,7 @@ class ComprehensiveTestRunner {
       totalTests += phase.testsRun;
       totalPassed += phase.testsRun - phase.testsFailed;
       totalFailed += phase.testsFailed;
-      totalSkipped += phase.testsSkipped || 0;
+      totalSkipped += (phase as any).testsSkipped || 0;
     }
 
     // Print concise summary

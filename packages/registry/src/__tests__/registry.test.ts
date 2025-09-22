@@ -12,14 +12,14 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import type { HookContext } from "@carabiner/types";
+import type { HookContext, HookEvent } from "@carabiner/types";
 import type { HookPlugin, PluginConfig } from "../plugin";
 import { PluginRegistry } from "../registry";
 
 // Mock plugins for testing
 const createMockPlugin = (
   name: string,
-  events: string[] = ["PreToolUse"],
+  events: HookEvent[] = ["PreToolUse"],
   options: Partial<HookPlugin> = {}
 ): HookPlugin => ({
   name,
@@ -199,8 +199,8 @@ describe("PluginRegistry", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(2); // Only PreToolUse plugins should execute
-      expect(results[0].pluginName).toMatch(/plugin-(1|3)/);
-      expect(results[1].pluginName).toMatch(/plugin-(1|3)/);
+      expect(results[0]!.pluginName).toMatch(/plugin-(1|3)/);
+      expect(results[1]!.pluginName).toMatch(/plugin-(1|3)/);
     });
 
     test("should execute plugins in priority order", async () => {
@@ -214,8 +214,8 @@ describe("PluginRegistry", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(2);
-      expect(results[0].pluginName).toBe("high-priority");
-      expect(results[1].pluginName).toBe("low-priority");
+      expect(results[0]!.pluginName).toBe("high-priority");
+      expect(results[1]!.pluginName).toBe("low-priority");
     });
 
     test("should skip disabled plugins", async () => {
@@ -229,7 +229,7 @@ describe("PluginRegistry", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0].pluginName).toBe("enabled");
+      expect(results[0]!.pluginName).toBe("enabled");
     });
 
     test("should filter by tool name", async () => {
@@ -243,7 +243,7 @@ describe("PluginRegistry", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0].pluginName).toBe("bash-plugin");
+      expect(results[0]!.pluginName).toBe("bash-plugin");
     });
 
     test("should stop on blocking failure", async () => {
@@ -265,9 +265,9 @@ describe("PluginRegistry", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0].pluginName).toBe("blocking");
-      expect(results[0].success).toBe(false);
-      expect(results[0].block).toBe(true);
+      expect(results[0]!.pluginName).toBe("blocking");
+      expect(results[0]!.success).toBe(false);
+      expect(results[0]!.block).toBe(true);
     });
 
     test("should continue on failure when configured", async () => {
@@ -290,8 +290,8 @@ describe("PluginRegistry", () => {
       });
 
       expect(results).toHaveLength(2);
-      expect(results[0].success).toBe(false);
-      expect(results[1].success).toBe(true);
+      expect(results[0]!.success).toBe(false);
+      expect(results[1]!.success).toBe(true);
     });
 
     test("should handle plugin execution errors", async () => {
@@ -307,8 +307,8 @@ describe("PluginRegistry", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0].success).toBe(false);
-      expect(results[0].message).toContain("Plugin execution failed");
+      expect(results[0]!.success).toBe(false);
+      expect(results[0]!.message).toContain("Plugin execution failed");
     });
   });
 

@@ -17,6 +17,7 @@ import type { ToolInput, ToolInputMap } from "./tools";
  */
 export type HookEnvironment = {
   readonly CLAUDE_PROJECT_DIR?: string;
+  readonly [key: string]: string | undefined;
 };
 
 /**
