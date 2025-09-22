@@ -79,19 +79,23 @@ async function handleBashValidation(
   // Check timeout
   if (timeout && timeout > 300_000) {
     // 5 minutes
-    return HookResults.failure(
-      "Command timeout too long (max 5 minutes)",
-      false,
-      {
+    return {
+      continue: false,
+      systemMessage: "Command timeout too long (max 5 minutes)",
+      providerState: {
         requestedTimeout: timeout,
         maxAllowed: 300_000,
-      }
-    );
+      },
+    };
   }
-  return HookResults.success("Bash validation passed", {
-    command: command.slice(0, 100),
-    estimatedDuration: estimateCommandDuration(command),
-  });
+  return {
+    continue: true,
+    systemMessage: "Bash validation passed",
+    providerState: {
+      command: command.slice(0, 100),
+      estimatedDuration: estimateCommandDuration(command),
+    },
+  };
 }
 
 /**
@@ -123,15 +127,23 @@ async function handleWriteValidation(
   const contentSize = new TextEncoder().encode(content).length;
   if (contentSize > 1_048_576) {
     // 1MB
-    return HookResults.failure("File content too large (max 1MB)", false, {
-      size: contentSize,
-      maxSize: 1_048_576,
-    });
+    return {
+      continue: false,
+      systemMessage: "File content too large (max 1MB)",
+      providerState: {
+        size: contentSize,
+        maxSize: 1_048_576,
+      },
+    };
   }
-  return HookResults.success("Write validation passed", {
-    filePath: file_path,
-    contentSize,
-  });
+  return {
+    continue: true,
+    systemMessage: "Write validation passed",
+    providerState: {
+      filePath: file_path,
+      contentSize,
+    },
+  };
 }
 
 /**
@@ -168,11 +180,15 @@ async function handleEditValidation(
   // if (old_string.length > 10_000 || new_string.length > 10_000) {
   //   console.warn('Large replacement detected');
   // }
-  return HookResults.success("Edit validation passed", {
-    filePath: file_path,
-    replaceAll: replace_all,
-    replacementSize: new_string.length - old_string.length,
-  });
+  return {
+    continue: true,
+    systemMessage: "Edit validation passed",
+    providerState: {
+      filePath: file_path,
+      replaceAll: replace_all,
+      replacementSize: new_string.length - old_string.length,
+    },
+  };
 }
 
 /**
