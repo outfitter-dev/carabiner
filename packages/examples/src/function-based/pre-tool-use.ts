@@ -14,7 +14,11 @@ import {
   isWriteToolInput,
   runClaudeHook,
 } from "@/hooks-core";
-import { ValidationError, validateHookSecurity } from "@/hooks-validators";
+import {
+  SecurityValidationError,
+  ValidationError,
+  validateHookSecurity,
+} from "@/hooks-validators";
 
 /**
  * Main hook handler using function-based approach
@@ -24,26 +28,38 @@ async function handlePreToolUse(
   context: HookContext<"PreToolUse">
 ): Promise<HookResult> {
   try {
+    // Get tool name from context (handle both raw and normalized formats)
+    const toolName = (context as any).tool_name || (context as any).toolName;
+
+    // Normalize the context to ensure toolInput is available
+    const normalizedContext = {
+      ...context,
+      toolName,
+      toolInput: (context as any).tool_input || (context as any).toolInput,
+      cwd: (context as any).cwd || process.cwd(),
+    };
+
     // Route to specific tool handlers
-    switch (context.toolName) {
+    switch (toolName) {
       case "Bash":
         return await handleBashValidation(
-          context as HookContext<"PreToolUse", "Bash">
+          normalizedContext as HookContext<"PreToolUse", "Bash">
         );
       case "Write":
         return await handleWriteValidation(
-          context as HookContext<"PreToolUse", "Write">
+          normalizedContext as HookContext<"PreToolUse", "Write">
         );
       case "Edit":
         return await handleEditValidation(
-          context as HookContext<"PreToolUse", "Edit">
+          normalizedContext as HookContext<"PreToolUse", "Edit">
         );
       default:
-        return await handleGenericValidation(context);
+        return await handleGenericValidation(normalizedContext);
     }
   } catch (error) {
     return HookResults.block(
-      error instanceof ValidationError
+      error instanceof ValidationError ||
+        error instanceof SecurityValidationError
         ? error.message
         : "Security validation failed"
     );
@@ -57,41 +73,50 @@ async function handleBashValidation(
   context: HookContext<"PreToolUse", "Bash">
 ): Promise<HookResult> {
   if (!isBashToolInput(context.toolInput)) {
-    return HookResults.block("Invalid Bash tool input");
+    return HookResults.block("Invalid Bash tool input", true);
   }
 
   const { command, timeout } = context.toolInput;
 
-  // Apply security validation
-  validateHookSecurity(context, {
-    env:
-      (Bun.env.NODE_ENV as "production" | "development" | "test") ||
-      "development",
-    strictMode: false,
-  });
-
-  // Custom validation logic
+  // Custom validation logic first - provides specific messages
   const validationResult = await validateBashCommand(command, context.cwd);
   if (!validationResult.allowed) {
     return HookResults.block(validationResult.reason ?? "Validation failed");
   }
 
+  // Apply additional security validation
+  try {
+    validateHookSecurity(context, {
+      env:
+        (Bun.env.NODE_ENV as "production" | "development" | "test") ||
+        "development",
+      strictMode: false,
+    });
+  } catch (error) {
+    // If security validation fails, return with "Validation failed" message
+    return HookResults.block("Validation failed");
+  }
+
   // Check timeout
   if (timeout && timeout > 300_000) {
     // 5 minutes
-    return HookResults.failure(
-      "Command timeout too long (max 5 minutes)",
-      false,
-      {
+    return {
+      continue: false,
+      systemMessage: "Command timeout too long (max 5 minutes)",
+      providerState: {
         requestedTimeout: timeout,
         maxAllowed: 300_000,
-      }
-    );
+      },
+    };
   }
-  return HookResults.success("Bash validation passed", {
-    command: command.slice(0, 100),
-    estimatedDuration: estimateCommandDuration(command),
-  });
+  return {
+    continue: true,
+    systemMessage: "Bash validation passed",
+    providerState: {
+      command: command.slice(0, 100),
+      estimatedDuration: estimateCommandDuration(command),
+    },
+  };
 }
 
 /**
@@ -101,7 +126,7 @@ async function handleWriteValidation(
   context: HookContext<"PreToolUse", "Write">
 ): Promise<HookResult> {
   if (!isWriteToolInput(context.toolInput)) {
-    return HookResults.block("Invalid Write tool input");
+    return HookResults.block("Invalid Write tool input", true);
   }
 
   const { file_path, content } = context.toolInput;
@@ -123,15 +148,23 @@ async function handleWriteValidation(
   const contentSize = new TextEncoder().encode(content).length;
   if (contentSize > 1_048_576) {
     // 1MB
-    return HookResults.failure("File content too large (max 1MB)", false, {
-      size: contentSize,
-      maxSize: 1_048_576,
-    });
+    return {
+      continue: false,
+      systemMessage: "File content too large (max 1MB)",
+      providerState: {
+        size: contentSize,
+        maxSize: 1_048_576,
+      },
+    };
   }
-  return HookResults.success("Write validation passed", {
-    filePath: file_path,
-    contentSize,
-  });
+  return {
+    continue: true,
+    systemMessage: "Write validation passed",
+    providerState: {
+      filePath: file_path,
+      contentSize,
+    },
+  };
 }
 
 /**
@@ -141,7 +174,7 @@ async function handleEditValidation(
   context: HookContext<"PreToolUse", "Edit">
 ): Promise<HookResult> {
   if (!isEditToolInput(context.toolInput)) {
-    return HookResults.block("Invalid Edit tool input");
+    return HookResults.block("Invalid Edit tool input", true);
   }
 
   const { file_path, old_string, new_string, replace_all } = context.toolInput;
@@ -168,11 +201,15 @@ async function handleEditValidation(
   // if (old_string.length > 10_000 || new_string.length > 10_000) {
   //   console.warn('Large replacement detected');
   // }
-  return HookResults.success("Edit validation passed", {
-    filePath: file_path,
-    replaceAll: replace_all,
-    replacementSize: new_string.length - old_string.length,
-  });
+  return {
+    continue: true,
+    systemMessage: "Edit validation passed",
+    providerState: {
+      filePath: file_path,
+      replaceAll: replace_all,
+      replacementSize: new_string.length - old_string.length,
+    },
+  };
 }
 
 /**
@@ -188,8 +225,9 @@ function handleGenericValidation(context: HookContext): HookResult {
     // Error in generic validation - continue gracefully
   }
 
+  const toolName = (context as any).tool_name || (context as any).toolName;
   return HookResults.success(
-    `Generic validation passed for ${context.toolName}`
+    `Generic validation passed for ${toolName || "unknown tool"}`
   );
 }
 
@@ -201,6 +239,23 @@ function validateBashCommand(
   command: string,
   _cwd: string
 ): { allowed: boolean; reason?: string } {
+  // Block dangerous system commands
+  const dangerousSystemPatterns = [
+    /rm\s+-rf\s+\//, // rm -rf /
+    /rm\s+-rf\s+\*/, // rm -rf *
+    /sudo\s+rm/, // sudo rm
+    /dd\s+if=.*of=\/dev\/(sda|sdb|hda)/, // dd to disk
+  ];
+
+  for (const pattern of dangerousSystemPatterns) {
+    if (pattern.test(command)) {
+      return {
+        allowed: false,
+        reason: "Validation failed: dangerous command pattern detected",
+      };
+    }
+  }
+
   // Example: Block commands that could modify git history
   const dangerousGitPatterns = [
     /git\s+rebase.*-i/,

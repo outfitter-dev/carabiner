@@ -14,6 +14,8 @@ export {
 } from "./builder";
 // Export production logging system
 export * from "./logging";
+// Export provider adapters and registry helpers
+export * from "./providers";
 // Export registry
 export {
   createHookRegistry,
@@ -28,8 +30,8 @@ export {
 } from "./registry";
 // Export runtime utilities
 export {
-  createBashContext,
-  createFileContext,
+  createBashInput,
+  createFileInput,
   createHookContext,
   executeHook,
   getSessionInfo,
@@ -41,7 +43,6 @@ export {
   isEditToolInput,
   isGlobToolInput,
   isGrepToolInput,
-  isLSToolInput,
   isMultiEditToolInput,
   isNotebookEditToolInput,
   isReadToolInput,
@@ -57,7 +58,7 @@ export {
   parseToolInput,
   runClaudeHook,
   safeHookExecution,
-  validateHookContext,
+  validateHookInput,
 } from "./runtime";
 // Export all types
 export type * from "./types";

@@ -4,11 +4,12 @@
  */
 
 import type {
+  HookContext,
+  HookEvent,
   HookHandler,
-  HookInput,
-  HookJSONOutput,
   HookMiddleware,
   HookRegistryEntry,
+  HookResult,
   HookBuilder as IHookBuilder,
   ToolName,
 } from "./types.ts";
@@ -16,27 +17,27 @@ import type {
 /**
  * Hook builder implementation with fluent interface
  */
-export class HookBuilder<TInput extends HookInput = HookInput>
-  implements IHookBuilder<TInput>
+export class HookBuilder<TEvent extends HookEvent = HookEvent>
+  implements IHookBuilder<TEvent>
 {
-  private readonly _event?: TInput["hook_event_name"];
+  private readonly _event?: TEvent;
   private _toolName?: ToolName;
-  private _handler?: HookHandler<TInput>;
+  private _handler?: HookHandler<TEvent>;
   private _timeout?: number;
-  private _condition?: (input: TInput) => boolean | Promise<boolean>;
+  private _condition?: (context: HookContext<TEvent>) => boolean;
   private _priority = 0;
   private _enabled = true;
-  private readonly _middleware: HookMiddleware<TInput>[] = [];
+  private readonly _middleware: HookMiddleware<HookContext<TEvent>>[] = [];
 
   constructor(params?: {
-    event?: TInput["hook_event_name"];
+    event?: TEvent;
     toolName?: ToolName;
-    handler?: HookHandler<TInput>;
+    handler?: HookHandler<TEvent>;
     timeout?: number;
-    condition?: (input: TInput) => boolean | Promise<boolean>;
+    condition?: (context: HookContext<TEvent>) => boolean;
     priority?: number;
     enabled?: boolean;
-    middleware?: HookMiddleware<TInput>[];
+    middleware?: HookMiddleware<HookContext<TEvent>>[];
   }) {
     if (params) {
       this._event = params.event;
@@ -55,49 +56,44 @@ export class HookBuilder<TInput extends HookInput = HookInput>
   /**
    * Specify the hook event type
    */
-  forEvent<E extends HookInput>(event: E["hook_event_name"]): HookBuilder<E> {
+  forEvent<E extends HookEvent>(event: E): HookBuilder<E> {
     return new HookBuilder<E>({
       event,
       toolName: this._toolName,
       handler: this._handler as unknown as HookHandler<E>,
       timeout: this._timeout,
       condition: this._condition as unknown as (
-        input: E
-      ) => boolean | Promise<boolean>,
+        context: HookContext<E>
+      ) => boolean,
       priority: this._priority,
       enabled: this._enabled,
-      middleware: this._middleware as unknown as HookMiddleware<E>[],
+      middleware: this._middleware as unknown as HookMiddleware<
+        HookContext<E>
+      >[],
     });
   }
 
   /**
    * Specify the target tool name
    */
-  forTool<T extends ToolName>(toolName: T): HookBuilder<TInput> {
+  forTool<T extends ToolName>(toolName: T): HookBuilder<TEvent> {
     this._toolName = toolName;
-    return this;
-  }
-
-  /**
-   * Set the matcher pattern for hook filtering
-   */
-  withMatcher(matcher: string): HookBuilder<TInput> {
-    this._toolName = matcher as ToolName;
     return this;
   }
 
   /**
    * Set the hook handler function
    */
-  withHandler(handler: HookHandler<TInput>): HookBuilder<TInput> {
-    this._handler = handler;
-    return this;
+  withHandler<E extends TEvent>(handler: HookHandler<E>): HookBuilder<E> {
+    const builder = this as unknown as HookBuilder<E>;
+    builder._handler = handler;
+    return builder;
   }
 
   /**
    * Set execution timeout in milliseconds
    */
-  withTimeout(timeout: number): HookBuilder<TInput> {
+  withTimeout(timeout: number): HookBuilder<TEvent> {
     this._timeout = timeout;
     return this;
   }
@@ -106,8 +102,8 @@ export class HookBuilder<TInput extends HookInput = HookInput>
    * Add conditional execution logic
    */
   withCondition(
-    condition: (input: TInput) => boolean | Promise<boolean>
-  ): HookBuilder<TInput> {
+    condition: (context: HookContext<TEvent>) => boolean
+  ): HookBuilder<TEvent> {
     this._condition = condition;
     return this;
   }
@@ -115,7 +111,7 @@ export class HookBuilder<TInput extends HookInput = HookInput>
   /**
    * Set hook priority (higher numbers execute first)
    */
-  withPriority(priority: number): HookBuilder<TInput> {
+  withPriority(priority: number): HookBuilder<TEvent> {
     this._priority = priority;
     return this;
   }
@@ -123,7 +119,7 @@ export class HookBuilder<TInput extends HookInput = HookInput>
   /**
    * Set hook enabled state
    */
-  enabled(enabled = true): HookBuilder<TInput> {
+  enabled(enabled = true): HookBuilder<TEvent> {
     this._enabled = enabled;
     return this;
   }
@@ -131,7 +127,9 @@ export class HookBuilder<TInput extends HookInput = HookInput>
   /**
    * Add middleware to the hook execution
    */
-  withMiddleware(middlewareFunc: HookMiddleware<TInput>): HookBuilder<TInput> {
+  withMiddleware(
+    middlewareFunc: HookMiddleware<HookContext<TEvent>>
+  ): HookBuilder<TEvent> {
     this._middleware.push(middlewareFunc);
     return this;
   }
@@ -139,7 +137,7 @@ export class HookBuilder<TInput extends HookInput = HookInput>
   /**
    * Build the hook registry entry
    */
-  build(): HookRegistryEntry<TInput> {
+  build(): HookRegistryEntry<TEvent> {
     if (!this._event) {
       throw new Error("Hook event is required");
     }
@@ -155,36 +153,23 @@ export class HookBuilder<TInput extends HookInput = HookInput>
       const originalHandler = finalHandler;
       const condition = this._condition;
 
-      finalHandler = async (
-        input: TInput,
-        toolUseId?: string,
-        _options?: { signal?: AbortSignal }
-      ) => {
-        const shouldExecute = await Promise.resolve(condition(input));
+      finalHandler = async (context: HookContext<TEvent>) => {
+        const shouldExecute = await Promise.resolve(condition(context));
         if (!shouldExecute) {
-          return {
-            continue: true,
-            systemMessage: "Hook skipped due to condition",
-          };
+          return { success: true, message: "Hook skipped due to condition" };
         }
-        return await Promise.resolve(
-          originalHandler(input, toolUseId, {
-            signal: new AbortController().signal,
-          })
-        );
+        return await Promise.resolve(originalHandler(context));
       };
     }
 
     // Apply middleware
     if (this._middleware.length > 0) {
       finalHandler = this._middleware.reduceRight(
-        (nextHandler, middlewareFunc) =>
-          async (
-            input: TInput,
-            toolUseId?: string,
-            _options?: { signal?: AbortSignal }
-          ) =>
-            await middlewareFunc(input, toolUseId, nextHandler),
+        (nextHandler, middlewareFunc) => async (context: HookContext<TEvent>) =>
+          await middlewareFunc(
+            context,
+            async (ctx) => await Promise.resolve(nextHandler(ctx))
+          ),
         finalHandler
       );
     }
@@ -194,15 +179,9 @@ export class HookBuilder<TInput extends HookInput = HookInput>
       const originalHandler = finalHandler;
       const timeout = this._timeout;
 
-      finalHandler = async (
-        input: TInput,
-        toolUseId?: string,
-        _options?: { signal?: AbortSignal }
-      ) => {
-        let timeoutId: NodeJS.Timeout | undefined;
-
-        const timeoutPromise = new Promise<HookJSONOutput>((_, reject) => {
-          timeoutId = setTimeout(
+      finalHandler = async (context: HookContext<TEvent>) => {
+        const timeoutPromise = new Promise<HookResult>((_, reject) => {
+          setTimeout(
             () =>
               reject(new Error(`Hook execution timed out after ${timeout}ms`)),
             timeout
@@ -210,26 +189,15 @@ export class HookBuilder<TInput extends HookInput = HookInput>
         });
 
         try {
-          const result = await Promise.race([
-            originalHandler(input, toolUseId, {
-              signal: new AbortController().signal,
-            }),
-            timeoutPromise,
-          ]);
-
-          return result;
+          return await Promise.race([originalHandler(context), timeoutPromise]);
         } catch (error) {
           if (error instanceof Error && error.message.includes("timed out")) {
             return {
-              continue: false,
-              systemMessage: error.message,
+              success: false,
+              message: error.message,
             };
           }
           throw error;
-        } finally {
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-          }
         }
       };
     }
@@ -239,27 +207,27 @@ export class HookBuilder<TInput extends HookInput = HookInput>
       handler: finalHandler,
       priority: this._priority,
       enabled: this._enabled,
-      matcher: this._toolName, // Tool-specific scoping using matcher
+      tool: this._toolName, // FIX: Now properly included
     };
   }
 
   /**
    * Static factory methods for common patterns
    */
-  static forPreToolUse(): HookBuilder<any> {
-    return new HookBuilder().forEvent("PreToolUse");
+  static forPreToolUse(): HookBuilder<"PreToolUse"> {
+    return new HookBuilder<"PreToolUse">().forEvent("PreToolUse");
   }
 
-  static forPostToolUse(): HookBuilder<any> {
-    return new HookBuilder().forEvent("PostToolUse");
+  static forPostToolUse(): HookBuilder<"PostToolUse"> {
+    return new HookBuilder<"PostToolUse">().forEvent("PostToolUse");
   }
 
-  static forSessionStart(): HookBuilder<any> {
-    return new HookBuilder().forEvent("SessionStart");
+  static forSessionStart(): HookBuilder<"SessionStart"> {
+    return new HookBuilder<"SessionStart">().forEvent("SessionStart");
   }
 
-  static forUserPrompt(): HookBuilder<any> {
-    return new HookBuilder().forEvent("UserPromptSubmit");
+  static forUserPrompt(): HookBuilder<"UserPromptSubmit"> {
+    return new HookBuilder<"UserPromptSubmit">().forEvent("UserPromptSubmit");
   }
 }
 
@@ -271,9 +239,9 @@ export const createHook = {
    * Create a PreToolUse hook - supports both universal and tool-specific
    */
   preToolUse<T extends ToolName>(
-    toolOrHandler: T | HookHandler,
-    handler?: HookHandler
-  ): HookRegistryEntry<any> {
+    toolOrHandler: T | HookHandler<"PreToolUse">,
+    handler?: HookHandler<"PreToolUse">
+  ): HookRegistryEntry<"PreToolUse"> {
     if (typeof toolOrHandler === "function") {
       // Universal hook: createHook.preToolUse(handler)
       return {
@@ -281,7 +249,7 @@ export const createHook = {
         handler: toolOrHandler,
         priority: 0,
         enabled: true,
-        matcher: undefined, // Universal hook
+        tool: undefined, // Universal hook
       };
     }
     // Tool-specific hook: createHook.preToolUse('Bash', handler)
@@ -293,7 +261,7 @@ export const createHook = {
       handler,
       priority: 0,
       enabled: true,
-      matcher: toolOrHandler,
+      tool: toolOrHandler,
     };
   },
 
@@ -301,9 +269,9 @@ export const createHook = {
    * Create a PostToolUse hook - supports both universal and tool-specific
    */
   postToolUse<T extends ToolName>(
-    toolOrHandler: T | HookHandler,
-    handler?: HookHandler
-  ): HookRegistryEntry<any> {
+    toolOrHandler: T | HookHandler<"PostToolUse">,
+    handler?: HookHandler<"PostToolUse">
+  ): HookRegistryEntry<"PostToolUse"> {
     if (typeof toolOrHandler === "function") {
       // Universal hook: createHook.postToolUse(handler)
       return {
@@ -311,7 +279,7 @@ export const createHook = {
         handler: toolOrHandler,
         priority: 0,
         enabled: true,
-        matcher: undefined, // Universal hook
+        tool: undefined, // Universal hook
       };
     }
     // Tool-specific hook: createHook.postToolUse('Bash', handler)
@@ -323,33 +291,37 @@ export const createHook = {
       handler,
       priority: 0,
       enabled: true,
-      matcher: toolOrHandler,
+      tool: toolOrHandler,
     };
   },
 
   /**
    * Create a SessionStart hook
    */
-  sessionStart(handler: HookHandler): HookRegistryEntry<any> {
+  sessionStart(
+    handler: HookHandler<"SessionStart">
+  ): HookRegistryEntry<"SessionStart"> {
     return HookBuilder.forSessionStart().withHandler(handler).build();
   },
 
   /**
    * Create a UserPromptSubmit hook
    */
-  userPromptSubmit(handler: HookHandler): HookRegistryEntry<any> {
+  userPromptSubmit(
+    handler: HookHandler<"UserPromptSubmit">
+  ): HookRegistryEntry<"UserPromptSubmit"> {
     return HookBuilder.forUserPrompt().withHandler(handler).build();
   },
 
   /**
    * Create a conditional hook
    */
-  conditional<TInput extends HookInput>(
-    event: TInput["hook_event_name"],
-    condition: (input: TInput) => boolean | Promise<boolean>,
-    handler: HookHandler<TInput>
-  ): HookRegistryEntry<TInput> {
-    return new HookBuilder<TInput>()
+  conditional<TEvent extends HookEvent>(
+    event: TEvent,
+    condition: (context: HookContext<TEvent>) => boolean,
+    handler: HookHandler<TEvent>
+  ): HookRegistryEntry<TEvent> {
+    return new HookBuilder<TEvent>()
       .forEvent(event)
       .withCondition(condition)
       .withHandler(handler)
@@ -360,24 +332,24 @@ export const createHook = {
 /**
  * Declarative hook configuration API
  */
-export type DeclarativeHookConfig<TInput extends HookInput = HookInput> = {
-  event: TInput["hook_event_name"];
+export type DeclarativeHookConfig<TEvent extends HookEvent = HookEvent> = {
+  event: TEvent;
   tool?: ToolName;
-  handler: HookHandler<TInput>;
-  condition?: (input: TInput) => boolean | Promise<boolean>;
+  handler: HookHandler<TEvent>;
+  condition?: (context: HookContext<TEvent>) => boolean;
   timeout?: number;
   priority?: number;
   enabled?: boolean;
-  middleware?: HookMiddleware<TInput>[];
+  middleware?: HookMiddleware<HookContext<TEvent>>[];
 };
 
 /**
  * Create hook from declarative configuration
  */
-export function defineHook<TInput extends HookInput>(
-  config: DeclarativeHookConfig<TInput>
-): HookRegistryEntry<TInput> {
-  let builder = new HookBuilder<TInput>().forEvent(config.event);
+export function defineHook<TEvent extends HookEvent>(
+  config: DeclarativeHookConfig<TEvent>
+): HookRegistryEntry<TEvent> {
+  let builder = new HookBuilder<TEvent>().forEvent(config.event);
 
   if (config.tool) {
     builder = builder.forTool(config.tool);
@@ -417,25 +389,23 @@ export const middleware = {
   /**
    * Logging middleware
    */
-  logging<T extends HookInput>(
+  logging<T extends HookContext>(
     logLevel: "debug" | "info" | "warn" | "error" = "info"
   ): HookMiddleware<T> {
-    return async (input, toolUseId, next) => {
+    return async (context, next) => {
       // Timing captured but not used - reserved for future logging
       Date.now();
 
       if (logLevel === "debug" || logLevel === "info") {
-        // Logging handled by logger in hook execution
+        // Logging handled by pino logger in hook execution
       }
 
       try {
-        const result = await next(input, toolUseId, {
-          signal: new AbortController().signal,
-        });
+        const result = await next(context);
         // Duration tracking reserved for future logging
 
         if (logLevel === "debug" || logLevel === "info") {
-          // Success logging handled by logger
+          // Success logging handled by pino logger
         }
 
         return result;
@@ -443,7 +413,7 @@ export const middleware = {
         // Duration tracking reserved for future logging
 
         if (logLevel !== "error") {
-          // Error logging handled by logger
+          // Error logging handled by pino logger
         }
 
         throw error;
@@ -454,19 +424,16 @@ export const middleware = {
   /**
    * Timing middleware
    */
-  timing<T extends HookInput>(): HookMiddleware<T> {
-    return async (input, toolUseId, next) => {
+  timing<T extends HookContext>(): HookMiddleware<T> {
+    return async (context, next) => {
       const start = Date.now();
-      const result = await next(input, toolUseId, {
-        signal: new AbortController().signal,
-      });
+      const result = await next(context);
       const duration = Date.now() - start;
 
-      // Add timing metadata if result supports it
       return {
         ...result,
         metadata: {
-          ...(result as any).metadata,
+          ...(result.metadata ?? {}),
           duration,
         },
       };
@@ -476,26 +443,21 @@ export const middleware = {
   /**
    * Error handling middleware
    */
-  errorHandling<T extends HookInput>(
-    onError?: (
-      error: Error,
-      input: T
-    ) => HookJSONOutput | Promise<HookJSONOutput>
+  errorHandling<T extends HookContext>(
+    onError?: (error: Error, context: T) => HookResult | Promise<HookResult>
   ): HookMiddleware<T> {
-    return async (input, toolUseId, next) => {
+    return async (context, next) => {
       try {
-        return await next(input, toolUseId, {
-          signal: new AbortController().signal,
-        });
+        return await next(context);
       } catch (error) {
         if (onError && error instanceof Error) {
-          return await onError(error, input);
+          return await onError(error, context);
         }
 
         return {
-          continue: false,
-          systemMessage:
-            error instanceof Error ? error.message : "Unknown error",
+          success: false,
+          message: error instanceof Error ? error.message : "Unknown error",
+          block: context.event === "PreToolUse",
         };
       }
     };
@@ -504,21 +466,22 @@ export const middleware = {
   /**
    * Validation middleware
    */
-  validation<T extends HookInput>(
-    validator: (input: T) => boolean | Promise<boolean>,
+  validation<T extends HookContext>(
+    validator: (context: T) => boolean | Promise<boolean>,
     errorMessage = "Hook validation failed"
   ): HookMiddleware<T> {
-    return async (input, toolUseId, next) => {
-      const isValid = await Promise.resolve(validator(input));
+    return async (context, next) => {
+      const isValid = await Promise.resolve(validator(context));
 
       if (!isValid) {
         return {
-          continue: false,
-          systemMessage: errorMessage,
+          success: false,
+          message: errorMessage,
+          block: context.event === "PreToolUse",
         };
       }
 
-      return next(input, toolUseId, { signal: new AbortController().signal });
+      return next(context);
     };
   },
 };

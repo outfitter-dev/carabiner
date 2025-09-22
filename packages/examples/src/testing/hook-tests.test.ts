@@ -4,8 +4,38 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import type { HookHandler } from "@/hooks-core";
+import type { HookHandler, HookResult } from "@/hooks-core";
 import { executeHook, HookBuilder, HookResults } from "@/hooks-core";
+
+// Helper function to get continue status
+function didContinue(result: HookResult): boolean {
+  if ("continue" in result && result.continue === false) {
+    return false;
+  }
+  if ("stopReason" in result && result.stopReason === "blocked") {
+    return false;
+  }
+  return true;
+}
+
+// Helper function to get system message
+function getSystemMessage(result: HookResult): string | undefined {
+  if ("systemMessage" in result && typeof result.systemMessage === "string") {
+    return result.systemMessage;
+  }
+  return;
+}
+
+// Helper function to get provider state
+function getProviderState(
+  result: HookResult
+): Record<string, unknown> | undefined {
+  if ("providerState" in result) {
+    return result.providerState;
+  }
+  return;
+}
+
 import {
   createMockContext,
   createMockContextFor,
@@ -42,11 +72,11 @@ describe("Function-based PreToolUse Hook", () => {
     const result = await handlePreToolUse(context);
 
     // Assert
-    expect(result.success).toBe(true);
-    expect(result.message).toContain("validation passed");
-    expect(result.block).toBeUndefined();
-    expect(result.data).toBeDefined();
-    expect(result.data?.command).toBeDefined();
+    expect(didContinue(result)).toBe(true);
+    expect(getSystemMessage(result)).toContain("validation passed");
+    const providerState = getProviderState(result);
+    expect(providerState).toBeDefined();
+    expect(providerState?.command).toBeDefined();
   });
 
   test("should block dangerous bash commands", async () => {
@@ -57,9 +87,8 @@ describe("Function-based PreToolUse Hook", () => {
     const result = await handlePreToolUse(context);
 
     // Assert
-    expect(result.success).toBe(false);
-    expect(result.block).toBe(true);
-    expect(result.message).toContain("Security validation failed");
+    expect(didContinue(result)).toBe(false);
+    expect(getSystemMessage(result)).toContain("Validation failed");
   });
 
   test("should validate file write operations", async () => {
@@ -75,9 +104,10 @@ describe("Function-based PreToolUse Hook", () => {
     const result = await handlePreToolUse(context);
 
     // Assert
-    expect(result.success).toBe(true);
-    expect(result.data?.filePath).toBe("test-file.ts");
-    expect(result.data?.contentSize).toBe(
+    expect(didContinue(result)).toBe(true);
+    const providerState = getProviderState(result);
+    expect(providerState?.filePath).toBe("test-file.ts");
+    expect(providerState?.contentSize).toBe(
       new TextEncoder().encode(testContent).length
     );
   });
@@ -95,9 +125,10 @@ describe("Function-based PreToolUse Hook", () => {
     const result = await handlePreToolUse(context);
 
     // Assert
-    expect(result.success).toBe(false);
-    expect(result.message).toContain("too large");
-    expect(result.data?.size).toBeGreaterThan(1_048_576);
+    expect(didContinue(result)).toBe(false);
+    expect(getSystemMessage(result)).toContain("too large");
+    const providerState = getProviderState(result);
+    expect(providerState?.size).toBeGreaterThan(1_048_576);
   });
 
   test("should handle different environments correctly", async () => {
@@ -109,12 +140,12 @@ describe("Function-based PreToolUse Hook", () => {
       const context = createMockContextFor.bash("PreToolUse", "ls -la");
 
       const prodResult = await handlePreToolUse(context);
-      expect(prodResult.success).toBe(true);
+      expect(didContinue(prodResult)).toBe(true);
 
       // Test development environment
       Bun.env.NODE_ENV = "development";
       const devResult = await handlePreToolUse(context);
-      expect(devResult.success).toBe(true);
+      expect(didContinue(devResult)).toBe(true);
     } finally {
       // Restore original environment
       if (originalEnv !== undefined) {
@@ -137,9 +168,11 @@ describe("Function-based PreToolUse Hook", () => {
     const result = await handlePreToolUse(context);
 
     // Assert
-    expect(result.success).toBe(false);
-    expect(result.block).toBe(true);
-    expect(result.message).toContain("Invalid");
+    expect(didContinue(result)).toBe(false);
+    expect("suppressOutput" in result ? result.suppressOutput : false).toBe(
+      true
+    );
+    expect(getSystemMessage(result)).toContain("Invalid");
   });
 });
 
@@ -167,7 +200,7 @@ describe("Hook Testing Framework Examples", () => {
           "new code"
         );
         const result = await handlePreToolUse(context);
-        expect(result.success).toBe(true);
+        expect(didContinue(result)).toBe(true);
         return result;
       }
     );
@@ -215,9 +248,10 @@ describe("Builder Pattern Security Hook", () => {
       context
     );
 
-    expect(result.success).toBe(true);
-    expect(result.data?.securityLevel).toBeDefined();
-    expect(result.data?.checksPerformed).toBeDefined();
+    expect(didContinue(result)).toBe(true);
+    const providerState = getProviderState(result);
+    expect(providerState?.securityLevel).toBeDefined();
+    expect(providerState?.checksPerformed).toBeDefined();
   });
 
   test("should handle security violations", async () => {
@@ -225,9 +259,11 @@ describe("Builder Pattern Security Hook", () => {
 
     const result = await executeHook(securityPreToolUseHook.handler, context);
 
-    expect(result.success).toBe(false);
-    expect(result.block).toBe(true);
-    expect(result.message).toContain("dangerous command pattern");
+    expect(didContinue(result)).toBe(false);
+    expect("suppressOutput" in result ? result.suppressOutput : false).toBe(
+      true
+    );
+    expect(getSystemMessage(result)).toContain("dangerous command pattern");
   });
 });
 
@@ -240,12 +276,13 @@ describe("Custom Hook Scenarios", () => {
     const customValidationHook = HookBuilder.forPreToolUse()
       .forTool("Write")
       .withHandler((context) => {
-        const filePath = (context.toolInput as Record<string, unknown>)
-          .file_path;
+        const toolInput =
+          (context as any).tool_input || (context as any).toolInput;
+        const filePath = (toolInput as Record<string, unknown>).file_path;
 
         // Custom validation: only allow .ts files
         if (!filePath.endsWith(".ts")) {
-          return HookResults.block("Only TypeScript files allowed");
+          return HookResults.block("Only TypeScript files allowed", true);
         }
 
         return HookResults.success("TypeScript file validated");
@@ -259,7 +296,7 @@ describe("Custom Hook Scenarios", () => {
       "content"
     );
     const tsResult = await executeHook(customValidationHook.handler, tsContext);
-    expect(tsResult.success).toBe(true);
+    expect(didContinue(tsResult)).toBe(true);
 
     // Test with JavaScript file
     const jsContext = createMockContextFor.write(
@@ -268,8 +305,10 @@ describe("Custom Hook Scenarios", () => {
       "content"
     );
     const jsResult = await executeHook(customValidationHook.handler, jsContext);
-    expect(jsResult.success).toBe(false);
-    expect(jsResult.block).toBe(true);
+    expect(didContinue(jsResult)).toBe(false);
+    expect("suppressOutput" in jsResult ? jsResult.suppressOutput : false).toBe(
+      true
+    );
   });
 
   test("should test hook with middleware", async () => {
@@ -287,7 +326,7 @@ describe("Custom Hook Scenarios", () => {
     const context = createMockContextFor.bash("PostToolUse", "test command");
     const result = await executeHook(timedHook.handler, context);
 
-    expect(result.success).toBe(true);
+    expect(didContinue(result)).toBe(true);
     expect(result.metadata?.duration).toBeGreaterThan(90); // Should be ~100ms
   });
 });
@@ -309,7 +348,7 @@ describe("Integration Testing", () => {
     );
 
     const preResult = await handlePreToolUse(context);
-    expect(preResult.success).toBe(true);
+    expect(didContinue(preResult)).toBe(true);
 
     // Note: PostToolUse handler requires actual file to exist, but this is a mock test
     // In a real scenario, the file would be created by Claude Code between PreToolUse and PostToolUse
@@ -322,7 +361,7 @@ describe("Integration Testing", () => {
     // expect(postResult.data?.actionsPerformed).toBeDefined();
 
     // For now, just verify the PreToolUse worked
-    expect(preResult.success).toBe(true);
+    expect(didContinue(preResult)).toBe(true);
   });
 
   test("should handle error propagation correctly", async () => {
@@ -340,9 +379,9 @@ describe("Integration Testing", () => {
     const result = await executeHook(errorHook.handler, context);
 
     // The hook should return a failure result, not throw
-    expect(result.success).toBe(false);
+    expect(didContinue(result)).toBe(false);
     // The error message might be wrapped in the hook result
-    expect(result.message).toBeDefined();
+    expect(getSystemMessage(result)).toBeDefined();
   });
 });
 
@@ -383,7 +422,7 @@ describe("Performance Testing", () => {
 
     // All should succeed
     for (const result of results) {
-      expect(result.success).toBe(true);
+      expect(didContinue(result)).toBe(true);
     }
 
     // Should complete reasonably quickly
@@ -407,7 +446,7 @@ describe("Edge Cases", () => {
     const result = await handlePreToolUse(context);
     // Should handle gracefully, not crash
     expect(typeof result).toBe("object");
-    expect(typeof result.success).toBe("boolean");
+    expect(typeof didContinue(result)).toBe("boolean");
   });
 
   test("should handle malformed JSON input", async () => {
@@ -419,7 +458,7 @@ describe("Edge Cases", () => {
 
     const result = await handlePreToolUse(context);
     // Should handle JSON parse errors gracefully
-    expect(result.success).toBe(false);
+    expect(didContinue(result)).toBe(false);
   });
 
   test("should handle very long input strings", async () => {
@@ -429,7 +468,7 @@ describe("Edge Cases", () => {
     const result = await handlePreToolUse(context);
     // Should handle large inputs appropriately
     expect(typeof result).toBe("object");
-    expect(typeof result.success).toBe("boolean");
+    expect(typeof didContinue(result)).toBe("boolean");
   });
 });
 

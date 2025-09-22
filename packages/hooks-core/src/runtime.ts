@@ -8,38 +8,37 @@ import path from "node:path";
 import { runtimeLogger } from "./logger";
 import { stdout } from "./logging/stdio";
 import type {
-  ClaudeHookInputVariant,
-  ClaudeToolHookInput,
   GetToolInput,
-  HookContext,
+  HookCallback,
   HookEnvironment,
-  HookEvent,
   HookExecutionOptions,
-  HookHandler,
-  HookOutputMode,
-  HookResult,
+  HookInput,
+  HookJSONOutput,
+  PreToolUseHookInput,
   StdinParseResult,
   ToolInput,
   ToolInputMap,
   ToolName,
 } from "./types";
-import {
-  HookError,
-  HookInputError,
-  HookTimeoutError,
-  isClaudeNotificationInput,
-  isClaudeToolHookInput,
-  isClaudeUserPromptInput,
-} from "./types";
+import { HookError, HookInputError, HookTimeoutError } from "./types";
+
+// Note: These type guards are kept for potential future use
+// function isPreToolUse(input: HookInput): input is PreToolUseHookInput {
+//   return input.hook_event_name === "PreToolUse";
+// }
+// function isUserPromptSubmit(input: HookInput): input is UserPromptSubmitHookInput {
+//   return input.hook_event_name === "UserPromptSubmit";
+// }
+// function isNotification(input: HookInput): input is NotificationHookInput {
+//   return input.hook_event_name === "Notification";
+// }
 import { getEnvVar } from "./utils/env";
 
 /**
  * Parse JSON input from stdin
  * Enhanced with security validation
  */
-export async function parseStdinInput(): Promise<
-  StdinParseResult<ClaudeHookInputVariant>
-> {
+export async function parseStdinInput(): Promise<StdinParseResult<HookInput>> {
   try {
     // Read from stdin with size limits for security
     const MAX_INPUT_SIZE = 1024 * 1024; // 1MB limit
@@ -89,7 +88,7 @@ export async function parseStdinInput(): Promise<
       .trim();
 
     // Parse JSON with additional validation
-    const parsedData = JSON.parse(sanitizedInput) as ClaudeHookInputVariant;
+    const parsedData = JSON.parse(sanitizedInput) as HookInput;
 
     // Basic validation
     if (
@@ -168,76 +167,12 @@ export function parseToolInput<T extends ToolName>(
 /**
  * Create hook context from Claude Code JSON input
  */
-export function createHookContext<
-  TEvent extends HookEvent,
-  TTool extends ToolName = ToolName,
->(
-  claudeInput: ClaudeHookInputVariant,
-  overrides?: Partial<HookContext<TEvent, TTool>>
-): HookContext<TEvent, TTool> {
-  const env = parseHookEnvironment();
-
-  // Base context shared by all hook types
-  const baseContext = {
-    event: claudeInput.hook_event_name as TEvent,
-    sessionId: claudeInput.session_id,
-    transcriptPath: claudeInput.transcript_path,
-    cwd: claudeInput.cwd,
-    matcher: claudeInput.matcher,
-    environment: env,
-    rawInput: claudeInput,
-    ...overrides,
-  };
-
-  // Event-specific context creation
-  if (isClaudeToolHookInput(claudeInput)) {
-    const toolContext = {
-      ...baseContext,
-      toolName: claudeInput.tool_name as TTool,
-      toolInput: parseToolInput(
-        claudeInput.tool_name as TTool,
-        claudeInput.tool_input
-      ),
-      toolResponse: claudeInput.tool_response,
-      userPrompt: undefined,
-      message: undefined,
-    };
-    return toolContext as HookContext<TEvent, TTool>;
-  }
-
-  if (isClaudeUserPromptInput(claudeInput)) {
-    const promptContext = {
-      ...baseContext,
-      toolName: "UserPromptSubmit" as TTool,
-      toolInput: {} as GetToolInput<TTool>,
-      toolResponse: undefined,
-      userPrompt: claudeInput.prompt,
-      message: undefined,
-    };
-    return promptContext as HookContext<TEvent, TTool>;
-  }
-
-  if (isClaudeNotificationInput(claudeInput)) {
-    const notificationContext = {
-      ...baseContext,
-      toolName: claudeInput.hook_event_name as TTool,
-      toolInput: {} as GetToolInput<TTool>,
-      toolResponse: undefined,
-      userPrompt: undefined,
-      message: claudeInput.message,
-    };
-    return notificationContext as HookContext<TEvent, TTool>;
-  }
-
-  // Fallback for unknown event types
-  return {
-    ...baseContext,
-    toolName: "" as TTool,
-    toolInput: {} as GetToolInput<TTool>,
-    toolResponse: undefined,
-    userPrompt: undefined,
-    message: undefined,
-  } as HookContext<TEvent, TTool>;
+export function createHookContext(
+  claudeInput: HookInput,
+  overrides?: Partial<HookInput>
+): HookInput {
+  // Preserve original input and allow shallow overrides (rarely needed)
+  return { ...(claudeInput as any), ...(overrides as any) };
 }
 
 /**
@@ -302,10 +237,6 @@ export function isGrepToolInput(
   return typeof input === "object" && input !== null && "pattern" in input;
 }
 
-export function isLSToolInput(input: ToolInput): input is ToolInputMap["LS"] {
-  return typeof input === "object" && input !== null && "path" in input;
-}
-
 export function isTodoWriteToolInput(
   input: ToolInput
 ): input is ToolInputMap["TodoWrite"] {
@@ -349,52 +280,44 @@ export function isNotebookEditToolInput(
  * Execute hook with timeout and error handling
  */
 export async function executeHook(
-  handler: HookHandler,
-  context: HookContext,
+  handler: HookCallback,
+  input: HookInput,
   options: HookExecutionOptions = {}
-): Promise<HookResult> {
-  const startTime = Date.now();
-  const { timeout = 30_000, throwOnError = false } = options;
+): Promise<HookJSONOutput> {
+  const { timeout = 30_000, throwOnError = false } = options as {
+    timeout?: number;
+    throwOnError?: boolean;
+  };
 
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     // Create timeout promise with clearable timer
     const timeoutPromise = new Promise<never>((_, reject) => {
       timer = setTimeout(
-        () => reject(new HookTimeoutError(timeout, context)),
+        () => reject(new HookTimeoutError(timeout, input)),
         timeout
       );
     });
 
+    // Create proper options with signal
+    const execOptions = { signal: new AbortController().signal };
+
     // Execute handler with timeout
-    const result = await Promise.race([
-      Promise.resolve(handler(context)),
+    const result = await Promise.race<HookJSONOutput>([
+      Promise.resolve(handler(input, undefined, execOptions)),
       timeoutPromise,
     ]);
-
-    // Add execution metadata
-    const duration = Date.now() - startTime;
-    return {
-      ...result,
-      metadata: {
-        ...result.metadata,
-        duration,
-        timestamp: new Date().toISOString(),
-        hookVersion: "0.2.0",
-      },
-    };
+    return result;
   } catch (error) {
-    const duration = Date.now() - startTime;
-
     if (error instanceof HookTimeoutError) {
       runtimeLogger.error(`Hook execution timed out after ${timeout}ms`, {
         timeout,
-        context,
+        input,
       });
     } else {
       runtimeLogger.error(
         `Hook execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        { error, context }
+        { error, input }
       );
     }
 
@@ -403,20 +326,14 @@ export async function executeHook(
         ? error
         : new HookError(
             error instanceof Error ? error.message : "Unknown error",
-            context,
+            input,
             error instanceof Error ? error : undefined
           );
     }
 
     return {
-      success: false,
-      message: error instanceof Error ? error.message : "Unknown error",
-      block: context.event === "PreToolUse", // Block on PreToolUse failures by default
-      metadata: {
-        duration,
-        timestamp: new Date().toISOString(),
-        hookVersion: "0.2.0",
-      },
+      continue: false,
+      systemMessage: error instanceof Error ? error.message : "Unknown error",
     };
   } finally {
     // Always clear the timeout to prevent memory leaks
@@ -427,56 +344,21 @@ export async function executeHook(
 }
 
 /**
- * Output hook result to Claude Code - supports both exit codes and JSON
+ * Output hook result to Claude Code - JSON output only
  */
 export function outputHookResult(
-  result: HookResult,
-  mode: HookOutputMode = "exit-code",
+  result: HookJSONOutput,
   exitHandler: (code: number) => never = (code) => process.exit(code)
 ): never {
-  if (mode === "json") {
-    // Structured JSON output for advanced control
-    let action: string;
-    if (result.success) {
-      action = "continue";
-    } else if (result.block) {
-      action = "block";
-    } else {
-      action = "continue";
-    }
-    const claudeOutput = {
-      action,
-      message: result.message,
-      data: result.data,
-    };
-    // Use lightweight stdio helper to avoid console usage
-    stdout.json(claudeOutput);
-    return exitHandler(0); // Always exit 0 for JSON mode, let JSON control behavior
-  }
-  // Traditional exit code mode - must use console for Claude Code communication
-  if (result.message) {
-    if (result.success) {
-      // Success messages are handled by caller
-    } else {
-      // Error messages are handled by caller
-    }
-  }
-
-  // Exit codes: 0 = success, 2 = blocking error, 1 = non-blocking error
-  if (result.success) {
-    return exitHandler(0);
-  }
-  if (result.block) {
-    return exitHandler(2);
-  }
-  return exitHandler(1);
+  stdout.json(result);
+  return exitHandler(0);
 }
 
 /**
  * Main hook execution function - reads from stdin, executes hook, outputs result
  */
 export async function runClaudeHook(
-  handler: HookHandler,
+  handler: HookCallback,
   options: HookExecutionOptions = {}
 ): Promise<never> {
   try {
@@ -488,24 +370,22 @@ export async function runClaudeHook(
     }
 
     // Create context from Claude input
-    const context = createHookContext(parseResult.data);
+    const input = createHookContext(parseResult.data);
 
     // Execute the hook
-    const result = await executeHook(handler, context, options);
+    const result = await executeHook(handler, input, options);
 
     // Output result to Claude
-    outputHookResult(result, options.outputMode);
+    outputHookResult(result);
   } catch (error) {
-    const result: HookResult = {
-      success: false,
-      message:
+    const result: HookJSONOutput = {
+      continue: false,
+      systemMessage:
         error instanceof Error
           ? error.message
           : "Unknown error during hook execution",
-      block: true, // Block by default on runtime errors
     };
-
-    outputHookResult(result, options.outputMode);
+    outputHookResult(result);
   }
 }
 
@@ -526,41 +406,40 @@ export function getSessionInfo(): { projectDir?: string } {
  * Hook result builders for common scenarios
  */
 export const HookResults = {
-  success(message?: string, data?: Record<string, unknown>): HookResult {
-    return { success: true, message, data };
+  success(systemMessage?: string): HookJSONOutput {
+    return { continue: true, systemMessage };
   },
-
-  failure(
-    message: string,
-    block = false,
-    data?: Record<string, unknown>
-  ): HookResult {
-    return { success: false, message, block, data };
+  failure(systemMessage: string): HookJSONOutput {
+    return { continue: false, systemMessage };
   },
-
-  block(message: string): HookResult {
-    return { success: false, message, block: true };
+  block(systemMessage: string, suppressOutput = false): HookJSONOutput {
+    return {
+      continue: false,
+      systemMessage,
+      stopReason: "blocked",
+      ...(suppressOutput && { suppressOutput }),
+    };
   },
-
-  skip(message?: string): HookResult {
-    return { success: true, message: message || "Hook skipped" };
+  skip(systemMessage?: string): HookJSONOutput {
+    return { continue: true, systemMessage: systemMessage || "Hook skipped" };
   },
-
-  warn(message: string, data?: Record<string, unknown>): HookResult {
-    return { success: true, message, data };
+  warn(systemMessage: string): HookJSONOutput {
+    return { continue: true, systemMessage };
   },
 };
 
 /**
  * Utility for safe hook execution with error boundaries
  */
-export async function safeHookExecution<T extends HookContext>(
-  handler: HookHandler,
-  context: T,
-  fallback?: () => HookResult
-): Promise<HookResult> {
+export async function safeHookExecution(
+  handler: HookCallback,
+  input: HookInput,
+  fallback?: () => HookJSONOutput
+): Promise<HookJSONOutput> {
   try {
-    const result = await Promise.resolve(handler(context));
+    const result = await Promise.resolve(
+      handler(input, undefined, { signal: new AbortController().signal })
+    );
     return result;
   } catch (error) {
     if (fallback) {
@@ -568,70 +447,78 @@ export async function safeHookExecution<T extends HookContext>(
     }
 
     return HookResults.failure(
-      error instanceof Error ? error.message : "Unknown error occurred",
-      context.event === "PreToolUse" // Block PreToolUse on errors
+      error instanceof Error ? error.message : "Unknown error occurred"
     );
   }
 }
 
 /**
- * Context validation utilities
+ * Input validation utilities
  */
-export function validateHookContext(context: HookContext): void {
-  if (!context.event) {
-    throw new HookError("Invalid hook context: missing event", context);
+export function validateHookInput(input: HookInput): void {
+  if (!input.session_id) {
+    throw new HookError("Invalid hook input: missing session ID", input);
   }
-
-  if (!context.sessionId) {
-    throw new HookError("Invalid hook context: missing session ID", context);
+  if (!input.cwd) {
+    throw new HookError("Invalid hook input: missing cwd", input);
   }
-
-  if (!context.cwd) {
-    throw new HookError(
-      "Invalid hook context: missing current working directory",
-      context
-    );
+  if (!input.hook_event_name) {
+    throw new HookError("Invalid hook input: missing hook_event_name", input);
   }
 }
 
 /**
- * Context creation helpers for testing
+ * Input creation helpers for testing
  */
-export function createBashContext(
-  hookEvent: HookEvent,
+export function createBashInput(
+  hookEvent: "PreToolUse" | "PostToolUse",
   command?: string
-): HookContext<typeof hookEvent, "Bash"> {
-  const mockInput: ClaudeToolHookInput = {
+): HookInput {
+  if (hookEvent === "PreToolUse") {
+    const mockInput: PreToolUseHookInput = {
+      session_id: "test-session",
+      transcript_path: "/tmp/transcript.md",
+      cwd: process.cwd(),
+      hook_event_name: hookEvent,
+      tool_name: "Bash",
+      tool_input: { command: command || "echo test" },
+    };
+    return mockInput;
+  }
+  // PostToolUse case
+  const mockInput = {
     session_id: "test-session",
     transcript_path: "/tmp/transcript.md",
     cwd: process.cwd(),
-    hook_event_name: hookEvent as "PreToolUse" | "PostToolUse",
+    hook_event_name: hookEvent,
     tool_name: "Bash",
     tool_input: { command: command || "echo test" },
+    tool_response: "command executed",
   };
-
-  return createHookContext(mockInput) as HookContext<typeof hookEvent, "Bash">;
+  return mockInput as HookInput;
 }
 
-export function createFileContext(
-  hookEvent: HookEvent,
+export function createFileInput(
+  hookEvent: "PreToolUse" | "PostToolUse",
   toolName: "Write" | "Edit" | "Read",
   filePath?: string
-): HookContext<typeof hookEvent, typeof toolName> {
-  const mockInput: ClaudeToolHookInput = {
+): HookInput {
+  const mockInput = {
     session_id: "test-session",
     transcript_path: "/tmp/transcript.md",
     cwd: process.cwd(),
-    hook_event_name: hookEvent as "PreToolUse" | "PostToolUse",
+    hook_event_name: hookEvent,
     tool_name: toolName,
     tool_input: { file_path: filePath || "/tmp/test.txt" },
   };
-
-  return createHookContext(mockInput) as HookContext<
-    typeof hookEvent,
-    typeof toolName
-  >;
+  return mockInput as HookInput;
 }
+
+// Back-compat aliases (if anything still imports old names)
+export {
+  createBashInput as createBashContext,
+  createFileInput as createFileContext,
+};
 
 // HookLogger is now exported from logger.ts with proper pino implementation
 export { HookLogger } from "./logger";

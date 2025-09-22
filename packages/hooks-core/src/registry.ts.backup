@@ -4,12 +4,14 @@
  * Updated to work with new stdin-based runtime system
  */
 
+import { executeHook } from "./runtime";
 import type {
+  HookContext,
   HookEvent,
   HookExecutionStats,
-  HookInput,
-  HookJSONOutput,
+  HookHandler,
   HookRegistryEntry,
+  HookResult,
   ToolName,
 } from "./types";
 
@@ -17,7 +19,7 @@ import type {
  * Central hook registry with composite key system for tool scoping
  */
 export class HookRegistry {
-  private readonly hooks = new Map<string, HookRegistryEntry<HookInput>[]>();
+  private readonly hooks = new Map<string, HookRegistryEntry<HookEvent>[]>();
   private readonly stats = new Map<string, HookExecutionStats>();
 
   /**
@@ -28,10 +30,10 @@ export class HookRegistry {
   }
 
   /**
-   * Register hook with proper key generation based on matcher field
+   * Register hook with proper key generation based on tool field
    */
-  register<TInput extends HookInput>(entry: HookRegistryEntry<TInput>): void {
-    const key = this.getRegistryKey(entry.event, entry.matcher as ToolName);
+  register<TEvent extends HookEvent>(entry: HookRegistryEntry<TEvent>): void {
+    const key = this.getRegistryKey(entry.event, entry.tool);
 
     if (!this.hooks.has(key)) {
       this.hooks.set(key, []);
@@ -47,12 +49,12 @@ export class HookRegistry {
       (h) => (h.priority || 0) < (entry.priority || 0)
     );
     if (insertIndex === -1) {
-      hooks.push(entry as unknown as HookRegistryEntry<HookInput>);
+      hooks.push(entry as unknown as HookRegistryEntry<HookEvent>);
     } else {
       hooks.splice(
         insertIndex,
         0,
-        entry as unknown as HookRegistryEntry<HookInput>
+        entry as unknown as HookRegistryEntry<HookEvent>
       );
     }
   }
@@ -69,22 +71,22 @@ export class HookRegistry {
   /**
    * Get hooks for event and tool - returns both universal and tool-specific hooks
    */
-  getHooks<TInput extends HookInput>(
-    event: TInput["hook_event_name"],
+  getHooks<TEvent extends HookEvent>(
+    event: TEvent,
     toolName?: ToolName
-  ): HookRegistryEntry<TInput>[] {
-    const hooks: HookRegistryEntry<TInput>[] = [];
+  ): HookRegistryEntry<TEvent>[] {
+    const hooks: HookRegistryEntry<TEvent>[] = [];
 
     // Always include universal hooks
     const universalKey = this.getRegistryKey(event);
     const universalHooks = this.hooks.get(universalKey) || [];
-    hooks.push(...(universalHooks as unknown as HookRegistryEntry<TInput>[]));
+    hooks.push(...(universalHooks as unknown as HookRegistryEntry<TEvent>[]));
 
     // Include tool-specific hooks if tool specified
     if (toolName) {
       const toolKey = this.getRegistryKey(event, toolName);
       const toolHooks = this.hooks.get(toolKey) || [];
-      hooks.push(...(toolHooks as unknown as HookRegistryEntry<TInput>[]));
+      hooks.push(...(toolHooks as unknown as HookRegistryEntry<TEvent>[]));
     }
 
     // Re-sort by priority (higher priority first)
@@ -94,13 +96,11 @@ export class HookRegistry {
   /**
    * Execute hooks with proper tool filtering
    */
-  async execute<TInput extends HookInput>(
-    input: TInput
-  ): Promise<HookJSONOutput[]> {
-    const toolName =
-      "tool_name" in input ? (input as any).tool_name : undefined;
-    const hooks = this.getHooks(input.hook_event_name, toolName);
-    const results: HookJSONOutput[] = [];
+  async execute<TEvent extends HookEvent>(
+    context: HookContext<TEvent>
+  ): Promise<HookResult[]> {
+    const hooks = this.getHooks(context.event, context.toolName);
+    const results: HookResult[] = [];
 
     for (const hookEntry of hooks) {
       if (hookEntry.enabled === false) {
@@ -110,45 +110,41 @@ export class HookRegistry {
       const start = Date.now();
 
       try {
-        const result = await hookEntry.handler(input, undefined, {
-          signal: new AbortController().signal,
-        });
+        const result = await executeHook(
+          hookEntry.handler as HookHandler,
+          context
+        );
         results.push(result);
 
         // Update stats
         this.updateStats(
-          input.hook_event_name,
-          toolName,
+          context.event,
+          context.toolName,
           true,
           Date.now() - start
         );
 
         // For PreToolUse, stop on blocking failures
-        if (
-          input.hook_event_name === "PreToolUse" &&
-          (result as any).continue === false
-        ) {
+        if (context.event === "PreToolUse" && !result.success && result.block) {
           break;
         }
       } catch (error) {
-        const failureResult: HookJSONOutput = {
-          continue: false,
-          systemMessage:
+        const failureResult: HookResult = {
+          success: false,
+          message:
             error instanceof Error ? error.message : "Hook execution failed",
+          block: context.event === "PreToolUse",
         };
 
         results.push(failureResult);
         this.updateStats(
-          input.hook_event_name,
-          toolName,
+          context.event,
+          context.toolName,
           false,
           Date.now() - start
         );
 
-        if (
-          input.hook_event_name === "PreToolUse" &&
-          (failureResult as any).continue === false
-        ) {
+        if (context.event === "PreToolUse" && failureResult.block) {
           break;
         }
       }
@@ -160,31 +156,42 @@ export class HookRegistry {
   /**
    * Execute hooks and return combined result
    */
-  async executeAndCombine<TInput extends HookInput>(
-    input: TInput
-  ): Promise<HookJSONOutput> {
-    const results = await this.execute(input);
+  async executeAndCombine<TEvent extends HookEvent>(
+    context: HookContext<TEvent>
+  ): Promise<HookResult> {
+    const results = await this.execute(context);
 
     if (results.length === 0) {
-      return { continue: true, systemMessage: "No hooks executed" };
+      return { success: true, message: "No hooks executed" };
     }
 
-    // Check for any failures that should stop execution
-    const failure = results.find((r) => (r as any).continue === false);
+    // Check for any blocking failures
+    const blockingFailure = results.find((r) => !r.success && r.block);
+    if (blockingFailure) {
+      return blockingFailure;
+    }
+
+    // Check for any failures
+    const failure = results.find((r) => !r.success);
     if (failure) {
       return failure;
     }
 
-    // All successful or continuing
-    const messages = results
-      .map((r) => (r as any).systemMessage)
-      .filter(Boolean);
+    // All successful
+    const messages = results.map((r) => r.message).filter(Boolean);
     return {
-      continue: true,
-      systemMessage:
+      success: true,
+      message:
         messages.length > 0
           ? messages.join("; ")
           : "All hooks executed successfully",
+      data: {
+        hookCount: results.length,
+        results: results.map((r) => ({
+          success: r.success,
+          message: r.message,
+        })),
+      },
     };
   }
 
@@ -192,7 +199,7 @@ export class HookRegistry {
    * Check if any hooks are registered for an event
    */
   hasHooks(event: HookEvent): boolean {
-    const hooks = this.getHooks(event as any);
+    const hooks = this.getHooks(event);
     return hooks.some((h) => h.enabled);
   }
 
@@ -236,7 +243,7 @@ export class HookRegistry {
    */
   private updateStats(
     event: HookEvent,
-    toolName: ToolName | undefined,
+    toolName: ToolName,
     success: boolean,
     duration: number
   ): void {
@@ -280,8 +287,8 @@ export const globalRegistry = new HookRegistry();
 /**
  * Convenience functions using global registry
  */
-export const registerHook = <TInput extends HookInput>(
-  entry: HookRegistryEntry<TInput>
+export const registerHook = <TEvent extends HookEvent>(
+  entry: HookRegistryEntry<TEvent>
 ): void => {
   globalRegistry.register(entry);
 };
@@ -290,16 +297,16 @@ export const registerHooks = (entries: HookRegistryEntry[]): void => {
   globalRegistry.registerAll(entries);
 };
 
-export const executeHooks = <TInput extends HookInput>(
-  input: TInput
-): Promise<HookJSONOutput[]> => {
-  return globalRegistry.execute(input);
+export const executeHooks = <TEvent extends HookEvent>(
+  context: HookContext<TEvent>
+): Promise<HookResult[]> => {
+  return globalRegistry.execute(context);
 };
 
-export const executeHooksAndCombine = <TInput extends HookInput>(
-  input: TInput
-): Promise<HookJSONOutput> => {
-  return globalRegistry.executeAndCombine(input);
+export const executeHooksAndCombine = <TEvent extends HookEvent>(
+  context: HookContext<TEvent>
+): Promise<HookResult> => {
+  return globalRegistry.executeAndCombine(context);
 };
 
 export const hasHooksForEvent = (event: HookEvent): boolean => {
