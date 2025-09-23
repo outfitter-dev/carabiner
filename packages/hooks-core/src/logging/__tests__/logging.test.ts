@@ -209,8 +209,13 @@ test("sanitizer handles deep nested objects", () => {
   };
 
   // Should traverse deep structures
-  expect(sanitized.level1.level2.level3.data).toBe("normal");
-  expect(sanitized.level1.level2.level3.password).toBeUndefined();
+  expect(sanitized.level1?.level2?.level3).toBeDefined();
+  const level3 = sanitized.level1?.level2?.level3;
+  if (!level3) {
+    throw new Error("Expected level3 to be defined after sanitizer traversal");
+  }
+  expect(level3.data).toBe("normal");
+  expect(level3.password).toBeUndefined();
 });
 
 test("sanitizer handles arrays correctly", () => {
@@ -226,10 +231,11 @@ test("sanitizer handles arrays correctly", () => {
   }>;
 
   expect(Array.isArray(sanitized)).toBe(true);
-  expect(sanitized[0].name).toBe("item1");
-  expect(sanitized[0].password).toBeUndefined();
-  expect(sanitized[1].name).toBe("item2");
-  expect(sanitized[1].token).toBeUndefined();
+  expect(sanitized).toHaveLength(2);
+  expect(sanitized[0]?.name).toBe("item1");
+  expect(sanitized[0]?.password).toBeUndefined();
+  expect(sanitized[1]?.name).toBe("item2");
+  expect(sanitized[1]?.token).toBeUndefined();
 });
 
 test("hook logger logs execution lifecycle", () => {

@@ -35,6 +35,12 @@ import { HookError, HookInputError, HookTimeoutError } from "./types";
 
 type ClaudeProviderAdapter = HookProviderAdapter<HookInput, HookJSONOutput>;
 
+type CreateHookContextOptions = {
+  environment?: HookEnvironment;
+  providerId?: HookProviderId;
+  provider?: ClaudeProviderAdapter;
+};
+
 function resolveProvider(
   options: HookExecutionOptions = {}
 ): ClaudeProviderAdapter {
@@ -268,12 +274,18 @@ export function parseToolInput<T extends ToolName>(
 export function createHookContext<T extends HookInput = HookInput>(
   providerInput: T,
   overrides?: Partial<T>,
-  options: {
-    environment?: HookEnvironment;
-    providerId?: HookProviderId;
-    provider?: ClaudeProviderAdapter;
-  } = {}
-): HookContext<T> {
+  options?: CreateHookContextOptions
+): HookContext<T>;
+export function createHookContext<E extends HookEvent = HookEvent>(
+  providerInput: E,
+  overrides?: Partial<HookInput>,
+  options?: CreateHookContextOptions
+): HookContext;
+export function createHookContext(
+  providerInput: HookInput | HookEvent,
+  overrides?: Partial<HookInput>,
+  options: CreateHookContextOptions = {}
+): HookContext {
   const provider = resolveProvider({
     provider: options.provider,
     providerId: options.providerId,
@@ -282,11 +294,11 @@ export function createHookContext<T extends HookInput = HookInput>(
   const environment = options.environment ?? parseHookEnvironment();
   const baseInput = ensureHookInput(providerInput, environment);
   const mergedInput = overrides
-    ? ({ ...baseInput, ...overrides } as T)
+    ? ({ ...baseInput, ...overrides } as HookInput)
     : baseInput;
 
   const normalized = provider.fromProviderInput(mergedInput, environment);
-  return toHookContext(normalized) as HookContext<T>;
+  return toHookContext(normalized);
 }
 
 /**
@@ -534,12 +546,15 @@ export async function runClaudeHook(
 
     outputHookResult(providerResult);
   } catch (error) {
+    const systemMessage =
+      error instanceof Error
+        ? error.message
+        : "Unknown error during hook execution";
     const failure: HookResult = {
       continue: false,
-      systemMessage:
-        error instanceof Error
-          ? error.message
-          : "Unknown error during hook execution",
+      systemMessage,
+      success: false,
+      message: systemMessage,
       metadata: {
         timestamp: new Date().toISOString(),
         ...(provider ? { provider: provider.metadata } : {}),
@@ -576,10 +591,20 @@ export function getSessionInfo(): { projectDir?: string } {
  */
 export const HookResults = {
   success(systemMessage?: string): HookResult {
-    return { continue: true, systemMessage };
+    return {
+      continue: true,
+      systemMessage,
+      success: true,
+      message: systemMessage,
+    };
   },
   failure(systemMessage: string): HookResult {
-    return { continue: false, systemMessage };
+    return {
+      continue: false,
+      systemMessage,
+      success: false,
+      message: systemMessage,
+    };
   },
   block(systemMessage: string, suppressOutput = false): HookResult {
     return {
@@ -587,16 +612,26 @@ export const HookResults = {
       systemMessage,
       stopReason: "blocked",
       ...(suppressOutput && { suppressOutput }),
+      success: false,
+      message: systemMessage,
+      block: true,
     };
   },
   skip(systemMessage?: string): HookResult {
     return {
       continue: true,
       systemMessage: systemMessage || "Hook skipped",
+      success: true,
+      message: systemMessage || "Hook skipped",
     };
   },
   warn(systemMessage: string): HookResult {
-    return { continue: true, systemMessage };
+    return {
+      continue: true,
+      systemMessage,
+      success: true,
+      message: systemMessage,
+    };
   },
 };
 
@@ -608,42 +643,54 @@ export async function safeHookExecution(
   context: HookContext,
   fallback?: () => HookResult
 ): Promise<HookResult> {
+  const abortController = new AbortController();
+  const startedAt = Date.now();
   try {
     const result = await Promise.resolve(
-      handler(context, undefined, { signal: new AbortController().signal })
+      handler(context, undefined, { signal: abortController.signal })
     );
 
     const normalized = result as HookResult;
+    const metadata: HookMetadata = {
+      provider: context.metadata.provider,
+      timestamp: new Date().toISOString(),
+      duration: Date.now() - startedAt,
+      ...(normalized.metadata ?? {}),
+    };
     return {
       ...normalized,
-      metadata: {
-        provider: context.metadata.provider,
-        ...(normalized.metadata ?? {}),
-      },
+      metadata,
     } satisfies HookResult;
   } catch (error) {
     if (fallback) {
-      const fallbackResult = fallback();
+      const fallbackResult = await Promise.resolve(fallback());
+      const metadata: HookMetadata = {
+        provider: context.metadata.provider,
+        timestamp: new Date().toISOString(),
+        duration: Date.now() - startedAt,
+        ...(fallbackResult.metadata ?? {}),
+      };
       return {
         ...fallbackResult,
-        metadata: {
-          provider: context.metadata.provider,
-          ...(fallbackResult.metadata ?? {}),
-        },
+        metadata,
       } satisfies HookResult;
     }
 
     const failure = HookResults.failure(
       error instanceof Error ? error.message : "Unknown error occurred"
     );
-
+    const metadata: HookMetadata = {
+      provider: context.metadata.provider,
+      timestamp: new Date().toISOString(),
+      duration: Date.now() - startedAt,
+      ...(failure.metadata ?? {}),
+    };
     return {
       ...failure,
-      metadata: {
-        provider: context.metadata.provider,
-        ...(failure.metadata ?? {}),
-      },
+      metadata,
     } satisfies HookResult;
+  } finally {
+    abortController.abort();
   }
 }
 

@@ -84,7 +84,7 @@ describe("ConfigManager - Immutability Tests", () => {
   });
 
   test("should create immutable updates in toggleHook for tool-specific hooks", async () => {
-    const _initialConfig = await configManager.load();
+    await configManager.load();
 
     // Ensure we have a tool config to toggle
     await configManager.setHookConfig("PreToolUse", "Bash", {

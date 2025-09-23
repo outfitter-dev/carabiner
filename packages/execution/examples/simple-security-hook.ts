@@ -15,33 +15,8 @@
  * 2. Expected output: Hook should block the dangerous command
  */
 
-import type { HookHandler } from "@carabiner/types";
-
-type BashToolInput = {
-  readonly command: string;
-  readonly description?: string;
-  readonly timeout?: number;
-};
-
-type BashContext = {
-  readonly event: string;
-  readonly toolName: string;
-  readonly toolInput: BashToolInput;
-  readonly sessionId: string;
-  readonly cwd: string;
-  readonly environment: Record<string, string>;
-};
-
-type NonBashContext = {
-  readonly event: string;
-  readonly toolName: string;
-  readonly toolInput: Record<string, unknown>;
-  readonly sessionId: string;
-  readonly cwd: string;
-  readonly environment: Record<string, string>;
-};
-
-type TestContext = BashContext | NonBashContext;
+import type { PreToolUseHookInput } from "@carabiner/hooks-core";
+import { createHookContext, HookResults } from "@carabiner/hooks-core";
 
 // We would normally use:
 // import { runHook } from '@carabiner/execution';
@@ -54,21 +29,16 @@ import {
 } from "../src/metrics";
 
 // Define our security hook handler
-const securityHook: HookHandler = (context) => {
+const securityHook = (context: ReturnType<typeof createHookContext>) => {
   // Only check PreToolUse events for Bash
   if (context.event !== "PreToolUse" || context.toolName !== "Bash") {
-    return { success: true, message: "Not applicable to this tool/event" };
+    return HookResults.success("Not applicable to this tool/event");
   }
 
-  // Type guard to ensure context has the expected structure
-  if (!("toolInput" in context && context.toolInput)) {
-    return { success: true, message: "No tool input to validate" };
-  }
-
-  const bashContext = context as BashContext;
-  const command = bashContext.toolInput.command;
+  const command = (context.toolInput as { command?: string } | undefined)
+    ?.command;
   if (!command || typeof command !== "string") {
-    return { success: true, message: "No command to validate" };
+    return HookResults.success("No command to validate");
   }
 
   // Define dangerous command patterns
@@ -90,72 +60,62 @@ const securityHook: HookHandler = (context) => {
   // Check for dangerous patterns
   for (const pattern of dangerousPatterns) {
     if (pattern.test(command)) {
-      return {
-        success: false,
-        block: true,
-        message: `Security violation: Command blocked due to dangerous pattern - ${pattern.source}`,
-      };
+      return HookResults.block(
+        `Security violation: Command blocked due to dangerous pattern - ${pattern.source}`
+      );
     }
   }
 
   // Additional checks for suspicious combinations
   if (command.includes("sudo") && command.includes("rm")) {
-    return {
-      success: false,
-      block: true,
-      message: "Security violation: sudo rm commands are not allowed",
-    };
+    return HookResults.block(
+      "Security violation: sudo rm commands are not allowed"
+    );
   }
-  return {
-    success: true,
-    message: `Command "${command.slice(0, 50)}${command.length > 50 ? "..." : ""}" approved by security hook`,
-  };
+  return HookResults.success(
+    `Command "${command.slice(0, 50)}${command.length > 50 ? "..." : ""}" approved by security hook`
+  );
 };
 
 // Example usage function for testing
 export async function runSecurityExample() {
-  const testCases: Array<{ name: string; context: TestContext }> = [
+  const testCases: Array<{
+    name: string;
+    input: {
+      sessionId: string;
+      toolName: string;
+      toolInput: Record<string, unknown>;
+    };
+  }> = [
     {
       name: "Safe command",
-      context: {
-        event: "PreToolUse" as const,
-        toolName: "Bash",
+      input: {
         sessionId: "example-1",
-        cwd: "/tmp",
-        environment: {},
+        toolName: "Bash",
         toolInput: { command: "ls -la" },
       },
     },
     {
       name: "Dangerous rm -rf command",
-      context: {
-        event: "PreToolUse" as const,
-        toolName: "Bash",
+      input: {
         sessionId: "example-2",
-        cwd: "/tmp",
-        environment: {},
+        toolName: "Bash",
         toolInput: { command: "rm -rf /" },
       },
     },
     {
       name: "Suspicious sudo rm command",
-      context: {
-        event: "PreToolUse" as const,
-        toolName: "Bash",
+      input: {
         sessionId: "example-3",
-        cwd: "/tmp",
-        environment: {},
+        toolName: "Bash",
         toolInput: { command: "sudo rm -f /important-file" },
       },
     },
     {
       name: "Non-Bash tool (should pass through)",
-      context: {
-        event: "PreToolUse" as const,
-        toolName: "Write",
+      input: {
         sessionId: "example-4",
-        cwd: "/tmp",
-        environment: {},
+        toolName: "Write",
         toolInput: { file_path: "/tmp/test.txt", content: "Hello" },
       },
     },
@@ -167,14 +127,27 @@ export async function runSecurityExample() {
     const timer = new ExecutionTimer();
     const memoryBefore = snapshotMemoryUsage();
 
+    const hookInput: PreToolUseHookInput = {
+      hook_event_name: "PreToolUse",
+      session_id: testCase.input.sessionId,
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/tmp",
+      tool_name: testCase.input.toolName,
+      tool_input: testCase.input.toolInput,
+    };
+
+    const context = createHookContext(hookInput, undefined, {
+      environment: { CLAUDE_PROJECT_DIR: "/tmp" },
+    });
+
     try {
-      const result = await securityHook(testCase.context);
+      const result = await securityHook(context);
 
       const memoryAfter = snapshotMemoryUsage();
 
       // Collect metrics
       collector.record(
-        testCase.context,
+        context,
         result,
         timer.getTiming(),
         memoryBefore,
@@ -184,14 +157,6 @@ export async function runSecurityExample() {
       // Additional event recording could be implemented here if needed
     } catch (_error) {
       // Error in test execution - expected for some test cases
-    }
-  }
-  const stats = collector.getAggregateMetrics();
-
-  if (stats.topErrors.length > 0) {
-    for (const _error of stats.topErrors) {
-      // Log error statistics for debugging
-      collector.recordEvent("error_stat", "Found error in statistics");
     }
   }
 }

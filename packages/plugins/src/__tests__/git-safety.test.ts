@@ -4,11 +4,16 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import type {
+  HookEvent,
+  HookInput,
+  PostToolUseHookInput,
+  PreToolUseHookInput,
+} from "@carabiner/hooks-core";
 import { createHookContext } from "@carabiner/hooks-core";
-import type { HookEvent } from "@carabiner/types";
 import { gitSafetyPlugin } from "../git-safety/index";
 
-type TestHookContext = ReturnType<typeof createHookContext>;
+type TestHookContext = Parameters<typeof gitSafetyPlugin.apply>[0];
 
 type ContextOptions = {
   event?: HookEvent;
@@ -23,25 +28,41 @@ const createContext = ({
   toolInput = { command: "echo" },
   cwd = "/test/repo",
 }: ContextOptions = {}): TestHookContext => {
-  const overrides: Record<string, unknown> = {
-    session_id: "test-session",
-    transcript_path: "/tmp/transcript",
-    cwd,
-    tool_name: toolName,
-    tool_input: toolInput,
-  };
-
-  if (event === "PostToolUse") {
-    overrides.tool_response = overrides.tool_response ?? { stdout: "" };
+  let input: HookInput;
+  if (event === "PreToolUse") {
+    const preInput = {
+      hook_event_name: event,
+      session_id: "test-session",
+      transcript_path: "/tmp/transcript",
+      cwd,
+      tool_name: toolName,
+      tool_input: toolInput,
+    } satisfies PreToolUseHookInput;
+    input = preInput;
+  } else if (event === "PostToolUse") {
+    const postInput = {
+      hook_event_name: event,
+      session_id: "test-session",
+      transcript_path: "/tmp/transcript",
+      cwd,
+      tool_name: toolName,
+      tool_input: toolInput,
+      tool_response: { exit_code: 0, stdout: "", stderr: "" },
+    } satisfies PostToolUseHookInput;
+    input = postInput;
+  } else {
+    throw new Error(`Unsupported event for git-safety tests: ${event}`);
   }
 
-  return createHookContext(event, overrides, {
+  return createHookContext(input, undefined, {
     environment: { CLAUDE_PROJECT_DIR: cwd },
-  });
+  }) as unknown as TestHookContext;
 };
 
-const createBashContext = (command: string): TestHookContext =>
-  createContext({ toolInput: { command } });
+const createBashContext = (
+  command: string,
+  options: Partial<Pick<ContextOptions, "cwd">> = {}
+): TestHookContext => createContext({ toolInput: { command }, ...options });
 
 const createNonBashContext = (): TestHookContext =>
   createContext({
@@ -257,8 +278,9 @@ describe("Git Safety Plugin", () => {
         excludeRepos: ["/tmp/.*", ".*test.*"],
       };
 
-      const context = createBashContext("git push --force");
-      context.cwd = "/tmp/test-repo" as any;
+      const context = createBashContext("git push --force", {
+        cwd: "/tmp/test-repo",
+      });
 
       const result = await gitSafetyPlugin.apply(context, config);
 
@@ -272,16 +294,18 @@ describe("Git Safety Plugin", () => {
       };
 
       // Should skip repo not in include list
-      const context1 = createBashContext("git push --force");
-      context1.cwd = "/unimportant/repo" as any;
+      const context1 = createBashContext("git push --force", {
+        cwd: "/unimportant/repo",
+      });
 
       const result1 = await gitSafetyPlugin.apply(context1, config);
       expect(result1.success).toBe(true);
       expect(result1.metadata?.skipped).toBe(true);
 
       // Should process repo in include list
-      const context2 = createBashContext("git push --force");
-      context2.cwd = "/important/repo" as any;
+      const context2 = createBashContext("git push --force", {
+        cwd: "/important/repo",
+      });
 
       const result2 = await gitSafetyPlugin.apply(context2, config);
       expect(result2.success).toBe(false);

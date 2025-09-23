@@ -144,9 +144,12 @@ describe("claudeProviderAdapter.toProviderOutput", () => {
 describe("provider registry", () => {
   test("registerDefaultHookProviders seeds the default claude adapter", () => {
     const provider = getDefaultHookProvider();
-    expect(provider).not.toBeNull();
-    expect(provider?.id).toBe("claude");
-    expect(provider).toBe(getHookProvider("claude"));
+    expect(provider).toBeDefined();
+    if (!provider) {
+      throw new Error("Default provider not registered");
+    }
+    expect(provider.id).toBe("claude");
+    expect(getHookProvider("claude")).toBe(provider);
   });
 
   test("registerHookProvider prevents duplicate registrations by default", () => {

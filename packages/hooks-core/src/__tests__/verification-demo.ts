@@ -4,26 +4,23 @@
  */
 
 import { createHook, HookBuilder, HookRegistry } from "../index.ts";
+import { createHookContext, HookResults } from "../runtime.ts";
+import type { PreToolUseHookInput } from "../types.ts";
 
 // Mock context helper
 function createMockContext(event: "PreToolUse", toolName: string) {
-  return {
-    event,
-    toolName,
-    sessionId: "demo-session",
-    transcriptPath: "/demo/transcript",
+  const input: PreToolUseHookInput = {
+    hook_event_name: event,
+    session_id: "demo-session",
+    transcript_path: "/demo/transcript",
     cwd: process.cwd(),
-    toolInput: { command: "echo demo" },
-    environment: {},
-    rawInput: {
-      session_id: "demo-session",
-      transcript_path: "/demo/transcript",
-      cwd: process.cwd(),
-      hook_event_name: event,
-      tool_name: toolName,
-      tool_input: { command: "echo demo" },
-    },
-  } as Record<string, unknown>;
+    tool_name: toolName,
+    tool_input: { command: "echo demo" },
+  };
+
+  return createHookContext(input, undefined, {
+    environment: { CLAUDE_PROJECT_DIR: process.cwd() },
+  });
 }
 
 async function demonstrateToolScopingFix() {
@@ -31,22 +28,18 @@ async function demonstrateToolScopingFix() {
 
   // 1. Universal hook (runs for all tools)
   const universalHook = HookBuilder.forPreToolUse()
-    .withHandler(async (_context) => {
-      return { success: true };
-    })
+    .withHandler(async () => HookResults.success())
     .build();
 
   // 2. Bash-specific hook (runs only for Bash)
   const bashHook = HookBuilder.forPreToolUse()
     .forTool("Bash")
-    .withHandler(async (_context) => {
-      return { success: true };
-    })
+    .withHandler(async () => HookResults.success())
     .build();
 
   // 3. Write-specific hook using function API
-  const writeHook = createHook.preToolUse("Write", async (_context) => {
-    return { success: true };
+  const writeHook = createHook.preToolUse("Write", async () => {
+    return HookResults.success();
   });
 
   registry.register(universalHook);
@@ -55,9 +48,9 @@ async function demonstrateToolScopingFix() {
   await registry.execute(createMockContext("PreToolUse", "Bash"));
   await registry.execute(createMockContext("PreToolUse", "Write"));
   await registry.execute(createMockContext("PreToolUse", "Edit"));
-  const _bashHooks = registry.getHooks("PreToolUse", "Bash");
-  const _writeHooks = registry.getHooks("PreToolUse", "Write");
-  const _editHooks = registry.getHooks("PreToolUse", "Edit");
+  registry.getHooks("PreToolUse", "Bash");
+  registry.getHooks("PreToolUse", "Write");
+  registry.getHooks("PreToolUse", "Edit");
 }
 
 // Only run demo if this file is executed directly
