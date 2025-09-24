@@ -8,7 +8,11 @@ import {
   ProtocolOutputError,
   ProtocolParseError,
 } from "../interface.js";
-import { StdinProtocol, StdinProtocolFactory } from "../protocols/stdin.js";
+import {
+  parseStdinInput,
+  StdinProtocol,
+  StdinProtocolFactory,
+} from "../protocols/stdin.js";
 
 describe("StdinProtocol", () => {
   let originalStdin: typeof process.stdin;
@@ -294,6 +298,146 @@ describe("StdinProtocolFactory", () => {
 
     expect(protocol).toBeInstanceOf(StdinProtocol);
     expect(factory.type).toBe("stdin");
+  });
+});
+
+describe("parseStdinInput", () => {
+  test("should parse input with stop_hook_active flag", () => {
+    const input = JSON.stringify({
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/test/dir",
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: 'echo "test"' },
+      stop_hook_active: true,
+    });
+
+    const result = parseStdinInput(input);
+
+    expect(result.session_id).toBe("test-session-123");
+    expect(result.hook_event_name).toBe("PreToolUse");
+    expect(result.stop_hook_active).toBe(true);
+    expect(result.stopHookActive).toBe(true);
+    expect(result.hook_specific_input).toEqual({});
+    expect(result.hookSpecificInput).toEqual({});
+  });
+
+  test("should parse input with hook_specific_input", () => {
+    const input = JSON.stringify({
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/test/dir",
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: 'echo "test"' },
+      hook_specific_input: {
+        permissionPrompt: "Allow bash command execution?",
+      },
+    });
+
+    const result = parseStdinInput(input);
+
+    expect(result.hook_event_name).toBe("PreToolUse");
+    expect(result.stop_hook_active).toBe(false);
+    expect(result.stopHookActive).toBe(false);
+    expect(result.hook_specific_input).toEqual({
+      permissionPrompt: "Allow bash command execution?",
+    });
+    expect(result.hookSpecificInput).toEqual({
+      permissionPrompt: "Allow bash command execution?",
+    });
+  });
+
+  test("should parse Notification event properly", () => {
+    const input = JSON.stringify({
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/test/dir",
+      hook_event_name: "Notification",
+      notification_type: "info",
+      message: "Test notification",
+      stop_hook_active: false,
+    });
+
+    const result = parseStdinInput(input);
+
+    expect(result.hook_event_name).toBe("Notification");
+    expect(result.notification_type).toBe("info");
+    expect(result.message).toBe("Test notification");
+    expect(result.stop_hook_active).toBe(false);
+    expect(result.stopHookActive).toBe(false);
+    expect(result.stopHookActive).toBe(false);
+  });
+
+  test("should parse PreCompact event with trigger", () => {
+    const input = JSON.stringify({
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/test/dir",
+      hook_event_name: "PreCompact",
+      pre_compact_trigger: "manual",
+      stop_hook_active: true,
+    });
+
+    const result = parseStdinInput(input);
+
+    expect(result.hook_event_name).toBe("PreCompact");
+    expect(result.pre_compact_trigger).toBe("manual");
+    expect(result.stop_hook_active).toBe(true);
+    expect(result.stopHookActive).toBe(true);
+  });
+
+  test("should default stop_hook_active to false when missing", () => {
+    const input = JSON.stringify({
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/test/dir",
+      hook_event_name: "UserPromptSubmit",
+      prompt: "Test prompt",
+    });
+
+    const result = parseStdinInput(input);
+
+    expect(result.stop_hook_active).toBe(false);
+    expect(result.hook_specific_input).toEqual({});
+  });
+
+  test("should preserve all fields from Claude Code SDK", () => {
+    const input = JSON.stringify({
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/test/dir",
+      hook_event_name: "PostToolUse",
+      tool_name: "Edit",
+      tool_input: { file_path: "/test.txt", new_content: "test" },
+      tool_response: { success: true },
+      stop_hook_active: true,
+      hook_specific_input: {
+        permissionPrompt: "Allow file edit?",
+      },
+      permission_decision: "allow",
+      custom_field: "should be preserved",
+    });
+
+    const result = parseStdinInput(input);
+
+    // All original fields should be preserved
+    expect(result.permission_decision).toBe("allow");
+    expect(result.custom_field).toBe("should be preserved");
+    expect(result.tool_response).toEqual({ success: true });
+    expect(result.stop_hook_active).toBe(true);
+    expect(result.stopHookActive).toBe(true);
+    expect(result.hook_specific_input.permissionPrompt).toBe(
+      "Allow file edit?"
+    );
+    expect(result.hookSpecificInput?.permissionPrompt).toBe(
+      "Allow file edit?"
+    );
+  });
+
+  test("should throw error on invalid JSON", () => {
+    expect(() => parseStdinInput("invalid json")).toThrow();
   });
 });
 

@@ -108,6 +108,29 @@ function buildNormalizedContext(
   const transcriptPath =
     "transcript_path" in input ? input.transcript_path : undefined;
 
+  // CRITICAL: Preserve ALL fields from Claude Code SDK
+  // Do NOT strip fields like permission_decision, stop_hook_active, etc.
+  const enhancedInput = {
+    ...input,
+  } as any;
+
+  // Map snake_case to camelCase if needed, but preserve all data
+  // Only add camelCase versions if the original field exists
+  if ("stop_hook_active" in input) {
+    enhancedInput.stopHookActive = input.stop_hook_active;
+  }
+  if ("hook_specific_input" in input) {
+    enhancedInput.hookSpecificInput = input.hook_specific_input;
+  }
+  // Preserve notification_type for Notification events
+  if ("notification_type" in input) {
+    enhancedInput.notificationType = input.notification_type;
+  }
+  // Preserve pre_compact_trigger for PreCompact events
+  if ("pre_compact_trigger" in input) {
+    enhancedInput.preCompactTrigger = input.pre_compact_trigger;
+  }
+
   return {
     event: input.hook_event_name,
     sessionId: input.session_id,
@@ -116,7 +139,7 @@ function buildNormalizedContext(
     userPrompt: isUserPromptSubmitInput(input) ? input.prompt : undefined,
     environment: environment ?? { CLAUDE_PROJECT_DIR: undefined },
     tool: resolveToolContext(input),
-    raw: input,
+    raw: enhancedInput as HookInput,
     metadata: {
       provider: CLAUDE_PROVIDER_METADATA,
       receivedAt: new Date().toISOString(),
@@ -125,6 +148,8 @@ function buildNormalizedContext(
 }
 
 function denormalizeHookResult(result: NormalizedHookResult): HookJSONOutput {
+  // Pass through hookSpecificOutput untouched
+  // This includes permissionDecision, permissionDecisionReason
   const {
     providerState: _providerState,
     metadata: _metadata,
@@ -134,7 +159,39 @@ function denormalizeHookResult(result: NormalizedHookResult): HookJSONOutput {
     data: _legacyData,
     ...json
   } = result;
-  return { ...json } as HookJSONOutput;
+
+  // Build output object excluding undefined fields
+  const output: any = {};
+
+  if (result.continue !== undefined) {
+    output.continue = result.continue;
+  }
+  if (result.stopReason !== undefined) {
+    output.stopReason = result.stopReason;
+  }
+  if (result.suppressOutput !== undefined) {
+    output.suppressOutput = result.suppressOutput;
+  }
+  if (result.systemMessage !== undefined) {
+    output.systemMessage = result.systemMessage;
+  }
+  if (result.hookSpecificOutput !== undefined) {
+    output.hookSpecificOutput = result.hookSpecificOutput;
+  }
+  if (result.additionalContext !== undefined) {
+    output.additionalContext = result.additionalContext;
+  }
+
+  // Include any other fields from json that aren't already handled
+  const jsonRecord = json as Record<string, unknown>;
+
+  Object.entries(jsonRecord).forEach(([key, value]) => {
+    if (value !== undefined && !(key in output)) {
+      (output as Record<string, unknown>)[key] = value;
+    }
+  });
+
+  return output as HookJSONOutput;
 }
 
 export const claudeProviderAdapter: HookProviderAdapter<
