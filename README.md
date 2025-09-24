@@ -344,14 +344,115 @@ carabiner publish --npm
 
 The CLI is available via Node (ESM) or as a Bun-compiled standalone binary. See Quickstart for setup.
 
+## 🔗 Claude Code Compatibility
+
+Carabiner is designed from the ground up for full Claude Code compatibility, built directly on the official `@anthropic-ai/claude-code` SDK.
+
+### ✅ Compatibility Features
+
+- **🛡️ SDK Foundation**: Built on `@anthropic-ai/claude-code` for guaranteed compatibility
+- **📋 All Hook Events**: Supports all 9 Claude Code hook events with full type safety
+- **🔧 Tool Integration**: First-class support for all Claude Code tools + MCP tools
+- **🎯 Exit Code Semantics**: Proper handling of Claude Code's exit code requirements
+- **📡 JSON Protocol**: Native support for Claude Code's stdin/stdout JSON protocol
+- **🔍 Permission System**: Rich permission controls with detailed feedback to Claude
+
+### 🚀 Migration from Shell Scripts
+
+Transform manual shell scripts into type-safe TypeScript hooks:
+
+**Before (Shell Script)**:
+```bash
+#!/bin/bash
+# Limited context, error-prone
+if [[ "$TOOL_INPUT_COMMAND" == *"rm -rf"* ]]; then
+  echo "Dangerous command blocked!"
+  exit 1
+fi
+```
+
+**After (Carabiner Hook)**:
+```typescript
+#!/usr/bin/env bun
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
+
+runClaudeHook(async (context) => {
+  if (context.toolName === 'Bash') {
+    const { command } = context.toolInput as { command: string };
+
+    if (command.includes('rm -rf')) {
+      return HookResults.block('Dangerous command blocked!');
+    }
+  }
+
+  return HookResults.success('Command validated');
+});
+```
+
+### 🔌 MCP Tool Support
+
+Built-in support for Model Context Protocol (MCP) tools:
+
+```typescript
+import { isMCPToolName, validateMCPToolName } from '@carabiner/hooks-core';
+
+runClaudeHook(async (context) => {
+  // Detect and handle MCP tools
+  if (isMCPToolName(context.toolName)) {
+    const { provider, toolName } = validateMCPToolName(context.toolName);
+    console.log(`MCP Tool: ${provider}::${toolName}`);
+
+    // Provider-specific validation
+    return validateMCPTool(provider, toolName, context.toolInput);
+  }
+
+  return HookResults.success('Standard tool validated');
+});
+```
+
+### 🎯 Claude Code Hook Events
+
+Full support for all Claude Code hook events:
+
+| Event | Purpose | Carabiner Support |
+|-------|---------|------------------|
+| `PreToolUse` | Validate/block tool execution | ✅ Full support + type safety |
+| `PostToolUse` | Process tool results | ✅ Access to tool response |
+| `SessionStart` | Initialize session | ✅ Context injection |
+| `SessionEnd` | Cleanup session | ✅ Resource management |
+| `UserPromptSubmit` | Process user input | ✅ Input validation |
+| `Stop` | Handle execution stop | ✅ Graceful shutdown |
+| `SubagentStop` | Handle subagent stop | ✅ Subagent management |
+| `PreCompact` | Before history compaction | ✅ Data archival |
+| `Notification` | Handle notifications | ✅ Event processing |
+
+### 🏃 Quick Migration
+
+1. **Install Carabiner**: `bun add @carabiner/hooks-core`
+2. **Convert scripts** to TypeScript using `runClaudeHook()`
+3. **Update configuration** to point to new hooks
+4. **Test thoroughly** with real Claude Code integration
+
+See our [**Migration Guide**](./docs/CLAUDE_CODE_MIGRATION.md) for detailed instructions.
+
+### 📋 Compatibility Examples
+
+- **[Basic PreToolUse Hook](./examples/claude-code-hooks/basic-pretooluse.json)** - Security validation examples
+- **[Permission Control](./examples/claude-code-hooks/permission-control.py)** - Advanced permission system
+- **[MCP Integration](./examples/claude-code-hooks/mcp-integration.json)** - MCP tool handling
+- **[Context Injection](./examples/claude-code-hooks/context-injection.py)** - SessionStart context setup
+
 ## 📚 Documentation
 
 - [Quickstart](./docs/QUICKSTART.md)
+- [Claude Code Migration Guide](./docs/CLAUDE_CODE_MIGRATION.md)
 - [API Reference](./docs/api-reference/)
 - [Configuration Guide](./docs/configuration.md)
 - [Testing Guide](./docs/testing.md)
+- [Troubleshooting Guide](./docs/troubleshooting.md)
 - [Example Hooks](./packages/examples/)
- - [Registry + CLI Guide](./docs/registry/README.md)
+- [Claude Code Examples](./examples/claude-code-hooks/)
+- [Registry + CLI Guide](./docs/registry/README.md)
 
 ## 🤝 Contributing
 

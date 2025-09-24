@@ -1,0 +1,506 @@
+{
+  "$schema": "https://raw.githubusercontent.com/outfitter-dev/carabiner/main/docs/schema.json",
+  "name": "mcp-integration-examples",
+  "description": "MCP (Model Context Protocol) integration examples for Claude Code",
+  "version": "1.0.0",
+  "claude_code_version": ">=0.4.0",
+
+  "mcp_patterns": {
+    "description": "MCP tools follow the pattern: mcp__<provider>__<tool>",
+    "examples": [
+      "mcp__filesystem__read_file",
+      "mcp__database__execute_query",
+      "mcp__web__fetch_url",
+      "mcp__git__get_status",
+      "mcp__docker__list_containers"
+    ]
+  },
+
+  "hooks": {
+    "preToolUseHooks": {
+      "mcp__*": {
+        "command": "bun hooks/mcp-validator.ts",
+        "timeout": 5000,
+        "description": "Universal MCP tool validation"
+      },
+      "mcp__filesystem__*": {
+        "command": "bun hooks/mcp-filesystem-security.ts",
+        "timeout": 3000,
+        "description": "Filesystem MCP tools security"
+      },
+      "mcp__database__*": {
+        "command": "bun hooks/mcp-database-security.ts",
+        "timeout": 4000,
+        "description": "Database MCP tools security"
+      },
+      "mcp__web__*": {
+        "command": "bun hooks/mcp-web-security.ts",
+        "timeout": 6000,
+        "description": "Web/HTTP MCP tools security"
+      }
+    },
+    "postToolUseHooks": {
+      "mcp__*": {
+        "command": "bun hooks/mcp-logger.ts",
+        "timeout": 2000,
+        "description": "Log MCP tool usage"
+      }
+    }
+  },
+
+  "examples": {
+    "mcp_universal_validator": {
+      "description": "Universal MCP tool validator that works with any MCP provider",
+      "file": "hooks/mcp-validator.ts",
+      "content": [
+        "#!/usr/bin/env bun",
+        "",
+        "import { runClaudeHook, HookResults, isMCPToolName, validateMCPToolName } from '@carabiner/hooks-core';",
+        "",
+        "runClaudeHook(async (context) => {",
+        "  // Verify this is an MCP tool",
+        "  if (!isMCPToolName(context.toolName)) {",
+        "    return HookResults.success('Not an MCP tool');",
+        "  }",
+        "",
+        "  try {",
+        "    // Parse MCP tool name",
+        "    const { provider, toolName } = validateMCPToolName(context.toolName);",
+        "    console.log(`🔌 MCP Tool: ${provider}::${toolName}`);",
+        "",
+        "    // Universal MCP security checks",
+        "    const secureProviders = ['filesystem', 'database', 'web', 'git', 'docker'];",
+        "    if (!secureProviders.includes(provider)) {",
+        "      return HookResults.custom({",
+        "        continue: true,",
+        "        systemMessage: `⚠️ Unknown MCP provider: ${provider} - proceeding with caution`",
+        "      });",
+        "    }",
+        "",
+        "    // Check for suspicious tool names",
+        "    const suspiciousTools = ['execute', 'eval', 'run', 'system', 'shell'];",
+        "    if (suspiciousTools.some(suspicious => toolName.toLowerCase().includes(suspicious))) {",
+        "      return HookResults.custom({",
+        "        continue: true,",
+        "        systemMessage: `⚠️ Potentially dangerous MCP tool: ${toolName} - review carefully`",
+        "      });",
+        "    }",
+        "",
+        "    // Rate limiting for MCP tools",
+        "    const mcpCallsKey = `mcp_calls_${context.sessionId}`;",
+        "    const currentCalls = parseInt(process.env[mcpCallsKey] || '0');",
+        "    if (currentCalls > 50) {",
+        "      return HookResults.block('MCP rate limit exceeded (50 calls per session)');",
+        "    }",
+        "",
+        "    // Increment call counter",
+        "    process.env[mcpCallsKey] = (currentCalls + 1).toString();",
+        "",
+        "    return HookResults.success(`MCP tool ${provider}::${toolName} validated (${currentCalls + 1}/50 calls)`);",
+        "",
+        "  } catch (error) {",
+        "    return HookResults.failure('MCP tool validation error', error);",
+        "  }",
+        "});"
+      ]
+    },
+
+    "mcp_filesystem_security": {
+      "description": "Security validation for filesystem MCP tools",
+      "file": "hooks/mcp-filesystem-security.ts",
+      "content": [
+        "#!/usr/bin/env bun",
+        "",
+        "import { runClaudeHook, HookResults, validateMCPToolName } from '@carabiner/hooks-core';",
+        "",
+        "runClaudeHook(async (context) => {",
+        "  // Verify this is a filesystem MCP tool",
+        "  if (!context.toolName.startsWith('mcp__filesystem__')) {",
+        "    return HookResults.success('Not a filesystem MCP tool');",
+        "  }",
+        "",
+        "  const { toolName } = validateMCPToolName(context.toolName);",
+        "  const toolInput = context.toolInput as any;",
+        "",
+        "  // Extract file path from various input formats",
+        "  let filePath = toolInput.path || toolInput.file_path || toolInput.filename || '';",
+        "  console.log(`📁 Filesystem MCP: ${toolName} on ${filePath}`);",
+        "",
+        "  // Security patterns",
+        "  const blockedPaths = [",
+        "    /^\\/etc\\/passwd$/, /^\\/etc\\/shadow$/, /^\\/etc\\/hosts$/,",
+        "    /\\.ssh\\/id_rsa$/, /\\.ssh\\/.*\\.key$/,",
+        "    /\\.env$/, /\\.key$/, /\\.pem$/, /\\.crt$/,",
+        "    /\\.git\\/config$/, /\\.aws\\/credentials$/",
+        "  ];",
+        "",
+        "  for (const pattern of blockedPaths) {",
+        "    if (pattern.test(filePath)) {",
+        "      return HookResults.block(",
+        "        `🚫 Filesystem MCP access denied: ${filePath}`,",
+        "        'Sensitive file protected by security policy'",
+        "      );",
+        "    }",
+        "  }",
+        "",
+        "  // Check for directory traversal",
+        "  if (filePath.includes('..') || filePath.includes('~')) {",
+        "    return HookResults.block(",
+        "      `🚫 Path traversal detected: ${filePath}`,",
+        "      'Directory traversal is not allowed'",
+        "    );",
+        "  }",
+        "",
+        "  // Warn for system directories",
+        "  const systemDirs = ['/usr/', '/var/', '/sys/', '/proc/'];",
+        "  for (const sysDir of systemDirs) {",
+        "    if (filePath.startsWith(sysDir)) {",
+        "      return HookResults.custom({",
+        "        continue: true,",
+        "        systemMessage: `⚠️ System directory access: ${filePath} - use caution`",
+        "      });",
+        "    }",
+        "  }",
+        "",
+        "  // Special handling for write operations",
+        "  const writeOperations = ['write', 'create', 'delete', 'move', 'copy'];",
+        "  if (writeOperations.some(op => toolName.toLowerCase().includes(op))) {",
+        "    // Block writes to root directory",
+        "    if (filePath === '/' || filePath.startsWith('/bin/') || filePath.startsWith('/sbin/')) {",
+        "      return HookResults.block(",
+        "        `🚫 Write access denied to: ${filePath}`,",
+        "        'Cannot modify system binaries'",
+        "      );",
+        "    }",
+        "",
+        "    // Warn for config files",
+        "    if (filePath.includes('.config') || filePath.endsWith('.json')) {",
+        "      return HookResults.custom({",
+        "        continue: true,",
+        "        systemMessage: `⚠️ Configuration file modification: ${filePath}`",
+        "      });",
+        "    }",
+        "  }",
+        "",
+        "  return HookResults.success(`Filesystem MCP access approved: ${toolName} on ${filePath}`);",
+        "});"
+      ]
+    },
+
+    "mcp_database_security": {
+      "description": "Security validation for database MCP tools",
+      "file": "hooks/mcp-database-security.ts",
+      "content": [
+        "#!/usr/bin/env bun",
+        "",
+        "import { runClaudeHook, HookResults, validateMCPToolName } from '@carabiner/hooks-core';",
+        "",
+        "runClaudeHook(async (context) => {",
+        "  // Verify this is a database MCP tool",
+        "  if (!context.toolName.startsWith('mcp__database__')) {",
+        "    return HookResults.success('Not a database MCP tool');",
+        "  }",
+        "",
+        "  const { toolName } = validateMCPToolName(context.toolName);",
+        "  const toolInput = context.toolInput as any;",
+        "",
+        "  // Extract query from various input formats",
+        "  let query = toolInput.query || toolInput.sql || toolInput.command || '';",
+        "  let database = toolInput.database || toolInput.db || 'unknown';",
+        "",
+        "  console.log(`🗄️ Database MCP: ${toolName} on database '${database}'`);",
+        "",
+        "  // Block dangerous SQL operations",
+        "  const dangerousSQL = [",
+        "    /DROP\\s+DATABASE/i, /DROP\\s+TABLE/i, /DROP\\s+SCHEMA/i,",
+        "    /TRUNCATE\\s+TABLE/i, /DELETE\\s+FROM.*WHERE\\s+1\\s*=\\s*1/i,",
+        "    /ALTER\\s+TABLE.*DROP/i, /GRANT\\s+ALL/i, /REVOKE\\s+ALL/i,",
+        "    /CREATE\\s+USER/i, /DROP\\s+USER/i, /ALTER\\s+USER/i,",
+        "    /SHUTDOWN/i, /RESTART/i",
+        "  ];",
+        "",
+        "  for (const pattern of dangerousSQL) {",
+        "    if (pattern.test(query)) {",
+        "      return HookResults.block(",
+        "        `🚫 Dangerous SQL operation blocked: ${query.substring(0, 50)}...`,",
+        "        `Matched dangerous pattern: ${pattern.source}`",
+        "      );",
+        "    }",
+        "  }",
+        "",
+        "  // Warn for potentially risky operations",
+        "  const riskySQL = [",
+        "    /DELETE\\s+FROM/i, /UPDATE.*SET/i, /INSERT\\s+INTO/i,",
+        "    /ALTER\\s+TABLE/i, /CREATE\\s+TABLE/i, /CREATE\\s+INDEX/i",
+        "  ];",
+        "",
+        "  for (const pattern of riskySQL) {",
+        "    if (pattern.test(query)) {",
+        "      return HookResults.custom({",
+        "        continue: true,",
+        "        systemMessage: `⚠️ Database modification query detected - please review: ${query.substring(0, 100)}`",
+        "      });",
+        "    }",
+        "  }",
+        "",
+        "  // Check for production database access",
+        "  const prodIndicators = ['prod', 'production', 'live', 'master'];",
+        "  for (const indicator of prodIndicators) {",
+        "    if (database.toLowerCase().includes(indicator)) {",
+        "      return HookResults.custom({",
+        "        continue: true,",
+        "        systemMessage: `🚨 Production database access detected: ${database} - extra caution required`",
+        "      });",
+        "    }",
+        "  }",
+        "",
+        "  // Rate limiting for database queries",
+        "  const dbCallsKey = `db_calls_${context.sessionId}`;",
+        "  const currentCalls = parseInt(process.env[dbCallsKey] || '0');",
+        "  if (currentCalls > 20) {",
+        "    return HookResults.block('Database query rate limit exceeded (20 queries per session)');",
+        "  }",
+        "",
+        "  process.env[dbCallsKey] = (currentCalls + 1).toString();",
+        "",
+        "  return HookResults.success(`Database MCP query approved (${currentCalls + 1}/20 queries)`);",
+        "});"
+      ]
+    },
+
+    "mcp_web_security": {
+      "description": "Security validation for web/HTTP MCP tools",
+      "file": "hooks/mcp-web-security.ts",
+      "content": [
+        "#!/usr/bin/env bun",
+        "",
+        "import { runClaudeHook, HookResults, validateMCPToolName } from '@carabiner/hooks-core';",
+        "",
+        "runClaudeHook(async (context) => {",
+        "  // Verify this is a web MCP tool",
+        "  if (!context.toolName.startsWith('mcp__web__') && !context.toolName.startsWith('mcp__http__')) {",
+        "    return HookResults.success('Not a web MCP tool');",
+        "  }",
+        "",
+        "  const { provider, toolName } = validateMCPToolName(context.toolName);",
+        "  const toolInput = context.toolInput as any;",
+        "",
+        "  // Extract URL from various input formats",
+        "  let url = toolInput.url || toolInput.endpoint || toolInput.uri || '';",
+        "  let method = (toolInput.method || 'GET').toUpperCase();",
+        "",
+        "  console.log(`🌐 Web MCP: ${method} ${url}`);",
+        "",
+        "  // Block internal/private URLs",
+        "  const privateURLs = [",
+        "    /^https?:\\/\\/localhost/, /^https?:\\/\\/127\\.0\\.0\\.1/,",
+        "    /^https?:\\/\\/192\\.168\\./, /^https?:\\/\\/10\\./,",
+        "    /^https?:\\/\\/172\\.(1[6-9]|2[0-9]|3[0-1])\\./,",
+        "    /^https?:\\/\\/.*\\.local/, /^https?:\\/\\/.*\\.internal/,",
+        "  ];",
+        "",
+        "  for (const pattern of privateURLs) {",
+        "    if (pattern.test(url)) {",
+        "      return HookResults.block(",
+        "        `🚫 Private URL access denied: ${url}`,",
+        "        'Access to internal/private URLs is restricted'",
+        "      );",
+        "    }",
+        "  }",
+        "",
+        "  // Block dangerous protocols",
+        "  if (url.startsWith('file://') || url.startsWith('ftp://')) {",
+        "    return HookResults.block(",
+        "      `🚫 Dangerous protocol blocked: ${url}`,",
+        "      'Only HTTP/HTTPS protocols are allowed'",
+        "    );",
+        "  }",
+        "",
+        "  // Rate limiting for web requests",
+        "  const webCallsKey = `web_calls_${context.sessionId}`;",
+        "  const currentCalls = parseInt(process.env[webCallsKey] || '0');",
+        "  if (currentCalls > 100) {",
+        "    return HookResults.block('Web request rate limit exceeded (100 requests per session)');",
+        "  }",
+        "",
+        "  // Special handling for write operations",
+        "  const writeMethodsOrPosts = ['POST', 'PUT', 'PATCH', 'DELETE'];",
+        "  if (writeMethodsOrPosts.includes(method)) {",
+        "    // Extra caution for write operations",
+        "    return HookResults.custom({",
+        "      continue: true,",
+        "      systemMessage: `⚠️ ${method} request to ${url} - verify this action is safe`",
+        "    });",
+        "  }",
+        "",
+        "  // Warn for suspicious domains",
+        "  const suspiciousDomains = ['bit.ly', 'tinyurl.com', 'short.link', 't.co'];",
+        "  for (const domain of suspiciousDomains) {",
+        "    if (url.includes(domain)) {",
+        "      return HookResults.custom({",
+        "        continue: true,",
+        "        systemMessage: `⚠️ Shortened URL detected: ${url} - verify destination`",
+        "      });",
+        "    }",
+        "  }",
+        "",
+        "  process.env[webCallsKey] = (currentCalls + 1).toString();",
+        "",
+        "  return HookResults.success(`Web MCP request approved: ${method} ${url} (${currentCalls + 1}/100 requests)`);",
+        "});"
+      ]
+    },
+
+    "mcp_logger": {
+      "description": "PostToolUse logger for MCP tools",
+      "file": "hooks/mcp-logger.ts",
+      "content": [
+        "#!/usr/bin/env bun",
+        "",
+        "import { runClaudeHook, HookResults, validateMCPToolName } from '@carabiner/hooks-core';",
+        "",
+        "runClaudeHook(async (context) => {",
+        "  if (!context.toolName.startsWith('mcp__')) {",
+        "    return HookResults.success('Not an MCP tool');",
+        "  }",
+        "",
+        "  const { provider, toolName } = validateMCPToolName(context.toolName);",
+        "",
+        "  // Create audit log entry",
+        "  const logEntry = {",
+        "    timestamp: new Date().toISOString(),",
+        "    sessionId: context.sessionId,",
+        "    mcpProvider: provider,",
+        "    mcpTool: toolName,",
+        "    success: context.toolResponse?.success || false,",
+        "    duration: context.toolResponse?.metadata?.duration || 0,",
+        "    inputSize: JSON.stringify(context.toolInput).length,",
+        "    outputSize: context.toolResponse ? JSON.stringify(context.toolResponse).length : 0",
+        "  };",
+        "",
+        "  // Log to different destinations based on provider",
+        "  const logFile = `/tmp/mcp-${provider}-audit.log`;",
+        "  const logLine = JSON.stringify(logEntry) + '\\n';",
+        "",
+        "  try {",
+        "    await Bun.write(logFile, logLine, { createPath: true });",
+        "    console.log(`📊 MCP audit logged: ${provider}::${toolName}`);",
+        "  } catch (error) {",
+        "    console.error(`Failed to write MCP audit log: ${error}`);",
+        "  }",
+        "",
+        "  // Alert for high-frequency usage",
+        "  const sessionCallsKey = `session_mcp_calls_${context.sessionId}`;",
+        "  const sessionCalls = parseInt(process.env[sessionCallsKey] || '0') + 1;",
+        "  process.env[sessionCallsKey] = sessionCalls.toString();",
+        "",
+        "  if (sessionCalls > 200) {",
+        "    return HookResults.custom({",
+        "      continue: true,",
+        "      systemMessage: `⚠️ High MCP usage detected: ${sessionCalls} calls in this session`",
+        "    });",
+        "  }",
+        "",
+        "  return HookResults.success(`MCP usage logged: ${provider}::${toolName} (session call #${sessionCalls})`);",
+        "});"
+      ]
+    }
+  },
+
+  "configuration_examples": {
+    "selective_mcp_validation": {
+      "description": "Apply different validation rules to different MCP providers",
+      "config": {
+        "preToolUseHooks": {
+          "mcp__database__*": {
+            "command": "bun hooks/strict-database-validator.ts",
+            "timeout": 5000
+          },
+          "mcp__filesystem__*": {
+            "command": "bun hooks/filesystem-security.ts",
+            "timeout": 3000
+          },
+          "mcp__web__*": {
+            "command": "bun hooks/web-rate-limiter.ts",
+            "timeout": 2000
+          },
+          "mcp__*": {
+            "command": "bun hooks/basic-mcp-validator.ts",
+            "timeout": 2000
+          }
+        }
+      }
+    },
+
+    "environment_based_mcp_rules": {
+      "description": "Different MCP rules for different environments",
+      "config": {
+        "preToolUseHooks": {
+          "mcp__*": [
+            {
+              "command": "NODE_ENV=production bun hooks/production-mcp-security.ts",
+              "timeout": 10000,
+              "enabled": "{{ NODE_ENV === 'production' }}"
+            },
+            {
+              "command": "NODE_ENV=development bun hooks/development-mcp-logger.ts",
+              "timeout": 3000,
+              "enabled": "{{ NODE_ENV === 'development' }}"
+            }
+          ]
+        }
+      }
+    }
+  },
+
+  "testing": {
+    "test_mcp_tools": [
+      {
+        "tool_name": "mcp__filesystem__read_file",
+        "input": { "path": "/tmp/test.txt" },
+        "expected": "allow"
+      },
+      {
+        "tool_name": "mcp__filesystem__read_file",
+        "input": { "path": "/etc/passwd" },
+        "expected": "block"
+      },
+      {
+        "tool_name": "mcp__database__execute_query",
+        "input": { "query": "SELECT * FROM users LIMIT 10" },
+        "expected": "allow"
+      },
+      {
+        "tool_name": "mcp__database__execute_query",
+        "input": { "query": "DROP TABLE users" },
+        "expected": "block"
+      },
+      {
+        "tool_name": "mcp__web__fetch",
+        "input": { "url": "https://api.github.com/repos/outfitter-dev/carabiner" },
+        "expected": "allow"
+      },
+      {
+        "tool_name": "mcp__web__fetch",
+        "input": { "url": "http://localhost:8080/admin" },
+        "expected": "block"
+      }
+    ]
+  },
+
+  "documentation": {
+    "overview": "MCP integration examples showing how to validate and control access to MCP tools",
+    "setup_instructions": [
+      "1. Install Carabiner with MCP support: bun add @carabiner/hooks-core",
+      "2. Copy the hook files to your hooks/ directory",
+      "3. Configure Claude Code to use MCP-specific hooks",
+      "4. Test with sample MCP tool calls"
+    ],
+    "security_considerations": [
+      "MCP tools can access external systems - validation is critical",
+      "Rate limiting prevents abuse of external APIs",
+      "Provider-specific security rules address different risk levels",
+      "Audit logging tracks all MCP tool usage"
+    ]
+  }
+}
