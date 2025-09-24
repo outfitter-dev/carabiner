@@ -20,7 +20,7 @@ A simple hook that validates bash commands for security:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   console.log(`🔍 Security validation for ${context.toolName}`);
@@ -62,7 +62,7 @@ A hook that automatically formats files after they're written:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 import { $ } from 'bun';
 
 runClaudeHook(async (context) => {
@@ -110,7 +110,7 @@ Different security rules for different environments:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 interface SecurityRule {
   pattern: RegExp;
@@ -209,7 +209,7 @@ Control which files can be written or edited:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 import path from 'path';
 
 runClaudeHook(async (context) => {
@@ -322,7 +322,7 @@ Automatically commit and push changes:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 import { $ } from 'bun';
 
 runClaudeHook(async (context) => {
@@ -394,7 +394,7 @@ Compile and validate TypeScript projects:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 import { $ } from 'bun';
 import path from 'path';
 
@@ -483,7 +483,7 @@ Log all tool usage for compliance and debugging:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 import { createHash } from 'crypto';
 
 interface AuditLog {
@@ -639,7 +639,7 @@ Monitor hook execution performance:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 interface PerformanceMetrics {
   sessionId: string;
@@ -758,7 +758,7 @@ Complex hook composition using the builder pattern:
 ```typescript
 #!/usr/bin/env bun
 
-import { HookBuilder, middleware, runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { HookBuilder, middleware, runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 // Security hook for Bash commands
 const bashSecurityHook = HookBuilder.forPreToolUse()
@@ -874,7 +874,7 @@ Complete project setup using declarative configuration:
 ```typescript
 #!/usr/bin/env bun
 
-import { defineHook, HookResults, middleware, runClaudeHook } from '@outfitter/hooks-core';
+import { defineHook, HookResults, middleware, runClaudeHook } from '@carabiner/hooks-core';
 
 // Define all project hooks declaratively
 const projectHooks = [
@@ -1068,8 +1068,8 @@ Create reusable middleware for common functionality:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
-import type { Middleware, HookContext, HookResult } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
+import type { Middleware, HookContext, HookResult } from '@carabiner/hooks-core';
 
 // Custom rate limiting middleware
 const rateLimitMiddleware = (maxRequestsPerMinute: number): Middleware => {

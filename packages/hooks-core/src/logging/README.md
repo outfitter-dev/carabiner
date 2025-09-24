@@ -15,7 +15,7 @@ Enterprise-grade structured JSON logging for the Grapple monorepo with security,
 ## Quick Start
 
 ```typescript
-import { createLogger, createHookLogger } from '@outfitter/hooks-core';
+import { createLogger, createHookLogger } from '@carabiner/hooks-core';
 
 // Basic service logger
 const logger = createLogger('my-service');
@@ -54,7 +54,7 @@ The logging system automatically configures based on environment:
 ### Basic Logger
 
 ```typescript
-import { createLogger } from '@outfitter/hooks-core';
+import { createLogger } from '@carabiner/hooks-core';
 
 const logger = createLogger('service-name');
 
@@ -68,7 +68,7 @@ logger.trace('Trace message', { stackTrace: true });
 ### Hook Logger
 
 ```typescript
-import { createHookLogger, type HookExecutionContext } from '@outfitter/hooks-core';
+import { createHookLogger, type HookExecutionContext } from '@carabiner/hooks-core';
 
 const hookLogger = createHookLogger('PreToolUse', 'Bash');
 
@@ -100,7 +100,7 @@ hookLogger.logUserAction('validate_input', context, {
 ### CLI Logger
 
 ```typescript
-import { createCliLogger } from '@outfitter/hooks-core';
+import { createCliLogger } from '@carabiner/hooks-core';
 
 const cliLogger = createCliLogger('generate');
 
@@ -117,7 +117,7 @@ import {
   createProductionLogger,
   createDevelopmentLogger,
   createTestLogger,
-} from '@outfitter/hooks-core';
+} from '@carabiner/hooks-core';
 
 // Optimized for production (no debug, structured JSON)
 const prodLogger = createProductionLogger('api-service');
@@ -344,7 +344,7 @@ Production JSON log format:
 ### Test Logger
 
 ```typescript
-import { createTestLogger, clearLoggerCache } from '@outfitter/hooks-core';
+import { createTestLogger, clearLoggerCache } from '@carabiner/hooks-core';
 
 // Silent logger for tests
 const logger = createTestLogger('test-service');
@@ -374,7 +374,7 @@ import pino from 'pino';
 const logger = pino({ level: 'debug' });
 
 // NEW
-import { createLogger } from '@outfitter/hooks-core';
+import { createLogger } from '@carabiner/hooks-core';
 const logger = createLogger('service-name');
 ```
 
@@ -519,7 +519,7 @@ In production, ensure:
 ### Custom Sanitization
 
 ```typescript
-import { sanitizeForLogging, type SanitizationOptions } from '@outfitter/hooks-core';
+import { sanitizeForLogging, type SanitizationOptions } from '@carabiner/hooks-core';
 
 const customOptions: SanitizationOptions = {
   removeFields: ['customSecret', 'internalToken'],
@@ -535,7 +535,7 @@ const sanitized = sanitizeForLogging(data, customOptions);
 ### Custom Correlation IDs
 
 ```typescript
-import { generateCorrelationId } from '@outfitter/hooks-core';
+import { generateCorrelationId } from '@carabiner/hooks-core';
 
 const customId = generateCorrelationId();
 const logger = createLogger('service').child({ correlationId: customId });

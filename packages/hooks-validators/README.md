@@ -1,11 +1,11 @@
-# @outfitter/hooks-validators
+# @carabiner/hooks-validators
 
 Security validators and environment-specific validation rules for Carabiner hooks.
 
 ## Installation
 
 ```bash
-bun add @outfitter/hooks-validators
+bun add @carabiner/hooks-validators
 
 ```
 
@@ -17,8 +17,8 @@ bun add @outfitter/hooks-validators
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
-import { SecurityValidators } from '@outfitter/hooks-validators';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
+import { SecurityValidators } from '@carabiner/hooks-validators';
 
 runClaudeHook(async (context) => {
   try {
@@ -45,7 +45,7 @@ runClaudeHook(async (context) => {
 ### Tool Input Validation
 
 ```typescript
-import { validateToolInput, ToolSchemas } from '@outfitter/hooks-validators';
+import { validateToolInput, ToolSchemas } from '@carabiner/hooks-validators';
 
 runClaudeHook(async (context) => {
   // Validate tool input structure
@@ -70,7 +70,7 @@ runClaudeHook(async (context) => {
 ### Custom Validation Rules
 
 ```typescript
-import { ValidationRules, validateSchema } from '@outfitter/hooks-validators';
+import { ValidationRules, validateSchema } from '@carabiner/hooks-validators';
 
 const customSchema = {
   file_path: [
@@ -368,7 +368,7 @@ import type {
   SecurityRuleSet,
   SecurityError,
   ToolSchemaType,
-} from '@outfitter/hooks-validators';
+} from '@carabiner/hooks-validators';
 
 // Type-safe validation
 const schema: ValidationSchema = {
@@ -438,8 +438,8 @@ if (result.warnings.length > 0) {
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
-import { SecurityValidators, validateToolInput } from '@outfitter/hooks-validators';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
+import { SecurityValidators, validateToolInput } from '@carabiner/hooks-validators';
 
 runClaudeHook(async (context) => {
   // Always validate input structure
@@ -482,7 +482,7 @@ runClaudeHook(async (context) => {
 ### Custom Security Rules
 
 ```typescript
-import { SecurityValidators, ValidationRules } from '@outfitter/hooks-validators';
+import { SecurityValidators, ValidationRules } from '@carabiner/hooks-validators';
 
 const customSecurityRules = {
   dangerousCommands: {
@@ -529,8 +529,8 @@ runClaudeHook(async (context) => {
 ### Tool-Specific Validation
 
 ```typescript
-import { isBashToolInput, isWriteToolInput } from '@outfitter/hooks-core';
-import { ValidationRules, validateSchema } from '@outfitter/hooks-validators';
+import { isBashToolInput, isWriteToolInput } from '@carabiner/hooks-core';
+import { ValidationRules, validateSchema } from '@carabiner/hooks-validators';
 
 runClaudeHook(async (context) => {
   if (isBashToolInput(context.toolInput)) {

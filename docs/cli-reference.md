@@ -23,10 +23,10 @@ The Grapple CLI (`carabiner`) provides comprehensive tools for developing, testi
 
 ```bash
 # Global installation (recommended)
-npm install -g @outfitter/hooks-cli
+npm install -g @carabiner/hooks-cli
 
 # Or use with npx (no installation required)
-npx @outfitter/hooks-cli --help
+npx @carabiner/hooks-cli --help
 
 # Verify installation
 carabiner --version
@@ -450,7 +450,7 @@ carabiner validate --fix
 Create `hooks.config.ts` for advanced configuration:
 
 ```typescript
-import { defineConfig } from '@outfitter/hooks-cli';
+import { defineConfig } from '@carabiner/hooks-cli';
 
 export default defineConfig({
   // Runtime configuration
@@ -593,7 +593,7 @@ Create custom templates in `templates/` directory:
 
 ```typescript
 // templates/my-template.ts
-import { defineTemplate } from '@outfitter/hooks-cli';
+import { defineTemplate } from '@carabiner/hooks-cli';
 
 export default defineTemplate({
   name: 'my-template',
@@ -612,7 +612,7 @@ export default defineTemplate({
     {
       path: 'hooks/custom-validator.ts',
       content: `#!/usr/bin/env bun
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   console.log(\`Custom validation for \${context.toolName}\`);
@@ -621,7 +621,7 @@ runClaudeHook(async (context) => {
     },
   ],
 
-  dependencies: ['@outfitter/hooks-core'],
+  dependencies: ['@carabiner/hooks-core'],
 
   postInstall: async (context) => {
     console.log('Custom template installed successfully!');
@@ -685,9 +685,9 @@ jobs:
 
       - name: Validate hooks
         run: |
-          bunx @outfitter/hooks-cli validate --all
-          bunx @outfitter/hooks-cli test --dry-run
-          bunx @outfitter/hooks-cli build --validate
+          bunx @carabiner/hooks-cli validate --all
+          bunx @carabiner/hooks-cli test --dry-run
+          bunx @carabiner/hooks-cli build --validate
 ```
 
 ### Package.json Scripts
@@ -714,10 +714,10 @@ Add to your `package.json`:
 
 ```bash
 # Install globally
-npm install -g @outfitter/hooks-cli
+npm install -g @carabiner/hooks-cli
 
 # Or use with npx
-npx @outfitter/hooks-cli --version
+npx @carabiner/hooks-cli --version
 ```
 
 #### Permission Errors

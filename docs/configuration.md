@@ -324,7 +324,7 @@ carabiner build --environment test --output .claude/settings.test.json
 Create `hooks.config.ts` for advanced configuration:
 
 ```typescript
-import { defineConfig } from '@outfitter/hooks-cli';
+import { defineConfig } from '@carabiner/hooks-cli';
 
 export default defineConfig({
   // Global settings
@@ -602,7 +602,7 @@ interface HookConfig {
 
 ```typescript
 // hooks.config.ts
-import { defineConfig } from '@outfitter/hooks-cli';
+import { defineConfig } from '@carabiner/hooks-cli';
 
 export default defineConfig({
   runtime: 'bun',

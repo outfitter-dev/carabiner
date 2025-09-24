@@ -54,10 +54,10 @@ echo '{
 
 ```bash
 # Option 1: Install globally
-npm install -g @outfitter/hooks-cli
+npm install -g @carabiner/hooks-cli
 
 # Option 2: Use npx
-npx @outfitter/hooks-cli --help
+npx @carabiner/hooks-cli --help
 
 # Option 3: Check PATH
 echo $PATH
@@ -204,8 +204,8 @@ echo '{
 
    ```typescript
    // Fix import paths
-   import { runClaudeHook } from '@outfitter/hooks-core';
-   // not: from '@outfitter/hooks-core/src/index'
+   import { runClaudeHook } from '@carabiner/hooks-core';
+   // not: from '@carabiner/hooks-core/src/index'
    ```
 
 2. **Type Errors**:
@@ -489,8 +489,8 @@ cat tsconfig.json
 
    ```typescript
    // Correct imports
-   import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
-   import type { HookContext } from '@outfitter/hooks-core';
+   import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
+   import type { HookContext } from '@carabiner/hooks-core';
    ```
 
 2. **Fix Type Issues**:
@@ -575,7 +575,7 @@ cat package.json  # Look for test scripts
 1. **Fix Test Data**:
 
    ```typescript
-   import { createMockContext } from '@outfitter/hooks-testing';
+   import { createMockContext } from '@carabiner/hooks-testing';
 
    const context = createMockContext('PreToolUse', {
      toolName: 'Bash',
@@ -686,7 +686,7 @@ Add debugging to your hooks:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   console.error('DEBUG: Hook started');
