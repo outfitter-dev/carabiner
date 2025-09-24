@@ -84,7 +84,7 @@ Create a file called `pre-tool-security.ts`:
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 // This hook runs before any tool is executed
 runClaudeHook(async (context) => {
@@ -258,7 +258,7 @@ You can create hooks that target specific tools or run universally:
 Run for **all** tools when no tool is specified:
 
 ```typescript
-import { HookBuilder, middleware } from '@outfitter/hooks-core';
+import { HookBuilder, middleware } from '@carabiner/hooks-core';
 
 const universalAuditHook = HookBuilder.forPreToolUse()
   // No .forTool() call = runs for ALL tools
@@ -360,7 +360,7 @@ carabiner test --hook ./pre-tool-security.ts --tool Bash --input '{"command":"ls
 ### Unit Testing
 
 ```typescript
-import { createMockContext, testHook } from '@outfitter/hooks-testing';
+import { createMockContext, testHook } from '@carabiner/hooks-testing';
 
 describe('Security Hook', () => {
   test('blocks dangerous commands', async () => {
@@ -498,7 +498,7 @@ runClaudeHook(async (context) => {
 
 ```bash
 # Ensure dependencies are installed
-bun install @outfitter/hooks-core
+bun install @carabiner/hooks-core
 
 # Verify TypeScript configuration
 bun run typecheck

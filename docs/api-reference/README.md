@@ -13,7 +13,7 @@ Complete API documentation for all Grapple packages with types, examples, and us
 
 ## Core Package
 
-### @outfitter/hooks-core
+### @carabiner/hooks-core
 
 The foundation package providing runtime, types, and core APIs.
 
@@ -30,7 +30,7 @@ Main runtime function that reads JSON from stdin and executes your hook handler.
 **Example:**
 
 ```typescript
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   console.log(`Processing ${context.toolName} with event ${context.event}`);
@@ -145,7 +145,7 @@ Create the hook instance.
 **Example:**
 
 ```typescript
-import { HookBuilder, middleware } from '@outfitter/hooks-core';
+import { HookBuilder, middleware } from '@carabiner/hooks-core';
 
 const bashSecurityHook = HookBuilder.forPreToolUse()
   .forTool('Bash') // Only runs for Bash commands
@@ -254,7 +254,7 @@ Create hooks using declarative configuration.
 **Example:**
 
 ```typescript
-import { defineHook, HookResults, middleware } from '@outfitter/hooks-core';
+import { defineHook, HookResults, middleware } from '@carabiner/hooks-core';
 
 export const projectHooks = [
   // Universal security check
@@ -296,7 +296,7 @@ export const projectHooks = [
 
 ## CLI Package
 
-### @outfitter/hooks-cli
+### @carabiner/hooks-cli
 
 Command-line tools for hook development and management.
 
@@ -305,7 +305,7 @@ Command-line tools for hook development and management.
 ##### `CLI` Class
 
 ```typescript
-import { CLI } from '@outfitter/hooks-cli';
+import { CLI } from '@carabiner/hooks-cli';
 
 const cli = new CLI();
 
@@ -339,7 +339,7 @@ await cli.test({
 ##### `ConfigManager` Class
 
 ```typescript
-import { ConfigManager } from '@outfitter/hooks-cli';
+import { ConfigManager } from '@carabiner/hooks-cli';
 
 const config = new ConfigManager('./project');
 
@@ -362,7 +362,7 @@ const isValid = await config.validate();
 ##### `TemplateEngine` Class
 
 ```typescript
-import { TemplateEngine } from '@outfitter/hooks-cli';
+import { TemplateEngine } from '@carabiner/hooks-cli';
 
 const templates = new TemplateEngine();
 
@@ -390,7 +390,7 @@ const customTemplate = templates.create({
 
 ## Validators Package
 
-### @outfitter/hooks-validators
+### @carabiner/hooks-validators
 
 Security validation and environment-specific rules.
 
@@ -399,7 +399,7 @@ Security validation and environment-specific rules.
 ##### `SecurityValidators` Class
 
 ```typescript
-import { SecurityValidators } from '@outfitter/hooks-validators';
+import { SecurityValidators } from '@carabiner/hooks-validators';
 
 runClaudeHook(async (context) => {
   // Environment-specific validation
@@ -496,7 +496,7 @@ const SECURITY_RULES = [
 
 ## Testing Package
 
-### @outfitter/hooks-testing
+### @carabiner/hooks-testing
 
 Testing framework and utilities for hook development.
 
@@ -514,7 +514,7 @@ Create mock hook contexts for testing.
 **Example:**
 
 ```typescript
-import { createMockContext } from '@outfitter/hooks-testing';
+import { createMockContext } from '@carabiner/hooks-testing';
 
 const context = createMockContext('PreToolUse', {
   toolName: 'Bash',
@@ -531,7 +531,7 @@ Fluent API for testing hooks.
 **Example:**
 
 ```typescript
-import { testHook } from '@outfitter/hooks-testing';
+import { testHook } from '@carabiner/hooks-testing';
 
 await testHook('PreToolUse')
   .withContext({
@@ -550,7 +550,7 @@ await testHook('PreToolUse')
 ##### `describe` and `test` Integration
 
 ```typescript
-import { createMockContext, testHook } from '@outfitter/hooks-testing';
+import { createMockContext, testHook } from '@carabiner/hooks-testing';
 
 describe('Security Hook', () => {
   test('blocks dangerous commands', async () => {
@@ -583,7 +583,7 @@ describe('Security Hook', () => {
 
 ## Configuration Package
 
-### @outfitter/hooks-config
+### @carabiner/hooks-config
 
 Configuration management and template system.
 
@@ -596,7 +596,7 @@ Define comprehensive hook configuration.
 **Example:**
 
 ```typescript
-import { defineConfig } from '@outfitter/hooks-config';
+import { defineConfig } from '@carabiner/hooks-config';
 
 export default defineConfig({
   runtime: 'bun',
@@ -637,7 +637,7 @@ Create custom hook templates.
 **Example:**
 
 ```typescript
-import { defineTemplate } from '@outfitter/hooks-config';
+import { defineTemplate } from '@carabiner/hooks-config';
 
 export default defineTemplate({
   name: 'custom-security',
@@ -659,7 +659,7 @@ export default defineTemplate({
     },
   ],
 
-  dependencies: ['@outfitter/hooks-core'],
+  dependencies: ['@carabiner/hooks-core'],
 
   postInstall: async (context) => {
     console.log('Security template installed!');

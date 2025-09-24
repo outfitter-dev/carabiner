@@ -38,7 +38,7 @@ const toolInput = JSON.parse(process.env.TOOL_INPUT || '{}');
 
 ```typescript
 // ✅ Uses JSON from stdin automatically
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   // All data comes from Claude Code's JSON input via stdin
@@ -105,10 +105,10 @@ const universalHook = HookBuilder.forPreToolUse()
 
 ```bash
 # Update to latest versions
-npm update @outfitter/hooks-core @outfitter/hooks-cli @outfitter/hooks-validators
+npm update @carabiner/hooks-core @carabiner/hooks-cli @carabiner/hooks-validators
 
 # Or install fresh
-npm install @outfitter/hooks-core@latest
+npm install @carabiner/hooks-core@latest
 ```
 
 #### Step 2: Update Hook Structure
@@ -118,7 +118,7 @@ npm install @outfitter/hooks-core@latest
 ```typescript
 #!/usr/bin/env bun
 
-import { createHookContext, HookResults } from '@outfitter/hooks-core';
+import { createHookContext, HookResults } from '@carabiner/hooks-core';
 
 // ❌ Old broken pattern
 const context = createHookContext('PreToolUse');
@@ -138,7 +138,7 @@ process.exit(0);
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 // ✅ New working pattern
 runClaudeHook(async (context) => {
@@ -236,7 +236,7 @@ exit 0
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   if (context.toolName === 'Bash') {
@@ -322,7 +322,7 @@ Migrate existing hooks that use environment variables:
 
 ```typescript
 // migration-helper.ts
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 // Legacy environment variable hook function
 async function legacyHookLogic() {
@@ -401,7 +401,7 @@ v2.0 adds new configuration capabilities:
 
 ```typescript
 // hooks.config.ts (new in v2.0)
-import { defineConfig } from '@outfitter/hooks-cli';
+import { defineConfig } from '@carabiner/hooks-cli';
 
 export default defineConfig({
   runtime: 'bun',
@@ -434,15 +434,15 @@ No import changes required - all imports remain the same:
 
 ```typescript
 // These remain unchanged
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
-import { HookBuilder, middleware } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
+import { HookBuilder, middleware } from '@carabiner/hooks-core';
 ```
 
 ### New APIs in v2.0
 
 ```typescript
 // New: Improved type guards
-import { isBashToolInput, isWriteToolInput } from '@outfitter/hooks-core';
+import { isBashToolInput, isWriteToolInput } from '@carabiner/hooks-core';
 
 if (context.toolName === 'Bash' && isBashToolInput(context.toolInput)) {
   // Fully typed context
@@ -450,7 +450,7 @@ if (context.toolName === 'Bash' && isBashToolInput(context.toolInput)) {
 }
 
 // New: Enhanced middleware
-import { middleware } from '@outfitter/hooks-core';
+import { middleware } from '@carabiner/hooks-core';
 
 const hook = HookBuilder.forPreToolUse()
   .withMiddleware(middleware.timing()) // Performance tracking
@@ -495,7 +495,7 @@ For gradual migration, you can temporarily wrap old hooks:
 
 ```typescript
 // compatibility-wrapper.ts
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 async function oldHookLogic(toolName: string, toolInput: any) {
   // Your old hook logic here

@@ -1,4 +1,4 @@
-# @outfitter/execution
+# @carabiner/execution
 
 Simplified execution engine for Carabiner hooks with predictable error handling, comprehensive metrics, and excellent developer experience.
 
@@ -15,7 +15,7 @@ Simplified execution engine for Carabiner hooks with predictable error handling,
 ## Installation
 
 ```bash
-bun add @outfitter/execution
+bun add @carabiner/execution
 
 ```
 
@@ -24,7 +24,7 @@ bun add @outfitter/execution
 ### Basic Hook
 
 ```typescript
-import { runHook } from '@outfitter/execution';
+import { runHook } from '@carabiner/execution';
 
 await runHook(async (context) => {
   if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
@@ -47,7 +47,7 @@ await runHook(async (context) => {
 ### Testing Hooks
 
 ```typescript
-import { runTestHook } from '@outfitter/execution';
+import { runTestHook } from '@carabiner/execution';
 
 const mockInput = {
   hook_event_name: 'PreToolUse',
@@ -77,7 +77,7 @@ await runTestHook(
 Execute a hook with stdin protocol (most common usage).
 
 ```typescript
-import { runHook } from '@outfitter/execution';
+import { runHook } from '@carabiner/execution';
 
 await runHook(
   async (context) => {
@@ -97,7 +97,7 @@ await runHook(
 Execute a hook with mock input for testing.
 
 ```typescript
-import { runTestHook } from '@outfitter/execution';
+import { runTestHook } from '@carabiner/execution';
 
 await runTestHook(
   async (context) => ({ success: true }),
@@ -111,8 +111,8 @@ await runTestHook(
 For advanced usage with custom protocols and configuration.
 
 ```typescript
-import { HookExecutor } from '@outfitter/execution';
-import { createProtocol } from '@outfitter/protocol';
+import { HookExecutor } from '@carabiner/execution';
+import { createProtocol } from '@carabiner/protocol';
 
 const protocol = createProtocol('stdin');
 const executor = new HookExecutor(protocol, {
@@ -131,7 +131,7 @@ await executor.execute(async (context) => {
 Type-safe error handling without exceptions.
 
 ```typescript
-import { success, failure, isSuccess, mapResult, chainResult } from '@outfitter/execution';
+import { success, failure, isSuccess, mapResult, chainResult } from '@carabiner/execution';
 
 // Create results
 const successResult = success('value');
@@ -160,7 +160,7 @@ import {
   getExecutionMetrics,
   getExecutionStats,
   clearExecutionMetrics,
-} from '@outfitter/execution';
+} from '@carabiner/execution';
 
 // Get all metrics
 const metrics = getExecutionMetrics();
@@ -218,7 +218,7 @@ interface ExecutionOptions {
 The execution engine uses the Result pattern for predictable error handling:
 
 ```typescript
-import { tryAsyncResult, isSuccess } from '@outfitter/execution';
+import { tryAsyncResult, isSuccess } from '@carabiner/execution';
 
 const result = await tryAsyncResult(async () => {
   // Operation that might fail
@@ -235,7 +235,7 @@ if (isSuccess(result)) {
 ### Custom Errors
 
 ```typescript
-import { ExecutionError, TimeoutError, ValidationError } from '@outfitter/execution';
+import { ExecutionError, TimeoutError, ValidationError } from '@carabiner/execution';
 
 // Execution-specific errors
 throw new ExecutionError('Custom execution error', 'CUSTOM_ERROR', { context: 'data' });
@@ -261,7 +261,7 @@ Every execution is automatically tracked with:
 ### Aggregate Statistics
 
 ```typescript
-import { getExecutionStats } from '@outfitter/execution';
+import { getExecutionStats } from '@carabiner/execution';
 
 const stats = getExecutionStats();
 console.log({
@@ -279,7 +279,7 @@ console.log({
 
 ```typescript
 import { describe, test, expect } from 'bun:test';
-import { runTestHook } from '@outfitter/execution';
+import { runTestHook } from '@carabiner/execution';
 
 describe('My Hook', () => {
   test('should validate bash commands', async () => {
@@ -307,7 +307,7 @@ describe('My Hook', () => {
 ### Integration Testing
 
 ```typescript
-import { HookRunner, getExecutionMetrics } from '@outfitter/execution';
+import { HookRunner, getExecutionMetrics } from '@carabiner/execution';
 
 const runner = new HookRunner({
   protocol: 'test',
@@ -336,7 +336,7 @@ expect(metrics[0].success).toBe(true);
 ### Security Hook
 
 ```typescript
-import { runHook } from '@outfitter/execution';
+import { runHook } from '@carabiner/execution';
 
 await runHook(async (context) => {
   if (context.event === 'PreToolUse' && context.toolName === 'Bash') {
@@ -362,7 +362,7 @@ await runHook(async (context) => {
 ### Logging Hook
 
 ```typescript
-import { runHook, getExecutionMetrics } from '@outfitter/execution';
+import { runHook, getExecutionMetrics } from '@carabiner/execution';
 import { writeFile } from 'node:fs/promises';
 
 await runHook(

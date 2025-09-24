@@ -1,11 +1,11 @@
-# @outfitter/hooks-core
+# @carabiner/hooks-core
 
 Core types, runtime utilities, and execution engine for Carabiner hooks TypeScript library.
 
 ## Installation
 
 ```bash
-bun add @outfitter/hooks-core
+bun add @carabiner/hooks-core
 
 ```
 
@@ -19,7 +19,7 @@ The simplest way to create hooks using the new stdin-based runtime:
 
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 // Universal hook - runs for all tools
 runClaudeHook(async (context) => {
@@ -50,7 +50,7 @@ Fluent interface for complex hooks with middleware and tool scoping:
 
 #!/usr/bin/env bun
 
-import { HookBuilder, middleware, runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { HookBuilder, middleware, runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 // Tool-specific hook - ONLY runs for Bash commands
 const bashSecurityHook = HookBuilder.forPreToolUse()
@@ -105,7 +105,7 @@ if (import.meta.main) {
 Configuration-driven approach for managing hooks:
 
 ```typescript
-import { defineHook, HookResults, middleware } from '@outfitter/hooks-core';
+import { defineHook, HookResults, middleware } from '@carabiner/hooks-core';
 
 export const projectHooks = [
   // Universal security check (all tools)
@@ -258,7 +258,7 @@ import type {
   GetToolInput,
   HookHandler,
   HookConfig,
-} from '@outfitter/hooks-core';
+} from '@carabiner/hooks-core';
 
 // Type-safe hook handler
 const handler: HookHandler = async (context) => {

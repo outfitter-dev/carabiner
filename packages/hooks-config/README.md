@@ -1,11 +1,11 @@
-# @outfitter/hooks-config
+# @carabiner/hooks-config
 
 Configuration management and settings generation for Carabiner hooks.
 
 ## Installation
 
 ```bash
-bun add @outfitter/hooks-config
+bun add @carabiner/hooks-config
 
 ```
 
@@ -14,7 +14,7 @@ bun add @outfitter/hooks-config
 ### Basic Configuration Management
 
 ```typescript
-import { ConfigManager } from '@outfitter/hooks-config';
+import { ConfigManager } from '@carabiner/hooks-config';
 
 // Create configuration manager
 const config = new ConfigManager('/path/to/workspace');
@@ -41,7 +41,7 @@ await config.save();
 Generate Claude Code settings from hook configurations:
 
 ```typescript
-import { generateSettings } from '@outfitter/hooks-config';
+import { generateSettings } from '@carabiner/hooks-config';
 
 const settings = generateSettings({
   hooks: {
@@ -72,7 +72,7 @@ console.log(JSON.stringify(settings, null, 2));
 Create configurations from templates:
 
 ```typescript
-import { createConfigFromTemplate, templates } from '@outfitter/hooks-config';
+import { createConfigFromTemplate, templates } from '@carabiner/hooks-config';
 
 // Use built-in security template
 const securityConfig = createConfigFromTemplate(templates.security, {
@@ -277,7 +277,7 @@ import type {
   TemplateVariables,
   ConfigOptions,
   ValidationResult,
-} from '@outfitter/hooks-config';
+} from '@carabiner/hooks-config';
 
 // Type-safe configuration
 const config: HookConfiguration = {
@@ -411,7 +411,7 @@ Settings are loaded in this order (highest to lowest precedence):
 ### Complete Setup
 
 ```typescript
-import { ConfigManager, templates } from '@outfitter/hooks-config';
+import { ConfigManager, templates } from '@carabiner/hooks-config';
 
 async function setupHooks() {
   const config = new ConfigManager('/path/to/project');
@@ -449,7 +449,7 @@ async function setupHooks() {
 ### Dynamic Configuration
 
 ```typescript
-import { ConfigManager } from '@outfitter/hooks-config';
+import { ConfigManager } from '@carabiner/hooks-config';
 
 async function dynamicConfig() {
   const config = new ConfigManager(process.cwd());
