@@ -1,0 +1,14 @@
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "transcript_path": "/Users/test/.claude/projects/test/transcript.jsonl",
+  "cwd": "/Users/test/project",
+  "hook_event_name": "SessionStart",
+  "context": {
+    "project_name": "test-project",
+    "claude_version": "3.5-sonnet",
+    "environment": {
+      "CLAUDE_PROJECT_ID": "test-project-123",
+      "CLAUDE_SESSION_ID": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  }
+}

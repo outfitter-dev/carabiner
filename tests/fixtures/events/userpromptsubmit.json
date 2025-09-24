@@ -1,0 +1,14 @@
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "transcript_path": "/Users/test/.claude/projects/test/transcript.jsonl",
+  "cwd": "/Users/test/project",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "Please help me write a TypeScript function to parse JSON data",
+  "context": {
+    "project_type": "typescript",
+    "files_in_context": [
+      "/Users/test/project/src/types.ts",
+      "/Users/test/project/package.json"
+    ]
+  }
+}
