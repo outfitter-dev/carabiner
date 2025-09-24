@@ -62,8 +62,10 @@ export type ExecutionMetrics = {
   readonly event: MetricsHookEvent;
   /** Tool name (if applicable) */
   readonly toolName?: string;
-  /** Whether execution was successful */
+  /** Whether execution was successful (legacy format) */
   readonly success: boolean;
+  /** Whether execution should continue (Claude Code format) */
+  readonly continue?: boolean;
   /** Error code if execution failed */
   readonly errorCode?: string;
   /** Execution timing information */
@@ -267,13 +269,26 @@ export class MetricsCollector {
     if (!this.enabled) {
       return;
     }
-    const success = result.success !== false;
-    const message = "message" in result ? result.message : undefined;
+    // Handle both legacy and Claude Code formats
+    const success =
+      "success" in result
+        ? result.success !== false
+        : "continue" in result
+          ? result.continue !== false
+          : true;
+    const message =
+      "message" in result
+        ? result.message
+        : "stopReason" in result
+          ? result.stopReason
+          : undefined;
+    const continueValue = "continue" in result ? result.continue : undefined;
     const metrics: ExecutionMetrics = {
       id: this.generateId(),
       event: context.event,
       toolName: "toolName" in context ? context.toolName : undefined,
       success,
+      continue: continueValue,
       errorCode: success ? undefined : this.extractErrorCode(message),
       timing,
       memoryBefore,

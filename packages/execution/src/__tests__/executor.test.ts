@@ -31,7 +31,10 @@ describe("HookExecutor", () => {
       if (isToolHookContext(context)) {
         expect(context.toolName).toBe("Bash");
       }
-      return { success: true, message: "Hook executed successfully" };
+      return {
+        continue: true,
+        additionalContext: "Hook executed successfully",
+      };
     };
 
     const executor = new HookExecutor(mockProtocol, {
@@ -42,12 +45,12 @@ describe("HookExecutor", () => {
     await executor.execute(handler);
 
     expect(mockProtocol.output).toBeDefined();
-    expect(mockProtocol.output?.success).toBe(true);
+    expect(mockProtocol.output?.continue).toBe(true);
   });
 
   test("should collect metrics", async () => {
     const metricsCollector = new MetricsCollector();
-    const handler: HookHandler = async () => ({ success: true });
+    const handler: HookHandler = async () => ({ continue: true });
 
     const executor = new HookExecutor(mockProtocol, {
       exitProcess: false,
@@ -64,7 +67,7 @@ describe("HookExecutor", () => {
     if (metric) {
       expect(metric.event).toBe("PreToolUse");
       expect(metric.toolName).toBe("Bash");
-      expect(metric.success).toBe(true);
+      expect(metric.continue).toBe(true);
       expect(metric.timing.duration).toBeGreaterThan(0);
     }
   });
@@ -97,7 +100,7 @@ describe("HookExecutor", () => {
       const handler: HookHandler = async () => {
         // Simulate work that completes before timeout
         await new Promise((resolve) => originalSetTimeout(resolve, 50));
-        return { success: true, message: "Completed" };
+        return { continue: true, additionalContext: "Completed" };
       };
 
       const executor = new HookExecutor(mockProtocol, {
@@ -115,8 +118,8 @@ describe("HookExecutor", () => {
       expect(clearTimeoutCalled).toBe(true);
 
       // Verify the handler succeeded
-      expect(mockProtocol.output?.success).toBe(true);
-      expect(mockProtocol.output?.message).toBe("Completed");
+      expect(mockProtocol.output?.continue).toBe(true);
+      expect(mockProtocol.output?.additionalContext).toBe("Completed");
     } finally {
       // Restore original functions
       global.setTimeout = originalSetTimeout;
@@ -160,12 +163,170 @@ describe("HookExecutor", () => {
       expect(clearTimeoutCalled).toBe(true);
 
       // Verify the error was handled
-      expect(mockProtocol.output?.success).toBe(false);
+      expect(mockProtocol.output?.continue).toBe(false);
       // The error might be in different fields based on the protocol output structure
       expect(mockProtocol.output).toBeDefined();
     } finally {
       global.setTimeout = originalSetTimeout;
       global.clearTimeout = originalClearTimeout;
     }
+  });
+
+  test("should parse JSON output correctly", async () => {
+    const mockInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "ls -la" },
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/tmp",
+      environment: { PATH: "/usr/bin" },
+    };
+    const testProtocol = createProtocol("test", {
+      input: mockInput,
+    }) as TestProtocol;
+
+    const handler: HookHandler = () => {
+      return {
+        continue: true,
+        additionalContext: "test context",
+        hookSpecificOutput: {
+          permissionDecision: "allow",
+          permissionDecisionReason: "test reason",
+        },
+      };
+    };
+
+    const executor = new HookExecutor(testProtocol, {
+      exitProcess: false,
+      collectMetrics: false,
+    });
+
+    await executor.execute(handler);
+
+    expect(testProtocol.output).toBeDefined();
+    expect(testProtocol.output?.continue).toBe(true);
+    expect(testProtocol.output?.additionalContext).toBe("test context");
+  });
+
+  test("should handle permission decision in hookSpecificOutput", async () => {
+    const mockInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "ls -la" },
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/tmp",
+      environment: { PATH: "/usr/bin" },
+    };
+    const testProtocol = createProtocol("test", {
+      input: mockInput,
+    }) as TestProtocol;
+
+    const handler: HookHandler = () => {
+      return {
+        hookSpecificOutput: {
+          permissionDecision: "deny",
+          permissionDecisionReason: "blocked for security",
+        },
+      };
+    };
+
+    const executor = new HookExecutor(testProtocol, {
+      exitProcess: false,
+      collectMetrics: false,
+    });
+
+    await executor.execute(handler);
+
+    expect(testProtocol.output).toBeDefined();
+    expect(testProtocol.output?.continue).toBe(false);
+  });
+
+  test("should handle raw output for SessionStart event", async () => {
+    const mockInput = {
+      hook_event_name: "SessionStart",
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/tmp",
+      environment: { PATH: "/usr/bin" },
+    };
+    const testProtocol = createProtocol("test", {
+      input: mockInput,
+    }) as TestProtocol;
+
+    const handler: HookHandler = () => {
+      // Return raw string instead of JSON
+      return "Raw context string from SessionStart";
+    };
+
+    const executor = new HookExecutor(testProtocol, {
+      exitProcess: false,
+      collectMetrics: false,
+    });
+
+    await executor.execute(handler);
+
+    expect(testProtocol.output).toBeDefined();
+  });
+
+  test("should handle raw output for UserPromptSubmit event", async () => {
+    const mockInput = {
+      hook_event_name: "UserPromptSubmit",
+      prompt: "test prompt",
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/tmp",
+      environment: { PATH: "/usr/bin" },
+    };
+    const testProtocol = createProtocol("test", {
+      input: mockInput,
+    }) as TestProtocol;
+
+    const handler: HookHandler = () => {
+      // Return raw string instead of JSON
+      return "Additional context from user prompt";
+    };
+
+    const executor = new HookExecutor(testProtocol, {
+      exitProcess: false,
+      collectMetrics: false,
+    });
+
+    await executor.execute(handler);
+
+    expect(testProtocol.output).toBeDefined();
+  });
+
+  test("should respect stopHookActive flag", async () => {
+    const mockInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "ls -la" },
+      session_id: "test-session-123",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/tmp",
+      environment: { PATH: "/usr/bin" },
+      stop_hook_active: true,
+    };
+    const testProtocol = createProtocol("test", {
+      input: mockInput,
+    }) as TestProtocol;
+
+    const handler: HookHandler = () => {
+      return {
+        continue: true,
+        additionalContext: "should not force continue",
+      };
+    };
+
+    const executor = new HookExecutor(testProtocol, {
+      exitProcess: false,
+      collectMetrics: false,
+    });
+
+    await executor.execute(handler);
+
+    expect(testProtocol.output).toBeDefined();
   });
 });

@@ -192,15 +192,14 @@ export function fromHookResult(
 export function toHookResult<T>(result: Result<T, Error>): HookResult {
   if (isSuccess(result)) {
     return {
-      success: true,
-      message: "Execution completed successfully",
+      continue: true,
+      additionalContext: "Execution completed successfully",
     };
   }
 
   return {
-    success: false,
-    message: result.error.message,
-    block: true, // By default, execution failures should block
+    continue: false,
+    stopReason: result.error.message,
   };
 }
 

@@ -260,8 +260,10 @@ describe("Result Pattern", () => {
       const result = success("test data");
       const hookResult = toHookResult(result);
 
-      expect(hookResult.success).toBe(true);
-      expect(hookResult.message).toBe("Execution completed successfully");
+      expect(hookResult.continue).toBe(true);
+      expect(hookResult.additionalContext).toBe(
+        "Execution completed successfully"
+      );
     });
 
     test("toHookResult should convert failed result", () => {
@@ -269,9 +271,8 @@ describe("Result Pattern", () => {
       const result = failure(error);
       const hookResult = toHookResult(result);
 
-      expect(hookResult.success).toBe(false);
-      expect(hookResult.message).toBe("execution failed");
-      expect(hookResult.block).toBe(true);
+      expect(hookResult.continue).toBe(false);
+      expect(hookResult.stopReason).toBe("execution failed");
     });
   });
 

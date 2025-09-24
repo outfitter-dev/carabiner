@@ -218,9 +218,8 @@ export class HookExecutor {
     } catch (error) {
       // Catch-all for any unhandled errors
       const errorResult: HookResult = {
-        success: false,
-        message: `Unhandled execution error: ${error instanceof Error ? error.message : String(error)}`,
-        block: true,
+        continue: false,
+        stopReason: `Unhandled execution error: ${error instanceof Error ? error.message : String(error)}`,
       };
 
       if (executionContext && error instanceof Error) {
@@ -304,10 +303,9 @@ export class HookExecutor {
       return this.normalizeResult(result, context);
     } catch (error) {
       return {
-        success: false,
-        message:
+        continue: false,
+        stopReason:
           error instanceof Error ? error.message : "Handler execution failed",
-        block: context.event === "PreToolUse", // Block pre-tool-use by default on errors
       };
     }
   }
@@ -323,48 +321,80 @@ export class HookExecutor {
     // Handle null/undefined results
     if (result === null || result === undefined) {
       return {
-        success: true,
-        message: "Handler completed successfully",
+        continue: true,
+        additionalContext: "Handler completed successfully",
       };
     }
 
     // Handle primitive boolean results
     if (typeof result === "boolean") {
       return {
-        success: result,
-        message: result
-          ? "Handler completed successfully"
-          : "Handler returned false",
-        block: !result && context.event === "PreToolUse",
+        continue: result,
+        stopReason: result ? undefined : "Handler returned false",
       };
     }
 
-    // Handle string results
+    // Handle string results - treat as additionalContext for SessionStart/UserPromptSubmit
     if (typeof result === "string") {
+      if (
+        context.event === "SessionStart" ||
+        context.event === "UserPromptSubmit"
+      ) {
+        return {
+          continue: true,
+          additionalContext: result,
+        };
+      }
       return {
-        success: true,
-        message: result,
+        continue: true,
+        additionalContext: result,
       };
     }
 
-    // Handle object results
+    // Handle object results - support both legacy and Claude Code format
     if (typeof result === "object" && result !== null) {
-      const obj = result as Partial<HookResult>;
+      const obj = result as any;
 
+      // Check if it's already Claude Code format
+      if (
+        "continue" in obj ||
+        "stopReason" in obj ||
+        "hookSpecificOutput" in obj
+      ) {
+        // Process permission decision format
+        if (obj.hookSpecificOutput?.permissionDecision) {
+          return {
+            continue:
+              obj.continue ??
+              obj.hookSpecificOutput.permissionDecision !== "deny",
+            stopReason: obj.stopReason,
+            hookSpecificOutput: obj.hookSpecificOutput,
+            additionalContext: obj.additionalContext,
+          };
+        }
+        return obj as HookResult;
+      }
+
+      // Handle legacy format
+      if ("success" in obj) {
+        return {
+          continue: obj.success ?? true,
+          stopReason: obj.success === false ? obj.message : undefined,
+          additionalContext: obj.success ? obj.message : undefined,
+        };
+      }
+
+      // Generic object - treat as additionalContext
       return {
-        success: obj.success ?? true,
-        message: obj.message || "Handler completed successfully",
-        block:
-          obj.block ??
-          (obj.success === false && context.event === "PreToolUse"),
-        data: obj.data,
+        continue: true,
+        additionalContext: JSON.stringify(obj),
       };
     }
 
     // Fallback for other types
     return {
-      success: true,
-      message: String(result),
+      continue: true,
+      additionalContext: String(result),
     };
   }
 
@@ -397,39 +427,99 @@ export class HookExecutor {
   }
 
   /**
-   * Validate hook result format and content
+   * Validate hook result format and content (Claude Code format)
    *
    * @param result - Hook result to validate
    * @returns Validation result
    */
   private validateResult(result: HookResult): Result<HookResult, Error> {
     try {
-      // Check required fields
-      if (typeof result.success !== "boolean") {
+      // Validate continue field
+      if (
+        result.continue !== undefined &&
+        typeof result.continue !== "boolean"
+      ) {
         return failure(
-          new ValidationError("Result must have boolean success field")
+          new ValidationError("Result continue must be boolean if present")
         );
       }
 
-      // Validate message field
-      if (result.message !== undefined && typeof result.message !== "string") {
+      // Validate stopReason field
+      if (
+        result.stopReason !== undefined &&
+        typeof result.stopReason !== "string"
+      ) {
         return failure(
-          new ValidationError("Result message must be string if present")
+          new ValidationError("Result stopReason must be string if present")
         );
       }
 
-      // Validate block field
-      if (result.block !== undefined && typeof result.block !== "boolean") {
+      // Validate suppressOutput field
+      if (
+        result.suppressOutput !== undefined &&
+        typeof result.suppressOutput !== "boolean"
+      ) {
         return failure(
-          new ValidationError("Result block must be boolean if present")
+          new ValidationError(
+            "Result suppressOutput must be boolean if present"
+          )
+        );
+      }
+
+      // Validate systemMessage field
+      if (
+        result.systemMessage !== undefined &&
+        typeof result.systemMessage !== "string"
+      ) {
+        return failure(
+          new ValidationError("Result systemMessage must be string if present")
+        );
+      }
+
+      // Validate additionalContext field
+      if (
+        result.additionalContext !== undefined &&
+        typeof result.additionalContext !== "string"
+      ) {
+        return failure(
+          new ValidationError(
+            "Result additionalContext must be string if present"
+          )
+        );
+      }
+
+      // Validate hookSpecificOutput field
+      if (
+        result.hookSpecificOutput !== undefined &&
+        typeof result.hookSpecificOutput !== "object"
+      ) {
+        return failure(
+          new ValidationError(
+            "Result hookSpecificOutput must be object if present"
+          )
         );
       }
 
       // Additional semantic validation
-      if (!(result.success || result.message)) {
-        return failure(
-          new ValidationError("Failed results should include an error message")
-        );
+      if (result.continue === false && !result.stopReason && !result.suppressOutput) {
+        const permissionDecision =
+          result.hookSpecificOutput &&
+          typeof result.hookSpecificOutput === "object"
+            ? (result.hookSpecificOutput as Record<string, unknown>)[
+                "permissionDecision"
+              ]
+            : undefined;
+
+        const isPermissionBasedBlock =
+          permissionDecision === "deny" || permissionDecision === "ask";
+
+        if (!isPermissionBasedBlock) {
+          return failure(
+            new ValidationError(
+              "When continue is false, provide stopReason or permissionDecision"
+            )
+          );
+        }
       }
 
       return success(result);
