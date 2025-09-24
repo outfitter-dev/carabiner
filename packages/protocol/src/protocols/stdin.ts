@@ -12,6 +12,7 @@ import {
 import type {
   DirectoryPath,
   HookContext,
+  HookInput,
   HookResult,
   NotificationEvent,
   SessionId,
@@ -54,6 +55,46 @@ export type StdinProtocolOptions = {
    */
   includeErrorStack?: boolean;
 };
+
+export type ParsedHookInput = HookInput & {
+  stop_hook_active?: boolean;
+  hook_specific_input?: Record<string, unknown>;
+  stopHookActive?: boolean;
+  hookSpecificInput?: Record<string, unknown>;
+};
+
+/**
+ * Parse stdin input and preserve Claude Code specific flags.
+ * Returns the raw hook input with camelCase aliases for convenience.
+ */
+export function parseStdinInput(input: string): ParsedHookInput {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(input);
+  } catch (error) {
+    throw new ProtocolParseError("Failed to parse JSON from stdin", error);
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new ProtocolParseError("Invalid hook input: expected JSON object");
+  }
+
+  const hookInput = parsed as Record<string, unknown>;
+
+  const stopHookActive = hookInput.stop_hook_active === true;
+  hookInput.stop_hook_active = stopHookActive;
+  hookInput.stopHookActive = stopHookActive;
+
+  const hookSpecificInput = (hookInput.hook_specific_input ?? {}) as Record<
+    string,
+    unknown
+  >;
+  hookInput.hook_specific_input = hookSpecificInput;
+  hookInput.hookSpecificInput = hookSpecificInput;
+
+  return hookInput as ParsedHookInput;
+}
 
 /**
  * Protocol implementation for Claude Code's stdin/stdout communication
@@ -383,8 +424,8 @@ export class StdinProtocol implements HookProtocol {
       });
     }
 
-    if ("notification" in input) {
-      // Notification context
+    if (input.hook_event_name === "Notification") {
+      // Notification should be its own event, not collapsed to SessionStart/Stop
       return createNotificationContext(
         input.hook_event_name as NotificationEvent,
         {
@@ -394,7 +435,7 @@ export class StdinProtocol implements HookProtocol {
           environment: process.env as Record<string, string>,
           matcher: input.matcher as string | undefined,
         },
-        input.notification as string | undefined
+        input.message as string | undefined
       );
     }
 

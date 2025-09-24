@@ -93,6 +93,81 @@ describe("claudeProviderAdapter.fromProviderInput", () => {
     expect(snapshotContext(context)).toMatchSnapshot();
   });
 
+  test("preserves all Claude Code SDK fields including stop_hook_active", () => {
+    const input = {
+      ...createPreToolUseInput(),
+      stop_hook_active: true,
+      hook_specific_input: {
+        permissionPrompt: "Allow bash execution?",
+      },
+      permission_decision: "allow",
+      custom_field: "should be preserved",
+    } as any;
+
+    const context = claudeProviderAdapter.fromProviderInput(
+      input,
+      TEST_ENVIRONMENT
+    );
+
+    // Original fields should be preserved in raw
+    expect(context.raw.stop_hook_active).toBe(true);
+    expect(context.raw.hook_specific_input).toEqual({
+      permissionPrompt: "Allow bash execution?",
+    });
+    expect(context.raw.permission_decision).toBe("allow");
+    expect(context.raw.custom_field).toBe("should be preserved");
+
+    // Snake_case should be converted to camelCase
+    expect(context.raw.stopHookActive).toBe(true);
+    expect(context.raw.hookSpecificInput).toEqual({
+      permissionPrompt: "Allow bash execution?",
+    });
+  });
+
+  test("handles Notification event with notification_type", () => {
+    const notificationInput = {
+      hook_event_name: "Notification",
+      session_id: "session-notify",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/workspace/project",
+      notification_type: "warning",
+      message: "Test notification",
+      stop_hook_active: false,
+    } satisfies any;
+
+    const context = claudeProviderAdapter.fromProviderInput(
+      notificationInput,
+      TEST_ENVIRONMENT
+    );
+
+    expect(context.event).toBe("Notification");
+    expect(context.raw.notification_type).toBe("warning");
+    expect(context.raw.notificationType).toBe("warning");
+    expect(context.raw.message).toBe("Test notification");
+    expect(context.raw.stopHookActive).toBe(false);
+  });
+
+  test("handles PreCompact event with pre_compact_trigger", () => {
+    const preCompactInput = {
+      hook_event_name: "PreCompact",
+      session_id: "session-compact",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/workspace/project",
+      pre_compact_trigger: "manual",
+      stop_hook_active: true,
+    } satisfies any;
+
+    const context = claudeProviderAdapter.fromProviderInput(
+      preCompactInput,
+      TEST_ENVIRONMENT
+    );
+
+    expect(context.event).toBe("PreCompact");
+    expect(context.raw.pre_compact_trigger).toBe("manual");
+    expect(context.raw.preCompactTrigger).toBe("manual");
+    expect(context.raw.stopHookActive).toBe(true);
+  });
+
   test("captures PostToolUse tool response", () => {
     const input = createPostToolUseInput();
 
@@ -138,6 +213,75 @@ describe("claudeProviderAdapter.toProviderOutput", () => {
     };
 
     expect(output).toStrictEqual(expected);
+  });
+
+  test("passes through hookSpecificOutput including permission decisions", () => {
+    const input = createPreToolUseInput();
+    const context = claudeProviderAdapter.fromProviderInput(
+      input,
+      TEST_ENVIRONMENT
+    );
+
+    const normalized: NormalizedHookResult = {
+      continue: false,
+      stopReason: "blocked",
+      systemMessage: "Permission denied",
+      hookSpecificOutput: {
+        permissionDecision: "deny",
+        permissionDecisionReason: "Security policy violation",
+        hookEventName: "PreToolUse",
+        customField: "should be preserved",
+      },
+      additionalContext: "Additional debugging info",
+      metadata: {
+        duration: 25,
+      },
+      providerState: {
+        blocked: true,
+      },
+    } satisfies NormalizedHookResult;
+
+    const output = claudeProviderAdapter.toProviderOutput(normalized, context);
+
+    // Should include all the standard fields
+    expect(output.continue).toBe(false);
+    expect(output.stopReason).toBe("blocked");
+    expect(output.systemMessage).toBe("Permission denied");
+    expect(output.additionalContext).toBe("Additional debugging info");
+
+    // Should pass through hookSpecificOutput untouched
+    expect(output.hookSpecificOutput).toEqual({
+      permissionDecision: "deny",
+      permissionDecisionReason: "Security policy violation",
+      hookEventName: "PreToolUse",
+      customField: "should be preserved",
+    });
+
+    // Should NOT include provider-specific metadata
+    expect(output).not.toHaveProperty("metadata");
+    expect(output).not.toHaveProperty("providerState");
+  });
+
+  test("handles empty hookSpecificOutput", () => {
+    const input = createPreToolUseInput();
+    const context = claudeProviderAdapter.fromProviderInput(
+      input,
+      TEST_ENVIRONMENT
+    );
+
+    const normalized: NormalizedHookResult = {
+      continue: true,
+      suppressOutput: true,
+    } satisfies NormalizedHookResult;
+
+    const output = claudeProviderAdapter.toProviderOutput(normalized, context);
+
+    expect(output.continue).toBe(true);
+    expect(output.suppressOutput).toBe(true);
+    expect(output.hookSpecificOutput).toBeUndefined();
+    expect(output.stopReason).toBeUndefined();
+    expect(output.systemMessage).toBeUndefined();
+    expect(output.additionalContext).toBeUndefined();
   });
 });
 
