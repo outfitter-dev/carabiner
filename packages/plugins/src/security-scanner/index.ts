@@ -855,12 +855,12 @@ export const securityScannerPlugin: HookPlugin = {
         this.version
       );
 
-      // If result is already a PluginResult (skip case), return it directly
-      if ("success" in result) {
+      // If the scanner returned a PluginResult (e.g. skip/too-large cases), return it directly
+      if (!Array.isArray(result)) {
         return result;
       }
 
-      // Otherwise, process the findings
+      // Otherwise, process the findings array
       return processFindings(result, scannerConfig, this.name, this.version);
     } catch (error) {
       return createErrorResult(this.name, this.version, error);
