@@ -7,14 +7,18 @@ import type { LiteralUnion } from "type-fest";
 
 /**
  * Hook events supported by Claude Code
+ * All 9 events according to the official specification
  */
 export const HOOK_EVENTS = Object.freeze([
   "PreToolUse",
   "PostToolUse",
+  "Notification",
   "UserPromptSubmit",
-  "SessionStart",
   "Stop",
   "SubagentStop",
+  "PreCompact",
+  "SessionStart",
+  "SessionEnd",
 ] as const);
 
 export type HookEvent = (typeof HOOK_EVENTS)[number];
@@ -27,12 +31,22 @@ export type ToolHookEvent = "PreToolUse" | "PostToolUse";
 /**
  * Notification events (informational events)
  */
-export type NotificationEvent = "SessionStart" | "Stop" | "SubagentStop";
+export type NotificationEvent =
+  | "Notification"
+  | "SessionStart"
+  | "SessionEnd"
+  | "Stop"
+  | "SubagentStop";
 
 /**
  * User interaction events
  */
 export type UserEvent = "UserPromptSubmit";
+
+/**
+ * Compact events
+ */
+export type CompactEvent = "PreCompact";
 
 /**
  * Known tool names from Claude Code
@@ -55,7 +69,7 @@ export type ToolName = LiteralUnion<
 >;
 
 /**
- * Hook execution result
+ * Hook execution result - Claude Code compliant format
  */
 export type HookResult = {
   readonly success?: boolean;
@@ -66,7 +80,19 @@ export type HookResult = {
   readonly hookSpecificOutput?: Record<string, unknown>;
   readonly additionalContext?: string;
   readonly message?: string;
-  readonly block?: boolean; // For PreToolUse hooks - true blocks tool execution
+  readonly block?: boolean;
+  readonly data?: Record<string, unknown>;
+  readonly metadata?: HookMetadata;
+};
+
+/**
+ * Legacy hook result format - deprecated but maintained for backwards compatibility
+ * @deprecated Use HookResult instead
+ */
+export type LegacyHookResult = {
+  readonly success: boolean;
+  readonly message?: string;
+  readonly block?: boolean;
   readonly data?: Record<string, unknown>;
   readonly metadata?: HookMetadata;
 };
@@ -81,7 +107,8 @@ export type HookMetadata = {
 };
 
 /**
- * Simple hook output for Claude Code communication
+ * Simple hook output for Claude Code communication - deprecated format
+ * @deprecated Use HookResult instead
  */
 export type ClaudeHookOutput = {
   readonly action: "continue" | "block";
@@ -123,7 +150,11 @@ export function isNotificationEvent(
   event: HookEvent
 ): event is NotificationEvent {
   return (
-    event === "SessionStart" || event === "Stop" || event === "SubagentStop"
+    event === "Notification" ||
+    event === "SessionStart" ||
+    event === "SessionEnd" ||
+    event === "Stop" ||
+    event === "SubagentStop"
   );
 }
 
@@ -131,11 +162,64 @@ export function isUserEvent(event: HookEvent): event is UserEvent {
   return event === "UserPromptSubmit";
 }
 
+export function isCompactEvent(event: HookEvent): event is CompactEvent {
+  return event === "PreCompact";
+}
+
 /**
- * Hook result builders for common scenarios
+ * Hook result builders for Claude Code compliant scenarios
  */
 export const HookResults = {
-  success(message?: string, data?: Record<string, unknown>): HookResult {
+  continue(additionalContext?: string): HookResult {
+    return { continue: true, additionalContext };
+  },
+
+  allow(reason?: string): HookResult {
+    return {
+      continue: true,
+      hookSpecificOutput: {
+        permissionDecision: "allow",
+        permissionDecisionReason: reason,
+      },
+    };
+  },
+
+  deny(reason?: string): HookResult {
+    return {
+      continue: false,
+      stopReason: "blocked",
+      hookSpecificOutput: {
+        permissionDecision: "deny",
+        permissionDecisionReason: reason,
+      },
+    };
+  },
+
+  ask(reason?: string): HookResult {
+    return {
+      continue: false,
+      hookSpecificOutput: {
+        permissionDecision: "ask",
+        permissionDecisionReason: reason,
+      },
+    };
+  },
+
+  stop(reason: string): HookResult {
+    return { continue: false, stopReason: reason };
+  },
+
+  suppress(systemMessage?: string): HookResult {
+    return { suppressOutput: true, systemMessage };
+  },
+} as const;
+
+/**
+ * Legacy hook result builders - deprecated but maintained for backwards compatibility
+ * @deprecated Use HookResults instead
+ */
+export const LegacyHookResults = {
+  success(message?: string, data?: Record<string, unknown>): LegacyHookResult {
     return { success: true, message, data };
   },
 
@@ -143,19 +227,19 @@ export const HookResults = {
     message: string,
     block = false,
     data?: Record<string, unknown>
-  ): HookResult {
+  ): LegacyHookResult {
     return { success: false, message, block, data };
   },
 
-  block(message: string): HookResult {
+  block(message: string): LegacyHookResult {
     return { success: false, message, block: true };
   },
 
-  skip(message?: string): HookResult {
+  skip(message?: string): LegacyHookResult {
     return { success: true, message: message || "Hook skipped" };
   },
 
-  warn(message: string, data?: Record<string, unknown>): HookResult {
+  warn(message: string, data?: Record<string, unknown>): LegacyHookResult {
     return { success: true, message, data };
   },
 } as const;

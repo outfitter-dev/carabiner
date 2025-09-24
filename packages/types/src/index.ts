@@ -11,6 +11,8 @@
  * that are easy to understand, use, and maintain.
  */
 
+export type { HookInput } from "@anthropic-ai/claude-code";
+
 // Branded types and validation
 export type {
   CommandString,
@@ -45,13 +47,19 @@ export type {
   HookContext,
   HookEnvironment,
   HookHandler,
-  NotificationHandler,
+  NotificationContext,
+  NotificationContextHandler,
   NotificationHookContext,
+  NotificationHookHandler,
   PostToolUseContext,
   PostToolUseHandler,
+  PreCompactContext,
+  PreCompactHandler,
   PreToolUseContext,
   PreToolUseHandler,
   SearchHookContext,
+  SessionEndContext,
+  SessionEndHandler,
   SessionStartContext,
   SessionStartHandler,
   StopContext,
@@ -65,25 +73,58 @@ export type {
 } from "./context";
 export {
   createNotificationContext,
+  createPreCompactContext,
+  createPreToolUseContext,
   createToolHookContext,
   createUserPromptContext,
   isBashHookContext,
   isFileHookContext,
   isNotificationContext,
   isPostToolUseContext,
+  isPreCompactContext,
   isPreToolUseContext,
   isSearchHookContext,
   isToolHookContext,
   isUserPromptContext,
 } from "./context";
+// Decision types
+export type {
+  HookEventData,
+  HookSpecificOutput,
+  NotificationEventData,
+  NotificationType,
+  PermissionDecision,
+  PostToolUseEventData,
+  PreCompactEventData,
+  PreCompactTrigger,
+  PreToolUseEventData,
+  SessionEndEventData,
+  SessionStartEventData,
+  SessionStartTrigger,
+  StopEventData,
+  SubagentStopEventData,
+  UserPromptSubmitEventData,
+} from "./decisions";
+export {
+  HookOutputBuilder,
+  isMCPToolName,
+  isNotificationType,
+  isPermissionDecision,
+  isPreCompactTrigger,
+  isSessionStartTrigger,
+  MCP_TOOL_NAME_PATTERN,
+  validateMCPToolName,
+} from "./decisions";
 // Hook events and results
 export type {
   ClaudeHookOutput,
+  CompactEvent,
   HookEvent,
   HookExecutionOptions,
   HookMetadata,
   HookOutputMode,
   HookResult,
+  LegacyHookResult,
   NotificationEvent,
   ToolHookEvent,
   ToolName,
@@ -92,10 +133,12 @@ export type {
 export {
   HOOK_EVENTS,
   HookResults,
+  isCompactEvent,
   isHookEvent,
   isNotificationEvent,
   isToolHookEvent,
   isUserEvent,
+  LegacyHookResults,
 } from "./events";
 // Test helpers for type-safe testing
 export type { TestContextOptions } from "./test-helpers";

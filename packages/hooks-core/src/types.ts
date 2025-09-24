@@ -3,6 +3,7 @@
  * Built on top of @anthropic-ai/claude-code SDK for full type safety
  */
 
+import type { HookSpecificOutput } from "@carabiner/types";
 import type { LiteralUnion, Simplify } from "type-fest";
 
 // Re-export all Claude Code SDK types for convenience
@@ -290,8 +291,14 @@ type LegacyHookResultCompat = {
 };
 
 export type HookResult = HookJSONOutput & {
+  continue?: boolean;
+  suppressOutput?: boolean;
+  stopReason?: string;
+  systemMessage?: string;
   metadata?: HookMetadata;
   providerState?: Record<string, unknown>;
+  hookSpecificOutput?: HookSpecificOutput;
+  additionalContext?: string;
 } & LegacyHookResultCompat;
 
 export type NormalizedHookResult = HookResult;
