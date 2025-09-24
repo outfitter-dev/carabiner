@@ -1,0 +1,9 @@
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "transcript_path": "/Users/test/.claude/projects/test/transcript.jsonl",
+  "cwd": "/Users/test/project",
+  "hook_event_name": "Stop",
+  "reason": "user_requested",
+  "stop_hook_active": true,
+  "exit_code": 0
+}

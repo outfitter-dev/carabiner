@@ -1,0 +1,11 @@
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "transcript_path": "/Users/test/.claude/projects/test/transcript.jsonl",
+  "cwd": "/Users/test/project",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "/Users/test/project/src/main.ts",
+    "content": "console.log('Hello, World!');"
+  }
+}
