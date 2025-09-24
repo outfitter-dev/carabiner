@@ -340,29 +340,82 @@ export class HookExecutor {
       };
     }
 
-    // Handle string results
+    // Handle string results while preserving context for select events
     if (typeof result === "string") {
-      return {
+      const normalized: HookResult = {
         continue: true,
         systemMessage: result,
       };
+
+      if (
+        context.event === "SessionStart" ||
+        context.event === "UserPromptSubmit"
+      ) {
+        normalized.additionalContext = result;
+      }
+
+      return normalized;
     }
 
-    // Handle object results
+    // Handle object results - support both legacy and Claude Code format
     if (typeof result === "object" && result !== null) {
-      const obj = result as Partial<HookResult>;
+      const obj = result as Record<string, any>;
+
+      if (
+        "continue" in obj ||
+        "stopReason" in obj ||
+        "hookSpecificOutput" in obj
+      ) {
+        if (obj.hookSpecificOutput?.permissionDecision) {
+          return {
+            continue:
+              obj.continue ??
+              obj.hookSpecificOutput.permissionDecision !== "deny",
+            stopReason: obj.stopReason,
+            hookSpecificOutput: obj.hookSpecificOutput,
+            additionalContext: obj.additionalContext,
+            systemMessage: obj.systemMessage,
+            suppressOutput: obj.suppressOutput,
+            metadata: obj.metadata,
+          };
+        }
+
+        return obj as HookResult;
+      }
+
+      if ("success" in obj) {
+        const successValue = obj.success ?? true;
+        const messageValue = typeof obj.message === "string" ? obj.message : undefined;
+        return {
+          continue: successValue,
+          stopReason: successValue ? undefined : messageValue,
+          systemMessage:
+            messageValue || (successValue ? "Handler completed successfully" : undefined),
+          additionalContext: successValue ? messageValue : undefined,
+        };
+      }
+
+      const stopReason =
+        obj.stopReason ??
+        (obj.continue === false && context.event === "PreToolUse"
+          ? "blocked"
+          : undefined);
 
       return {
         continue: obj.continue ?? true,
-        systemMessage: obj.systemMessage || "Handler completed successfully",
-        stopReason:
-          obj.stopReason ??
-          (obj.continue === false && context.event === "PreToolUse"
-            ? "blocked"
-            : undefined),
+        systemMessage:
+          typeof obj.systemMessage === "string"
+            ? obj.systemMessage
+            : typeof obj.message === "string"
+              ? obj.message
+              : "Handler completed successfully",
+        stopReason,
         hookSpecificOutput: obj.hookSpecificOutput,
         suppressOutput: obj.suppressOutput,
-        additionalContext: obj.additionalContext,
+        additionalContext:
+          typeof obj.additionalContext === "string"
+            ? obj.additionalContext
+            : JSON.stringify(obj),
         metadata: obj.metadata,
       };
     }
@@ -410,33 +463,27 @@ export class HookExecutor {
    */
   private validateResult(result: HookResult): Result<HookResult, Error> {
     try {
-      // Validate continue flag when present
       if (
-        result.continue !== undefined &&
-        typeof result.continue !== "boolean"
+        result.success !== undefined &&
+        typeof result.success !== "boolean"
       ) {
         return failure(
-          new ValidationError("Result continue must be boolean if present")
+          new ValidationError("Result success must be boolean if present")
         );
       }
 
-      // Validate systemMessage field
       if (
-        result.systemMessage !== undefined &&
-        typeof result.systemMessage !== "string"
+        result.message !== undefined &&
+        typeof result.message !== "string"
       ) {
         return failure(
-          new ValidationError("Result systemMessage must be string if present")
+          new ValidationError("Result message must be string if present")
         );
       }
 
-      // Validate stopReason field
-      if (
-        result.stopReason !== undefined &&
-        typeof result.stopReason !== "string"
-      ) {
+      if (result.block !== undefined && typeof result.block !== "boolean") {
         return failure(
-          new ValidationError("Result stopReason must be string if present")
+          new ValidationError("Result block must be boolean if present")
         );
       }
 
@@ -501,10 +548,55 @@ export class HookExecutor {
         );
       }
 
-      // Additional semantic validation
-      if (result.continue === false && !result.systemMessage) {
+      if (
+        result.metadata !== undefined &&
+        typeof result.metadata !== "object"
+      ) {
+        return failure(
+          new ValidationError("Result metadata must be object if present")
+        );
+      }
+
+      if (
+        result.continue === false &&
+        !result.systemMessage &&
+        !result.suppressOutput
+      ) {
         return failure(
           new ValidationError("Failed results should include a systemMessage")
+        );
+      }
+
+      if (
+        result.continue === false &&
+        !result.stopReason &&
+        !result.suppressOutput
+      ) {
+        const permissionDecision =
+          result.hookSpecificOutput &&
+          typeof result.hookSpecificOutput === "object"
+            ? (
+                result.hookSpecificOutput as {
+                  permissionDecision?: unknown;
+                }
+              ).permissionDecision
+            : undefined;
+
+        const isPermissionBasedBlock =
+          permissionDecision === "deny" || permissionDecision === "ask";
+
+        if (!isPermissionBasedBlock) {
+          return failure(
+            new ValidationError(
+              "When continue is false, provide stopReason or permissionDecision"
+            )
+          );
+        }
+      }
+
+      if (result.success === false && !result.message) {
+        return failure(
+          new ValidationError("Failed results should include an error message")
         );
       }
 
