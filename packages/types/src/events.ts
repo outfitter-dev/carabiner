@@ -174,6 +174,13 @@ export const HookResults = {
     return { continue: true, additionalContext };
   },
 
+  success(
+    message?: string,
+    data?: Record<string, unknown>
+  ): HookResult {
+    return { success: true, message, data };
+  },
+
   allow(reason?: string): HookResult {
     return {
       continue: true,
@@ -195,6 +202,25 @@ export const HookResults = {
     };
   },
 
+  failure(
+    message: string,
+    options: {
+      data?: Record<string, unknown>;
+      stopReason?: string;
+      block?: boolean;
+    } = {}
+  ): HookResult {
+    const { data, stopReason, block } = options;
+    return {
+      success: false,
+      message,
+      data,
+      block,
+      stopReason: stopReason ?? (block ? "blocked" : undefined),
+      continue: block === true ? false : undefined,
+    };
+  },
+
   ask(reason?: string): HookResult {
     return {
       continue: false,
@@ -207,6 +233,31 @@ export const HookResults = {
 
   stop(reason: string): HookResult {
     return { continue: false, stopReason: reason };
+  },
+
+  block(
+    message: string,
+    data?: Record<string, unknown>
+  ): HookResult {
+    return {
+      success: false,
+      continue: false,
+      stopReason: "blocked",
+      block: true,
+      message,
+      data,
+    };
+  },
+
+  skip(message = "Hook skipped"): HookResult {
+    return { success: true, message };
+  },
+
+  warn(
+    message: string,
+    data?: Record<string, unknown>
+  ): HookResult {
+    return { success: true, message, data };
   },
 
   suppress(systemMessage?: string): HookResult {
