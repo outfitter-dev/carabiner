@@ -579,6 +579,25 @@ class HookRegistry {
 
 ## Extension Points
 
+### Logger Factory Hooks
+
+Inject a custom factory to redirect structured logs to your observability stack:
+
+```typescript
+import type { LoggerFactory } from '@carabiner/hooks-core';
+import { setLoggerFactory } from '@carabiner/hooks-core';
+
+const loggerFactory: LoggerFactory = (service, config) =>
+  myLogger.child({ service, env: config.environment });
+
+setLoggerFactory(loggerFactory);
+
+// revert to built-in production logger when needed
+setLoggerFactory(null);
+```
+
+All shared helpers (`createLogger`, `coreLogger`, `executionLogger`, etc.) automatically refresh when the factory changes.
+
 ### Custom Middleware
 
 ```typescript
