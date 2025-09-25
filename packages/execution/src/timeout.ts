@@ -82,7 +82,8 @@ export async function executeWithTimeout(
 
     // Give 5s for graceful shutdown, then SIGKILL
     setTimeout(() => {
-      if (!child.killed) {
+      const stillRunning = child.exitCode === null && child.signalCode === null;
+      if (stillRunning) {
         logger.warn("Process did not exit gracefully, sending SIGKILL", {
           command,
           args,

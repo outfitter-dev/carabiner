@@ -367,11 +367,22 @@ export class HookExecutor {
         "hookSpecificOutput" in obj
       ) {
         if (obj.hookSpecificOutput?.permissionDecision) {
+          const decision = obj.hookSpecificOutput.permissionDecision;
+          const inferredContinue =
+            decision === "allow" || decision === "approve";
           return {
             continue:
               obj.continue ??
-              obj.hookSpecificOutput.permissionDecision !== "deny",
-            stopReason: obj.stopReason,
+              (decision === "deny" || decision === "ask"
+                ? false
+                : inferredContinue),
+            stopReason:
+              obj.stopReason ??
+              (decision === "deny"
+                ? "blocked"
+                : decision === "ask"
+                  ? "approval_required"
+                  : undefined),
             hookSpecificOutput: obj.hookSpecificOutput,
             additionalContext: obj.additionalContext,
             systemMessage: obj.systemMessage,
