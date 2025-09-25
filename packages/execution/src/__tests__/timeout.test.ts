@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from "bun:test";
-import { executeHook, executeWithTimeout, type Hook } from "../timeout";
+import { executeHookProcess, executeWithTimeout, type Hook } from "../timeout";
 
 describe("executeWithTimeout", () => {
   it("should execute a successful command and return result", async () => {
@@ -70,14 +70,14 @@ describe("executeWithTimeout", () => {
   });
 });
 
-describe("executeHook", () => {
+describe("executeHookProcess", () => {
   it("should execute successful hook (exit code 0)", async () => {
     const hook: Hook = {
       command: "echo",
       args: ["success"],
     };
 
-    const result = await executeHook(hook);
+    const result = await executeHookProcess(hook);
     expect(result.exitCode).toBe(0);
     expect(result.continue).toBe(true);
     expect(result.blocked).toBe(false);
@@ -89,7 +89,7 @@ describe("executeHook", () => {
       args: ["-c", 'echo "warning message" >&2; exit 1'],
     };
 
-    const result = await executeHook(hook);
+    const result = await executeHookProcess(hook);
     expect(result.exitCode).toBe(1);
     expect(result.continue).toBe(true);
     expect(result.blocked).toBe(false);
@@ -101,7 +101,7 @@ describe("executeHook", () => {
       args: ["-c", 'echo "blocking error" >&2; exit 2'],
     };
 
-    const result = await executeHook(hook);
+    const result = await executeHookProcess(hook);
     expect(result.exitCode).toBe(2);
     expect(result.continue).toBe(false);
     expect(result.blocked).toBe(true);
@@ -115,7 +115,7 @@ describe("executeHook", () => {
       timeout: 100, // 100ms timeout for 2s sleep
     };
 
-    const result = await executeHook(hook);
+    const result = await executeHookProcess(hook);
     expect(result.timedOut).toBe(true);
     expect(result.continue).toBe(true);
     expect(result.blocked).toBe(false);
@@ -128,7 +128,7 @@ describe("executeHook", () => {
     };
     const context = { event: { type: "PreToolUse" } };
 
-    const result = await executeHook(hook, context);
+    const result = await executeHookProcess(hook, context);
     expect(result.exitCode).toBe(0);
   });
 
@@ -138,7 +138,7 @@ describe("executeHook", () => {
       args: ["-c", 'echo "detailed error message" >&2; exit 2'],
     };
 
-    const result = await executeHook(hook);
+    const result = await executeHookProcess(hook);
     expect(result.blocked).toBe(true);
     expect(result.stderr).toContain("detailed error message");
   });
