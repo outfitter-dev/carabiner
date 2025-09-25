@@ -363,11 +363,22 @@ export class HookExecutor {
       ) {
         // Process permission decision format
         if (obj.hookSpecificOutput?.permissionDecision) {
+          const decision = obj.hookSpecificOutput.permissionDecision;
+          const inferredContinue =
+            decision === "allow" || decision === "approve";
           return {
             continue:
               obj.continue ??
-              obj.hookSpecificOutput.permissionDecision !== "deny",
-            stopReason: obj.stopReason,
+              (decision === "deny" || decision === "ask"
+                ? false
+                : inferredContinue),
+            stopReason:
+              obj.stopReason ??
+              (decision === "deny"
+                ? "blocked"
+                : decision === "ask"
+                  ? "approval_required"
+                  : undefined),
             hookSpecificOutput: obj.hookSpecificOutput,
             additionalContext: obj.additionalContext,
           };
@@ -501,13 +512,19 @@ export class HookExecutor {
       }
 
       // Additional semantic validation
-      if (result.continue === false && !result.stopReason && !result.suppressOutput) {
+      if (
+        result.continue === false &&
+        !result.stopReason &&
+        !result.suppressOutput
+      ) {
         const permissionDecision =
           result.hookSpecificOutput &&
           typeof result.hookSpecificOutput === "object"
-            ? (result.hookSpecificOutput as Record<string, unknown>)[
-                "permissionDecision"
-              ]
+            ? (
+                result.hookSpecificOutput as {
+                  permissionDecision?: unknown;
+                }
+              ).permissionDecision
             : undefined;
 
         const isPermissionBasedBlock =
