@@ -12,6 +12,10 @@ export type HookEnvironmentVariables = {
   CLAUDE_HOOK_EVENT: string;
 };
 
+function unsetEnv(key: keyof HookEnvironmentVariables): void {
+  Reflect.deleteProperty(process.env, key);
+}
+
 /**
  * Inject Claude Code environment variables
  * These variables are available to hook commands during execution
@@ -52,7 +56,7 @@ export function validateHookEnvironment(): boolean {
  * Clear hook environment variables (for testing)
  */
 export function clearHookEnvironment(): void {
-  process.env.CLAUDE_PROJECT_DIR = undefined;
-  process.env.CLAUDE_SESSION_ID = undefined;
-  process.env.CLAUDE_HOOK_EVENT = undefined;
+  unsetEnv("CLAUDE_PROJECT_DIR");
+  unsetEnv("CLAUDE_SESSION_ID");
+  unsetEnv("CLAUDE_HOOK_EVENT");
 }
