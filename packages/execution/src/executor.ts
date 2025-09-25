@@ -517,14 +517,19 @@ export class HookExecutor {
         !result.stopReason &&
         !result.suppressOutput
       ) {
-        const permissionDecision =
+        const rawPermissionDecision =
           result.hookSpecificOutput &&
-          typeof result.hookSpecificOutput === "object"
+          typeof result.hookSpecificOutput === "object" &&
+          "permissionDecision" in result.hookSpecificOutput
             ? (
                 result.hookSpecificOutput as {
                   permissionDecision?: unknown;
                 }
               ).permissionDecision
+            : undefined;
+        const permissionDecision =
+          typeof rawPermissionDecision === "string"
+            ? rawPermissionDecision
             : undefined;
 
         const isPermissionBasedBlock =
@@ -618,7 +623,7 @@ export class HookExecutor {
       );
       this.logger.completeExecution(
         executionContext,
-        result.success ?? true,
+        result.continue ?? true,
         metrics,
         result
       );
@@ -636,8 +641,8 @@ export class HookExecutor {
     executionContext: HookExecutionContext | null
   ): Promise<void> {
     // Try to write error to protocol
-    if (result.message) {
-      const error = new ExecutionError(result.message, "EXECUTION_FAILED");
+    if (result.stopReason) {
+      const error = new ExecutionError(result.stopReason, "EXECUTION_FAILED");
       await this.writeError(error);
     }
 
@@ -665,16 +670,16 @@ export class HookExecutor {
         memoryAfter
       );
       const error = new ExecutionError(
-        result.message || "Hook execution failed",
+        result.stopReason || "Hook execution failed",
         "EXECUTION_FAILED"
       );
       this.logger.failExecution(executionContext, error, metrics);
     } else {
       // Log generic failure if no execution context
       this.logger.error("Hook execution failed without context", {
-        message: result.message,
-        success: result.success,
-        block: result.block,
+        stopReason: result.stopReason,
+        continue: result.continue,
+        suppressOutput: result.suppressOutput,
       });
     }
   }

@@ -16,15 +16,23 @@ import type {
   HookContext,
   HookEvent,
   HookResult,
+  NotificationContext,
   NotificationEvent,
+  NotificationType,
+  PreCompactTrigger,
+  SessionEndContext,
   SessionId,
+  SessionStartContext,
+  SessionStartTrigger,
+  StopContext,
+  SubagentStopContext,
   ToolHookEvent,
   ToolInput,
   TranscriptPath,
 } from "@carabiner/types";
 import {
   createDirectoryPath,
-  createNotificationContext,
+  createPreCompactContext,
   createSessionId,
   createToolHookContext,
   createTranscriptPath,
@@ -281,8 +289,13 @@ export class TestProtocol implements HookProtocol {
       environment,
       matcher: get<string | undefined>("matcher", "matcher"),
     };
+    const rawEvent = get<string>("hookEventName", "hook_event_name");
+    const stopHookActive = get<boolean | undefined>(
+      "stopHookActive",
+      "stop_hook_active"
+    );
 
-    if (hookEvent === "PreToolUse" || hookEvent === "PostToolUse") {
+    if ("tool_name" in inRec || "toolName" in inRec) {
       // Tool hook context (PreToolUse/PostToolUse)
       return createToolHookContext(
         hookEvent as ToolHookEvent,
@@ -309,28 +322,77 @@ export class TestProtocol implements HookProtocol {
       return createUserPromptContext(prompt, baseOptions);
     }
 
-    if (
-      hookEvent === "Notification" ||
-      hookEvent === "SessionStart" ||
-      hookEvent === "SessionEnd" ||
-      hookEvent === "Stop" ||
-      hookEvent === "SubagentStop"
-    ) {
-      const message =
-        get<string | undefined>("notification", "notification") ??
-        get<string | undefined>("message", "message");
+    const message =
+      (inRec.notification as string | undefined) ??
+      get<string | undefined>("message", "message");
 
-      // Notification context
-      return createNotificationContext(
-        hookEvent as NotificationEvent,
+    if (rawEvent === "PreCompact") {
+      const trigger =
+        get<PreCompactTrigger | undefined>(
+          "preCompactTrigger",
+          "pre_compact_trigger"
+        ) ?? "auto";
+      const context = createPreCompactContext(
+        trigger,
         baseOptions,
-        message
+        stopHookActive
       );
+      return context;
     }
 
-    throw new ProtocolParseError(
-      `Unsupported hook event: ${String(hookEvent)}`
-    );
+    if (
+      rawEvent === "Notification" ||
+      rawEvent === "SessionStart" ||
+      rawEvent === "SessionEnd" ||
+      rawEvent === "Stop" ||
+      rawEvent === "SubagentStop"
+    ) {
+      if (rawEvent === "Notification") {
+        const notificationType = get<NotificationType | undefined>(
+          "notificationType",
+          "notification_type"
+        );
+
+        const notificationContext: NotificationContext = {
+          event: "Notification",
+          message,
+          notificationType,
+          stopHookActive,
+          ...baseOptions,
+        };
+        return notificationContext;
+      }
+
+      if (rawEvent === "SessionStart") {
+        const sessionStartContext: SessionStartContext = {
+          event: "SessionStart",
+          message,
+          sessionStartTrigger: get<SessionStartTrigger | undefined>(
+            "sessionStartTrigger",
+            "session_start_trigger"
+          ),
+          stopHookActive,
+          ...baseOptions,
+        };
+        return sessionStartContext;
+      }
+
+      const terminalContext:
+        | SessionEndContext
+        | StopContext
+        | SubagentStopContext = {
+        event: rawEvent as Exclude<
+          NotificationEvent,
+          "Notification" | "SessionStart"
+        >,
+        message,
+        stopHookActive,
+        ...baseOptions,
+      };
+      return terminalContext;
+    }
+
+    throw new ProtocolParseError(`Unsupported hook event: ${String(rawEvent)}`)
   }
 
   /**
