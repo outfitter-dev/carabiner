@@ -6,8 +6,8 @@
 import { describe, expect, test } from "bun:test";
 import {
   ConfigManager,
-  executeHooksForEvent,
   type ExtendedHookConfiguration,
+  executeHooksForEvent,
   type HookCommand,
   type HookConfigItem,
   type HookConfiguration,
@@ -237,7 +237,7 @@ describe("Claude settings generation", () => {
             {
               type: "command",
               command: "bun run lint.ts",
-              timeout: 1_000,
+              timeout: 1000,
               enabled: true,
             },
             {
@@ -271,9 +271,11 @@ describe("Claude settings generation", () => {
       ],
     };
 
-    (manager as unknown as { setConfig(config: ExtendedHookConfiguration): void }).setConfig(
-      customConfig
-    );
+    (
+      manager as unknown as {
+        setConfig(config: ExtendedHookConfiguration): void;
+      }
+    ).setConfig(customConfig);
 
     const settings = manager.generateClaudeSettings();
 
@@ -286,7 +288,7 @@ describe("Claude settings generation", () => {
             hooks: [
               {
                 command: "bun run lint.ts",
-                timeoutMs: 1_000,
+                timeoutMs: 1000,
                 enabled: true,
               },
             ],
@@ -322,9 +324,7 @@ describe("Execution helpers", () => {
         },
         {
           matcher: "Write",
-          hooks: [
-            { type: "command", command: "echo write" },
-          ],
+          hooks: [{ type: "command", command: "echo write" }],
         },
         {
           matcher: "Edit",
