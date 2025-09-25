@@ -67,6 +67,11 @@ The new work will sit on top of the stack to avoid re-ordering the existing Grap
 4. Add a changelog entry or note in the migration doc about the new logger override.
 5. Smoke-test by running `bun run check` and the affected example scripts (if practical).
 
+### Status
+- ✅ Added architecture and getting started documentation covering `setLoggerFactory`
+- ✅ Updated README highlights to mention the logger factory override
+- ✅ Verified targeted logging tests and typechecks (`bun test packages/hooks-core/src/logging/__tests__/logging.test.ts`, `turbo typecheck --filter=@carabiner/hooks-core --filter=@carabiner/hooks-config`)
+
 ## 4. Lefthook Automation (`gt/devx-lefthook-lint`)
 **Base branch:** `gt/docs-logger-alignment`
 
@@ -93,4 +98,3 @@ Capture the above in human-readable form (this note) and link it from the top-le
 - Do we want environment-based defaults for the custom logger hook (e.g., allow configuring via env var)? Not in scope for now, but note in the docs.
 - After landing the logging adapter, consider whether the example console calls should migrate to the shared logger or remain illustrative.
 - Ensure Graphite branch order is updated in Graphite after adding new branches (each new slice should be created with `gt create` off the branch noted above).
-
