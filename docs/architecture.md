@@ -646,6 +646,33 @@ class PluginManager {
 }
 ```
 
+### Custom Logger Factory
+
+Carabiner's logging layer defaults to the bundled Pino implementation, but you can supply your own logger globally. Every helper exported from `@carabiner/hooks-core` (`createLogger`, `coreLogger`, `executionLogger`, etc.) respects the active factory.
+
+```typescript
+import pino from 'pino';
+import { LoggerFactory, setLoggerFactory } from '@carabiner/hooks-core';
+
+const pinoFactory: LoggerFactory = (service, config) => {
+  return pino({
+    level: config.level,
+    base: {
+      service,
+      env: config.environment,
+    },
+    transport: config.pretty ? { target: 'pino-pretty' } : undefined,
+  });
+};
+
+setLoggerFactory(pinoFactory);
+
+// Later, revert to the built-in logger.
+setLoggerFactory(null);
+```
+
+Setting a new factory transparently clears the internal cache so every package receives the updated logger instances.
+
 ### Configuration Extensions
 
 ```typescript

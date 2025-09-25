@@ -26,17 +26,27 @@ import type {
 const loggerCache = new Map<string, Logger>();
 
 /**
+ * Logger factory configuration
+ */
+export type LoggerFactory = (service: string, config: LoggingConfig) => Logger;
+
+const defaultLoggerFactory: LoggerFactory = (_service, config) =>
+  new ProductionLogger(config);
+
+let activeLoggerFactory: LoggerFactory = defaultLoggerFactory;
+
+/**
  * Create or get cached logger for a service
  */
 export function createLogger(service: string, config?: LoggingConfig): Logger {
-  const cacheKey = `${service}-${config ? JSON.stringify(config) : "default"}`;
+  const finalConfig = config ?? createLoggingConfig(service);
+  const cacheKey = `${service}-${JSON.stringify(finalConfig)}`;
 
   if (loggerCache.has(cacheKey)) {
     return loggerCache.get(cacheKey)!;
   }
 
-  const finalConfig = config || createLoggingConfig(service);
-  const logger = new ProductionLogger(finalConfig);
+  const logger = activeLoggerFactory(service, finalConfig);
 
   loggerCache.set(cacheKey, logger);
   return logger;
@@ -297,18 +307,39 @@ export function createCliLogger(command?: string): Logger {
 /**
  * Pre-configured logger instances for different components
  */
-export const coreLogger = createLogger("core");
-export const runtimeLogger = createLogger("runtime");
-export const registryLogger = createLogger("registry");
-export const builderLogger = createLogger("builder");
-export const executionLogger = new HookLoggerImpl(createLogger("execution"));
-export const configLogger = createLogger("config");
+export let coreLogger = createLogger("core");
+export let runtimeLogger = createLogger("runtime");
+export let registryLogger = createLogger("registry");
+export let builderLogger = createLogger("builder");
+export let executionLogger: HookLogger = new HookLoggerImpl(
+  createLogger("execution")
+);
+export let configLogger = createLogger("config");
+
+function refreshSharedLoggers(): void {
+  coreLogger = createLogger("core");
+  runtimeLogger = createLogger("runtime");
+  registryLogger = createLogger("registry");
+  builderLogger = createLogger("builder");
+  executionLogger = new HookLoggerImpl(createLogger("execution"));
+  configLogger = createLogger("config");
+}
+
+/**
+ * Override the logger factory used across hooks-core
+ */
+export function setLoggerFactory(factory?: LoggerFactory | null): void {
+  activeLoggerFactory = factory ?? defaultLoggerFactory;
+  loggerCache.clear();
+  refreshSharedLoggers();
+}
 
 /**
  * Clear logger cache (useful for testing)
  */
 export function clearLoggerCache(): void {
   loggerCache.clear();
+  refreshSharedLoggers();
 }
 
 /**
