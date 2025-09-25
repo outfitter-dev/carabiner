@@ -1,6 +1,8 @@
 pre-commit:
   parallel: true
   commands:
+    check:
+      run: "if [ -n \"{staged_files}\" ]; then bunx ultracite check {staged_files}; fi"
     ultracite:
       glob: "**/*.{ts,tsx,js,jsx}"
       run: "bunx ultracite format {staged_files}"
@@ -14,6 +16,8 @@ pre-commit:
 pre-push:
   parallel: true
   commands:
+    check:
+      run: "if [ -n \"{staged_files}\" ]; then bunx ultracite check {staged_files}; fi"
     build:
       run: "bun run build"
     typecheck:
