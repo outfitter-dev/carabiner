@@ -10,20 +10,24 @@ import {
 } from "../config";
 import {
   clearLoggerCache,
+  coreLogger,
   createDevelopmentLogger,
   createHookLogger,
   createLogger,
   createProductionLogger,
   createTestLogger,
+  setLoggerFactory,
 } from "../factory";
 import {
   generateCorrelationId,
   hashUserId,
   sanitizeForLogging,
 } from "../sanitizer";
+import type { Logger } from "../types";
 
 beforeEach(() => {
-  // Clear logger cache before each test
+  // Ensure default factory and clear logger cache before each test
+  setLoggerFactory(null);
   clearLoggerCache();
 
   // Reset environment
@@ -33,8 +37,38 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setLoggerFactory(null);
   clearLoggerCache();
 });
+
+class FakeLogger implements Logger {
+  public readonly childContexts: Record<string, unknown>[] = [];
+
+  constructor(public readonly service: string) {}
+
+  error(
+    _messageOrError: string | Error,
+    _messageOrContext?: string | Record<string, unknown>,
+    _context?: Record<string, unknown>
+  ): void {}
+
+  warn(_message: string, _context?: Record<string, unknown>): void {}
+
+  info(_message: string, _context?: Record<string, unknown>): void {}
+
+  debug(_message: string, _context?: Record<string, unknown>): void {}
+
+  trace(_message: string, _context?: Record<string, unknown>): void {}
+
+  child(context: Record<string, unknown>): Logger {
+    this.childContexts.push(context);
+    return this;
+  }
+
+  isLevelEnabled(_level: string): boolean {
+    return true;
+  }
+}
 
 test("createLogger creates logger with correct configuration", () => {
   const logger = createLogger("test-service");
@@ -171,6 +205,42 @@ test("logger handles errors correctly", () => {
     logger.error("Test message");
     logger.error(testError, "Error with context");
   }).not.toThrow();
+});
+
+test("setLoggerFactory overrides logger creation and refreshes cache", () => {
+  const createdServices: string[] = [];
+  const fakeLoggers = new Map<string, FakeLogger>();
+
+  setLoggerFactory((service, config) => {
+    createdServices.push(`${service}:${config.service}`);
+    const logger = new FakeLogger(service);
+    fakeLoggers.set(service, logger);
+    return logger;
+  });
+
+  const customLogger = createLogger("custom-service");
+  expect(customLogger).toBe(fakeLoggers.get("custom-service"));
+  expect(createdServices).toContain("custom-service:custom-service");
+
+  // Cache should return the same instance
+  expect(createLogger("custom-service")).toBe(customLogger);
+
+  // Shared loggers should also use the custom factory
+  expect(coreLogger).toBe(fakeLoggers.get("core"));
+
+  const hookLogger = createHookLogger("PreToolUse", "Write");
+  expect(fakeLoggers.has("hook-runtime")).toBe(true);
+  expect(() => hookLogger.info("test")).not.toThrow();
+
+  // Reset to default factory
+  setLoggerFactory(null);
+
+  const defaultLogger = createLogger("custom-service");
+  expect(defaultLogger).not.toBe(customLogger);
+  expect(coreLogger).not.toBe(fakeLoggers.get("core"));
+
+  // Restore clean state
+  setLoggerFactory(null);
 });
 
 test("logging configuration uses environment variables", () => {

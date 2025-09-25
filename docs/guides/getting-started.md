@@ -64,9 +64,9 @@ Create `hooks/security-check.ts`:
 
 #!/usr/bin/env bun
 
-import pino from 'pino';
-import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
-const logger = pino({ level: process.env.LOG_LEVEL ?? 'info' }, pino.destination(2));
+import { createLogger, runClaudeHook, HookResults } from '@carabiner/hooks-core';
+
+const logger = createLogger('security-check');
 
 runClaudeHook(async (context) => {
   logger.info({ tool: context.toolName }, 'Security check');
@@ -478,6 +478,33 @@ runClaudeHook(async (context) => {
 1. **Check timeouts**: Increase timeout values in settings
 2. **Optimize logic**: Avoid expensive operations in hooks
 3. **Use async properly**: Ensure async operations are awaited
+
+## Customizing Logging
+
+The default logger returned by `createLogger` is often enough, but you can route logs through your existing observability stack.
+
+```typescript
+import pino from 'pino';
+import { LoggerFactory, setLoggerFactory } from '@carabiner/hooks-core';
+
+const pinoFactory: LoggerFactory = (service, config) => {
+  return pino({
+    level: config.level,
+    base: {
+      service,
+      env: config.environment,
+    },
+    transport: config.pretty ? { target: 'pino-pretty' } : undefined,
+  });
+};
+
+setLoggerFactory(pinoFactory);
+
+// When you need to go back to the built-in logger
+setLoggerFactory(null);
+```
+
+All helper loggers (`coreLogger`, `executionLogger`, `createHookLogger`, etc.) pick up the custom factory automatically and caches are refreshed when you change it.
 
 ## What's Next?
 
