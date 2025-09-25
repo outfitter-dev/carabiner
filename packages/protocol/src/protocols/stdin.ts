@@ -266,11 +266,22 @@ export class StdinProtocol implements HookProtocol {
    */
   async parseContext(input: unknown): Promise<HookContext> {
     try {
+      const originalInput =
+        typeof input === "object" && input !== null ? input : {};
+
       // First validate with Zod schemas
       const claudeInput = parseClaudeHookInput(input);
 
+      // Merge validated fields with the original payload so we preserve
+      // SDK-specific extensions (e.g. permission_decision) while ensuring
+      // validated values take precedence.
+      const mergedInput = {
+        ...(originalInput as Record<string, unknown>),
+        ...claudeInput,
+      };
+
       // Then create branded types and context
-      const validatedInput = await validateAndCreateBrandedInput(claudeInput);
+      const validatedInput = await validateAndCreateBrandedInput(mergedInput);
 
       return this.createTypedContext(validatedInput);
     } catch (error) {
