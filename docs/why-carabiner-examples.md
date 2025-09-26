@@ -251,47 +251,47 @@ export const runAffectedTests = createHook({
 
 #### After (Carabiner)
 ```typescript
-import { createHook } from '@outfitter/carabiner';
-import { BuildSystem } from '@outfitter/carabiner/build';
+import { createHook, HookResults } from '@outfitter/carabiner';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
-const builder = new BuildSystem({
-  incremental: true,
-  cache: '.carabiner/build-cache',
-});
+const execAsync = promisify(exec);
 
-export const incrementalBuild = createHook({
-  event: 'PostToolUse',
-  matcher: 'Edit:src/**/*.ts',
-  handler: async ({ event }) => {
-    const changedFile = event.tool_input.file_path;
+// Note: This example demonstrates the pattern.
+// A future @outfitter/carabiner/build module could provide
+// more sophisticated incremental build capabilities.
 
-    // Start incremental build in background
-    const buildHandle = await builder.buildIncremental({
-      entryPoints: [changedFile],
-      watch: false,
-    });
+export const incrementalBuild = createHook.postToolUse(
+  'Edit',
+  async (context) => {
+    // Only trigger for TypeScript files in src/
+    if (!context.toolInput?.file_path?.match(/^src\/.*\.ts$/)) {
+      return HookResults.success();
+    }
 
-    // Return immediately, let Claude continue
-    buildHandle.onComplete((result) => {
-      if (result.errors.length > 0) {
-        event.notify({
-          type: 'error',
-          title: 'Build Failed',
-          errors: result.errors.map(e => ({
-            file: e.location.file,
-            line: e.location.line,
-            message: e.text,
-          }))
-        });
+    const changedFile = context.toolInput.file_path;
+
+    // Non-blocking build execution
+    execAsync(`bun run build:incremental --entry ${changedFile}`)
+      .then(({ stdout }) => {
+        console.log('Build succeeded:', stdout);
+      })
+      .catch(({ stderr }) => {
+        console.error('Build failed:', stderr);
+        // In a real implementation, this could notify via a webhook
+        // or write to a status file that Claude could check
+      });
+
+    // Return immediately so Claude can continue working
+    return HookResults.success({
+      message: 'Incremental build started in background',
+      metadata: {
+        file: changedFile,
+        buildCommand: 'bun run build:incremental',
       }
     });
-
-    return {
-      message: 'Incremental build started in background',
-      async: true,
-    };
   }
-});
+);
 ```
 
 **Benefits**:
