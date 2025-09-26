@@ -15,6 +15,7 @@ import type {
   DirectoryPath,
   HookContext,
   HookResult,
+  HookEvent,
   NotificationEvent,
   SessionId,
   ToolHookEvent,
@@ -264,23 +265,23 @@ export class TestProtocol implements HookProtocol {
       CLAUDE_PROJECT_DIR: Bun.env.CLAUDE_PROJECT_DIR,
       ...this.options.environment,
     };
+    const hookEvent = get<HookEvent>("hookEventName", "hook_event_name");
 
-    if ("tool_name" in inRec || "toolName" in inRec) {
+    const baseOptions = {
+      sessionId: get<SessionId>("sessionId", "session_id"),
+      transcriptPath: get<TranscriptPath>("transcriptPath", "transcript_path"),
+      cwd: get<DirectoryPath>("cwd", "cwd"),
+      environment,
+      matcher: get<string | undefined>("matcher", "matcher"),
+    };
+
+    if (hookEvent === "PreToolUse" || hookEvent === "PostToolUse") {
       // Tool hook context (PreToolUse/PostToolUse)
       return createToolHookContext(
-        get<ToolHookEvent>("hookEventName", "hook_event_name"),
+        hookEvent as ToolHookEvent,
         get<string>("toolName", "tool_name"),
         get<ToolInput>("toolInput", "tool_input"),
-        {
-          sessionId: get<SessionId>("sessionId", "session_id"),
-          transcriptPath: get<TranscriptPath>(
-            "transcriptPath",
-            "transcript_path"
-          ),
-          cwd: get<DirectoryPath>("cwd", "cwd"),
-          environment,
-          matcher: get<string | undefined>("matcher", "matcher"),
-        },
+        baseOptions,
         get<Record<string, unknown> | undefined>(
           "toolResponse",
           "tool_response"
@@ -288,40 +289,40 @@ export class TestProtocol implements HookProtocol {
       );
     }
 
-    if ("prompt" in inRec) {
+    if (hookEvent === "UserPromptSubmit") {
+      const prompt = get<string | undefined>("prompt", "prompt");
+
+      if (typeof prompt !== "string" || prompt.length === 0) {
+        throw new ProtocolParseError(
+          "UserPromptSubmit events require a prompt string"
+        );
+      }
+
       // User prompt context
-      return createUserPromptContext(inRec.prompt as string, {
-        sessionId: get<SessionId>("sessionId", "session_id"),
-        transcriptPath: get<TranscriptPath>(
-          "transcriptPath",
-          "transcript_path"
-        ),
-        cwd: get<DirectoryPath>("cwd", "cwd"),
-        environment,
-        matcher: get<string | undefined>("matcher", "matcher"),
-      });
+      return createUserPromptContext(prompt, baseOptions);
     }
 
-    if ("notification" in inRec) {
+    if (
+      hookEvent === "Notification" ||
+      hookEvent === "SessionStart" ||
+      hookEvent === "SessionEnd" ||
+      hookEvent === "Stop" ||
+      hookEvent === "SubagentStop"
+    ) {
+      const message =
+        get<string | undefined>("notification", "notification") ??
+        get<string | undefined>("message", "message");
+
       // Notification context
       return createNotificationContext(
-        get<NotificationEvent>("hookEventName", "hook_event_name"),
-        {
-          sessionId: get<SessionId>("sessionId", "session_id"),
-          transcriptPath: get<TranscriptPath>(
-            "transcriptPath",
-            "transcript_path"
-          ),
-          cwd: get<DirectoryPath>("cwd", "cwd"),
-          environment,
-          matcher: get<string | undefined>("matcher", "matcher"),
-        },
-        inRec.notification as string | undefined
+        hookEvent as NotificationEvent,
+        baseOptions,
+        message
       );
     }
 
     throw new ProtocolParseError(
-      `Unsupported hook event: ${String(get("hookEventName", "hook_event_name"))}`
+      `Unsupported hook event: ${String(hookEvent)}`
     );
   }
 
