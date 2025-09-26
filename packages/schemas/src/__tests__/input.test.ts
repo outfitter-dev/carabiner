@@ -371,12 +371,12 @@ describe("claudeHookInputSchema (discriminated union)", () => {
       hook_event_name: "PreToolUse",
       tool_name: "Bash",
       tool_input: { command: "ls" },
-      prompt: "This should be ignored", // extra field
+      prompt: "This should be preserved", // extra field for SDK compatibility
     };
 
     const parsed = claudeHookInputSchema.parse(toolInput);
     expect("tool_name" in parsed).toBe(true);
-    expect("prompt" in parsed).toBe(false); // extra field stripped
+    expect("prompt" in parsed).toBe(true); // extra field preserved via passthrough
   });
 });
 
