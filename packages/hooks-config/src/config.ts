@@ -1063,6 +1063,31 @@ export class ConfigManager {
         if ("command" in eventConfig) {
           // Single hook config
           hooks[event] = this.processHookConfig(eventConfig);
+        } else if (Array.isArray(eventConfig)) {
+          // Multi-hook array format
+          const eventHooks: unknown[] = [];
+          for (const item of eventConfig) {
+            if (item && typeof item === "object" && "hooks" in item) {
+              const hookConfigItem = item as {
+                hooks: unknown[];
+                matcher?: string;
+              };
+              const processedHooks = hookConfigItem.hooks
+                .filter(
+                  (hook): hook is ToolHookConfig =>
+                    hook && typeof hook === "object" && "command" in hook
+                )
+                .map((hook) => this.processHookConfig(hook));
+
+              eventHooks.push({
+                ...(hookConfigItem.matcher && {
+                  matcher: hookConfigItem.matcher,
+                }),
+                hooks: processedHooks,
+              });
+            }
+          }
+          hooks[event] = eventHooks;
         } else {
           // Tool-specific configs
           const eventHooks: Record<string, unknown> = {};
@@ -1451,6 +1476,23 @@ export default config;
     if (config && typeof config === "object" && "command" in config) {
       // Single hook config
       this.validateToolHookConfig(config, `${event} hook`);
+    } else if (Array.isArray(config)) {
+      // Multi-hook array format
+      for (let i = 0; i < config.length; i++) {
+        const item = config[i];
+        if (item && typeof item === "object" && "hooks" in item) {
+          const hookConfigItem = item as { hooks: unknown[] };
+          if (Array.isArray(hookConfigItem.hooks)) {
+            for (let j = 0; j < hookConfigItem.hooks.length; j++) {
+              const hookCommand = hookConfigItem.hooks[j];
+              this.validateToolHookConfig(
+                hookCommand,
+                `${event}[${i}].hooks[${j}]`
+              );
+            }
+          }
+        }
+      }
     } else if (config && typeof config === "object") {
       // Tool-specific configs
       for (const [tool, toolConfig] of Object.entries(config)) {
