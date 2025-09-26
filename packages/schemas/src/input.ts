@@ -75,7 +75,7 @@ export const baseClaudeHookInputSchema = z.object({
   hook_event_name: hookEventSchema,
   matcher: z.string().optional(),
   stop_hook_active: z.boolean().optional(),
-});
+}).passthrough();
 
 /**
  * Tool hook input schema (PreToolUse, PostToolUse)
@@ -89,8 +89,9 @@ export const claudeToolHookInputSchema = baseClaudeHookInputSchema.extend({
     .object({
       permissionPrompt: z.string().optional(),
     })
+    .passthrough()
     .optional(),
-});
+}).passthrough();
 
 /**
  * User prompt input schema
@@ -98,7 +99,7 @@ export const claudeToolHookInputSchema = baseClaudeHookInputSchema.extend({
 export const claudeUserPromptInputSchema = baseClaudeHookInputSchema.extend({
   hook_event_name: z.literal("UserPromptSubmit"),
   prompt: z.string().min(1),
-});
+}).passthrough();
 
 /**
  * Notification input schema
@@ -107,7 +108,7 @@ export const claudeNotificationInputSchema = baseClaudeHookInputSchema.extend({
   hook_event_name: z.literal("Notification"),
   notification_type: notificationTypeSchema.optional(),
   message: z.string().optional(),
-});
+}).passthrough();
 
 /**
  * SessionStart input schema
@@ -116,7 +117,7 @@ export const claudeSessionStartInputSchema = baseClaudeHookInputSchema.extend({
   hook_event_name: z.literal("SessionStart"),
   session_start_trigger: sessionStartMatcherSchema.optional(),
   message: z.string().optional(),
-});
+}).passthrough();
 
 /**
  * SessionEnd input schema
@@ -124,7 +125,7 @@ export const claudeSessionStartInputSchema = baseClaudeHookInputSchema.extend({
 export const claudeSessionEndInputSchema = baseClaudeHookInputSchema.extend({
   hook_event_name: z.literal("SessionEnd"),
   reason: z.string().optional(),
-});
+}).passthrough();
 
 /**
  * Stop hook input schema
@@ -132,7 +133,7 @@ export const claudeSessionEndInputSchema = baseClaudeHookInputSchema.extend({
 export const claudeStopInputSchema = baseClaudeHookInputSchema.extend({
   hook_event_name: z.literal("Stop"),
   reason: z.string().optional(),
-});
+}).passthrough();
 
 /**
  * SubagentStop input schema
@@ -140,7 +141,7 @@ export const claudeStopInputSchema = baseClaudeHookInputSchema.extend({
 export const claudeSubagentStopInputSchema = baseClaudeHookInputSchema.extend({
   hook_event_name: z.literal("SubagentStop"),
   reason: z.string().optional(),
-});
+}).passthrough();
 
 /**
  * PreCompact input schema
@@ -148,7 +149,7 @@ export const claudeSubagentStopInputSchema = baseClaudeHookInputSchema.extend({
 export const claudePreCompactInputSchema = baseClaudeHookInputSchema.extend({
   hook_event_name: z.literal("PreCompact"),
   pre_compact_trigger: preCompactMatcherSchema,
-});
+}).passthrough();
 
 /**
  * Union of all possible Claude hook inputs
