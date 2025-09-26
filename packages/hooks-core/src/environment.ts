@@ -13,7 +13,7 @@ export type HookEnvironmentVariables = {
 };
 
 function unsetEnv(key: keyof HookEnvironmentVariables): void {
-  Reflect.deleteProperty(process.env, key);
+  delete process.env[key];
 }
 
 /**
