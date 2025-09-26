@@ -104,7 +104,7 @@ export {
 // Timeout and process execution
 export {
   type ExecutionResult,
-  executeHook,
+  executeHook as executeHookProcess,
   executeWithTimeout,
   type Hook,
   type HookProcessResult,
