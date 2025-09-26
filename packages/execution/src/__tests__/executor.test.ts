@@ -299,7 +299,6 @@ describe("HookExecutor", () => {
     });
 
     await executor.execute(handler);
-
     expect(testProtocol.output).toBeDefined();
   });
 
