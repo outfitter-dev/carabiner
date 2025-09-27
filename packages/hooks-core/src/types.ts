@@ -45,7 +45,6 @@ export type {
   BashOutputInput,
   ExitPlanModeInput,
   FileEditInput,
-  FileMultiEditInput,
   FileReadInput,
   FileWriteInput,
   GlobInput,
@@ -77,18 +76,37 @@ import type {
 } from "@anthropic-ai/claude-code";
 
 import type {
+  AgentInput,
   BashInput,
+  BashOutputInput,
+  ExitPlanModeInput,
   FileEditInput,
-  FileMultiEditInput,
   FileReadInput,
   FileWriteInput,
   GlobInput,
   GrepInput,
+  KillShellInput,
+  ListMcpResourcesInput,
+  McpInput,
   NotebookEditInput,
+  ReadMcpResourceInput,
   TodoWriteInput,
   WebFetchInput,
   WebSearchInput,
 } from "@anthropic-ai/claude-code/sdk-tools";
+
+/**
+ * Multi-edit input type was removed from the Claude Code SDK in v2.0.
+ * We maintain backwards compatibility by defining the structure explicitly.
+ */
+export type FileMultiEditInput = {
+  readonly file_path: string;
+  readonly edits: ReadonlyArray<{
+    readonly old_string: string;
+    readonly new_string: string;
+    readonly replace_all?: boolean;
+  }>;
+};
 
 /**
  * JSON parsing result for stdin input
@@ -122,6 +140,7 @@ export type ToolName = LiteralUnion<
   | "Read"
   | "Glob"
   | "Grep"
+  | "Mcp"
   | "KillShell"
   | "NotebookEdit"
   | "TodoWrite"
@@ -129,7 +148,9 @@ export type ToolName = LiteralUnion<
   | "WebSearch"
   | "ExitPlanMode"
   | "ListMcpResources"
-  | "ReadMcpResource",
+  | "ReadMcpResource"
+  | "Agent"
+  | "BashOutput",
   string
 >;
 
@@ -146,7 +167,9 @@ export type HookEnvironment = {
  * Uses SDK types directly
  */
 export type ToolInputMap = {
+  Agent: AgentInput;
   Bash: BashInput;
+  BashOutput: BashOutputInput;
   Edit: FileEditInput;
   MultiEdit: FileMultiEditInput;
   Write: FileWriteInput;
@@ -157,6 +180,11 @@ export type ToolInputMap = {
   WebFetch: WebFetchInput;
   WebSearch: WebSearchInput;
   NotebookEdit: NotebookEditInput;
+  KillShell: KillShellInput;
+  ExitPlanMode: ExitPlanModeInput;
+  ListMcpResources: ListMcpResourcesInput;
+  ReadMcpResource: ReadMcpResourceInput;
+  Mcp: McpInput;
 };
 
 /**

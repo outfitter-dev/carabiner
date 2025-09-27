@@ -404,10 +404,10 @@ export class HookExecutor {
    */
   private validateResult(result: HookResult): Result<HookResult, Error> {
     try {
-      // Check required fields
-      if (typeof result.success !== "boolean") {
+      // Validate success flag when present
+      if (result.success !== undefined && typeof result.success !== "boolean") {
         return failure(
-          new ValidationError("Result must have boolean success field")
+          new ValidationError("Result success must be boolean if present")
         );
       }
 
@@ -426,7 +426,7 @@ export class HookExecutor {
       }
 
       // Additional semantic validation
-      if (!(result.success || result.message)) {
+      if (result.success === false && !result.message) {
         return failure(
           new ValidationError("Failed results should include an error message")
         );
@@ -509,9 +509,15 @@ export class HookExecutor {
         memoryBefore,
         memoryAfter
       );
+      const wasSuccessful =
+        typeof result.success === "boolean"
+          ? result.success
+          : result.block === true
+            ? false
+            : result.continue !== false;
       this.logger.completeExecution(
         executionContext,
-        result.success,
+        wasSuccessful,
         metrics,
         result
       );
