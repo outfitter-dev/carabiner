@@ -71,7 +71,6 @@ describe("executeWithTimeout", () => {
 });
 
 describe("executeHook", () => {
-  
   it("should execute successful hook (exit code 0)", async () => {
     const hook: Hook = {
       command: "echo",
