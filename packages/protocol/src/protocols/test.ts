@@ -400,7 +400,7 @@ export class TestProtocol implements HookProtocol {
       return terminalContext;
     }
 
-    throw new ProtocolParseError(`Unsupported hook event: ${String(rawEvent)}`)
+    throw new ProtocolParseError(`Unsupported hook event: ${String(rawEvent)}`);
   }
 
   /**
