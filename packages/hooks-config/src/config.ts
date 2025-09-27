@@ -1075,7 +1075,7 @@ export class ConfigManager {
               const processedHooks = hookConfigItem.hooks
                 .filter(
                   (hook): hook is ToolHookConfig =>
-                    hook && typeof hook === "object" && "command" in hook
+                    !!(hook && typeof hook === "object" && "command" in hook)
                 )
                 .map((hook) => this.processHookConfig(hook));
 
