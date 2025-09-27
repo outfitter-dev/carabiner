@@ -477,7 +477,9 @@
       },
       {
         "tool_name": "mcp__web__fetch",
-        "input": { "url": "https://api.github.com/repos/outfitter-dev/carabiner" },
+        "input": {
+          "url": "https://api.github.com/repos/outfitter-dev/carabiner"
+        },
         "expected": "allow"
       },
       {
