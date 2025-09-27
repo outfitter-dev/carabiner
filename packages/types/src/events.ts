@@ -174,10 +174,7 @@ export const HookResults = {
     return { continue: true, additionalContext };
   },
 
-  success(
-    message?: string,
-    data?: Record<string, unknown>
-  ): HookResult {
+  success(message?: string, data?: Record<string, unknown>): HookResult {
     return { success: true, message, data };
   },
 
@@ -235,10 +232,7 @@ export const HookResults = {
     return { continue: false, stopReason: reason };
   },
 
-  block(
-    message: string,
-    data?: Record<string, unknown>
-  ): HookResult {
+  block(message: string, data?: Record<string, unknown>): HookResult {
     return {
       success: false,
       continue: false,
@@ -253,10 +247,7 @@ export const HookResults = {
     return { success: true, message };
   },
 
-  warn(
-    message: string,
-    data?: Record<string, unknown>
-  ): HookResult {
+  warn(message: string, data?: Record<string, unknown>): HookResult {
     return { success: true, message, data };
   },
 

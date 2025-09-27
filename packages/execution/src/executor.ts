@@ -511,7 +511,7 @@ export class HookExecutor {
       );
       this.logger.completeExecution(
         executionContext,
-        result.success,
+        result.success ?? true,
         metrics,
         result
       );
