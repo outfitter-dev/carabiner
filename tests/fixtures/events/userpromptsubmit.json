@@ -6,6 +6,9 @@
   "prompt": "Please help me write a TypeScript function to parse JSON data",
   "context": {
     "project_type": "typescript",
-    "files_in_context": ["/Users/test/project/src/types.ts", "/Users/test/project/package.json"]
+    "files_in_context": [
+      "/Users/test/project/src/types.ts",
+      "/Users/test/project/package.json"
+    ]
   }
 }
