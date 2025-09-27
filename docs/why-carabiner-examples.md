@@ -51,49 +51,52 @@ import { createHook, HookResults } from '@carabiner/hooks-core';
 import type { ToolHookContext } from '@carabiner/types';
 
 // Create a hook for the Read tool
-export const protectSensitiveFilesRead = createHook.preToolUse('Read', async (context: ToolHookContext) => {
-  const sensitivePatterns = [
-    /\.env(\.|$)/,
-    /\/secrets?\//,
-    /\.(key|pem|crt|pfx)$/,
-    /\/(\.?ssh|gpg)\//,
-  ];
+export const protectSensitiveFilesRead = createHook.preToolUse(
+  'Read',
+  async (context: ToolHookContext) => {
+    const sensitivePatterns = [
+      /\.env(\.|$)/,
+      /\/secrets?\//,
+      /\.(key|pem|crt|pfx)$/,
+      /\/(\.?ssh|gpg)\//,
+    ];
 
-  const filePath = context.toolInput.file_path;
-  const isRestricted = sensitivePatterns.some((pattern) => pattern.test(filePath));
+    const filePath = context.toolInput.file_path;
+    const isRestricted = sensitivePatterns.some((pattern) => pattern.test(filePath));
 
-  if (isRestricted) {
-    return HookResults.block(
-      `Access denied: ${filePath} matches restricted pattern`,
-      true // suppress output
-    );
-  }
+    if (isRestricted) {
+      return HookResults.block(
+        `Access denied: ${filePath} matches restricted pattern`,
+        true, // suppress output
+      );
+    }
 
-  return HookResults.success();
-});
+    return HookResults.success();
+  },
+);
 
 // Create a similar hook for the Edit tool
-export const protectSensitiveFilesEdit = createHook.preToolUse('Edit', async (context: ToolHookContext) => {
-  // Reuse the same logic (or extract to shared function)
-  const sensitivePatterns = [
-    /\.env(\.|$)/,
-    /\/secrets?\//,
-    /\.(key|pem|crt|pfx)$/,
-    /\/(\.?ssh|gpg)\//,
-  ];
+export const protectSensitiveFilesEdit = createHook.preToolUse(
+  'Edit',
+  async (context: ToolHookContext) => {
+    // Reuse the same logic (or extract to shared function)
+    const sensitivePatterns = [
+      /\.env(\.|$)/,
+      /\/secrets?\//,
+      /\.(key|pem|crt|pfx)$/,
+      /\/(\.?ssh|gpg)\//,
+    ];
 
-  const filePath = context.toolInput.file_path;
-  const isRestricted = sensitivePatterns.some((pattern) => pattern.test(filePath));
+    const filePath = context.toolInput.file_path;
+    const isRestricted = sensitivePatterns.some((pattern) => pattern.test(filePath));
 
-  if (isRestricted) {
-    return HookResults.block(
-      `Access denied: ${filePath} matches restricted pattern`,
-      true
-    );
-  }
+    if (isRestricted) {
+      return HookResults.block(`Access denied: ${filePath} matches restricted pattern`, true);
+    }
 
-  return HookResults.success();
-});
+    return HookResults.success();
+  },
+);
 ```
 
 **Benefits**:
@@ -160,15 +163,12 @@ export const protectMainBranch = createHook.preToolUse('Bash', async (context: T
       const branch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
 
       if (branch === 'main' || branch === 'master') {
-        return HookResults.block(
-          `Dangerous operation blocked on ${branch} branch`,
-          true
-        );
+        return HookResults.block(`Dangerous operation blocked on ${branch} branch`, true);
       }
 
       // Warn for dangerous operations on other branches
       return HookResults.warn(
-        `⚠️ Dangerous git operation detected: ${command.substring(0, 50)}...`
+        `⚠️ Dangerous git operation detected: ${command.substring(0, 50)}...`,
       );
     } catch (error) {
       // Not in a git repo, allow the command
@@ -327,9 +327,7 @@ export const autoFormat = createHook.postToolUse('Edit', async (context: ToolHoo
   const ext = path.extname(filePath);
 
   // Find appropriate formatter
-  const formatter = Object.values(formatters).find(f =>
-    f.extensions.includes(ext)
-  );
+  const formatter = Object.values(formatters).find((f) => f.extensions.includes(ext));
 
   if (!formatter) {
     return HookResults.skip(`No formatter configured for ${ext} files`);
@@ -405,13 +403,10 @@ const teamStandards: TeamStandards = {
   requireJSDoc: true,
   prohibitedPatterns: [
     /console\.(log|debug)/,
-    /any\s*:/,  // No 'any' types
-    /var\s+/,    // Use const/let
+    /any\s*:/, // No 'any' types
+    /var\s+/, // Use const/let
   ],
-  requiredHeaders: [
-    '@author',
-    '@description',
-  ],
+  requiredHeaders: ['@author', '@description'],
 };
 
 export const enforceStandards = createHook.preToolUse('Edit', async (context: ToolHookContext) => {
@@ -434,7 +429,7 @@ export const enforceStandards = createHook.preToolUse('Edit', async (context: To
   });
 
   // Check prohibited patterns
-  teamStandards.prohibitedPatterns.forEach(pattern => {
+  teamStandards.prohibitedPatterns.forEach((pattern) => {
     if (pattern.test(newContent)) {
       violations.push(`Prohibited pattern found: ${pattern.source}`);
     }
@@ -449,10 +444,7 @@ export const enforceStandards = createHook.preToolUse('Edit', async (context: To
   }
 
   if (violations.length > 0) {
-    return HookResults.block(
-      `Code standards violations:\\n${violations.join('\\n')}`,
-      false
-    );
+    return HookResults.block(`Code standards violations:\\n${violations.join('\\n')}`, false);
   }
 
   return HookResults.success('✅ Code standards check passed');
