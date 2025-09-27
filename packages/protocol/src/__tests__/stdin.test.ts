@@ -431,9 +431,7 @@ describe("parseStdinInput", () => {
     expect(result.hook_specific_input.permissionPrompt).toBe(
       "Allow file edit?"
     );
-    expect(result.hookSpecificInput?.permissionPrompt).toBe(
-      "Allow file edit?"
-    );
+    expect(result.hookSpecificInput?.permissionPrompt).toBe("Allow file edit?");
   });
 
   test("should throw error on invalid JSON", () => {
