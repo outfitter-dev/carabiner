@@ -29,21 +29,8 @@ import {
   executeHook,
   HookResults,
   parseHookEnvironment,
-} from "@carabiner/hooks-core/runtime";
-import {
-  type HookContext,
-  type HookInput,
-  type HookResult,
-  isNotificationInput,
-  isPostToolUseInput,
-  isPreCompactInput,
-  isPreToolUseInput,
-  isSessionEndInput,
-  isSessionStartInput,
-  isStopInput,
-  isSubagentStopInput,
-  isUserPromptSubmitInput,
-} from "@carabiner/hooks-core/types";
+} from "@carabiner/hooks-core";
+import type { HookContext, HookInput, HookResult } from "@carabiner/types";
 
 /**
  * Test fixture paths
@@ -59,6 +46,13 @@ function loadFixture<T = HookInput>(filename: string): T {
     throw new Error(`Test fixture not found: ${filePath}`);
   }
   return JSON.parse(readFileSync(filePath, "utf-8")) as T;
+}
+
+function hasHookEvent(
+  input: HookInput,
+  event: HookInput["hook_event_name"]
+): boolean {
+  return input.hook_event_name === event;
 }
 
 /**
@@ -149,8 +143,8 @@ describe("Claude Code Compliance Test Suite", () => {
         content: "console.log('Hello, World!');",
       });
 
-      expect(isPreToolUseInput(fixture)).toBe(true);
-      expect(isPostToolUseInput(fixture)).toBe(false);
+      expect(hasHookEvent(fixture, "PreToolUse")).toBe(true);
+      expect(hasHookEvent(fixture, "PostToolUse")).toBe(false);
     });
 
     test("should parse PreToolUse MCP tool event correctly", async () => {
@@ -162,7 +156,7 @@ describe("Claude Code Compliance Test Suite", () => {
         path: "/Users/test/project/README.md",
       });
 
-      expect(isPreToolUseInput(fixture)).toBe(true);
+      expect(hasHookEvent(fixture, "PreToolUse")).toBe(true);
     });
 
     test("should parse PostToolUse Write event correctly", async () => {
@@ -175,7 +169,7 @@ describe("Claude Code Compliance Test Suite", () => {
         file_written: "/Users/test/project/src/main.ts",
       });
 
-      expect(isPostToolUseInput(fixture)).toBe(true);
+      expect(hasHookEvent(fixture, "PostToolUse")).toBe(true);
     });
 
     test("should parse Notification event correctly", async () => {
@@ -185,7 +179,7 @@ describe("Claude Code Compliance Test Suite", () => {
       expect(fixture.notification_type).toBe("info");
       expect(fixture.message).toBe("Tool execution completed successfully");
 
-      expect(isNotificationInput(fixture)).toBe(true);
+      expect(hasHookEvent(fixture, "Notification")).toBe(true);
     });
 
     test("should parse UserPromptSubmit event correctly", async () => {
@@ -202,7 +196,7 @@ describe("Claude Code Compliance Test Suite", () => {
         ]),
       });
 
-      expect(isUserPromptSubmitInput(fixture)).toBe(true);
+      expect(hasHookEvent(fixture, "UserPromptSubmit")).toBe(true);
     });
 
     test("should parse Stop event correctly", async () => {
@@ -213,7 +207,7 @@ describe("Claude Code Compliance Test Suite", () => {
       expect(fixture.stop_hook_active).toBe(true);
       expect(fixture.exit_code).toBe(0);
 
-      expect(isStopInput(fixture)).toBe(true);
+      expect(hasHookEvent(fixture, "Stop")).toBe(true);
     });
 
     test("should parse SessionStart event correctly", async () => {
@@ -229,7 +223,7 @@ describe("Claude Code Compliance Test Suite", () => {
         }),
       });
 
-      expect(isSessionStartInput(fixture)).toBe(true);
+      expect(hasHookEvent(fixture, "SessionStart")).toBe(true);
     });
 
     test("should parse SessionEnd event correctly", async () => {
@@ -240,7 +234,7 @@ describe("Claude Code Compliance Test Suite", () => {
       expect(fixture.tools_used).toBe(15);
       expect(fixture.final_state).toBe("completed");
 
-      expect(isSessionEndInput(fixture)).toBe(true);
+      expect(hasHookEvent(fixture, "SessionEnd")).toBe(true);
     });
 
     test("should parse PreCompact event correctly", async () => {
@@ -251,7 +245,7 @@ describe("Claude Code Compliance Test Suite", () => {
       expect(fixture.messages_count).toBe(150);
       expect(fixture.compaction_strategy).toBe("semantic_summary");
 
-      expect(isPreCompactInput(fixture)).toBe(true);
+      expect(hasHookEvent(fixture, "PreCompact")).toBe(true);
     });
 
     test("should parse SubAgentStop event correctly", async () => {
@@ -263,7 +257,7 @@ describe("Claude Code Compliance Test Suite", () => {
       expect(fixture.completion_reason).toBe("task_completed");
       expect(fixture.exit_code).toBe(0);
 
-      expect(isSubagentStopInput(fixture)).toBe(true);
+      expect(hasHookEvent(fixture, "SubagentStop")).toBe(true);
     });
   });
 
