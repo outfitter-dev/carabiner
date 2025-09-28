@@ -43,7 +43,8 @@ export {
   createDevelopmentExecutor,
   createProductionExecutor,
   type ExecutionOptions,
-  executeHook,
+  executeHook as executeHookHandler,
+  executeHook as executeHookExecutor,
   HookExecutor,
 } from "./executor";
 // Metrics and performance monitoring
@@ -105,6 +106,7 @@ export {
 export {
   type ExecutionResult,
   executeHookProcess,
+  executeHookProcess as executeHook,
   executeWithTimeout,
   type Hook,
   type HookProcessResult,
