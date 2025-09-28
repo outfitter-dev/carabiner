@@ -568,10 +568,31 @@ export class HookExecutor {
         );
       }
 
+<<<<<<< HEAD
       if (
         result.continue === false &&
         !result.systemMessage &&
         !result.suppressOutput
+=======
+      const permissionDecision =
+        result.hookSpecificOutput &&
+        typeof result.hookSpecificOutput === "object"
+          ? (
+              result.hookSpecificOutput as {
+                permissionDecision?: unknown;
+              }
+            ).permissionDecision
+          : undefined;
+
+      const isPermissionBasedBlock =
+        permissionDecision === "deny" || permissionDecision === "ask";
+
+      if (
+        result.continue === false &&
+        !result.systemMessage &&
+        !result.suppressOutput &&
+        !isPermissionBasedBlock
+>>>>>>> 628bb30 (fix: block ask permission results and ensure SIGKILL fallback)
       ) {
         return failure(
           new ValidationError("Failed results should include a systemMessage")
@@ -581,28 +602,14 @@ export class HookExecutor {
       if (
         result.continue === false &&
         !result.stopReason &&
-        !result.suppressOutput
+        !result.suppressOutput &&
+        !isPermissionBasedBlock
       ) {
-        const permissionDecision =
-          result.hookSpecificOutput &&
-          typeof result.hookSpecificOutput === "object"
-            ? (
-                result.hookSpecificOutput as {
-                  permissionDecision?: unknown;
-                }
-              ).permissionDecision
-            : undefined;
-
-        const isPermissionBasedBlock =
-          permissionDecision === "deny" || permissionDecision === "ask";
-
-        if (!isPermissionBasedBlock) {
-          return failure(
-            new ValidationError(
-              "When continue is false, provide stopReason or permissionDecision"
-            )
-          );
-        }
+        return failure(
+          new ValidationError(
+            "When continue is false, provide stopReason or permissionDecision"
+          )
+        );
       }
 
       if (result.success === false && !result.message) {
