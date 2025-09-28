@@ -185,7 +185,7 @@ describe("Environment Variables", () => {
       expect(process.env.OTHER_VAR).toBe("should-remain");
 
       // Clean up
-      process.env.OTHER_VAR = undefined;
+      Reflect.deleteProperty(process.env, "OTHER_VAR");
     });
   });
 });
