@@ -41,6 +41,7 @@ export type HookConfiguration = Partial<
  */
 export type HookConfigItem = {
   matcher?: string; // Optional matcher pattern
+  enabled?: boolean;
   hooks: HookCommand[];
 };
 
@@ -51,6 +52,7 @@ export type HookCommand = {
   type: "command";
   command: string;
   timeout?: number; // Default 60000ms
+  enabled?: boolean;
 };
 
 /**
@@ -185,8 +187,17 @@ export async function validateConfiguration(
         }
       }
 
+      if (item.enabled !== undefined && typeof item.enabled !== "boolean") {
+        throw new Error(
+          "Hook config item enabled must be a boolean if provided"
+        );
+      }
+
       // Validate hook commands exist and are executable
       for (const hook of item.hooks) {
+        if (hook.enabled !== undefined && typeof hook.enabled !== "boolean") {
+          throw new Error("Hook command enabled must be a boolean if provided");
+        }
         if (!(await isExecutable(hook.command))) {
           throw new Error(
             `Hook command not found or not executable: ${hook.command}`
@@ -211,6 +222,9 @@ export async function executeHooksForEvent(
   }
 
   for (const configItem of eventConfigs) {
+    if (configItem.enabled === false) {
+      continue;
+    }
     // Check if matcher applies
     if (configItem.matcher && !matchesEvent(configItem.matcher, event)) {
       continue;
@@ -218,6 +232,9 @@ export async function executeHooksForEvent(
 
     // Execute hooks sequentially
     for (const hook of configItem.hooks) {
+      if (hook.enabled === false) {
+        continue;
+      }
       await executeHook(hook, event);
     }
   }
@@ -844,19 +861,23 @@ export class ConfigManager {
         );
         const firstHook = matchingItem?.hooks?.[0];
         if (firstHook) {
+          const itemEnabled = matchingItem?.enabled ?? true;
+          const hookEnabled = firstHook.enabled ?? true;
           return {
             command: firstHook.command,
             timeout: firstHook.timeout ?? 60_000,
-            enabled: true,
+            enabled: itemEnabled && hookEnabled,
           };
         }
       } else {
         const firstHook = eventConfig.at(0)?.hooks?.[0];
         if (firstHook) {
+          const itemEnabled = eventConfig.at(0)?.enabled ?? true;
+          const hookEnabled = firstHook.enabled ?? true;
           return {
             command: firstHook.command,
             timeout: firstHook.timeout ?? 60_000,
-            enabled: true,
+            enabled: itemEnabled && hookEnabled,
           };
         }
       }
@@ -903,33 +924,68 @@ export class ConfigManager {
     if (typeof toolOrConfig === "string" && config) {
       // Setting tool-specific config
       if (Array.isArray(existing)) {
-        const newConfig = [...existing];
+        const newConfig = existing.map((item) => ({
+          ...item,
+          hooks: item.hooks.map((hook) => ({ ...hook })),
+        }));
         // Find existing config item for this tool or create new one
         const itemIndex = newConfig.findIndex(
           (item) => item.matcher === toolOrConfig
         );
 
         if (itemIndex >= 0) {
-          // Update existing item
-          newConfig[itemIndex] = {
-            ...newConfig[itemIndex],
-            hooks: [
-              {
+          const currentItem = newConfig[itemIndex];
+          if (!currentItem) {
+            newConfig[itemIndex] = {
+              matcher: toolOrConfig,
+              enabled: config.enabled ?? true,
+              hooks: [
+                {
+                  type: "command",
+                  command: config.command,
+                  timeout: config.timeout,
+                  enabled: config.enabled ?? true,
+                },
+              ],
+            };
+          } else {
+            const itemEnabled = config.enabled ?? currentItem.enabled ?? true;
+            const updatedHooks = [...currentItem.hooks];
+
+            if (updatedHooks.length > 0 && updatedHooks[0]) {
+              updatedHooks[0] = {
+                ...updatedHooks[0],
                 type: "command",
                 command: config.command,
                 timeout: config.timeout,
-              },
-            ],
-          };
+                enabled: config.enabled ?? updatedHooks[0].enabled ?? true,
+              };
+            } else {
+              updatedHooks.push({
+                type: "command",
+                command: config.command,
+                timeout: config.timeout,
+                enabled: itemEnabled,
+              });
+            }
+
+            newConfig[itemIndex] = {
+              ...currentItem,
+              enabled: itemEnabled,
+              hooks: updatedHooks,
+            };
+          }
         } else {
           // Add new item
           newConfig.push({
             matcher: toolOrConfig,
+            enabled: config.enabled ?? true,
             hooks: [
               {
                 type: "command",
                 command: config.command,
                 timeout: config.timeout,
+                enabled: config.enabled ?? true,
               },
             ],
           });
@@ -949,17 +1005,52 @@ export class ConfigManager {
     } else if (typeof toolOrConfig === "object" && "command" in toolOrConfig) {
       // Setting event-level config
       if (Array.isArray(existing)) {
-        nextConfig[event] = [
-          {
-            hooks: [
-              {
-                type: "command",
-                command: toolOrConfig.command,
-                timeout: toolOrConfig.timeout,
-              },
-            ],
-          },
-        ] as HookConfigurationValue;
+        const newConfig = existing.map((item) => ({
+          ...item,
+          hooks: item.hooks.map((hook) => ({ ...hook })),
+        }));
+
+        const defaultIndex = newConfig.findIndex((item) => !item.matcher);
+        const defaultEnabled = toolOrConfig.enabled ?? true;
+        const baseHook = {
+          type: "command" as const,
+          command: toolOrConfig.command,
+          timeout: toolOrConfig.timeout,
+          enabled: toolOrConfig.enabled ?? true,
+        };
+
+        if (defaultIndex >= 0) {
+          const currentDefault = newConfig[defaultIndex];
+          if (!currentDefault) {
+            newConfig[defaultIndex] = {
+              enabled: defaultEnabled,
+              hooks: [baseHook],
+            };
+          } else {
+            const updatedHooks = [...currentDefault.hooks];
+            if (updatedHooks.length > 0) {
+              updatedHooks[0] = {
+                ...updatedHooks[0],
+                ...baseHook,
+              };
+            } else {
+              updatedHooks.push(baseHook);
+            }
+
+            newConfig[defaultIndex] = {
+              ...currentDefault,
+              enabled: toolOrConfig.enabled ?? currentDefault.enabled ?? true,
+              hooks: updatedHooks,
+            };
+          }
+        } else {
+          newConfig.push({
+            enabled: defaultEnabled,
+            hooks: [baseHook],
+          });
+        }
+
+        nextConfig[event] = newConfig as HookConfigurationValue;
       } else {
         nextConfig[event] = { ...toolOrConfig } as HookConfigurationValue;
       }
@@ -984,8 +1075,6 @@ export class ConfigManager {
     }
 
     // Create immutable copy of config with enabled toggle
-    const nextHookConfig = { ...hookConfig, enabled };
-
     if (tool) {
       const eventConfig = currentConfig[event];
       if (Array.isArray(eventConfig)) {
@@ -995,15 +1084,11 @@ export class ConfigManager {
           }
           return {
             ...item,
-            hooks: item.hooks.map((hook, index) =>
-              index === 0
-                ? {
-                    ...hook,
-                    command: nextHookConfig.command,
-                    timeout: nextHookConfig.timeout,
-                  }
-                : hook
-            ),
+            enabled,
+            hooks: item.hooks.map((hook) => ({
+              ...hook,
+              enabled,
+            })),
           };
         });
         await this.updateConfig({
@@ -1011,6 +1096,7 @@ export class ConfigManager {
           [event]: updated,
         } as ExtendedHookConfiguration);
       } else {
+        const nextHookConfig = { ...hookConfig, enabled };
         const eventMap = {
           ...(eventConfig as Record<string, ToolHookConfig>),
         };
@@ -1021,10 +1107,32 @@ export class ConfigManager {
         } as ExtendedHookConfiguration);
       }
     } else {
-      await this.updateConfig({
-        ...currentConfig,
-        [event]: nextHookConfig,
-      } as ExtendedHookConfiguration);
+      const eventConfig = currentConfig[event];
+      if (Array.isArray(eventConfig)) {
+        const updated = eventConfig.map((item) => {
+          if (item.matcher) {
+            return item;
+          }
+          return {
+            ...item,
+            enabled,
+            hooks: item.hooks.map((hook) => ({
+              ...hook,
+              enabled,
+            })),
+          };
+        });
+        await this.updateConfig({
+          ...currentConfig,
+          [event]: updated,
+        } as ExtendedHookConfiguration);
+      } else {
+        const nextHookConfig = { ...hookConfig, enabled };
+        await this.updateConfig({
+          ...currentConfig,
+          [event]: nextHookConfig,
+        } as ExtendedHookConfiguration);
+      }
     }
   }
 
@@ -1071,23 +1179,47 @@ export class ConfigManager {
               const hookConfigItem = item as {
                 hooks: unknown[];
                 matcher?: string;
+                enabled?: boolean;
               };
+
+              if (hookConfigItem.enabled === false) {
+                continue;
+              }
+
               const processedHooks = hookConfigItem.hooks
                 .filter(
                   (hook): hook is ToolHookConfig =>
-                    !!(hook && typeof hook === "object" && "command" in hook)
+                    !!(
+                      hook &&
+                      typeof hook === "object" &&
+                      "command" in hook &&
+                      (hook as HookCommand).enabled !== false
+                    )
                 )
                 .map((hook) => this.processHookConfig(hook));
 
-              eventHooks.push({
-                ...(hookConfigItem.matcher && {
-                  matcher: hookConfigItem.matcher,
-                }),
+              if (processedHooks.length === 0) {
+                continue;
+              }
+
+              const serializedItem: Record<string, unknown> = {
                 hooks: processedHooks,
-              });
+              };
+
+              if (hookConfigItem.matcher) {
+                serializedItem.matcher = hookConfigItem.matcher;
+              }
+
+              if (hookConfigItem.enabled !== undefined) {
+                serializedItem.enabled = hookConfigItem.enabled;
+              }
+
+              eventHooks.push(serializedItem);
             }
           }
-          hooks[event] = eventHooks;
+          if (eventHooks.length > 0) {
+            hooks[event] = eventHooks;
+          }
         } else {
           // Tool-specific configs
           const eventHooks: Record<string, unknown> = {};
@@ -1124,6 +1256,10 @@ export class ConfigManager {
 
     if (config.detached !== undefined) {
       processed.detached = config.detached;
+    }
+
+    if (config.enabled !== undefined) {
+      processed.enabled = config.enabled;
     }
 
     return processed;

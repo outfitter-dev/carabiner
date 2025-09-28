@@ -5,7 +5,9 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  ConfigManager,
   executeHooksForEvent,
+  type ExtendedHookConfiguration,
   type HookCommand,
   type HookConfigItem,
   type HookConfiguration,
@@ -220,6 +222,126 @@ describe("Configuration Validation", () => {
     await expect(validateConfiguration(config)).rejects.toThrow(
       "Hook command not found or not executable: nonexistent-command"
     );
+  });
+});
+
+describe("Claude settings generation", () => {
+  test("should omit disabled items and hooks in generated settings", () => {
+    const manager = new ConfigManager(process.cwd());
+    const customConfig: ExtendedHookConfiguration = {
+      PreToolUse: [
+        {
+          matcher: "Write",
+          enabled: true,
+          hooks: [
+            {
+              type: "command",
+              command: "bun run lint.ts",
+              timeout: 1_000,
+              enabled: true,
+            },
+            {
+              type: "command",
+              command: "bun run skip.ts",
+              enabled: false,
+            },
+          ],
+        },
+        {
+          matcher: "Edit",
+          enabled: false,
+          hooks: [
+            {
+              type: "command",
+              command: "bun run edit.ts",
+              enabled: true,
+            },
+          ],
+        },
+        {
+          enabled: true,
+          hooks: [
+            {
+              type: "command",
+              command: "bun run default.ts",
+              enabled: true,
+            },
+          ],
+        },
+      ],
+    };
+
+    (manager as unknown as { setConfig(config: ExtendedHookConfiguration): void }).setConfig(
+      customConfig
+    );
+
+    const settings = manager.generateClaudeSettings();
+
+    expect(settings).toEqual({
+      hooks: {
+        PreToolUse: [
+          {
+            matcher: "Write",
+            enabled: true,
+            hooks: [
+              {
+                command: "bun run lint.ts",
+                timeoutMs: 1_000,
+                enabled: true,
+              },
+            ],
+          },
+          {
+            enabled: true,
+            hooks: [
+              {
+                command: "bun run default.ts",
+                enabled: true,
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+});
+
+describe("Execution helpers", () => {
+  test("executeHooksForEvent skips disabled items and hooks", async () => {
+    const config: HookConfiguration = {
+      PreToolUse: [
+        {
+          enabled: false,
+          hooks: [
+            {
+              type: "command",
+              command: "should-not-run",
+              enabled: false,
+            },
+          ],
+        },
+        {
+          matcher: "Write",
+          hooks: [
+            { type: "command", command: "echo write" },
+          ],
+        },
+        {
+          matcher: "Edit",
+          hooks: [
+            {
+              type: "command",
+              command: "",
+              enabled: false,
+            },
+          ],
+        },
+      ],
+    };
+
+    await expect(
+      executeHooksForEvent({ type: "PreToolUse", toolName: "Edit" }, config)
+    ).resolves.toBeUndefined();
   });
 });
 
