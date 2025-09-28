@@ -265,7 +265,14 @@ export class TestProtocol implements HookProtocol {
       CLAUDE_PROJECT_DIR: Bun.env.CLAUDE_PROJECT_DIR,
       ...this.options.environment,
     };
-    const hookEvent = get<HookEvent>("hookEventName", "hook_event_name");
+    const hookEvent = get<HookEvent | undefined>(
+      "hookEventName",
+      "hook_event_name"
+    );
+
+    if (!hookEvent) {
+      throw new ProtocolParseError("Hook event name is required");
+    }
 
     const baseOptions = {
       sessionId: get<SessionId>("sessionId", "session_id"),
