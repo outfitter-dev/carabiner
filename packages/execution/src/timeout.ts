@@ -68,6 +68,7 @@ export async function executeWithTimeout(
   let stdout = "";
   let stderr = "";
   let timedOut = false;
+  let killTimer: NodeJS.Timeout | undefined;
 
   // Set timeout for SIGTERM -> SIGKILL progression
   const timer = setTimeout(() => {
@@ -81,8 +82,8 @@ export async function executeWithTimeout(
     child.kill("SIGTERM");
 
     // Give 5s for graceful shutdown, then SIGKILL
-    setTimeout(() => {
-      const stillRunning = child.exitCode === null && child.signalCode === null;
+    killTimer = setTimeout(() => {
+      const stillRunning = child.exitCode === null;
       if (stillRunning) {
         logger.warn("Process did not exit gracefully, sending SIGKILL", {
           command,
@@ -109,6 +110,9 @@ export async function executeWithTimeout(
   return new Promise((resolve) => {
     child.on("exit", (code, signal) => {
       clearTimeout(timer);
+      if (killTimer) {
+        clearTimeout(killTimer);
+      }
 
       const exitCode = code ?? 1;
 
@@ -127,6 +131,9 @@ export async function executeWithTimeout(
 
     child.on("error", (error) => {
       clearTimeout(timer);
+      if (killTimer) {
+        clearTimeout(killTimer);
+      }
 
       logger.error("Process error", {
         command,

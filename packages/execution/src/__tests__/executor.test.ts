@@ -243,6 +243,39 @@ describe("HookExecutor", () => {
     expect(testProtocol.output?.continue).toBe(false);
   });
 
+  test("should block when permission decision requests approval", async () => {
+    const mockInput = {
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "ls" },
+      session_id: "test-session-approval",
+      transcript_path: "/tmp/transcript.md",
+      cwd: "/tmp",
+      environment: { PATH: "/usr/bin" },
+    };
+
+    const testProtocol = createProtocol("test", {
+      input: mockInput,
+    }) as TestProtocol;
+
+    const handler: HookHandler = () => ({
+      hookSpecificOutput: {
+        permissionDecision: "ask",
+        permissionDecisionReason: "needs approval",
+      },
+    });
+
+    const executor = new HookExecutor(testProtocol, {
+      exitProcess: false,
+      collectMetrics: false,
+    });
+
+    await executor.execute(handler);
+
+    expect(testProtocol.output?.continue).toBe(false);
+    expect(testProtocol.output?.stopReason).toBe("approval_required");
+  });
+
   test("should handle raw output for SessionStart event", async () => {
     const mockInput = {
       hook_event_name: "SessionStart",
