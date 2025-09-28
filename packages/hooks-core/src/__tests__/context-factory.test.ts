@@ -11,7 +11,15 @@ import type {
   SessionStartContext,
   UserPromptHookContext,
 } from "@carabiner/types";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import {
   createContextForEvent,
   createNotificationContext,
@@ -47,6 +55,10 @@ describe("Context Factory", () => {
 
   afterEach(() => {
     clearHookEnvironment();
+  });
+
+  afterAll(() => {
+    mockConsoleDebug.mockRestore();
   });
 
   describe("createPreToolUseContext", () => {
