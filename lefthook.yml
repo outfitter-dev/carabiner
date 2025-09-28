@@ -17,7 +17,7 @@ pre-push:
   parallel: true
   commands:
     check:
-      run: "if [ -n \"{staged_files}\" ]; then bunx ultracite check {staged_files}; fi"
+      run: "bunx ultracite check"
     build:
       run: "bun run build"
     typecheck:
