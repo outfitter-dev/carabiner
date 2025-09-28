@@ -7,7 +7,12 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ConfigManager } from "../config";
+import {
+  ConfigManager,
+  type ExtendedHookConfiguration,
+  type HookCommand,
+  type HookConfigItem,
+} from "../config";
 
 describe("ConfigManager - Immutability Tests", () => {
   let tempDir: string;
@@ -173,5 +178,107 @@ describe("ConfigManager - Immutability Tests", () => {
 
     // Different references
     expect(afterSecondUpdate).not.toBe(afterFirstUpdate);
+  });
+
+  test("setHookConfig preserves multi-hook entries for event-level updates", async () => {
+    const settable = configManager as unknown as {
+      setConfig(config: ExtendedHookConfiguration): void;
+      configPath: string | null;
+      save(config: ExtendedHookConfiguration, format?: string): Promise<void>;
+    };
+
+    const initialConfig: ExtendedHookConfiguration = {
+      PreToolUse: [
+        {
+          matcher: "Write",
+          enabled: true,
+          hooks: [
+            {
+              type: "command",
+              command: "bun run hooks/write.ts",
+              enabled: true,
+            },
+          ],
+        },
+        {
+          matcher: "Edit",
+          enabled: true,
+          hooks: [
+            {
+              type: "command",
+              command: "bun run hooks/edit.ts",
+              enabled: true,
+            },
+          ],
+        },
+      ] satisfies HookConfigItem[],
+    };
+
+    settable.setConfig(initialConfig);
+    settable.configPath = join(tempDir, "hooks.config.json");
+    settable.save = async (config: ExtendedHookConfiguration) => {
+      settable.setConfig(config);
+    };
+
+    await configManager.setHookConfig("PreToolUse", {
+      command: "bun run hooks/default.ts",
+      timeout: 2_000,
+      enabled: true,
+    });
+
+    const updated = configManager.getConfig();
+    expect(updated.PreToolUse).toHaveLength(3);
+
+    const defaultItem = updated.PreToolUse?.find((item) => !item.matcher);
+    expect(defaultItem?.enabled).toBe(true);
+    expect(defaultItem?.hooks[0]?.command).toBe("bun run hooks/default.ts");
+    expect(defaultItem?.hooks[0]?.timeout).toBe(2_000);
+
+    const writeItem = updated.PreToolUse?.find((item) => item.matcher === "Write");
+    expect(writeItem?.hooks[0]?.command).toBe("bun run hooks/write.ts");
+    const editItem = updated.PreToolUse?.find((item) => item.matcher === "Edit");
+    expect(editItem?.hooks[0]?.command).toBe("bun run hooks/edit.ts");
+  });
+
+  test("toggleHook updates enabled flags in multi-hook arrays", async () => {
+    const settable = configManager as unknown as {
+      setConfig(config: ExtendedHookConfiguration): void;
+      configPath: string | null;
+      save(config: ExtendedHookConfiguration, format?: string): Promise<void>;
+    };
+
+    const initialConfig: ExtendedHookConfiguration = {
+      PreToolUse: [
+        {
+          matcher: "Write",
+          enabled: true,
+          hooks: [
+            {
+              type: "command",
+              command: "bun run hooks/write-primary.ts",
+              enabled: true,
+            },
+            {
+              type: "command",
+              command: "bun run hooks/write-secondary.ts",
+              enabled: true,
+            },
+          ] satisfies HookCommand[],
+        },
+      ] satisfies HookConfigItem[],
+    };
+
+    settable.setConfig(initialConfig);
+    settable.configPath = join(tempDir, "hooks.config.json");
+    settable.save = async (config: ExtendedHookConfiguration) => {
+      settable.setConfig(config);
+    };
+
+    await configManager.toggleHook("PreToolUse", "Write", false);
+
+    const updated = configManager.getConfig();
+    const writeItem = updated.PreToolUse?.find((item) => item.matcher === "Write");
+    expect(writeItem?.enabled).toBe(false);
+    expect(writeItem?.hooks.every((hook) => hook.enabled === false)).toBe(true);
   });
 });
