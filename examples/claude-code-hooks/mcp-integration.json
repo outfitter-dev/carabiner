@@ -17,7 +17,7 @@
   },
 
   "hooks": {
-    "preToolUseHooks": {
+    "PreToolUse": {
       "mcp__*": {
         "command": "bun hooks/mcp-validator.ts",
         "timeout": 5000,
@@ -39,7 +39,7 @@
         "description": "Web/HTTP MCP tools security"
       }
     },
-    "postToolUseHooks": {
+    "PostToolUse": {
       "mcp__*": {
         "command": "bun hooks/mcp-logger.ts",
         "timeout": 2000,
@@ -411,7 +411,7 @@
     "selective_mcp_validation": {
       "description": "Apply different validation rules to different MCP providers",
       "config": {
-        "preToolUseHooks": {
+        "PreToolUse": {
           "mcp__database__*": {
             "command": "bun hooks/strict-database-validator.ts",
             "timeout": 5000
@@ -435,7 +435,7 @@
     "environment_based_mcp_rules": {
       "description": "Different MCP rules for different environments",
       "config": {
-        "preToolUseHooks": {
+        "PreToolUse": {
           "mcp__*": [
             {
               "command": "NODE_ENV=production bun hooks/production-mcp-security.ts",
