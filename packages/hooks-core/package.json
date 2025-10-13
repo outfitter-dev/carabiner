@@ -12,7 +12,7 @@
     "@carabiner/types": "0.1.0-alpha",
     "@types/bun": "*",
     "pino-pretty": "^13.1.1",
-    "type-fest": "^4.41.0",
+    "type-fest": "^5.1.0",
     "typescript": "^5.9.2"
   },
   "exports": {
@@ -48,7 +48,7 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "peerDependencies": {
-    "type-fest": "^4.41.0"
+    "type-fest": "^5.1.0"
   },
   "publishConfig": {
     "access": "public",
