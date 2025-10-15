@@ -568,12 +568,6 @@ export class HookExecutor {
         );
       }
 
-<<<<<<< HEAD
-      if (
-        result.continue === false &&
-        !result.systemMessage &&
-        !result.suppressOutput
-=======
       const permissionDecision =
         result.hookSpecificOutput &&
         typeof result.hookSpecificOutput === "object"
@@ -592,7 +586,6 @@ export class HookExecutor {
         !result.systemMessage &&
         !result.suppressOutput &&
         !isPermissionBasedBlock
->>>>>>> 628bb30 (fix: block ask permission results and ensure SIGKILL fallback)
       ) {
         return failure(
           new ValidationError("Failed results should include a systemMessage")
