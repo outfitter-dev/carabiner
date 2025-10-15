@@ -935,20 +935,7 @@ export class ConfigManager {
 
         if (itemIndex >= 0) {
           const currentItem = newConfig[itemIndex];
-          if (!currentItem) {
-            newConfig[itemIndex] = {
-              matcher: toolOrConfig,
-              enabled: config.enabled ?? true,
-              hooks: [
-                {
-                  type: "command",
-                  command: config.command,
-                  timeout: config.timeout,
-                  enabled: config.enabled ?? true,
-                },
-              ],
-            };
-          } else {
+          if (currentItem) {
             const itemEnabled = config.enabled ?? currentItem.enabled ?? true;
             const updatedHooks = [...currentItem.hooks];
 
@@ -973,6 +960,19 @@ export class ConfigManager {
               ...currentItem,
               enabled: itemEnabled,
               hooks: updatedHooks,
+            };
+          } else {
+            newConfig[itemIndex] = {
+              matcher: toolOrConfig,
+              enabled: config.enabled ?? true,
+              hooks: [
+                {
+                  type: "command",
+                  command: config.command,
+                  timeout: config.timeout,
+                  enabled: config.enabled ?? true,
+                },
+              ],
             };
           }
         } else {
@@ -1021,12 +1021,7 @@ export class ConfigManager {
 
         if (defaultIndex >= 0) {
           const currentDefault = newConfig[defaultIndex];
-          if (!currentDefault) {
-            newConfig[defaultIndex] = {
-              enabled: defaultEnabled,
-              hooks: [baseHook],
-            };
-          } else {
+          if (currentDefault) {
             const updatedHooks = [...currentDefault.hooks];
             if (updatedHooks.length > 0) {
               updatedHooks[0] = {
@@ -1041,6 +1036,11 @@ export class ConfigManager {
               ...currentDefault,
               enabled: toolOrConfig.enabled ?? currentDefault.enabled ?? true,
               hooks: updatedHooks,
+            };
+          } else {
+            newConfig[defaultIndex] = {
+              enabled: defaultEnabled,
+              hooks: [baseHook],
             };
           }
         } else {

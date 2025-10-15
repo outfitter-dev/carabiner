@@ -222,7 +222,7 @@ describe("ConfigManager - Immutability Tests", () => {
 
     await configManager.setHookConfig("PreToolUse", {
       command: "bun run hooks/default.ts",
-      timeout: 2_000,
+      timeout: 2000,
       enabled: true,
     });
 
@@ -232,11 +232,15 @@ describe("ConfigManager - Immutability Tests", () => {
     const defaultItem = updated.PreToolUse?.find((item) => !item.matcher);
     expect(defaultItem?.enabled).toBe(true);
     expect(defaultItem?.hooks[0]?.command).toBe("bun run hooks/default.ts");
-    expect(defaultItem?.hooks[0]?.timeout).toBe(2_000);
+    expect(defaultItem?.hooks[0]?.timeout).toBe(2000);
 
-    const writeItem = updated.PreToolUse?.find((item) => item.matcher === "Write");
+    const writeItem = updated.PreToolUse?.find(
+      (item) => item.matcher === "Write"
+    );
     expect(writeItem?.hooks[0]?.command).toBe("bun run hooks/write.ts");
-    const editItem = updated.PreToolUse?.find((item) => item.matcher === "Edit");
+    const editItem = updated.PreToolUse?.find(
+      (item) => item.matcher === "Edit"
+    );
     expect(editItem?.hooks[0]?.command).toBe("bun run hooks/edit.ts");
   });
 
@@ -277,7 +281,9 @@ describe("ConfigManager - Immutability Tests", () => {
     await configManager.toggleHook("PreToolUse", "Write", false);
 
     const updated = configManager.getConfig();
-    const writeItem = updated.PreToolUse?.find((item) => item.matcher === "Write");
+    const writeItem = updated.PreToolUse?.find(
+      (item) => item.matcher === "Write"
+    );
     expect(writeItem?.enabled).toBe(false);
     expect(writeItem?.hooks.every((hook) => hook.enabled === false)).toBe(true);
   });
