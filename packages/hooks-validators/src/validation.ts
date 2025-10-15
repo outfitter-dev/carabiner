@@ -5,7 +5,12 @@
 
 import { existsSync, statSync } from "node:fs";
 import { dirname, extname, resolve } from "node:path";
-import type { HookContext, ToolInput, ToolName } from "@carabiner/hooks-core";
+import type {
+  FileMultiEditInput,
+  HookContext,
+  ToolInput,
+  ToolName,
+} from "@carabiner/hooks-core";
 import {
   isBashToolInput,
   isEditToolInput,
@@ -696,14 +701,7 @@ async function validateEditOperation(
  * Validate MultiEdit tool operation
  */
 async function validateMultiEditOperation(
-  input: {
-    file_path: string;
-    edits: Array<{
-      old_string: string;
-      new_string: string;
-      replace_all?: boolean;
-    }>;
-  },
+  input: FileMultiEditInput,
   result: ValidationResult,
   _context?: HookContext
 ): Promise<void> {
