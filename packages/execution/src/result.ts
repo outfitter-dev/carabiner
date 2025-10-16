@@ -181,7 +181,9 @@ export function fromHookResult(
   if (hookResult.continue !== false) {
     return success(hookResult);
   }
-  return failure(new Error(hookResult.systemMessage || "Hook execution failed"));
+  return failure(
+    new Error(hookResult.systemMessage || "Hook execution failed")
+  );
 }
 
 /**

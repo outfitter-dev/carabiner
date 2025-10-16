@@ -234,7 +234,8 @@ class MetricsStore {
     }
 
     const errorRate =
-      recentMetrics.filter((m) => m.continue === false).length / recentMetrics.length;
+      recentMetrics.filter((m) => m.continue === false).length /
+      recentMetrics.length;
     if (errorRate <= this.config.errorRateThreshold) {
       return;
     }
@@ -310,7 +311,9 @@ class MetricsStore {
 
     const durations = this.metrics.map((m) => m.duration);
     const totalDuration = durations.reduce((sum, d) => sum + d, 0);
-    const successCount = this.metrics.filter((m) => m.continue !== false).length;
+    const successCount = this.metrics.filter(
+      (m) => m.continue !== false
+    ).length;
 
     // Calculate memory trend
     const recent = this.metrics.slice(-10);

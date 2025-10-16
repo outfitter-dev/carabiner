@@ -95,7 +95,7 @@ describe("Plugin Utilities", () => {
   describe("isPluginResult", () => {
     test("should return true for valid plugin result", () => {
       const result: PluginResult = {
-        success: true,
+        continue: true,
         pluginName: "test-plugin",
         pluginVersion: "1.0.0",
       };
@@ -105,9 +105,9 @@ describe("Plugin Utilities", () => {
 
     test("should return true for plugin result with additional fields", () => {
       const result: PluginResult = {
-        success: false,
-        block: true,
-        message: "Test failed",
+        continue: false,
+        stopReason: "blocked",
+        systemMessage: "Test failed",
         pluginName: "test-plugin",
         pluginVersion: "1.0.0",
         executionTime: 100,
@@ -117,18 +117,19 @@ describe("Plugin Utilities", () => {
       expect(isPluginResult(result)).toBe(true);
     });
 
-    test("should return false for invalid plugin result - missing success", () => {
-      const invalid = {
+    test("should return true for plugin result with defaults (continue undefined means true)", () => {
+      const result = {
         pluginName: "test-plugin",
         pluginVersion: "1.0.0",
       };
 
-      expect(isPluginResult(invalid)).toBe(false);
+      // In Claude SDK v2, continue defaults to true if not specified
+      expect(isPluginResult(result)).toBe(true);
     });
 
     test("should return false for invalid plugin result - missing pluginName", () => {
       const invalid = {
-        success: true,
+        continue: true,
         pluginVersion: "1.0.0",
       };
 
@@ -149,15 +150,15 @@ describe("Plugin Utilities", () => {
         version: "1.0.0",
         events: ["PreToolUse"],
         apply: async () => ({
-          success: true,
+          continue: true,
           pluginName: "test",
           pluginVersion: "1.0.0",
         }),
       };
 
       const hookResult = {
-        success: true,
-        message: "Test passed",
+        continue: true,
+        systemMessage: "Test passed",
       };
 
       const pluginResult = createPluginResult(plugin, hookResult, 150, {
@@ -166,8 +167,8 @@ describe("Plugin Utilities", () => {
       });
 
       expect(pluginResult).toEqual({
-        success: true,
-        message: "Test passed",
+        continue: true,
+        systemMessage: "Test passed",
         pluginName: "test-plugin",
         pluginVersion: "1.0.0",
         executionTime: 150,
@@ -184,22 +185,22 @@ describe("Plugin Utilities", () => {
         version: "2.0.0",
         events: ["PostToolUse"],
         apply: async () => ({
-          success: true,
+          continue: true,
           pluginName: "test",
           pluginVersion: "1.0.0",
         }),
       };
 
       const hookResult = {
-        success: false,
-        block: true,
+        continue: false,
+        stopReason: "blocked",
       };
 
       const pluginResult = createPluginResult(plugin, hookResult);
 
       expect(pluginResult).toEqual({
-        success: false,
-        block: true,
+        continue: false,
+        stopReason: "blocked",
         pluginName: "test-plugin",
         pluginVersion: "2.0.0",
       });

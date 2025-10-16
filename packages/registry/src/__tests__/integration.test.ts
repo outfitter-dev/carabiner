@@ -24,25 +24,25 @@ const createTestPlugin = (
     switch (behavior) {
       case "fail":
         return {
-          success: false,
+          continue: false,
           pluginName: name,
           pluginVersion: "1.0.0",
-          message: `${name} failed`,
+          systemMessage: `${name} failed`,
         };
       case "block":
         return {
-          success: false,
-          block: true,
+          continue: false,
+          stopReason: "blocked",
           pluginName: name,
           pluginVersion: "1.0.0",
-          message: `${name} blocked operation`,
+          systemMessage: `${name} blocked operation`,
         };
       default:
         return {
-          success: true,
+          continue: true,
           pluginName: name,
           pluginVersion: "1.0.0",
-          message: `${name} executed successfully`,
+          systemMessage: `${name} executed successfully`,
         };
     }
   },
@@ -109,8 +109,8 @@ describe("Plugin System Integration", () => {
 
       expect(results).toHaveLength(1);
       expect(results[0]!.pluginName).toBe("blocking");
-      expect(results[0]!.success).toBe(false);
-      expect(results[0]!.block).toBe(true);
+      expect(results[0]!.continue).toBe(false);
+      expect(results[0]!.stopReason).toBe("blocked");
 
       await registry.shutdown();
     });
@@ -128,8 +128,8 @@ describe("Plugin System Integration", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(2);
-      expect(results[0]!.success).toBe(false);
-      expect(results[1]!.success).toBe(true);
+      expect(results[0]!.continue).toBe(false);
+      expect(results[1]!.continue).toBe(true);
 
       await registry.shutdown();
     });
@@ -313,10 +313,10 @@ export default {
   version: '1.0.0',
   events: ['PreToolUse'],
   apply: async (context) => ({
-    success: true,
+    continue: true,
     pluginName: 'test-plugin-1',
     pluginVersion: '1.0.0',
-    message: 'Test plugin executed'
+    systemMessage: 'Test plugin executed'
   })
 };
 `;
@@ -408,8 +408,8 @@ export default {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0]!.success).toBe(false);
-      expect(results[0]!.message).toContain("Plugin execution failed");
+      expect(results[0]!.continue).toBe(false);
+      expect(results[0]!.systemMessage).toContain("Plugin execution failed");
 
       await registry.shutdown();
     });
@@ -436,7 +436,7 @@ export default {
         events: ["PreToolUse"],
 
         apply: async () => ({
-          success: true,
+          continue: true,
           pluginName: "lifecycle-test",
           pluginVersion: "1.0.0",
         }),
@@ -475,7 +475,7 @@ export default {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(5);
-      expect(results.every((r) => r.success)).toBe(true);
+      expect(results.every((r) => r.continue !== false)).toBe(true);
 
       await registry.shutdown();
     });

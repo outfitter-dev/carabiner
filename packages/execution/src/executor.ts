@@ -335,7 +335,8 @@ export class HookExecutor {
         systemMessage: result
           ? "Handler completed successfully"
           : "Handler returned false",
-        stopReason: !result && context.event === "PreToolUse" ? "blocked" : undefined,
+        stopReason:
+          !result && context.event === "PreToolUse" ? "blocked" : undefined,
       };
     }
 
@@ -356,7 +357,9 @@ export class HookExecutor {
         systemMessage: obj.systemMessage || "Handler completed successfully",
         stopReason:
           obj.stopReason ??
-          (obj.continue === false && context.event === "PreToolUse" ? "blocked" : undefined),
+          (obj.continue === false && context.event === "PreToolUse"
+            ? "blocked"
+            : undefined),
         hookSpecificOutput: obj.hookSpecificOutput,
         suppressOutput: obj.suppressOutput,
         additionalContext: obj.additionalContext,
@@ -408,21 +411,30 @@ export class HookExecutor {
   private validateResult(result: HookResult): Result<HookResult, Error> {
     try {
       // Validate continue flag when present
-      if (result.continue !== undefined && typeof result.continue !== "boolean") {
+      if (
+        result.continue !== undefined &&
+        typeof result.continue !== "boolean"
+      ) {
         return failure(
           new ValidationError("Result continue must be boolean if present")
         );
       }
 
       // Validate systemMessage field
-      if (result.systemMessage !== undefined && typeof result.systemMessage !== "string") {
+      if (
+        result.systemMessage !== undefined &&
+        typeof result.systemMessage !== "string"
+      ) {
         return failure(
           new ValidationError("Result systemMessage must be string if present")
         );
       }
 
       // Validate stopReason field
-      if (result.stopReason !== undefined && typeof result.stopReason !== "string") {
+      if (
+        result.stopReason !== undefined &&
+        typeof result.stopReason !== "string"
+      ) {
         return failure(
           new ValidationError("Result stopReason must be string if present")
         );
@@ -596,7 +608,10 @@ export class HookExecutor {
   ): Promise<void> {
     // Try to write error to protocol
     if (result.systemMessage) {
-      const error = new ExecutionError(result.systemMessage, "EXECUTION_FAILED");
+      const error = new ExecutionError(
+        result.systemMessage,
+        "EXECUTION_FAILED"
+      );
       await this.writeError(error);
     }
 

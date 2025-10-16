@@ -271,7 +271,8 @@ export class MetricsCollector {
     }
     // In Claude SDK v2, continue defaults to true if not specified
     const success = result.continue !== false;
-    const message = "systemMessage" in result ? result.systemMessage : undefined;
+    const message =
+      "systemMessage" in result ? result.systemMessage : undefined;
     const metrics: ExecutionMetrics = {
       id: this.generateId(),
       event: context.event,

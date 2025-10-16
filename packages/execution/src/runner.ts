@@ -330,7 +330,7 @@ function normalizeTestResult(result: unknown): HookResult {
     return {
       continue: result,
       systemMessage: result ? "Handler completed" : "Handler returned false",
-      stopReason: !result ? "blocked" : undefined,
+      stopReason: result ? undefined : "blocked",
     };
   }
 
