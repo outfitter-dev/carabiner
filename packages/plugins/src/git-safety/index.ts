@@ -80,7 +80,7 @@ const GitSafetyConfigSchema = z
         z.object({
           name: z.string(),
           pattern: z.string(),
-          systemMessage: z.string(),
+          stopReason: z.string(),
           severity: z.enum(["block", "warn"]),
         })
       )
@@ -241,7 +241,7 @@ function checkCustomRules(
   customRules: Array<{
     name: string;
     pattern: string;
-    systemMessage: string;
+    stopReason: string;
     severity: "block" | "warn";
   }>,
   pluginName: string,
@@ -256,7 +256,7 @@ function checkCustomRules(
             continue: true,
             pluginName,
             pluginVersion,
-            systemMessage: rule.systemMessage,
+            stopReason: rule.stopReason,
             metadata: {
               safe: false,
               blocked: false,
@@ -267,10 +267,9 @@ function checkCustomRules(
         }
         return {
           continue: false,
-          stopReason: "blocked",
           pluginName,
           pluginVersion,
-          systemMessage: rule.systemMessage,
+          stopReason: rule.stopReason,
           metadata: {
             safe: false,
             blocked: true,
@@ -455,7 +454,7 @@ export const gitSafetyPlugin: HookPlugin = {
           continue: true,
           pluginName: this.name,
           pluginVersion: this.version,
-          systemMessage: `⚠️ Warning: ${message}`,
+          stopReason: `⚠️ Warning: ${message}`,
           metadata: {
             safe: false,
             blocked: false,
@@ -468,10 +467,9 @@ export const gitSafetyPlugin: HookPlugin = {
 
       return {
         continue: false,
-        stopReason: "blocked",
         pluginName: this.name,
         pluginVersion: this.version,
-        systemMessage: message,
+        stopReason: message,
         metadata: {
           safe: false,
           blocked: true,

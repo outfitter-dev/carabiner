@@ -23,7 +23,7 @@ type PerformanceMetric = {
   endTime: number;
   duration: number;
   memoryUsage: NodeJS.MemoryUsage;
-  continue: boolean;
+  success: boolean;
   toolName?: string;
   filePath?: string;
 };
@@ -49,7 +49,7 @@ type PerformanceStats = {
 type PerformanceAlert = {
   type: "slow_operation" | "memory_usage" | "error_rate" | "frequency";
   severity: "warning" | "critical";
-  systemMessage: string;
+  stopReason: string;
   metric: PerformanceMetric;
   threshold: number;
   value: number;
@@ -193,7 +193,7 @@ class MetricsStore {
         metric.duration > this.config.slowOperationThreshold * 2
           ? "critical"
           : "warning",
-      systemMessage: `Slow operation detected: ${metric.operation} took ${metric.duration.toFixed(2)}ms`,
+      stopReason: `Slow operation detected: ${metric.operation} took ${metric.duration.toFixed(2)}ms`,
       metric,
       threshold: this.config.slowOperationThreshold,
       value: metric.duration,
@@ -217,7 +217,7 @@ class MetricsStore {
         metric.memoryUsage.heapUsed > this.config.highMemoryThreshold * 1.5
           ? "critical"
           : "warning",
-      systemMessage: `High memory usage: ${Math.round(metric.memoryUsage.heapUsed / 1024 / 1024)}MB`,
+      stopReason: `High memory usage: ${Math.round(metric.memoryUsage.heapUsed / 1024 / 1024)}MB`,
       metric,
       threshold: this.config.highMemoryThreshold,
       value: metric.memoryUsage.heapUsed,
@@ -234,8 +234,7 @@ class MetricsStore {
     }
 
     const errorRate =
-      recentMetrics.filter((m) => m.continue === false).length /
-      recentMetrics.length;
+      recentMetrics.filter((m) => !m.success).length / recentMetrics.length;
     if (errorRate <= this.config.errorRateThreshold) {
       return;
     }
@@ -244,7 +243,7 @@ class MetricsStore {
       type: "error_rate",
       severity:
         errorRate > this.config.errorRateThreshold * 2 ? "critical" : "warning",
-      systemMessage: `High error rate: ${(errorRate * 100).toFixed(1)}%`,
+      stopReason: `High error rate: ${(errorRate * 100).toFixed(1)}%`,
       metric,
       threshold: this.config.errorRateThreshold,
       value: errorRate,
@@ -271,7 +270,7 @@ class MetricsStore {
     alerts.push({
       type: "frequency",
       severity: "warning",
-      systemMessage: `High operation frequency: ${recentOps.length} ${metric.operation} operations in the last minute`,
+      stopReason: `High operation frequency: ${recentOps.length} ${metric.operation} operations in the last minute`,
       metric,
       threshold: this.config.frequencyThreshold,
       value: recentOps.length,
@@ -283,7 +282,7 @@ class MetricsStore {
       this.alerts.push(alert);
 
       if (this.config.logAlerts) {
-        const line = `[PerformanceMonitor] ${alert.severity.toUpperCase()}: ${alert.systemMessage}`;
+        const line = `[PerformanceMonitor] ${alert.severity.toUpperCase()}: ${alert.stopReason}`;
         process.stderr.write(`${line}\n`);
       }
     }
@@ -311,9 +310,7 @@ class MetricsStore {
 
     const durations = this.metrics.map((m) => m.duration);
     const totalDuration = durations.reduce((sum, d) => sum + d, 0);
-    const successCount = this.metrics.filter(
-      (m) => m.continue !== false
-    ).length;
+    const successCount = this.metrics.filter((m) => m.success).length;
 
     // Calculate memory trend
     const recent = this.metrics.slice(-10);
@@ -487,7 +484,7 @@ function createPerformanceMetric(
   endTime: number,
   duration: number,
   memoryUsage: NodeJS.MemoryUsage,
-  continueOp: boolean,
+  success: boolean,
   toolName: string | undefined,
   filePath: string | undefined
 ): PerformanceMetric {
@@ -497,7 +494,7 @@ function createPerformanceMetric(
     endTime,
     duration,
     memoryUsage,
-    continue: continueOp,
+    success,
     toolName,
     filePath,
   };
@@ -540,14 +537,14 @@ function handlePostToolUseMonitoring(
   }
 
   const filePath = extractFilePathFromContext(context);
-  // Check continue based on toolResponse for PostToolUse contexts
+  // Check success based on toolResponse for PostToolUse contexts
   const isPostToolUseContext = (
     ctx: HookContext
   ): ctx is HookContext & { toolResponse: Record<string, unknown> } => {
     return "toolResponse" in ctx && ctx.toolResponse != null;
   };
-  const continueOp = isPostToolUseContext(context)
-    ? (context.toolResponse as any)?.continue !== false
+  const success = isPostToolUseContext(context)
+    ? Boolean((context.toolResponse as any)?.success)
     : true;
 
   const metric = createPerformanceMetric(
@@ -556,7 +553,7 @@ function handlePostToolUseMonitoring(
     endTime,
     duration,
     endMemory,
-    continueOp,
+    success,
     toolName,
     filePath
   );
@@ -573,7 +570,7 @@ function handlePostToolUseMonitoring(
         operation,
         duration: Math.round(duration * 100) / 100, // Round to 2 decimals
         memoryUsed: Math.round((endMemory.heapUsed / 1024 / 1024) * 100) / 100, // MB
-        continue: continueOp,
+        success,
       },
     },
   };
@@ -582,7 +579,7 @@ function handlePostToolUseMonitoring(
   if (config.trackExecutionTime && duration > config.slowOperationThreshold) {
     return {
       ...result,
-      systemMessage: `⚠️  Slow operation: ${operation} took ${Math.round(duration)}ms`,
+      stopReason: `⚠️  Slow operation: ${operation} took ${Math.round(duration)}ms`,
     };
   }
 

@@ -311,9 +311,9 @@ export function isPluginResult(obj: unknown): obj is PluginResult {
   const result = obj as Partial<PluginResult>;
 
   return (
+    typeof result.continue === "boolean" &&
     typeof result.pluginName === "string" &&
-    typeof result.pluginVersion === "string" &&
-    (result.continue === undefined || typeof result.continue === "boolean")
+    typeof result.pluginVersion === "string"
   );
 }
 
