@@ -203,7 +203,6 @@ export const hookSpecificOutputSchema = z
   })
   .catchall(z.unknown());
 
-
 /**
  * Hook execution options schema
  */

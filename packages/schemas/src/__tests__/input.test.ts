@@ -7,7 +7,6 @@ import { z } from "zod";
 import {
   baseClaudeHookInputSchema,
   claudeHookInputSchema,
-  claudeHookOutputSchema,
   claudeNotificationInputSchema,
   claudePreCompactInputSchema,
   claudeSessionEndInputSchema,
@@ -26,7 +25,6 @@ import {
   isValidPermissionDecision,
   isValidPreCompactInput,
   isValidToolHookInput,
-  legacyHookResultSchema,
   mcpToolNameSchema,
   notificationTypeSchema,
   parseClaudeHookInput,
@@ -423,35 +421,6 @@ describe("hookResultSchema", () => {
 
     for (const result of invalidResults) {
       expect(() => hookResultSchema.parse(result)).toThrow(z.ZodError);
-    }
-  });
-});
-
-describe("claudeHookOutputSchema", () => {
-  test("validates Claude hook outputs", () => {
-    const validOutputs = [
-      { action: "continue" },
-      { action: "block", message: "Security violation" },
-      {
-        action: "block",
-        message: "Security check complete",
-        data: { level: "high", timestamp: "2024-01-01T00:00:00Z" },
-      },
-    ];
-
-    for (const output of validOutputs) {
-      expect(() => claudeHookOutputSchema.parse(output)).not.toThrow();
-    }
-  });
-
-  test("rejects invalid actions", () => {
-    const invalidOutputs = [
-      { action: "invalid" },
-      {}, // missing action
-    ];
-
-    for (const output of invalidOutputs) {
-      expect(() => claudeHookOutputSchema.parse(output)).toThrow(z.ZodError);
     }
   });
 });
@@ -899,23 +868,6 @@ describe("New Claude Code Compliance Schemas", () => {
       };
 
       expect(() => hookResultSchema.parse(result)).not.toThrow();
-    });
-  });
-
-  describe("Legacy Hook Result Schema", () => {
-    test("validates legacy format for backwards compatibility", () => {
-      const result = {
-        success: false,
-        message: "Operation failed",
-        block: true,
-        data: { errorCode: "E001" },
-        metadata: {
-          duration: 150,
-          timestamp: "2024-01-01T00:00:00Z",
-        },
-      };
-
-      expect(() => legacyHookResultSchema.parse(result)).not.toThrow();
     });
   });
 });

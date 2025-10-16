@@ -374,4 +374,3 @@ describe("HookResult interface (Claude Code compliant)", () => {
     expect(result.hookSpecificOutput?.permissionDecision).toBe("allow");
   });
 });
-

@@ -91,7 +91,6 @@ export type HookMetadata = {
   readonly hookVersion?: string;
 };
 
-
 /**
  * Hook output modes
  */
