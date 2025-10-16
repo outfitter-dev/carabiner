@@ -117,14 +117,12 @@ export {
 } from "./decisions";
 // Hook events and results
 export type {
-  ClaudeHookOutput,
   CompactEvent,
   HookEvent,
   HookExecutionOptions,
   HookMetadata,
   HookOutputMode,
   HookResult,
-  LegacyHookResult,
   NotificationEvent,
   ToolHookEvent,
   ToolName,
@@ -138,7 +136,6 @@ export {
   isNotificationEvent,
   isToolHookEvent,
   isUserEvent,
-  LegacyHookResults,
 } from "./events";
 // Test helpers for type-safe testing
 export type { TestContextOptions } from "./test-helpers";

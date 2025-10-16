@@ -174,19 +174,15 @@ export const hookEnvironmentSchema = z.object({
 });
 
 /**
- * Hook result schema - Claude Code compliant format
+ * Hook result schema - Claude Code SDK v2 compliant format
  */
 export const hookResultSchema = z.object({
-  success: z.boolean().optional(),
   continue: z.boolean().optional(),
   stopReason: z.string().optional(),
   suppressOutput: z.boolean().optional(),
   systemMessage: z.string().optional(),
   hookSpecificOutput: z.record(z.string(), z.unknown()).optional(),
   additionalContext: z.string().optional(),
-  message: z.string().optional(),
-  block: z.boolean().optional(),
-  data: z.record(z.string(), z.unknown()).optional(),
   metadata: z
     .object({
       duration: z.number().optional(),
@@ -207,31 +203,6 @@ export const hookSpecificOutputSchema = z
   })
   .catchall(z.unknown());
 
-/**
- * Legacy hook result schema - deprecated but maintained for backwards compatibility
- */
-export const legacyHookResultSchema = z.object({
-  success: z.boolean(),
-  message: z.string().optional(),
-  block: z.boolean().optional(),
-  data: z.record(z.string(), z.unknown()).optional(),
-  metadata: z
-    .object({
-      duration: z.number().optional(),
-      timestamp: z.string().optional(),
-      hookVersion: z.string().optional(),
-    })
-    .optional(),
-});
-
-/**
- * Claude hook output schema
- */
-export const claudeHookOutputSchema = z.object({
-  action: z.enum(["continue", "block"]),
-  message: z.string().optional(),
-  data: z.record(z.string(), z.unknown()).optional(),
-});
 
 /**
  * Hook execution options schema
@@ -265,8 +236,6 @@ export type ClaudePreCompactInput = z.infer<typeof claudePreCompactInputSchema>;
 export type HookEnvironment = z.infer<typeof hookEnvironmentSchema>;
 export type HookResult = z.infer<typeof hookResultSchema>;
 export type HookSpecificOutput = z.infer<typeof hookSpecificOutputSchema>;
-export type LegacyHookResult = z.infer<typeof legacyHookResultSchema>;
-export type ClaudeHookOutput = z.infer<typeof claudeHookOutputSchema>;
 export type HookExecutionOptions = z.infer<typeof hookExecutionOptionsSchema>;
 
 /**
@@ -290,10 +259,6 @@ export function parseHookResult(result: unknown): HookResult {
 
 export function parseHookSpecificOutput(output: unknown): HookSpecificOutput {
   return hookSpecificOutputSchema.parse(output);
-}
-
-export function parseLegacyHookResult(result: unknown): LegacyHookResult {
-  return legacyHookResultSchema.parse(result);
 }
 
 export function parseHookExecutionOptions(

@@ -13,7 +13,6 @@ import {
   isNotificationEvent,
   isToolHookEvent,
   isUserEvent,
-  LegacyHookResults,
   type NotificationEvent,
   type ToolHookEvent,
   type UserEvent,
@@ -376,37 +375,3 @@ describe("HookResult interface (Claude Code compliant)", () => {
   });
 });
 
-describe("Backwards Compatibility - LegacyHookResults", () => {
-  test("legacy success builder works", () => {
-    const result = LegacyHookResults.success("Operation completed");
-
-    expect(result).toEqual({
-      success: true,
-      message: "Operation completed",
-      data: undefined,
-    });
-  });
-
-  test("legacy block builder works", () => {
-    const result = LegacyHookResults.block("Security violation");
-
-    expect(result).toEqual({
-      success: false,
-      message: "Security violation",
-      block: true,
-    });
-  });
-
-  test("legacy failure builder works", () => {
-    const result = LegacyHookResults.failure("Error occurred", true, {
-      code: "E001",
-    });
-
-    expect(result).toEqual({
-      success: false,
-      message: "Error occurred",
-      block: true,
-      data: { code: "E001" },
-    });
-  });
-});

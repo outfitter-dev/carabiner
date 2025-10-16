@@ -70,30 +70,15 @@ export type ToolName = LiteralUnion<
 
 /**
  * Hook execution result - Claude Code compliant format
+ * Only contains Claude SDK v2 fields
  */
 export type HookResult = {
-  readonly success?: boolean;
   readonly continue?: boolean;
   readonly stopReason?: string;
   readonly suppressOutput?: boolean;
   readonly systemMessage?: string;
   readonly hookSpecificOutput?: Record<string, unknown>;
   readonly additionalContext?: string;
-  readonly message?: string;
-  readonly block?: boolean;
-  readonly data?: Record<string, unknown>;
-  readonly metadata?: HookMetadata;
-};
-
-/**
- * Legacy hook result format - deprecated but maintained for backwards compatibility
- * @deprecated Use HookResult instead
- */
-export type LegacyHookResult = {
-  readonly success: boolean;
-  readonly message?: string;
-  readonly block?: boolean;
-  readonly data?: Record<string, unknown>;
   readonly metadata?: HookMetadata;
 };
 
@@ -106,15 +91,6 @@ export type HookMetadata = {
   readonly hookVersion?: string;
 };
 
-/**
- * Simple hook output for Claude Code communication - deprecated format
- * @deprecated Use HookResult instead
- */
-export type ClaudeHookOutput = {
-  readonly action: "continue" | "block";
-  readonly message?: string;
-  readonly data?: Record<string, unknown>;
-};
 
 /**
  * Hook output modes
@@ -167,17 +143,19 @@ export function isCompactEvent(event: HookEvent): event is CompactEvent {
 }
 
 /**
- * Hook result builders for Claude Code compliant scenarios
+ * Hook result builders for Claude Code SDK v2
  */
 export const HookResults = {
+  /**
+   * Continue execution with optional additional context
+   */
   continue(additionalContext?: string): HookResult {
     return { continue: true, additionalContext };
   },
 
-  success(message?: string, data?: Record<string, unknown>): HookResult {
-    return { success: true, message, data };
-  },
-
+  /**
+   * Allow permission with optional reason
+   */
   allow(reason?: string): HookResult {
     return {
       continue: true,
@@ -188,6 +166,9 @@ export const HookResults = {
     };
   },
 
+  /**
+   * Deny permission with optional reason
+   */
   deny(reason?: string): HookResult {
     return {
       continue: false,
@@ -199,25 +180,9 @@ export const HookResults = {
     };
   },
 
-  failure(
-    message: string,
-    options: {
-      data?: Record<string, unknown>;
-      stopReason?: string;
-      block?: boolean;
-    } = {}
-  ): HookResult {
-    const { data, stopReason, block } = options;
-    return {
-      success: false,
-      message,
-      data,
-      block,
-      stopReason: stopReason ?? (block ? "blocked" : undefined),
-      continue: block === true ? false : undefined,
-    };
-  },
-
+  /**
+   * Ask user for permission with optional reason
+   */
   ask(reason?: string): HookResult {
     return {
       continue: false,
@@ -228,60 +193,17 @@ export const HookResults = {
     };
   },
 
+  /**
+   * Stop execution with reason
+   */
   stop(reason: string): HookResult {
     return { continue: false, stopReason: reason };
   },
 
-  block(message: string, data?: Record<string, unknown>): HookResult {
-    return {
-      success: false,
-      continue: false,
-      stopReason: "blocked",
-      block: true,
-      message,
-      data,
-    };
-  },
-
-  skip(message = "Hook skipped"): HookResult {
-    return { success: true, message };
-  },
-
-  warn(message: string, data?: Record<string, unknown>): HookResult {
-    return { success: true, message, data };
-  },
-
+  /**
+   * Suppress output with optional system message
+   */
   suppress(systemMessage?: string): HookResult {
     return { suppressOutput: true, systemMessage };
-  },
-} as const;
-
-/**
- * Legacy hook result builders - deprecated but maintained for backwards compatibility
- * @deprecated Use HookResults instead
- */
-export const LegacyHookResults = {
-  success(message?: string, data?: Record<string, unknown>): LegacyHookResult {
-    return { success: true, message, data };
-  },
-
-  failure(
-    message: string,
-    block = false,
-    data?: Record<string, unknown>
-  ): LegacyHookResult {
-    return { success: false, message, block, data };
-  },
-
-  block(message: string): LegacyHookResult {
-    return { success: false, message, block: true };
-  },
-
-  skip(message?: string): LegacyHookResult {
-    return { success: true, message: message || "Hook skipped" };
-  },
-
-  warn(message: string, data?: Record<string, unknown>): LegacyHookResult {
-    return { success: true, message, data };
   },
 } as const;
