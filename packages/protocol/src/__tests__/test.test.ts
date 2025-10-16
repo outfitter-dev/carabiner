@@ -92,7 +92,7 @@ describe("TestProtocol", () => {
   describe("writeOutput", () => {
     test("should capture output for testing assertions", async () => {
       const protocol = new TestProtocol({});
-      const result = { success: true, message: "Test success" };
+      const result = { continue: true, message: "Test success" };
 
       await protocol.writeOutput(result);
 
@@ -106,7 +106,7 @@ describe("TestProtocol", () => {
       // Start timing by calling readInput first
       await protocol.readInput();
 
-      const result = { success: true, message: "Test" };
+      const result = { continue: true, message: "Test" };
       await protocol.writeOutput(result);
 
       expect(protocol.timing.writeOutputTime).toBeGreaterThan(0);
@@ -145,7 +145,7 @@ describe("TestProtocol", () => {
 
       expect(protocol.wasSuccessful).toBe(false);
 
-      await protocol.writeOutput({ success: true, message: "Success" });
+      await protocol.writeOutput({ continue: true, message: "Success" });
 
       expect(protocol.wasSuccessful).toBe(true);
     });
@@ -163,14 +163,14 @@ describe("TestProtocol", () => {
     test("hasFailed should return true for unsuccessful result", async () => {
       const protocol = new TestProtocol({});
 
-      await protocol.writeOutput({ success: false, message: "Failure" });
+      await protocol.writeOutput({ continue: false, message: "Failure" });
 
       expect(protocol.hasFailed).toBe(true);
     });
 
     test("result should return output or error", async () => {
       const protocol = new TestProtocol({});
-      const result = { success: true, message: "Success" };
+      const result = { continue: true, message: "Success" };
 
       expect(protocol.result).toBeUndefined();
 
@@ -183,7 +183,7 @@ describe("TestProtocol", () => {
       const protocol = new TestProtocol({}, { captureTiming: true });
 
       await protocol.readInput();
-      await protocol.writeOutput({ success: true, message: "Test" });
+      await protocol.writeOutput({ continue: true, message: "Test" });
 
       expect(protocol.output).toBeDefined();
       expect(protocol.callCounts.readInput).toBe(1);

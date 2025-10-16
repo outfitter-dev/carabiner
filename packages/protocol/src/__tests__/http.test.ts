@@ -136,7 +136,7 @@ describe("HttpProtocol", () => {
     test("should store output for later response generation", async () => {
       const request = new Request("http://test.com", { method: "POST" });
       const protocol = new HttpProtocol(request);
-      const result = { success: true, message: "Test success" };
+      const result = { continue: true, message: "Test success" };
 
       await protocol.writeOutput(result);
       const response = protocol.getResponse();
@@ -163,7 +163,7 @@ describe("HttpProtocol", () => {
     test("should return 400 for unsuccessful results", async () => {
       const request = new Request("http://test.com", { method: "POST" });
       const protocol = new HttpProtocol(request);
-      const result = { success: false, message: "Test failure" };
+      const result = { continue: false, message: "Test failure" };
 
       await protocol.writeOutput(result);
       const response = protocol.getResponse();
@@ -177,7 +177,7 @@ describe("HttpProtocol", () => {
         responseHeaders: { "X-Custom-Header": "custom-value" },
       });
 
-      const result = { success: true, message: "Test" };
+      const result = { continue: true, message: "Test" };
       await protocol.writeOutput(result);
       const response = protocol.getResponse();
 
@@ -213,7 +213,7 @@ describe("HttpProtocol", () => {
         },
       });
 
-      const result = { success: true, message: "Test" };
+      const result = { continue: true, message: "Test" };
       await protocol.writeOutput(result);
       const response = protocol.getResponse();
 

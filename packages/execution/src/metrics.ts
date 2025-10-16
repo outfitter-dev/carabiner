@@ -64,6 +64,8 @@ export type ExecutionMetrics = {
   readonly toolName?: string;
   /** Whether execution was successful */
   readonly success: boolean;
+  /** Whether execution requested continuation (Claude Code format) */
+  readonly continue?: boolean;
   /** Error code if execution failed */
   readonly errorCode?: string;
   /** Execution timing information */
