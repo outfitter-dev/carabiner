@@ -212,7 +212,10 @@ describe("StdinProtocol", () => {
 
       await protocol.writeOutput(result);
 
-      expect(mockStdout.writtenData).toBe(JSON.stringify(result));
+      expect(result).not.toHaveProperty("continue");
+      expect(mockStdout.writtenData).toBe(
+        JSON.stringify({ ...result, continue: true })
+      );
     });
 
     test("should pretty print when configured", async () => {
@@ -224,7 +227,10 @@ describe("StdinProtocol", () => {
 
       await protocol.writeOutput(result);
 
-      expect(mockStdout.writtenData).toBe(JSON.stringify(result, null, 2));
+      expect(result).not.toHaveProperty("continue");
+      expect(mockStdout.writtenData).toBe(
+        JSON.stringify({ ...result, continue: true }, null, 2)
+      );
     });
 
     test("should throw ProtocolOutputError on write failure", async () => {

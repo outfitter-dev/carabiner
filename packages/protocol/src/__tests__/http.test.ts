@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import type { HookResult } from "@carabiner/types";
 import { ProtocolInputError, ProtocolParseError } from "../interface.js";
 import { HttpProtocol, HttpProtocolFactory } from "../protocols/http.js";
 
@@ -144,6 +145,38 @@ describe("HttpProtocol", () => {
       expect(response.status).toBe(200);
       const responseBody = await response.json();
       expect(responseBody).toEqual(result);
+    });
+
+    test("should infer continue flag from legacy success values", async () => {
+      const request = new Request("http://test.com", { method: "POST" });
+      const protocol = new HttpProtocol(request);
+      const legacyResult = {
+        success: true,
+        message: "Legacy success",
+      } satisfies HookResult;
+
+      await protocol.writeOutput(legacyResult);
+      const response = protocol.getResponse();
+
+      expect(response.status).toBe(200);
+      const responseBody = await response.json();
+      expect(responseBody).toEqual({ ...legacyResult, continue: true });
+    });
+
+    test("should return 400 when legacy success flag indicates failure", async () => {
+      const request = new Request("http://test.com", { method: "POST" });
+      const protocol = new HttpProtocol(request);
+      const legacyFailure = {
+        success: false,
+        message: "Legacy failure",
+      } satisfies HookResult;
+
+      await protocol.writeOutput(legacyFailure);
+      const response = protocol.getResponse();
+
+      expect(response.status).toBe(400);
+      const responseBody = await response.json();
+      expect(responseBody).toEqual({ ...legacyFailure, continue: false });
     });
 
     test("should store error for later response generation", async () => {

@@ -31,6 +31,7 @@ import {
 } from "@carabiner/types";
 import type { HookProtocol } from "../interface";
 import { ProtocolParseError } from "../interface";
+import { normalizeHookResult } from "./utils";
 
 /**
  * Configuration options for TestProtocol
@@ -191,7 +192,7 @@ export class TestProtocol implements HookProtocol {
       }
     }
 
-    this.output = result;
+    this.output = normalizeHookResult(result);
   }
 
   /**
