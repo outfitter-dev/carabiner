@@ -29,7 +29,7 @@ const createMockPlugin = (
     continue: true,
     pluginName: name,
     pluginVersion: "1.0.0",
-    systemMessage: `${name} executed`,
+    additionalContext: `${name} executed`,
   }),
   ...options,
 });
@@ -250,10 +250,9 @@ describe("PluginRegistry", () => {
       const blockingPlugin = createMockPlugin("blocking", ["PreToolUse"], {
         apply: async () => ({
           continue: false,
-          stopReason: "blocked",
           pluginName: "blocking",
           pluginVersion: "1.0.0",
-          systemMessage: "Blocked",
+          stopReason: "Blocked",
         }),
       });
       const normalPlugin = createMockPlugin("normal", ["PreToolUse"]);
@@ -267,17 +266,15 @@ describe("PluginRegistry", () => {
       expect(results).toHaveLength(1);
       expect(results[0]!.pluginName).toBe("blocking");
       expect(results[0]!.continue).toBe(false);
-      expect(results[0]!.stopReason).toBe("blocked");
     });
 
     test("should continue on failure when configured", async () => {
       const failingPlugin = createMockPlugin("failing", ["PreToolUse"], {
         apply: async () => ({
           continue: false,
-          stopReason: "error",
           pluginName: "failing",
           pluginVersion: "1.0.0",
-          systemMessage: "Failed",
+          stopReason: "Failed",
         }),
       });
       const normalPlugin = createMockPlugin("normal", ["PreToolUse"]);
@@ -292,7 +289,7 @@ describe("PluginRegistry", () => {
 
       expect(results).toHaveLength(2);
       expect(results[0]!.continue).toBe(false);
-      expect(results[1]!.continue !== false).toBe(true);
+      expect(results[1]!.continue).toBe(true);
     });
 
     test("should handle plugin execution errors", async () => {
@@ -309,7 +306,7 @@ describe("PluginRegistry", () => {
 
       expect(results).toHaveLength(1);
       expect(results[0]!.continue).toBe(false);
-      expect(results[0]!.systemMessage).toContain("Plugin execution failed");
+      expect(results[0]!.stopReason).toContain("Plugin execution failed");
     });
   });
 

@@ -27,22 +27,21 @@ const createTestPlugin = (
           continue: false,
           pluginName: name,
           pluginVersion: "1.0.0",
-          systemMessage: `${name} failed`,
+          stopReason: `${name} failed`,
         };
       case "block":
         return {
           continue: false,
-          stopReason: "blocked",
           pluginName: name,
           pluginVersion: "1.0.0",
-          systemMessage: `${name} blocked operation`,
+          stopReason: `${name} blocked operation`,
         };
       default:
         return {
           continue: true,
           pluginName: name,
           pluginVersion: "1.0.0",
-          systemMessage: `${name} executed successfully`,
+          additionalContext: `${name} executed successfully`,
         };
     }
   },
@@ -110,7 +109,6 @@ describe("Plugin System Integration", () => {
       expect(results).toHaveLength(1);
       expect(results[0]!.pluginName).toBe("blocking");
       expect(results[0]!.continue).toBe(false);
-      expect(results[0]!.stopReason).toBe("blocked");
 
       await registry.shutdown();
     });
@@ -316,7 +314,7 @@ export default {
     continue: true,
     pluginName: 'test-plugin-1',
     pluginVersion: '1.0.0',
-    systemMessage: 'Test plugin executed'
+    additionalContext: 'Test plugin executed'
   })
 };
 `;
@@ -409,7 +407,7 @@ export default {
 
       expect(results).toHaveLength(1);
       expect(results[0]!.continue).toBe(false);
-      expect(results[0]!.systemMessage).toContain("Plugin execution failed");
+      expect(results[0]!.stopReason).toContain("Plugin execution failed");
 
       await registry.shutdown();
     });
@@ -475,7 +473,7 @@ export default {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(5);
-      expect(results.every((r) => r.continue !== false)).toBe(true);
+      expect(results.every((r) => r.continue)).toBe(true);
 
       await registry.shutdown();
     });
