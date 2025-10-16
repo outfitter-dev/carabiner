@@ -293,7 +293,7 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
   const fileTools = ["Edit", "Write", "MultiEdit", "NotebookEdit"];
   if (!(toolName && fileTools.includes(toolName))) {
     return {
-      success: true,
+      continue: true,
     };
   }
 
@@ -318,7 +318,7 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
 
   if (!filePath) {
     return {
-      success: true,
+      continue: true,
     };
   }
 
@@ -338,7 +338,7 @@ const autoFormatterHook: HookHandler = (context): HookResult => {
   }
 
   return {
-    success: true,
+    continue: true,
   };
 };
 

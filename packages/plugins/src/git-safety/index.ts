@@ -80,7 +80,7 @@ const GitSafetyConfigSchema = z
         z.object({
           name: z.string(),
           pattern: z.string(),
-          message: z.string(),
+          systemMessage: z.string(),
           severity: z.enum(["block", "warn"]),
         })
       )
@@ -177,7 +177,7 @@ function checkRepoExclusions(
       const regex = new RegExp(excludePattern);
       if (regex.test(cwd)) {
         return {
-          success: true,
+          continue: true,
           pluginName,
           pluginVersion,
           metadata: {
@@ -221,7 +221,7 @@ function checkRepoInclusions(
 
   if (!shouldInclude) {
     return {
-      success: true,
+      continue: true,
       pluginName,
       pluginVersion,
       metadata: {
@@ -241,7 +241,7 @@ function checkCustomRules(
   customRules: Array<{
     name: string;
     pattern: string;
-    message: string;
+    systemMessage: string;
     severity: "block" | "warn";
   }>,
   pluginName: string,
@@ -253,10 +253,10 @@ function checkCustomRules(
       if (regex.test(command)) {
         if (rule.severity === "warn") {
           return {
-            success: true,
+            continue: true,
             pluginName,
             pluginVersion,
-            message: rule.message,
+            systemMessage: rule.systemMessage,
             metadata: {
               safe: false,
               blocked: false,
@@ -266,11 +266,11 @@ function checkCustomRules(
           };
         }
         return {
-          success: false,
-          block: true,
+          continue: false,
+          stopReason: "blocked",
           pluginName,
           pluginVersion,
-          message: rule.message,
+          systemMessage: rule.systemMessage,
           metadata: {
             safe: false,
             blocked: true,
@@ -342,7 +342,7 @@ export const gitSafetyPlugin: HookPlugin = {
     // Only handle PreToolUse for Bash commands
     if (context.event !== "PreToolUse" || !("toolName" in context)) {
       return {
-        success: true,
+        continue: true,
         pluginName: this.name,
         pluginVersion: this.version,
       };
@@ -350,7 +350,7 @@ export const gitSafetyPlugin: HookPlugin = {
 
     if (!isBashHookContext(context)) {
       return {
-        success: true,
+        continue: true,
         pluginName: this.name,
         pluginVersion: this.version,
       };
@@ -384,7 +384,7 @@ export const gitSafetyPlugin: HookPlugin = {
     // Skip non-git commands
     if (!command.trim().toLowerCase().startsWith("git ")) {
       return {
-        success: true,
+        continue: true,
         pluginName: this.name,
         pluginVersion: this.version,
         metadata: {
@@ -397,7 +397,7 @@ export const gitSafetyPlugin: HookPlugin = {
     // Check allow list first
     if (isAllowed(command, safetyConfig.allowList)) {
       return {
-        success: true,
+        continue: true,
         pluginName: this.name,
         pluginVersion: this.version,
         metadata: {
@@ -416,7 +416,7 @@ export const gitSafetyPlugin: HookPlugin = {
       isTrustedDirectory(context.cwd, safetyConfig.trustedDirectories)
     ) {
       return {
-        success: true,
+        continue: true,
         pluginName: this.name,
         pluginVersion: this.version,
         metadata: {
@@ -452,10 +452,10 @@ export const gitSafetyPlugin: HookPlugin = {
 
       if (safetyConfig.warnOnly) {
         return {
-          success: true,
+          continue: true,
           pluginName: this.name,
           pluginVersion: this.version,
-          message: `⚠️ Warning: ${message}`,
+          systemMessage: `⚠️ Warning: ${message}`,
           metadata: {
             safe: false,
             blocked: false,
@@ -467,11 +467,11 @@ export const gitSafetyPlugin: HookPlugin = {
       }
 
       return {
-        success: false,
-        block: true,
+        continue: false,
+        stopReason: "blocked",
         pluginName: this.name,
         pluginVersion: this.version,
-        message,
+        systemMessage: message,
         metadata: {
           safe: false,
           blocked: true,
@@ -483,7 +483,7 @@ export const gitSafetyPlugin: HookPlugin = {
 
     // Command is safe
     return {
-      success: true,
+      continue: true,
       pluginName: this.name,
       pluginVersion: this.version,
       metadata: {

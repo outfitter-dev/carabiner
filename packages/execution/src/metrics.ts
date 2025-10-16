@@ -269,41 +269,14 @@ export class MetricsCollector {
     if (!this.enabled) {
       return;
     }
-    let continueValue: boolean | undefined;
-    if ("continue" in result && typeof result.continue === "boolean") {
-      continueValue = result.continue;
-    } else if (
-      "success" in result &&
-      typeof (result as { success?: unknown }).success === "boolean"
-    ) {
-      continueValue = (result as { success: boolean }).success;
-    }
-
-    // In Claude SDK v2, continue defaults to true if not specified.
-    const success = continueValue !== false;
-    let message: string | undefined;
-    if (
-      "systemMessage" in result &&
-      typeof (result as { systemMessage?: unknown }).systemMessage === "string"
-    ) {
-      message = (result as { systemMessage: string }).systemMessage;
-    } else if (
-      "message" in result &&
-      typeof (result as { message?: unknown }).message === "string"
-    ) {
-      message = (result as { message: string }).message;
-    } else if (
-      "stopReason" in result &&
-      typeof (result as { stopReason?: unknown }).stopReason === "string"
-    ) {
-      message = (result as { stopReason: string }).stopReason;
-    }
+    // In Claude SDK v2, continue defaults to true if not specified
+    const success = result.continue !== false;
+    const message = "systemMessage" in result ? result.systemMessage : undefined;
     const metrics: ExecutionMetrics = {
       id: this.generateId(),
       event: context.event,
       toolName: "toolName" in context ? context.toolName : undefined,
       success,
-      continue: continueValue,
       errorCode: success ? undefined : this.extractErrorCode(message),
       timing,
       memoryBefore,

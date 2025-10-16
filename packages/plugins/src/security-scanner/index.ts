@@ -478,7 +478,7 @@ function createSuccessResult(
   metadata?: Record<string, unknown>
 ): PluginResult {
   return {
-    success: true,
+    continue: true,
     pluginName,
     pluginVersion,
     ...(metadata && { metadata }),
@@ -495,10 +495,10 @@ function createErrorResult(
 ): PluginResult {
   const errorMessage = error instanceof Error ? error.message : "Unknown error";
   return {
-    success: false,
+    continue: false,
     pluginName,
     pluginVersion,
-    message: `Security scan failed: ${errorMessage}`,
+    systemMessage: `Security scan failed: ${errorMessage}`,
     metadata: { error: errorMessage },
   };
 }
@@ -634,10 +634,10 @@ async function scanFileOperation(
   // Check file size limit
   if (content.length > config.maxFileSize) {
     return {
-      success: true,
+      continue: true,
       pluginName,
       pluginVersion,
-      message: `File too large to scan (${content.length} > ${config.maxFileSize} bytes)`,
+      systemMessage: `File too large to scan (${content.length} > ${config.maxFileSize} bytes)`,
       metadata: { skipped: true, reason: "File too large" },
     };
   }
@@ -725,10 +725,10 @@ function processFindings(
   // No findings - success
   if (findings.length === 0) {
     return {
-      success: true,
+      continue: true,
       pluginName,
       pluginVersion,
-      message: "No security issues detected",
+      systemMessage: "No security issues detected",
       metadata: { scanned: true, findings: [] },
     };
   }
@@ -744,16 +744,16 @@ function processFindings(
   const highFindings = findings.filter((f) => f.severity === "high");
 
   const summary = formatFindings(findings);
-  const message = shouldBlock
+  const systemMessage = shouldBlock
     ? `🔒 Security issues found - operation blocked: ${summary}`
     : `⚠️  Security issues found: ${summary}`;
 
   return {
-    success: !shouldBlock,
-    block: shouldBlock,
+    continue: !shouldBlock,
+    stopReason: shouldBlock ? "blocked" : undefined,
     pluginName,
     pluginVersion,
-    message,
+    systemMessage,
     metadata: {
       findings: findings.map((f) => ({
         id: f.id,

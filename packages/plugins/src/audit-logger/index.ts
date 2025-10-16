@@ -31,7 +31,7 @@ type AuditLogEntry = {
   user: string;
   hostname: string;
   workingDirectory: string;
-  success: boolean;
+  continue: boolean;
   duration?: number;
   metadata: Record<string, unknown>;
   sensitive?: boolean;
@@ -181,7 +181,7 @@ class AuditLogger {
       case "security":
         return entry.risk === "high" || Boolean(entry.sensitive);
       case "errors":
-        return !entry.success;
+        return entry.continue === false;
       default:
         return true;
     }
@@ -248,7 +248,7 @@ class AuditLogger {
 
   private formatAsText(entry: AuditLogEntry): string {
     const timestamp = entry.timestamp;
-    const status = entry.success ? "SUCCESS" : "FAILURE";
+    const status = entry.continue !== false ? "SUCCESS" : "FAILURE";
     const operation = entry.toolName
       ? `${entry.event}_${entry.toolName}`
       : entry.event;
@@ -267,7 +267,7 @@ class AuditLogger {
       entry.user,
       entry.hostname,
       entry.workingDirectory,
-      entry.success.toString(),
+      (entry.continue !== false).toString(),
       entry.duration?.toString() || "",
       JSON.stringify(entry.metadata).replace(/"/g, '""'), // Escape quotes for CSV
       entry.sensitive?.toString() || "",
@@ -278,7 +278,7 @@ class AuditLogger {
   }
 
   private logToConsole(entry: AuditLogEntry, _formatted: string): void {
-    const level = entry.success ? "info" : "error";
+    const level = entry.continue !== false ? "info" : "error";
 
     if (this.shouldLogToConsole(level)) {
       if (this.config.format === "json") {
@@ -472,7 +472,7 @@ export const auditLoggerPlugin: HookPlugin = {
 
     if (!auditConfig.enabled) {
       return {
-        success: true,
+        continue: true,
         pluginName: this.name,
         pluginVersion: this.version,
         metadata: { skipped: true, reason: "Logging disabled" },
@@ -546,7 +546,7 @@ export const auditLoggerPlugin: HookPlugin = {
       user: userData.user,
       hostname: userData.host,
       workingDirectory: sessionInfo.cwd,
-      success: true, // Will be updated in PostToolUse if needed
+      continue: true, // Will be updated in PostToolUse if needed
       metadata,
       sensitive: riskAssessment.sensitive,
       risk: riskAssessment.risk,
@@ -558,7 +558,7 @@ export const auditLoggerPlugin: HookPlugin = {
     } catch (_error) {}
 
     return {
-      success: true,
+      continue: true,
       pluginName: this.name,
       pluginVersion: this.version,
       metadata: {

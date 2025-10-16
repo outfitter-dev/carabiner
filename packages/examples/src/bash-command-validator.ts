@@ -92,7 +92,7 @@ export const bashCommandValidatorHook: HookHandler = (context) => {
   // Only process Bash tool events
   if (!("toolName" in context) || context.toolName !== "Bash") {
     return {
-      success: true,
+      continue: true,
     };
   }
 
@@ -103,7 +103,7 @@ export const bashCommandValidatorHook: HookHandler = (context) => {
   // If no command provided, continue without validation
   if (!command) {
     return {
-      success: true,
+      continue: true,
     };
   }
 
@@ -115,10 +115,10 @@ export const bashCommandValidatorHook: HookHandler = (context) => {
     const errorMessage = issues.map((issue) => `• ${issue}`).join("\n");
 
     return {
-      success: false,
-      block: true,
-      message: errorMessage,
-      data: {
+      continue: false,
+      stopReason: "blocked",
+      systemMessage: errorMessage,
+      hookSpecificOutput: {
         modifiedInput: {
           ...context.toolInput,
           _validation_errors: issues,
@@ -128,7 +128,7 @@ export const bashCommandValidatorHook: HookHandler = (context) => {
   }
 
   return {
-    success: true,
+    continue: true,
   };
 };
 

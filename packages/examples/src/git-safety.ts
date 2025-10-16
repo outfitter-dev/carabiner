@@ -186,14 +186,14 @@ const gitSafetyHook: HookHandler = (context): HookResult => {
   // Only process Bash commands
   if (toolName !== "Bash") {
     return {
-      success: true,
+      continue: true,
     };
   }
 
   const command = isBashToolInput(toolInput) ? toolInput.command : undefined;
   if (!command?.includes("git")) {
     return {
-      success: true,
+      continue: true,
     };
   }
 
@@ -215,16 +215,16 @@ const gitSafetyHook: HookHandler = (context): HookResult => {
     }
 
     return {
-      success: false,
-      block: true,
-      message: `Git safety violation:\n${validation.blocked
+      continue: false,
+      stopReason: "blocked",
+      systemMessage: `Git safety violation:\n${validation.blocked
         .map((i) => `• ${i}`)
         .join("\n")}\n\nCurrent branch: ${getCurrentBranch() || "unknown"}`,
     };
   }
 
   return {
-    success: true,
+    continue: true,
   };
 };
 

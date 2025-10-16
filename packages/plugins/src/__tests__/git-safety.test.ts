@@ -237,7 +237,7 @@ describe("Git Safety Plugin", () => {
           {
             name: "No main branch force push",
             pattern: "push.*origin.*main.*--force",
-            message: "Force pushing to main branch is not allowed",
+            systemMessage: "Force pushing to main branch is not allowed",
             severity: "block" as const,
           },
         ],
@@ -259,7 +259,7 @@ describe("Git Safety Plugin", () => {
           {
             name: "Warning rule",
             pattern: "merge.*--no-ff",
-            message: "Consider using fast-forward merge",
+            systemMessage: "Consider using fast-forward merge",
             severity: "warn" as const,
           },
         ],
@@ -344,7 +344,7 @@ describe("Git Safety Plugin", () => {
           {
             name: "Block git aliases",
             pattern: "\\bpf\\b",
-            message: "Dangerous git alias detected",
+            systemMessage: "Dangerous git alias detected",
             severity: "block" as const,
           },
         ],
