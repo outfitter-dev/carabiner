@@ -27,6 +27,7 @@ import {
 } from "@carabiner/types";
 import type { HookProtocol } from "../interface";
 import { ProtocolInputError, ProtocolParseError } from "../interface";
+import { normalizeHookResult } from "./utils";
 
 /**
  * Configuration options for HttpProtocol
@@ -221,7 +222,7 @@ export class HttpProtocol implements HookProtocol {
    * Store result for later HTTP response generation
    */
   async writeOutput(result: HookResult): Promise<void> {
-    this.result = result;
+    this.result = normalizeHookResult(result);
   }
 
   /**
@@ -332,9 +333,14 @@ export class HttpProtocol implements HookProtocol {
    * Build success response
    */
   private buildSuccessResponse(headers: Headers): Response {
-    // In Claude SDK v2, continue defaults to true if not specified
-    // continue: false means blocked (400), continue: true or undefined means success (200)
-    const status = this.result?.continue === false ? 400 : 200;
+    // In Claude SDK v2, continue defaults to true if not specified.
+    // Legacy clients may still send `success`, so derive the state when needed.
+    const continueState =
+      this.result?.continue ??
+      (typeof (this.result as { success?: unknown })?.success === "boolean"
+        ? (this.result as { success: boolean }).success
+        : undefined);
+    const status = continueState === false ? 400 : 200;
     return new Response(JSON.stringify(this.result), {
       status,
       headers,
