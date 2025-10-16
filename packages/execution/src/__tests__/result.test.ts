@@ -223,7 +223,7 @@ describe("Result Pattern", () => {
 
   describe("Hook result conversions", () => {
     test("fromHookResult should convert successful hook result", () => {
-      const hookResult = { success: true, message: "All good" };
+      const hookResult = { continue: true, systemMessage: "All good" };
       const result = fromHookResult(hookResult);
 
       expect(isSuccess(result)).toBe(true);
@@ -234,9 +234,9 @@ describe("Result Pattern", () => {
 
     test("fromHookResult should convert failed hook result", () => {
       const hookResult = {
-        success: false,
-        message: "Something went wrong",
-        block: true,
+        continue: false,
+        stopReason: "error",
+        systemMessage: "Something went wrong",
       };
       const result = fromHookResult(hookResult);
 
@@ -247,7 +247,7 @@ describe("Result Pattern", () => {
     });
 
     test("fromHookResult should handle missing error message", () => {
-      const hookResult = { success: false, block: true };
+      const hookResult = { continue: false, stopReason: "error" };
       const result = fromHookResult(hookResult);
 
       expect(isFailure(result)).toBe(true);
@@ -260,8 +260,8 @@ describe("Result Pattern", () => {
       const result = success("test data");
       const hookResult = toHookResult(result);
 
-      expect(hookResult.success).toBe(true);
-      expect(hookResult.message).toBe("Execution completed successfully");
+      expect(hookResult.continue).toBe(true);
+      expect(hookResult.systemMessage).toBe("Execution completed successfully");
     });
 
     test("toHookResult should convert failed result", () => {
@@ -269,9 +269,9 @@ describe("Result Pattern", () => {
       const result = failure(error);
       const hookResult = toHookResult(result);
 
-      expect(hookResult.success).toBe(false);
-      expect(hookResult.message).toBe("execution failed");
-      expect(hookResult.block).toBe(true);
+      expect(hookResult.continue).toBe(false);
+      expect(hookResult.systemMessage).toBe("execution failed");
+      expect(hookResult.stopReason).toBe("error");
     });
   });
 

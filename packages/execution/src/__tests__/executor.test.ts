@@ -31,7 +31,7 @@ describe("HookExecutor", () => {
       if (isToolHookContext(context)) {
         expect(context.toolName).toBe("Bash");
       }
-      return { success: true, message: "Hook executed successfully" };
+      return { continue: true, systemMessage: "Hook executed successfully" };
     };
 
     const executor = new HookExecutor(mockProtocol, {
@@ -42,12 +42,12 @@ describe("HookExecutor", () => {
     await executor.execute(handler);
 
     expect(mockProtocol.output).toBeDefined();
-    expect(mockProtocol.output?.success).toBe(true);
+    expect(mockProtocol.output?.continue).not.toBe(false);
   });
 
   test("should collect metrics", async () => {
     const metricsCollector = new MetricsCollector();
-    const handler: HookHandler = async () => ({ success: true });
+    const handler: HookHandler = async () => ({ continue: true });
 
     const executor = new HookExecutor(mockProtocol, {
       exitProcess: false,
@@ -97,7 +97,7 @@ describe("HookExecutor", () => {
       const handler: HookHandler = async () => {
         // Simulate work that completes before timeout
         await new Promise((resolve) => originalSetTimeout(resolve, 50));
-        return { success: true, message: "Completed" };
+        return { continue: true, systemMessage: "Completed" };
       };
 
       const executor = new HookExecutor(mockProtocol, {
@@ -115,8 +115,8 @@ describe("HookExecutor", () => {
       expect(clearTimeoutCalled).toBe(true);
 
       // Verify the handler succeeded
-      expect(mockProtocol.output?.success).toBe(true);
-      expect(mockProtocol.output?.message).toBe("Completed");
+      expect(mockProtocol.output?.continue).not.toBe(false);
+      expect(mockProtocol.output?.systemMessage).toBe("Completed");
     } finally {
       // Restore original functions
       global.setTimeout = originalSetTimeout;
@@ -159,8 +159,8 @@ describe("HookExecutor", () => {
       // Verify clearTimeout was called even though handler failed
       expect(clearTimeoutCalled).toBe(true);
 
-      // Verify the error was handled
-      expect(mockProtocol.output?.success).toBe(false);
+      // Verify the error was handled (continue === false means failure)
+      expect(mockProtocol.output?.continue).toBe(false);
       // The error might be in different fields based on the protocol output structure
       expect(mockProtocol.output).toBeDefined();
     } finally {

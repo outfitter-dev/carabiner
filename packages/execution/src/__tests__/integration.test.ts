@@ -47,15 +47,15 @@ describe("Execution Engine Integration", () => {
         for (const pattern of dangerousPatterns) {
           if (command.includes(pattern)) {
             return {
-              success: false,
-              block: true,
-              message: `Dangerous command blocked: ${pattern}`,
+              continue: false,
+              stopReason: "blocked",
+              systemMessage: `Dangerous command blocked: ${pattern}`,
             };
           }
         }
       }
 
-      return { success: true, message: "Command approved" };
+      return { continue: true, systemMessage: "Command approved" };
     };
 
     // Simulate execution timing and metrics collection
@@ -87,8 +87,8 @@ describe("Execution Engine Integration", () => {
     );
 
     // Verify execution results
-    expect(result.success).toBe(true);
-    expect(result.message).toBe("Command approved");
+    expect(result.continue).not.toBe(false);
+    expect(result.systemMessage).toBe("Command approved");
 
     // Verify metrics were collected
     const metrics = metricsCollector.getMetrics();
@@ -124,14 +124,14 @@ describe("Execution Engine Integration", () => {
 
         if (command.includes("rm -rf /")) {
           return {
-            success: false,
-            block: true,
-            message: "SECURITY_ERROR: Dangerous command blocked",
+            continue: false,
+            stopReason: "blocked",
+            systemMessage: "SECURITY_ERROR: Dangerous command blocked",
           };
         }
       }
 
-      return { success: true };
+      return { continue: true };
     };
 
     const timer = new ExecutionTimer();
@@ -150,9 +150,9 @@ describe("Execution Engine Integration", () => {
     );
 
     // Verify the dangerous command was blocked
-    expect(result.success).toBe(false);
-    expect(result.block).toBe(true);
-    expect(result.message).toContain("SECURITY_ERROR");
+    expect(result.continue).toBe(false);
+    expect(result.stopReason).toBe("blocked");
+    expect(result.systemMessage).toContain("SECURITY_ERROR");
 
     // Verify metrics show the failure
     const aggregate = metricsCollector.getAggregateMetrics();
@@ -238,7 +238,10 @@ describe("Execution Engine Integration", () => {
         const delay = contextItem.fast ? 1 : 10;
         await new Promise((resolve) => setTimeout(resolve, delay));
 
-        return { success: true, message: `${contextItem.tool} completed` };
+        return {
+          continue: true,
+          systemMessage: `${contextItem.tool} completed`,
+        };
       };
 
       const memoryBefore = snapshotMemoryUsage();
@@ -280,15 +283,19 @@ describe("Execution Engine Integration", () => {
     const handlers = [
       async () => {
         await new Promise((resolve) => setTimeout(resolve, 5));
-        return { success: true, message: "Handler 1" };
+        return { continue: true, systemMessage: "Handler 1" };
       },
       async () => {
         await new Promise((resolve) => setTimeout(resolve, 3));
-        return { success: true, message: "Handler 2" };
+        return { continue: true, systemMessage: "Handler 2" };
       },
       async () => {
         await new Promise((resolve) => setTimeout(resolve, 7));
-        return { success: false, message: "Handler 3 failed" };
+        return {
+          continue: false,
+          stopReason: "error",
+          systemMessage: "Handler 3 failed",
+        };
       },
     ];
 
@@ -325,9 +332,9 @@ describe("Execution Engine Integration", () => {
 
     // Verify all handlers completed
     expect(results).toHaveLength(3);
-    expect(results[0]?.success).toBe(true);
-    expect(results[1]?.success).toBe(true);
-    expect(results[2]?.success).toBe(false);
+    expect(results[0]?.continue).not.toBe(false);
+    expect(results[1]?.continue).not.toBe(false);
+    expect(results[2]?.continue).toBe(false);
 
     // Verify metrics captured all executions
     const stats = metricsCollector.getAggregateMetrics();
