@@ -219,8 +219,7 @@ export class HookExecutor {
       // Catch-all for any unhandled errors
       const errorResult: HookResult = {
         continue: false,
-        stopReason: "error",
-        systemMessage: `Unhandled execution error: ${error instanceof Error ? error.message : String(error)}`,
+        stopReason: `Unhandled execution error: ${error instanceof Error ? error.message : String(error)}`,
       };
 
       if (executionContext && error instanceof Error) {
@@ -305,8 +304,7 @@ export class HookExecutor {
     } catch (error) {
       return {
         continue: false,
-        stopReason: context.event === "PreToolUse" ? "blocked" : "error",
-        systemMessage:
+        stopReason:
           error instanceof Error ? error.message : "Handler execution failed",
       };
     }
@@ -324,7 +322,7 @@ export class HookExecutor {
     if (result === null || result === undefined) {
       return {
         continue: true,
-        systemMessage: "Handler completed successfully",
+        additionalContext: "Handler completed successfully",
       };
     }
 
@@ -332,40 +330,38 @@ export class HookExecutor {
     if (typeof result === "boolean") {
       return {
         continue: result,
-        systemMessage: result
-          ? "Handler completed successfully"
-          : "Handler returned false",
-        stopReason:
-          !result && context.event === "PreToolUse" ? "blocked" : undefined,
+        stopReason: result ? undefined : "Handler returned false",
       };
     }
 
-    // Handle string results while preserving context for select events
+    // Handle string results - treat as additionalContext for SessionStart/UserPromptSubmit
     if (typeof result === "string") {
-      const normalized: HookResult = {
-        continue: true,
-        systemMessage: result,
-      };
-
       if (
         context.event === "SessionStart" ||
         context.event === "UserPromptSubmit"
       ) {
-        normalized.additionalContext = result;
+        return {
+          continue: true,
+          additionalContext: result,
+        };
       }
-
-      return normalized;
+      return {
+        continue: true,
+        additionalContext: result,
+      };
     }
 
     // Handle object results - support both legacy and Claude Code format
     if (typeof result === "object" && result !== null) {
-      const obj = result as Record<string, any>;
+      const obj = result as any;
 
+      // Check if it's already Claude Code format
       if (
         "continue" in obj ||
         "stopReason" in obj ||
         "hookSpecificOutput" in obj
       ) {
+        // Process permission decision format
         if (obj.hookSpecificOutput?.permissionDecision) {
           const decision = obj.hookSpecificOutput.permissionDecision;
           const inferredContinue =
@@ -385,56 +381,31 @@ export class HookExecutor {
                   : undefined),
             hookSpecificOutput: obj.hookSpecificOutput,
             additionalContext: obj.additionalContext,
-            systemMessage: obj.systemMessage,
-            suppressOutput: obj.suppressOutput,
-            metadata: obj.metadata,
           };
         }
-
         return obj as HookResult;
       }
 
+      // Handle legacy format
       if ("success" in obj) {
-        const successValue = obj.success ?? true;
-        const messageValue = typeof obj.message === "string" ? obj.message : undefined;
         return {
-          continue: successValue,
-          stopReason: successValue ? undefined : messageValue,
-          systemMessage:
-            messageValue || (successValue ? "Handler completed successfully" : undefined),
-          additionalContext: successValue ? messageValue : undefined,
+          continue: obj.success ?? true,
+          stopReason: obj.success === false ? obj.message : undefined,
+          additionalContext: obj.success ? obj.message : undefined,
         };
       }
 
-      const stopReason =
-        obj.stopReason ??
-        (obj.continue === false && context.event === "PreToolUse"
-          ? "blocked"
-          : undefined);
-
+      // Generic object - treat as additionalContext
       return {
-        continue: obj.continue ?? true,
-        systemMessage:
-          typeof obj.systemMessage === "string"
-            ? obj.systemMessage
-            : typeof obj.message === "string"
-              ? obj.message
-              : "Handler completed successfully",
-        stopReason,
-        hookSpecificOutput: obj.hookSpecificOutput,
-        suppressOutput: obj.suppressOutput,
-        additionalContext:
-          typeof obj.additionalContext === "string"
-            ? obj.additionalContext
-            : JSON.stringify(obj),
-        metadata: obj.metadata,
+        continue: true,
+        additionalContext: JSON.stringify(obj),
       };
     }
 
     // Fallback for other types
     return {
       continue: true,
-      systemMessage: String(result),
+      additionalContext: String(result),
     };
   }
 
@@ -467,7 +438,7 @@ export class HookExecutor {
   }
 
   /**
-   * Validate hook result format and content
+   * Validate hook result format and content (Claude Code format)
    *
    * @param result - Hook result to validate
    * @returns Validation result
@@ -475,6 +446,7 @@ export class HookExecutor {
   private validateResult(result: HookResult): Result<HookResult, Error> {
     try {
       if (
+<<<<<<< HEAD
         result.success !== undefined &&
         typeof result.success !== "boolean"
       ) {
@@ -499,6 +471,8 @@ export class HookExecutor {
       }
 
       if (
+=======
+>>>>>>> 936b2b3 (fix: remove all legacy field references (success, message, block, data) from execution and protocol)
         result.continue !== undefined &&
         typeof result.continue !== "boolean"
       ) {
@@ -560,6 +534,7 @@ export class HookExecutor {
       }
 
       if (
+<<<<<<< HEAD
         result.metadata !== undefined &&
         typeof result.metadata !== "object"
       ) {
@@ -592,17 +567,44 @@ export class HookExecutor {
         );
       }
 
-      if (
-        result.continue === false &&
-        !result.stopReason &&
-        !result.suppressOutput &&
-        !isPermissionBasedBlock
+=======
+        result.hookSpecificOutput !== undefined &&
+        typeof result.hookSpecificOutput !== "object"
       ) {
         return failure(
           new ValidationError(
-            "When continue is false, provide stopReason or permissionDecision"
+            "Result hookSpecificOutput must be object if present"
           )
         );
+      }
+
+      // Additional semantic validation
+>>>>>>> 936b2b3 (fix: remove all legacy field references (success, message, block, data) from execution and protocol)
+      if (
+        result.continue === false &&
+        !result.stopReason &&
+        !result.suppressOutput
+      ) {
+        const permissionDecision =
+          result.hookSpecificOutput &&
+          typeof result.hookSpecificOutput === "object"
+            ? (
+                result.hookSpecificOutput as {
+                  permissionDecision?: unknown;
+                }
+              ).permissionDecision
+            : undefined;
+
+        const isPermissionBasedBlock =
+          permissionDecision === "deny" || permissionDecision === "ask";
+
+        if (!isPermissionBasedBlock) {
+          return failure(
+            new ValidationError(
+              "When continue is false, provide stopReason or permissionDecision"
+            )
+          );
+        }
       }
 
       if (result.success === false && !result.message) {
@@ -688,7 +690,6 @@ export class HookExecutor {
         memoryBefore,
         memoryAfter
       );
-      // In Claude SDK v2, continue defaults to true if not specified
       const wasSuccessful = result.continue !== false;
       this.logger.completeExecution(
         executionContext,
@@ -710,11 +711,9 @@ export class HookExecutor {
     executionContext: HookExecutionContext | null
   ): Promise<void> {
     // Try to write error to protocol
-    if (result.systemMessage) {
-      const error = new ExecutionError(
-        result.systemMessage,
-        "EXECUTION_FAILED"
-      );
+    const errorMessage = result.stopReason || result.systemMessage;
+    if (errorMessage) {
+      const error = new ExecutionError(errorMessage, "EXECUTION_FAILED");
       await this.writeError(error);
     }
 
@@ -741,17 +740,16 @@ export class HookExecutor {
         memoryBefore,
         memoryAfter
       );
-      const error = new ExecutionError(
-        result.systemMessage || "Hook execution failed",
-        "EXECUTION_FAILED"
-      );
+      const errorMessage =
+        result.stopReason || result.systemMessage || "Hook execution failed";
+      const error = new ExecutionError(errorMessage, "EXECUTION_FAILED");
       this.logger.failExecution(executionContext, error, metrics);
     } else {
       // Log generic failure if no execution context
       this.logger.error("Hook execution failed without context", {
+        stopReason: result.stopReason,
         systemMessage: result.systemMessage,
         continue: result.continue,
-        stopReason: result.stopReason,
       });
     }
   }

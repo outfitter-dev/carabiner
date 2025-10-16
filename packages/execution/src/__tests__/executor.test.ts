@@ -323,9 +323,10 @@ describe("HookExecutor", () => {
 
     expect(capturedError).toBeUndefined();
     expect(capturedOutput).toBeDefined();
-    expect(capturedOutput?.systemMessage).toBe(
+    expect(capturedOutput?.additionalContext).toBe(
       "Raw context string from SessionStart"
     );
+    expect(capturedOutput?.systemMessage).toBeUndefined();
   });
 
   test("should handle raw output for UserPromptSubmit event", async () => {

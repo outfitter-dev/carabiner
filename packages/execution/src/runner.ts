@@ -267,7 +267,7 @@ export function createTestRunner(
  *   { collectMetrics: false }
  * );
  *
- * const allPassed = results.every(result => result.success);
+ * const allPassed = results.every(result => result.result.continue !== false);
  * ```
  */
 export async function runTestHooks(
@@ -306,8 +306,7 @@ export async function runTestHooks(
         handler,
         result: {
           continue: false,
-          stopReason: "error",
-          systemMessage:
+          stopReason:
             error instanceof Error ? error.message : "Handler execution failed",
         },
         error: error instanceof Error ? error : new Error(String(error)),
@@ -329,29 +328,20 @@ function normalizeTestResult(result: unknown): HookResult {
   if (typeof result === "boolean") {
     return {
       continue: result,
-      systemMessage: result ? "Handler completed" : "Handler returned false",
-      stopReason: result ? undefined : "blocked",
+      stopReason: result ? undefined : "Handler returned false",
+      additionalContext: result ? "Handler completed" : undefined,
     };
   }
 
   if (typeof result === "string") {
-    return { continue: true, systemMessage: result };
+    return { continue: true, additionalContext: result };
   }
 
   if (typeof result === "object" && result !== null) {
-    const obj = result as Partial<HookResult>;
-    return {
-      continue: obj.continue ?? true,
-      systemMessage: obj.systemMessage,
-      stopReason: obj.stopReason,
-      hookSpecificOutput: obj.hookSpecificOutput,
-      suppressOutput: obj.suppressOutput,
-      additionalContext: obj.additionalContext,
-      metadata: obj.metadata,
-    };
+    return result as HookResult;
   }
 
-  return { continue: true, systemMessage: String(result) };
+  return { continue: true, additionalContext: String(result) };
 }
 
 /**
