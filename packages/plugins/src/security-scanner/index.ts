@@ -751,7 +751,7 @@ function processFindings(
   return {
     continue: !shouldBlock,
     stopReason: shouldBlock ? message : undefined,
-    additionalContext: !shouldBlock ? message : undefined,
+    additionalContext: shouldBlock ? undefined : message,
     pluginName,
     pluginVersion,
     metadata: {
