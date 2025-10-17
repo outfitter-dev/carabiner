@@ -27,10 +27,10 @@ import { join } from "node:path";
 import {
   createHookContext,
   executeHook,
-  HookResults,
+  type HookResult,
   parseHookEnvironment,
 } from "@carabiner/hooks-core";
-import type { HookContext, HookInput, HookResult } from "@carabiner/types";
+import type { HookInput } from "@carabiner/types";
 
 /**
  * Test fixture paths
@@ -89,30 +89,47 @@ class TestWorkspace {
  * Mock hook handler for testing
  */
 const mockHandler = {
-  allow: async (_context: HookContext): Promise<HookResult> => ({
-    ...HookResults.allow("Hook allowed execution"),
+  allow: async (_context: any): Promise<HookResult> => ({
+    continue: true,
     systemMessage: "Hook allowed execution",
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "allow",
+      permissionDecisionReason: "Hook allowed execution",
+    },
   }),
 
-  deny: async (_context: HookContext): Promise<HookResult> => ({
-    ...HookResults.deny("Hook denied execution"),
+  deny: async (_context: any): Promise<HookResult> => ({
+    continue: false,
+    stopReason: "blocked",
     systemMessage: "Hook denied execution",
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "Hook denied execution",
+    },
   }),
 
-  ask: async (_context: HookContext): Promise<HookResult> => ({
-    ...HookResults.ask("Needs user confirmation"),
+  ask: async (_context: any): Promise<HookResult> => ({
+    continue: false,
+    stopReason: "approval_required",
     systemMessage: "Hook requested user permission",
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "ask",
+      permissionDecisionReason: "Needs user confirmation",
+    },
   }),
 
-  timeout: async (_context: HookContext): Promise<HookResult> => {
+  timeout: async (_context: any): Promise<HookResult> => {
     await new Promise((resolve) => setTimeout(resolve, 5000)); // 5 second delay
     return {
-      ...HookResults.continue(),
+      continue: true,
       systemMessage: "Hook completed after delay",
     };
   },
 
-  error: async (_context: HookContext): Promise<HookResult> => {
+  error: async (_context: any): Promise<HookResult> => {
     throw new Error("Intentional test error");
   },
 };
@@ -131,10 +148,11 @@ describe("Claude Code Compliance Test Suite", () => {
   describe("Hook Event Golden Tests", () => {
     test("should parse PreToolUse Write event correctly", async () => {
       const fixture = loadFixture("pretooluse-write.json");
+      const preToolUseFixture = fixture as any;
 
       expect(fixture.hook_event_name).toBe("PreToolUse");
-      expect(fixture.tool_name).toBe("Write");
-      expect(fixture.tool_input).toMatchObject({
+      expect(preToolUseFixture.tool_name).toBe("Write");
+      expect(preToolUseFixture.tool_input).toMatchObject({
         file_path: "/Users/test/project/src/main.ts",
         content: "console.log('Hello, World!');",
       });
@@ -145,10 +163,11 @@ describe("Claude Code Compliance Test Suite", () => {
 
     test("should parse PreToolUse MCP tool event correctly", async () => {
       const fixture = loadFixture("pretooluse-mcp.json");
+      const preToolUseFixture = fixture as any;
 
       expect(fixture.hook_event_name).toBe("PreToolUse");
-      expect(fixture.tool_name).toBe("mcp__filesystem__read_file");
-      expect(fixture.tool_input).toMatchObject({
+      expect(preToolUseFixture.tool_name).toBe("mcp__filesystem__read_file");
+      expect(preToolUseFixture.tool_input).toMatchObject({
         path: "/Users/test/project/README.md",
       });
 
@@ -157,10 +176,11 @@ describe("Claude Code Compliance Test Suite", () => {
 
     test("should parse PostToolUse Write event correctly", async () => {
       const fixture = loadFixture("posttooluse-write.json");
+      const postToolUseFixture = fixture as any;
 
       expect(fixture.hook_event_name).toBe("PostToolUse");
-      expect(fixture.tool_name).toBe("Write");
-      expect(fixture.tool_result).toMatchObject({
+      expect(postToolUseFixture.tool_name).toBe("Write");
+      expect(postToolUseFixture.tool_result).toMatchObject({
         success: true,
         file_written: "/Users/test/project/src/main.ts",
       });
@@ -170,22 +190,26 @@ describe("Claude Code Compliance Test Suite", () => {
 
     test("should parse Notification event correctly", async () => {
       const fixture = loadFixture("notification.json");
+      const notificationFixture = fixture as any;
 
       expect(fixture.hook_event_name).toBe("Notification");
-      expect(fixture.notification_type).toBe("info");
-      expect(fixture.message).toBe("Tool execution completed successfully");
+      expect(notificationFixture.notification_type).toBe("info");
+      expect(notificationFixture.message).toBe(
+        "Tool execution completed successfully"
+      );
 
       expect(hasHookEvent(fixture, "Notification")).toBe(true);
     });
 
     test("should parse UserPromptSubmit event correctly", async () => {
       const fixture = loadFixture("userpromptsubmit.json");
+      const userPromptFixture = fixture as any;
 
       expect(fixture.hook_event_name).toBe("UserPromptSubmit");
-      expect(fixture.prompt).toBe(
+      expect(userPromptFixture.prompt).toBe(
         "Please help me write a TypeScript function to parse JSON data"
       );
-      expect(fixture.context).toMatchObject({
+      expect(userPromptFixture.context).toMatchObject({
         project_type: "typescript",
         files_in_context: expect.arrayContaining([
           "/Users/test/project/src/types.ts",
@@ -197,20 +221,22 @@ describe("Claude Code Compliance Test Suite", () => {
 
     test("should parse Stop event correctly", async () => {
       const fixture = loadFixture("stop.json");
+      const stopFixture = fixture as any;
 
       expect(fixture.hook_event_name).toBe("Stop");
-      expect(fixture.reason).toBe("user_requested");
-      expect(fixture.stop_hook_active).toBe(true);
-      expect(fixture.exit_code).toBe(0);
+      expect(stopFixture.reason).toBe("user_requested");
+      expect(stopFixture.stop_hook_active).toBe(true);
+      expect(stopFixture.exit_code).toBe(0);
 
       expect(hasHookEvent(fixture, "Stop")).toBe(true);
     });
 
     test("should parse SessionStart event correctly", async () => {
       const fixture = loadFixture("sessionstart.json");
+      const sessionStartFixture = fixture as any;
 
       expect(fixture.hook_event_name).toBe("SessionStart");
-      expect(fixture.context).toMatchObject({
+      expect(sessionStartFixture.context).toMatchObject({
         project_name: "test-project",
         claude_version: "3.5-sonnet",
         environment: expect.objectContaining({
@@ -224,34 +250,37 @@ describe("Claude Code Compliance Test Suite", () => {
 
     test("should parse SessionEnd event correctly", async () => {
       const fixture = loadFixture("sessionend.json");
+      const sessionEndFixture = fixture as any;
 
       expect(fixture.hook_event_name).toBe("SessionEnd");
-      expect(fixture.duration_ms).toBe(3_600_000);
-      expect(fixture.tools_used).toBe(15);
-      expect(fixture.final_state).toBe("completed");
+      expect(sessionEndFixture.duration_ms).toBe(3_600_000);
+      expect(sessionEndFixture.tools_used).toBe(15);
+      expect(sessionEndFixture.final_state).toBe("completed");
 
       expect(hasHookEvent(fixture, "SessionEnd")).toBe(true);
     });
 
     test("should parse PreCompact event correctly", async () => {
       const fixture = loadFixture("precompact.json");
+      const preCompactFixture = fixture as any;
 
       expect(fixture.hook_event_name).toBe("PreCompact");
-      expect(fixture.transcript_size_bytes).toBe(2_048_000);
-      expect(fixture.messages_count).toBe(150);
-      expect(fixture.compaction_strategy).toBe("semantic_summary");
+      expect(preCompactFixture.transcript_size_bytes).toBe(2_048_000);
+      expect(preCompactFixture.messages_count).toBe(150);
+      expect(preCompactFixture.compaction_strategy).toBe("semantic_summary");
 
       expect(hasHookEvent(fixture, "PreCompact")).toBe(true);
     });
 
     test("should parse SubAgentStop event correctly", async () => {
       const fixture = loadFixture("subagentstop.json");
+      const subagentStopFixture = fixture as any;
 
       expect(fixture.hook_event_name).toBe("SubagentStop");
-      expect(fixture.subagent_id).toBe("sub-agent-789");
-      expect(fixture.subagent_type).toBe("specialized_reviewer");
-      expect(fixture.completion_reason).toBe("task_completed");
-      expect(fixture.exit_code).toBe(0);
+      expect(subagentStopFixture.subagent_id).toBe("sub-agent-789");
+      expect(subagentStopFixture.subagent_type).toBe("specialized_reviewer");
+      expect(subagentStopFixture.completion_reason).toBe("task_completed");
+      expect(subagentStopFixture.exit_code).toBe(0);
 
       expect(hasHookEvent(fixture, "SubagentStop")).toBe(true);
     });
@@ -350,27 +379,56 @@ describe("Claude Code Compliance Test Suite", () => {
       expect(fixture.exit_code).toBe(0);
     });
 
-    test("should use HookResults for consistent exit behavior", async () => {
-      const allowedResult = HookResults.allow("Operation completed");
+    test("should use HookResult format for consistent exit behavior", async () => {
+      const allowedResult: HookResult = {
+        continue: true,
+        hookSpecificOutput: {
+          hookEventName: "PreToolUse",
+          permissionDecision: "allow",
+          permissionDecisionReason: "Operation completed",
+        },
+      };
       expect(allowedResult.continue).toBe(true);
       expect(allowedResult.hookSpecificOutput?.permissionDecision).toBe(
         "allow"
       );
 
-      const deniedResult = HookResults.deny("Operation denied");
+      const deniedResult: HookResult = {
+        continue: false,
+        stopReason: "blocked",
+        hookSpecificOutput: {
+          hookEventName: "PreToolUse",
+          permissionDecision: "deny",
+          permissionDecisionReason: "Operation denied",
+        },
+      };
       expect(deniedResult.continue).toBe(false);
       expect(deniedResult.stopReason).toBe("blocked");
       expect(deniedResult.hookSpecificOutput?.permissionDecision).toBe("deny");
 
-      const askedResult = HookResults.ask("Operation requires approval");
+      const askedResult: HookResult = {
+        continue: false,
+        stopReason: "approval_required",
+        hookSpecificOutput: {
+          hookEventName: "PreToolUse",
+          permissionDecision: "ask",
+          permissionDecisionReason: "Operation requires approval",
+        },
+      };
       expect(askedResult.continue).toBe(false);
       expect(askedResult.hookSpecificOutput?.permissionDecision).toBe("ask");
 
-      const stoppedResult = HookResults.stop("Operation stopped");
+      const stoppedResult: HookResult = {
+        continue: false,
+        stopReason: "Operation stopped",
+      };
       expect(stoppedResult.continue).toBe(false);
       expect(stoppedResult.stopReason).toBe("Operation stopped");
 
-      const suppressedResult = HookResults.suppress("Output suppressed");
+      const suppressedResult: HookResult = {
+        suppressOutput: true,
+        systemMessage: "Output suppressed",
+      };
       expect(suppressedResult.suppressOutput).toBe(true);
       expect(suppressedResult.systemMessage).toBe("Output suppressed");
     });
@@ -464,10 +522,9 @@ describe("Claude Code Compliance Test Suite", () => {
 
   describe("stop_hook_active Flag Handling", () => {
     test("should handle stop_hook_active flag correctly", async () => {
-      const fixture = loadFixture("stop.json") as {
-        stop_hook_active?: boolean;
-      };
-      expect(fixture.stop_hook_active).toBe(true);
+      const fixture = loadFixture("stop.json");
+      const stopFixture = fixture as any;
+      expect(stopFixture.stop_hook_active).toBe(true);
 
       const context = createHookContext(fixture);
 

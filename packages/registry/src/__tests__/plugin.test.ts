@@ -191,14 +191,14 @@ describe("Plugin Utilities", () => {
 
       const hookResult = {
         continue: false,
-        block: true,
+        stopReason: "blocked",
       };
 
       const pluginResult = createPluginResult(plugin, hookResult);
 
       expect(pluginResult).toEqual({
         continue: false,
-        block: true,
+        stopReason: "blocked",
         pluginName: "test-plugin",
         pluginVersion: "2.0.0",
       });

@@ -225,7 +225,7 @@ describe("HttpProtocol", () => {
         responseHeaders: { "X-Custom-Header": "custom-value" },
       });
 
-      const result = { success: true, message: "Test" };
+      const result = { continue: true, systemMessage: "Test" };
       await protocol.writeOutput(result);
       const response = protocol.getResponse();
 
@@ -261,7 +261,7 @@ describe("HttpProtocol", () => {
         },
       });
 
-      const result = { success: true, message: "Test" };
+      const result = { continue: true, systemMessage: "Test" };
       await protocol.writeOutput(result);
       const response = protocol.getResponse();
 
