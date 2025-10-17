@@ -425,6 +425,61 @@ export class HookExecutor {
         );
       }
 
+      if (result.continue !== undefined && typeof result.continue !== "boolean") {
+        return failure(
+          new ValidationError("Result continue must be boolean if present")
+        );
+      }
+
+      if (result.stopReason !== undefined && typeof result.stopReason !== "string") {
+        return failure(
+          new ValidationError("Result stopReason must be string if present")
+        );
+      }
+
+      if (
+        result.suppressOutput !== undefined &&
+        typeof result.suppressOutput !== "boolean"
+      ) {
+        return failure(
+          new ValidationError(
+            "Result suppressOutput must be boolean if present"
+          )
+        );
+      }
+
+      if (
+        result.systemMessage !== undefined &&
+        typeof result.systemMessage !== "string"
+      ) {
+        return failure(
+          new ValidationError("Result systemMessage must be string if present")
+        );
+      }
+
+      if (
+        result.hookSpecificOutput !== undefined &&
+        (typeof result.hookSpecificOutput !== "object" ||
+          result.hookSpecificOutput === null)
+      ) {
+        return failure(
+          new ValidationError(
+            "Result hookSpecificOutput must be an object if present"
+          )
+        );
+      }
+
+      if (
+        result.additionalContext !== undefined &&
+        typeof result.additionalContext !== "string"
+      ) {
+        return failure(
+          new ValidationError(
+            "Result additionalContext must be string if present"
+          )
+        );
+      }
+
       // Additional semantic validation
       if (result.success === false && !result.message) {
         return failure(

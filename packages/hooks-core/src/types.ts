@@ -148,9 +148,7 @@ export type ToolName = LiteralUnion<
   | "WebSearch"
   | "ExitPlanMode"
   | "ListMcpResources"
-  | "ReadMcpResource"
-  | "Agent"
-  | "BashOutput",
+  | "ReadMcpResource",
   string
 >;
 
