@@ -369,8 +369,10 @@ describe("parseStdinInput", () => {
     const result = parseStdinInput(input);
 
     expect(result.hook_event_name).toBe("Notification");
-    expect(result.notification_type).toBe("info");
-    expect(result.message).toBe("Test notification");
+    // Access preserved extra fields
+    const notificationResult = result as any;
+    expect(notificationResult.notification_type).toBe("info");
+    expect(notificationResult.message).toBe("Test notification");
     expect(result.stop_hook_active).toBe(false);
     expect(result.stopHookActive).toBe(false);
     expect(result.stopHookActive).toBe(false);
@@ -389,7 +391,9 @@ describe("parseStdinInput", () => {
     const result = parseStdinInput(input);
 
     expect(result.hook_event_name).toBe("PreCompact");
-    expect(result.pre_compact_trigger).toBe("manual");
+    // Access preserved extra fields
+    const preCompactResult = result as any;
+    expect(preCompactResult.pre_compact_trigger).toBe("manual");
     expect(result.stop_hook_active).toBe(true);
     expect(result.stopHookActive).toBe(true);
   });
@@ -429,12 +433,13 @@ describe("parseStdinInput", () => {
     const result = parseStdinInput(input);
 
     // All original fields should be preserved
-    expect(result.permission_decision).toBe("allow");
-    expect(result.custom_field).toBe("should be preserved");
-    expect(result.tool_response).toEqual({ success: true });
+    const preservedResult = result as any;
+    expect(preservedResult.permission_decision).toBe("allow");
+    expect(preservedResult.custom_field).toBe("should be preserved");
+    expect(preservedResult.tool_response).toEqual({ success: true });
     expect(result.stop_hook_active).toBe(true);
     expect(result.stopHookActive).toBe(true);
-    expect(result.hook_specific_input.permissionPrompt).toBe(
+    expect(preservedResult.hook_specific_input.permissionPrompt).toBe(
       "Allow file edit?"
     );
     expect(result.hookSpecificInput?.permissionPrompt).toBe("Allow file edit?");

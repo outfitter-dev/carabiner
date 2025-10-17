@@ -110,16 +110,17 @@ describe("claudeProviderAdapter.fromProviderInput", () => {
     );
 
     // Original fields should be preserved in raw
-    expect(context.raw.stop_hook_active).toBe(true);
-    expect(context.raw.hook_specific_input).toEqual({
+    const rawWithExtras = context.raw as any;
+    expect(rawWithExtras.stop_hook_active).toBe(true);
+    expect(rawWithExtras.hook_specific_input).toEqual({
       permissionPrompt: "Allow bash execution?",
     });
-    expect(context.raw.permission_decision).toBe("allow");
-    expect(context.raw.custom_field).toBe("should be preserved");
+    expect(rawWithExtras.permission_decision).toBe("allow");
+    expect(rawWithExtras.custom_field).toBe("should be preserved");
 
     // Snake_case should be converted to camelCase
-    expect(context.raw.stopHookActive).toBe(true);
-    expect(context.raw.hookSpecificInput).toEqual({
+    expect(rawWithExtras.stopHookActive).toBe(true);
+    expect(rawWithExtras.hookSpecificInput).toEqual({
       permissionPrompt: "Allow bash execution?",
     });
   });
@@ -133,7 +134,7 @@ describe("claudeProviderAdapter.fromProviderInput", () => {
       notification_type: "warning",
       message: "Test notification",
       stop_hook_active: false,
-    } satisfies any;
+    } as any;
 
     const context = claudeProviderAdapter.fromProviderInput(
       notificationInput,
@@ -141,10 +142,11 @@ describe("claudeProviderAdapter.fromProviderInput", () => {
     );
 
     expect(context.event).toBe("Notification");
-    expect(context.raw.notification_type).toBe("warning");
-    expect(context.raw.notificationType).toBe("warning");
-    expect(context.raw.message).toBe("Test notification");
-    expect(context.raw.stopHookActive).toBe(false);
+    const rawNotification = context.raw as any;
+    expect(rawNotification.notification_type).toBe("warning");
+    expect(rawNotification.notificationType).toBe("warning");
+    expect(rawNotification.message).toBe("Test notification");
+    expect(rawNotification.stopHookActive).toBe(false);
   });
 
   test("handles PreCompact event with pre_compact_trigger", () => {
@@ -155,7 +157,7 @@ describe("claudeProviderAdapter.fromProviderInput", () => {
       cwd: "/workspace/project",
       pre_compact_trigger: "manual",
       stop_hook_active: true,
-    } satisfies any;
+    } as any;
 
     const context = claudeProviderAdapter.fromProviderInput(
       preCompactInput,
@@ -163,9 +165,10 @@ describe("claudeProviderAdapter.fromProviderInput", () => {
     );
 
     expect(context.event).toBe("PreCompact");
-    expect(context.raw.pre_compact_trigger).toBe("manual");
-    expect(context.raw.preCompactTrigger).toBe("manual");
-    expect(context.raw.stopHookActive).toBe(true);
+    const rawPreCompact = context.raw as any;
+    expect(rawPreCompact.pre_compact_trigger).toBe("manual");
+    expect(rawPreCompact.preCompactTrigger).toBe("manual");
+    expect(rawPreCompact.stopHookActive).toBe(true);
   });
 
   test("captures PostToolUse tool response", () => {
@@ -244,13 +247,16 @@ describe("claudeProviderAdapter.toProviderOutput", () => {
     const output = claudeProviderAdapter.toProviderOutput(normalized, context);
 
     // Should include all the standard fields
-    expect(output.continue).toBe(false);
-    expect(output.stopReason).toBe("blocked");
-    expect(output.systemMessage).toBe("Permission denied");
-    expect(output.additionalContext).toBe("Additional debugging info");
+    const outputWithFields = output as any;
+    expect(outputWithFields.continue).toBe(false);
+    expect(outputWithFields.stopReason).toBe("blocked");
+    expect(outputWithFields.systemMessage).toBe("Permission denied");
+    expect(outputWithFields.additionalContext).toBe(
+      "Additional debugging info"
+    );
 
     // Should pass through hookSpecificOutput untouched
-    expect(output.hookSpecificOutput).toEqual({
+    expect(outputWithFields.hookSpecificOutput).toEqual({
       permissionDecision: "deny",
       permissionDecisionReason: "Security policy violation",
       hookEventName: "PreToolUse",
@@ -276,12 +282,13 @@ describe("claudeProviderAdapter.toProviderOutput", () => {
 
     const output = claudeProviderAdapter.toProviderOutput(normalized, context);
 
-    expect(output.continue).toBe(true);
-    expect(output.suppressOutput).toBe(true);
-    expect(output.hookSpecificOutput).toBeUndefined();
-    expect(output.stopReason).toBeUndefined();
-    expect(output.systemMessage).toBeUndefined();
-    expect(output.additionalContext).toBeUndefined();
+    const outputWithOptionalFields = output as any;
+    expect(outputWithOptionalFields.continue).toBe(true);
+    expect(outputWithOptionalFields.suppressOutput).toBe(true);
+    expect(outputWithOptionalFields.hookSpecificOutput).toBeUndefined();
+    expect(outputWithOptionalFields.stopReason).toBeUndefined();
+    expect(outputWithOptionalFields.systemMessage).toBeUndefined();
+    expect(outputWithOptionalFields.additionalContext).toBeUndefined();
   });
 });
 
