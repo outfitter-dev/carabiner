@@ -120,9 +120,7 @@ describe("ConfigManager - Immutability Tests", () => {
       | Record<string, HookCommand>
       | undefined;
     expect(toggledToolConfig?.Bash?.enabled).toBe(false);
-    expect(toggledToolConfig?.Bash?.command).toBe(
-      "bun run hooks/pre-bash.ts"
-    );
+    expect(toggledToolConfig?.Bash?.command).toBe("bun run hooks/pre-bash.ts");
     expect(toggledToolConfig?.Bash?.timeout).toBe(3000);
 
     // Different references
@@ -143,9 +141,7 @@ describe("ConfigManager - Immutability Tests", () => {
     expect(initialConfig).toEqual(originalConfig);
 
     // Verify the toggle
-    const sessionToggle = updatedConfig.SessionStart as
-      | HookCommand
-      | undefined;
+    const sessionToggle = updatedConfig.SessionStart as HookCommand | undefined;
     expect(sessionToggle?.enabled).toBe(false);
 
     // Different references
@@ -256,9 +252,7 @@ describe("ConfigManager - Immutability Tests", () => {
       (item) => item.matcher === "Write"
     );
     expect(writeItem?.hooks[0]?.command).toBe("bun run hooks/write.ts");
-    const editItem = updatedPreToolUse?.find(
-      (item) => item.matcher === "Edit"
-    );
+    const editItem = updatedPreToolUse?.find((item) => item.matcher === "Edit");
     expect(editItem?.hooks[0]?.command).toBe("bun run hooks/edit.ts");
   });
 

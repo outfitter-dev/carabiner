@@ -506,9 +506,7 @@ describe("Example Configurations", () => {
     expect(examplePreToolUse).toHaveLength(2);
     expect(examplePreToolUse![0].matcher).toBe("Write");
     expect(examplePreToolUse![0].hooks).toHaveLength(2);
-    expect(examplePreToolUse![1].matcher).toBe(
-      "mcp__filesystem__read_file"
-    );
+    expect(examplePreToolUse![1].matcher).toBe("mcp__filesystem__read_file");
     expect(examplePreToolUse![1].hooks).toHaveLength(1);
   });
 });
