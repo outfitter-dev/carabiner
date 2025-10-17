@@ -163,7 +163,11 @@ describe("HttpProtocol", () => {
       expect(response.status).toBe(200);
       const responseBody = await response.json();
       // normalizeHookResult adds success field for backward compatibility
-      expect(responseBody).toEqual({ ...legacyResult, continue: true, success: true });
+      expect(responseBody).toEqual({
+        ...legacyResult,
+        continue: true,
+        success: true,
+      });
     });
 
     test("should return 400 when legacy success flag indicates failure", async () => {
@@ -180,7 +184,11 @@ describe("HttpProtocol", () => {
       expect(response.status).toBe(400);
       const responseBody = await response.json();
       // normalizeHookResult adds success field for backward compatibility
-      expect(responseBody).toEqual({ ...legacyFailure, continue: false, success: false });
+      expect(responseBody).toEqual({
+        ...legacyFailure,
+        continue: false,
+        success: false,
+      });
     });
 
     test("should store error for later response generation", async () => {

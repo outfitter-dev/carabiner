@@ -149,8 +149,8 @@ describe("Performance Benchmarks", () => {
         _context: any
       ): Promise<HookResult> => {
         return {
-          success: true,
-          message: "Simple hook executed",
+          continue: true,
+          systemMessage: "Simple hook executed",
         };
       };
 
@@ -192,9 +192,9 @@ describe("Performance Benchmarks", () => {
         await new Promise((resolve) => setTimeout(resolve, Math.random() * 5));
 
         return {
-          success: true,
-          message: `Concurrent hook executed for ${context.toolName}`,
-          data: { timestamp: Date.now() },
+          continue: true,
+          systemMessage: `Concurrent hook executed for ${context.toolName}`,
+          hookSpecificOutput: { timestamp: Date.now() },
         };
       };
 
@@ -224,7 +224,7 @@ describe("Performance Benchmarks", () => {
 
       // All results should be successful
       results.forEach((result) => {
-        expect(result.success).toBe(true);
+        expect(result.continue).toBe(true);
       });
     });
 
@@ -250,9 +250,9 @@ describe("Performance Benchmarks", () => {
           }));
 
           return {
-            success: true,
-            message: `Processed ${processed.length} items`,
-            data: { count: processed.length },
+            continue: true,
+            systemMessage: `Processed ${processed.length} items`,
+            hookSpecificOutput: { count: processed.length },
           };
         };
 

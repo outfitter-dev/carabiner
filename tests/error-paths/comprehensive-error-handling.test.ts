@@ -26,8 +26,8 @@ class ErrorSimulator {
             clearTimeout(timeoutTimer);
           }
           resolve({
-            success: true,
-            message: `Work completed after ${delayMs}ms`,
+            continue: true,
+            systemMessage: `Work completed after ${delayMs}ms`,
           });
         }, delayMs);
 
@@ -49,8 +49,8 @@ class ErrorSimulator {
       }
 
       return {
-        success: true,
-        message: "Unreliable handler succeeded",
+        continue: true,
+        systemMessage: "Unreliable handler succeeded",
       };
     };
   }
@@ -68,8 +68,8 @@ class ErrorSimulator {
       }
 
       return {
-        success: true,
-        message: `Memory leak handler completed, leaked ${leakedMemory.length} arrays`,
+        continue: true,
+        systemMessage: `Memory leak handler completed, leaked ${leakedMemory.length} arrays`,
       };
     };
   }
@@ -111,7 +111,7 @@ describe("Comprehensive Error Handling", () => {
               throw new Error("Invalid hook context provided");
             }
 
-            return { success: true, message: "Valid input processed" };
+            return { continue: true, systemMessage: "Valid input processed" };
           };
 
           await handler(invalidInput as any);
@@ -195,7 +195,7 @@ describe("Comprehensive Error Handling", () => {
             throw new Error(`Input too large: ${jsonSize} bytes`);
           }
 
-          return { success: true, message: "Input size acceptable" };
+          return { continue: true, systemMessage: "Input size acceptable" };
         };
 
         try {
@@ -240,7 +240,7 @@ describe("Comprehensive Error Handling", () => {
             // If we expected timeout but got result, that's unexpected
             expect(false).toBe(true);
           } else {
-            expect(result.success).toBe(true);
+            expect(result.continue).toBe(true);
           }
         } catch (error) {
           if (scenario.shouldTimeout) {
@@ -270,7 +270,7 @@ describe("Comprehensive Error Handling", () => {
         try {
           const handler: HookHandler = async (_context: any) => {
             await scenario();
-            return { success: true, message: "Should not reach here" };
+            return { continue: true, systemMessage: "Should not reach here" };
           };
 
           await handler({
@@ -351,7 +351,7 @@ describe("Comprehensive Error Handling", () => {
             return {
               success: true,
               message: `Processed ${processed.length} items`,
-              data: { count: processed.length },
+              hookSpecificOutput: { count: processed.length },
             };
           };
 
@@ -361,8 +361,8 @@ describe("Comprehensive Error Handling", () => {
             input: { size },
           });
 
-          expect(result.success).toBe(true);
-          expect(result.data?.count).toBe(size);
+          expect(result.continue).toBe(true);
+          expect(result.hookSpecificOutput?.count).toBe(size);
         } catch (error) {
           // Out of memory is acceptable for large sizes
           if (size >= 100_000) {
@@ -578,7 +578,7 @@ describe("Comprehensive Error Handling", () => {
             throw new Error("Security violation: script injection detected");
           }
 
-          return { success: true, message: "Security check passed" };
+          return { continue: true, systemMessage: "Security check passed" };
         };
 
         try {
@@ -617,7 +617,7 @@ describe("Comprehensive Error Handling", () => {
             throw new Error("Insufficient privileges for system access");
           }
 
-          return { success: true, message: "Privilege check passed" };
+          return { continue: true, systemMessage: "Privilege check passed" };
         };
 
         try {
@@ -718,7 +718,7 @@ describe("Comprehensive Error Handling", () => {
         return {
           success: true,
           message: "Graceful degradation successful",
-          data: {
+          hookSpecificOutput: {
             successful: results,
             failed: errors,
           },
@@ -731,9 +731,9 @@ describe("Comprehensive Error Handling", () => {
         toolInput: { test: true },
       });
 
-      expect(result.success).toBe(true);
-      expect(result.data?.successful).toHaveLength(3); // critical, optional2, important
-      expect(result.data?.failed).toHaveLength(1); // optional1
+      expect(result.continue).toBe(true);
+      expect(result.hookSpecificOutput?.successful).toHaveLength(3); // critical, optional2, important
+      expect(result.hookSpecificOutput?.failed).toHaveLength(1); // optional1
     });
   });
 });

@@ -238,7 +238,9 @@ describe("markdown formatter hook", () => {
       const result = await hook(context);
       expect(result.continue).not.toBe(false);
       expect(formatterUsed).toBe("markdownlint");
-      expect((result as any).hookSpecificOutput?.formatter).toBe("markdownlint");
+      expect((result as any).hookSpecificOutput?.formatter).toBe(
+        "markdownlint"
+      );
     });
 
     test("should fall back to prettier if markdownlint not available", async () => {
@@ -676,7 +678,9 @@ describe("markdown formatter hook", () => {
 
       const result = await hook(context);
       expect(result.continue).toBe(false);
-      expect(result.systemMessage).toContain("Failed to format with markdownlint");
+      expect(result.systemMessage).toContain(
+        "Failed to format with markdownlint"
+      );
     });
 
     test("should accept toolInput.path as an alternative to file_path", async () => {
@@ -774,7 +778,9 @@ describe("markdown formatter hook", () => {
       const result = await hook(context);
       expect(result.continue).not.toBe(false);
       expect(formatterUsed).toBe("markdownlint");
-      expect((result as any).hookSpecificOutput?.formatter).toBe("markdownlint");
+      expect((result as any).hookSpecificOutput?.formatter).toBe(
+        "markdownlint"
+      );
     });
 
     test("should pass additional arguments to prettier", async () => {
