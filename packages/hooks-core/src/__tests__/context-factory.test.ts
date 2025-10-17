@@ -12,6 +12,11 @@ import type {
   UserPromptHookContext,
 } from "@carabiner/types";
 import {
+  createDirectoryPath,
+  createSessionId,
+  createTranscriptPath,
+} from "@carabiner/types";
+import {
   afterAll,
   afterEach,
   beforeEach,
@@ -41,9 +46,9 @@ const mockConsoleDebug = vi
 
 describe("Context Factory", () => {
   const baseOptions: CreateContextOptions = {
-    sessionId: "test-session-123",
-    transcriptPath: "/path/to/transcript.jsonl",
-    cwd: "/project/directory",
+    sessionId: createSessionId("test-session-123"),
+    transcriptPath: createTranscriptPath("/path/to/transcript.md"),
+    cwd: createDirectoryPath("/project/directory"),
     matcher: "Write",
     environment: { TEST_VAR: "test-value" },
   };
@@ -72,7 +77,7 @@ describe("Context Factory", () => {
       expect(context).toMatchObject({
         event: "PreToolUse",
         sessionId: "test-session-123",
-        transcriptPath: "/path/to/transcript.jsonl",
+        transcriptPath: "/path/to/transcript.md",
         cwd: "/project/directory",
         matcher: "Write",
         toolName: "Write",
