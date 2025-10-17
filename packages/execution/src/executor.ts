@@ -425,13 +425,19 @@ export class HookExecutor {
         );
       }
 
-      if (result.continue !== undefined && typeof result.continue !== "boolean") {
+      if (
+        result.continue !== undefined &&
+        typeof result.continue !== "boolean"
+      ) {
         return failure(
           new ValidationError("Result continue must be boolean if present")
         );
       }
 
-      if (result.stopReason !== undefined && typeof result.stopReason !== "string") {
+      if (
+        result.stopReason !== undefined &&
+        typeof result.stopReason !== "string"
+      ) {
         return failure(
           new ValidationError("Result stopReason must be string if present")
         );
