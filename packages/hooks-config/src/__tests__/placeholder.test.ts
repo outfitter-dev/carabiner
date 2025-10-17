@@ -50,7 +50,10 @@ describe("ConfigManager - Immutability Tests", () => {
     expect(initialConfig).toEqual(originalConfig);
 
     // Verify the update was applied correctly
-    expect(updatedConfig.PreToolUse?.Write).toEqual({
+    const toolConfig = updatedConfig.PreToolUse as
+      | Record<string, HookCommand>
+      | undefined;
+    expect(toolConfig?.Write).toEqual({
       command: "bun run hooks/custom-pre.ts",
       timeout: 5000,
       enabled: true,
@@ -78,7 +81,10 @@ describe("ConfigManager - Immutability Tests", () => {
     expect(initialConfig).toEqual(originalConfig);
 
     // Verify the update
-    expect(updatedConfig.SessionStart).toEqual({
+    const sessionStartConfig = updatedConfig.SessionStart as
+      | HookCommand
+      | undefined;
+    expect(sessionStartConfig).toEqual({
       command: "bun run hooks/custom-session.ts",
       timeout: 15_000,
       enabled: true,
@@ -110,11 +116,14 @@ describe("ConfigManager - Immutability Tests", () => {
     expect(beforeToggle).toEqual(originalBeforeToggle);
 
     // Verify the toggle
-    expect(afterToggle.PreToolUse?.Bash?.enabled).toBe(false);
-    expect(afterToggle.PreToolUse?.Bash?.command).toBe(
+    const toggledToolConfig = afterToggle.PreToolUse as
+      | Record<string, HookCommand>
+      | undefined;
+    expect(toggledToolConfig?.Bash?.enabled).toBe(false);
+    expect(toggledToolConfig?.Bash?.command).toBe(
       "bun run hooks/pre-bash.ts"
     );
-    expect(afterToggle.PreToolUse?.Bash?.timeout).toBe(3000);
+    expect(toggledToolConfig?.Bash?.timeout).toBe(3000);
 
     // Different references
     expect(afterToggle).not.toBe(beforeToggle);
@@ -134,7 +143,10 @@ describe("ConfigManager - Immutability Tests", () => {
     expect(initialConfig).toEqual(originalConfig);
 
     // Verify the toggle
-    expect(updatedConfig.SessionStart?.enabled).toBe(false);
+    const sessionToggle = updatedConfig.SessionStart as
+      | HookCommand
+      | undefined;
+    expect(sessionToggle?.enabled).toBe(false);
 
     // Different references
     expect(updatedConfig).not.toBe(initialConfig);
@@ -165,12 +177,15 @@ describe("ConfigManager - Immutability Tests", () => {
     expect(afterFirstUpdate).toEqual(originalAfterFirst);
 
     // Verify both configs exist
-    expect(afterSecondUpdate.PreToolUse?.Write).toEqual({
+    const secondToolConfig = afterSecondUpdate.PreToolUse as
+      | Record<string, HookCommand>
+      | undefined;
+    expect(secondToolConfig?.Write).toEqual({
       command: "bun run hooks/pre-write.ts",
       timeout: 2000,
       enabled: true,
     });
-    expect(afterSecondUpdate.PreToolUse?.Edit).toEqual({
+    expect(secondToolConfig?.Edit).toEqual({
       command: "bun run hooks/pre-edit.ts",
       timeout: 3000,
       enabled: true,
@@ -227,18 +242,21 @@ describe("ConfigManager - Immutability Tests", () => {
     });
 
     const updated = configManager.getConfig();
-    expect(updated.PreToolUse).toHaveLength(3);
+    const updatedPreToolUse = updated.PreToolUse as
+      | HookConfigItem[]
+      | undefined;
+    expect(updatedPreToolUse).toHaveLength(3);
 
-    const defaultItem = updated.PreToolUse?.find((item) => !item.matcher);
+    const defaultItem = updatedPreToolUse?.find((item) => !item.matcher);
     expect(defaultItem?.enabled).toBe(true);
     expect(defaultItem?.hooks[0]?.command).toBe("bun run hooks/default.ts");
     expect(defaultItem?.hooks[0]?.timeout).toBe(2000);
 
-    const writeItem = updated.PreToolUse?.find(
+    const writeItem = updatedPreToolUse?.find(
       (item) => item.matcher === "Write"
     );
     expect(writeItem?.hooks[0]?.command).toBe("bun run hooks/write.ts");
-    const editItem = updated.PreToolUse?.find(
+    const editItem = updatedPreToolUse?.find(
       (item) => item.matcher === "Edit"
     );
     expect(editItem?.hooks[0]?.command).toBe("bun run hooks/edit.ts");
@@ -281,7 +299,10 @@ describe("ConfigManager - Immutability Tests", () => {
     await configManager.toggleHook("PreToolUse", "Write", false);
 
     const updated = configManager.getConfig();
-    const writeItem = updated.PreToolUse?.find(
+    const updatedPreToolUse = updated.PreToolUse as
+      | HookConfigItem[]
+      | undefined;
+    const writeItem = updatedPreToolUse?.find(
       (item) => item.matcher === "Write"
     );
     expect(writeItem?.enabled).toBe(false);
