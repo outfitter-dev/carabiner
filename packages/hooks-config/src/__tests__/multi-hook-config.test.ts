@@ -40,9 +40,9 @@ describe("Multi-Hook Configuration", () => {
     const preToolUse = config.PreToolUse as HookConfigItem[] | undefined;
     expect(preToolUse).toBeDefined();
     expect(preToolUse).toHaveLength(2);
-    expect(preToolUse![0].hooks).toHaveLength(2);
-    expect(preToolUse![0].hooks[0].timeout).toBe(30_000);
-    expect(preToolUse![1].hooks[0].command).toBe("validate-mcp-read.sh");
+    expect(preToolUse![0]!.hooks).toHaveLength(2);
+    expect(preToolUse![0]!.hooks[0]!.timeout).toBe(30_000);
+    expect(preToolUse![1]!.hooks[0]!.command).toBe("validate-mcp-read.sh");
   });
 
   test("should support HookConfigItem with optional matcher", () => {
@@ -504,9 +504,9 @@ describe("Example Configurations", () => {
       | HookConfigItem[]
       | undefined;
     expect(examplePreToolUse).toHaveLength(2);
-    expect(examplePreToolUse![0].matcher).toBe("Write");
-    expect(examplePreToolUse![0].hooks).toHaveLength(2);
-    expect(examplePreToolUse![1].matcher).toBe("mcp__filesystem__read_file");
-    expect(examplePreToolUse![1].hooks).toHaveLength(1);
+    expect(examplePreToolUse![0]!.matcher).toBe("Write");
+    expect(examplePreToolUse![0]!.hooks).toHaveLength(2);
+    expect(examplePreToolUse![1]!.matcher).toBe("mcp__filesystem__read_file");
+    expect(examplePreToolUse![1]!.hooks).toHaveLength(1);
   });
 });

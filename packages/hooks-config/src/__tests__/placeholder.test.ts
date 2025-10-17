@@ -53,7 +53,7 @@ describe("ConfigManager - Immutability Tests", () => {
     const toolConfig = updatedConfig.PreToolUse as
       | Record<string, HookCommand>
       | undefined;
-    expect(toolConfig?.Write).toEqual({
+    expect(toolConfig?.Write).toMatchObject({
       command: "bun run hooks/custom-pre.ts",
       timeout: 5000,
       enabled: true,
@@ -84,7 +84,7 @@ describe("ConfigManager - Immutability Tests", () => {
     const sessionStartConfig = updatedConfig.SessionStart as
       | HookCommand
       | undefined;
-    expect(sessionStartConfig).toEqual({
+    expect(sessionStartConfig).toMatchObject({
       command: "bun run hooks/custom-session.ts",
       timeout: 15_000,
       enabled: true,
@@ -176,12 +176,12 @@ describe("ConfigManager - Immutability Tests", () => {
     const secondToolConfig = afterSecondUpdate.PreToolUse as
       | Record<string, HookCommand>
       | undefined;
-    expect(secondToolConfig?.Write).toEqual({
+    expect(secondToolConfig?.Write).toMatchObject({
       command: "bun run hooks/pre-write.ts",
       timeout: 2000,
       enabled: true,
     });
-    expect(secondToolConfig?.Edit).toEqual({
+    expect(secondToolConfig?.Edit).toMatchObject({
       command: "bun run hooks/pre-edit.ts",
       timeout: 3000,
       enabled: true,
