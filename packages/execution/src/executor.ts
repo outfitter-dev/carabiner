@@ -445,10 +445,20 @@ export class HookExecutor {
    */
   private validateResult(result: HookResult): Result<HookResult, Error> {
     try {
+      const legacyResult = result as Record<string, unknown>;
+      const legacySuccessValue = Object.hasOwn(legacyResult, "success")
+        ? (legacyResult as { success?: unknown }).success
+        : undefined;
+      const legacyMessageValue = Object.hasOwn(legacyResult, "message")
+        ? (legacyResult as { message?: unknown }).message
+        : undefined;
+      const legacyBlockValue = Object.hasOwn(legacyResult, "block")
+        ? (legacyResult as { block?: unknown }).block
+        : undefined;
+
       if (
-<<<<<<< HEAD
-        result.success !== undefined &&
-        typeof result.success !== "boolean"
+        legacySuccessValue !== undefined &&
+        typeof legacySuccessValue !== "boolean"
       ) {
         return failure(
           new ValidationError("Result success must be boolean if present")
@@ -456,23 +466,24 @@ export class HookExecutor {
       }
 
       if (
-        result.message !== undefined &&
-        typeof result.message !== "string"
+        legacyMessageValue !== undefined &&
+        typeof legacyMessageValue !== "string"
       ) {
         return failure(
           new ValidationError("Result message must be string if present")
         );
       }
 
-      if (result.block !== undefined && typeof result.block !== "boolean") {
+      if (
+        legacyBlockValue !== undefined &&
+        typeof legacyBlockValue !== "boolean"
+      ) {
         return failure(
           new ValidationError("Result block must be boolean if present")
         );
       }
 
       if (
-=======
->>>>>>> 936b2b3 (fix: remove all legacy field references (success, message, block, data) from execution and protocol)
         result.continue !== undefined &&
         typeof result.continue !== "boolean"
       ) {
@@ -534,7 +545,6 @@ export class HookExecutor {
       }
 
       if (
-<<<<<<< HEAD
         result.metadata !== undefined &&
         typeof result.metadata !== "object"
       ) {
@@ -542,6 +552,15 @@ export class HookExecutor {
           new ValidationError("Result metadata must be object if present")
         );
       }
+
+      const legacySuccessBoolean =
+        typeof legacySuccessValue === "boolean"
+          ? (legacySuccessValue as boolean)
+          : undefined;
+      const legacyMessageString =
+        typeof legacyMessageValue === "string"
+          ? (legacyMessageValue as string)
+          : undefined;
 
       const permissionDecision =
         result.hookSpecificOutput &&
@@ -567,47 +586,23 @@ export class HookExecutor {
         );
       }
 
-=======
-        result.hookSpecificOutput !== undefined &&
-        typeof result.hookSpecificOutput !== "object"
+      if (
+        result.continue === false &&
+        !result.stopReason &&
+        !result.suppressOutput &&
+        !isPermissionBasedBlock
       ) {
         return failure(
           new ValidationError(
-            "Result hookSpecificOutput must be object if present"
+            "When continue is false, provide stopReason or permissionDecision"
           )
         );
       }
 
-      // Additional semantic validation
->>>>>>> 936b2b3 (fix: remove all legacy field references (success, message, block, data) from execution and protocol)
       if (
-        result.continue === false &&
-        !result.stopReason &&
-        !result.suppressOutput
+        legacySuccessBoolean === false &&
+        (!legacyMessageString || legacyMessageString.length === 0)
       ) {
-        const permissionDecision =
-          result.hookSpecificOutput &&
-          typeof result.hookSpecificOutput === "object"
-            ? (
-                result.hookSpecificOutput as {
-                  permissionDecision?: unknown;
-                }
-              ).permissionDecision
-            : undefined;
-
-        const isPermissionBasedBlock =
-          permissionDecision === "deny" || permissionDecision === "ask";
-
-        if (!isPermissionBasedBlock) {
-          return failure(
-            new ValidationError(
-              "When continue is false, provide stopReason or permissionDecision"
-            )
-          );
-        }
-      }
-
-      if (result.success === false && !result.message) {
         return failure(
           new ValidationError("Failed results should include an error message")
         );

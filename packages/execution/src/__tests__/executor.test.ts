@@ -178,7 +178,6 @@ describe("HookExecutor", () => {
       global.clearTimeout = originalClearTimeout;
     }
   });
- 
 
   test("should parse JSON output correctly", async () => {
     const mockInput = {
