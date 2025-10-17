@@ -144,7 +144,8 @@ describe("HttpProtocol", () => {
 
       expect(response.status).toBe(200);
       const responseBody = await response.json();
-      expect(responseBody).toEqual(result);
+      expect(responseBody).toMatchObject(result);
+      expect(responseBody.success).toBe(true);
     });
 
     test("should infer continue flag from legacy success values", async () => {

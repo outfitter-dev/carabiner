@@ -110,6 +110,7 @@ export class TestProtocol implements HookProtocol {
   };
 
   private startTime?: number;
+  private wroteOutput = false;
 
   constructor(
     private readonly inputData: unknown,
@@ -193,6 +194,7 @@ export class TestProtocol implements HookProtocol {
     }
 
     this.output = normalizeHookResult(result);
+    this.wroteOutput = true;
   }
 
   /**
@@ -231,6 +233,7 @@ export class TestProtocol implements HookProtocol {
       writeError: 0,
     };
     this.startTime = undefined;
+    this.wroteOutput = false;
   }
 
   /**
@@ -240,6 +243,7 @@ export class TestProtocol implements HookProtocol {
     // In Claude SDK v2, continue defaults to true if not specified
     // Success requires output to be present AND continue !== false
     return (
+      this.wroteOutput &&
       this.output !== undefined &&
       this.output?.continue !== false &&
       this.error === undefined

@@ -8,16 +8,27 @@ import type { HookResult } from "@carabiner/types";
  * downstream consumers can rely on a consistent shape.
  */
 export function normalizeHookResult(result: HookResult): HookResult {
-  if (
-    result.continue === undefined &&
-    typeof (result as { success?: unknown }).success === "boolean"
-  ) {
-    const { success } = result as { success: boolean };
-    return {
-      ...result,
-      continue: success,
-    };
-  }
+  const hasContinue = typeof result.continue === "boolean";
+  const hasSuccess =
+    typeof (result as { success?: unknown }).success === "boolean";
 
-  return result;
+  const normalizedContinue = hasContinue
+    ? result.continue
+    : hasSuccess
+      ? (result as { success: boolean }).success
+      : undefined;
+
+  const normalizedSuccess = hasSuccess
+    ? (result as { success: boolean }).success
+    : hasContinue
+      ? result.continue !== false
+      : undefined;
+
+  return {
+    ...result,
+    ...(normalizedContinue !== undefined
+      ? { continue: normalizedContinue }
+      : {}),
+    ...(normalizedSuccess !== undefined ? { success: normalizedSuccess } : {}),
+  };
 }

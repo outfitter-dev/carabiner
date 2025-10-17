@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import type { HookResult } from "@carabiner/types";
 import { ProtocolParseError } from "../interface.js";
 import {
   createNotificationInput,
@@ -96,7 +97,8 @@ describe("TestProtocol", () => {
 
       await protocol.writeOutput(result);
 
-      expect(protocol.output).toEqual(result);
+      expect(protocol.output).toMatchObject(result);
+      expect(protocol.output?.success).toBe(true);
       expect(protocol.callCounts.writeOutput).toBe(1);
     });
 
@@ -176,7 +178,8 @@ describe("TestProtocol", () => {
 
       await protocol.writeOutput(result);
 
-      expect(protocol.result).toBe(result);
+      expect(protocol.result).toMatchObject(result);
+      expect((protocol.result as HookResult).success).toBe(true);
     });
 
     test("reset should clear all captured data", async () => {
