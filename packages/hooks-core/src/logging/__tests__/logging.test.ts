@@ -219,14 +219,14 @@ test("setLoggerFactory overrides logger creation and refreshes cache", () => {
   });
 
   const customLogger = createLogger("custom-service");
-  expect(customLogger).toBe(fakeLoggers.get("custom-service"));
+  expect(customLogger).toBe(fakeLoggers.get("custom-service")!);
   expect(createdServices).toContain("custom-service:custom-service");
 
   // Cache should return the same instance
   expect(createLogger("custom-service")).toBe(customLogger);
 
   // Shared loggers should also use the custom factory
-  expect(coreLogger).toBe(fakeLoggers.get("core"));
+  expect(coreLogger).toBe(fakeLoggers.get("core")!);
 
   const hookLogger = createHookLogger("PreToolUse", "Write");
   expect(fakeLoggers.has("hook-runtime")).toBe(true);
