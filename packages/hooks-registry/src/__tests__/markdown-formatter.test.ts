@@ -57,7 +57,7 @@ describe("markdown formatter hook", () => {
       );
 
       const preResult = await hook(preContext);
-      expect(preResult.success).toBe(true);
+      expect(preResult.continue).not.toBe(false);
       expect(mockExecFileSync).not.toHaveBeenCalled();
     });
 
@@ -78,7 +78,7 @@ describe("markdown formatter hook", () => {
       );
 
       const result = await hook(context);
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(mockExecFileSync).not.toHaveBeenCalled();
     });
   });
@@ -109,7 +109,7 @@ describe("markdown formatter hook", () => {
       );
 
       const result = await hook(context);
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(mockExecFileSync).toHaveBeenCalled();
     });
 
@@ -138,7 +138,7 @@ describe("markdown formatter hook", () => {
       );
 
       const result = await hook(context);
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(mockExecFileSync).toHaveBeenCalled();
     });
 
@@ -161,7 +161,7 @@ describe("markdown formatter hook", () => {
 
       // .md file should not match custom patterns
       const mdResult = await hook(mdContext);
-      expect(mdResult.success).toBe(true);
+      expect(mdResult.continue).not.toBe(false);
       // Since .md doesn't match our custom patterns, formatter should not be called
 
       // Reset mock call count
@@ -190,7 +190,7 @@ describe("markdown formatter hook", () => {
       );
 
       const markdownResult = await hook(markdownContext);
-      expect(markdownResult.success).toBe(true);
+      expect(markdownResult.continue).not.toBe(false);
       // Now it should have been called for the .markdown file
       expect(mockExecFileSync).toHaveBeenCalled();
     });
@@ -236,9 +236,9 @@ describe("markdown formatter hook", () => {
       );
 
       const result = await hook(context);
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(formatterUsed).toBe("markdownlint");
-      expect((result as any).data?.formatter).toBe("markdownlint");
+      expect((result as any).hookSpecificOutput?.formatter).toBe("markdownlint");
     });
 
     test("should fall back to prettier if markdownlint not available", async () => {
@@ -305,9 +305,9 @@ describe("markdown formatter hook", () => {
       );
 
       const result = await hook(context);
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(formatterUsed).toBe("prettier");
-      expect((result as any).data?.formatter).toBe("prettier");
+      expect((result as any).hookSpecificOutput?.formatter).toBe("prettier");
     });
 
     test("should respect explicit formatter preference", async () => {
@@ -349,7 +349,7 @@ describe("markdown formatter hook", () => {
       );
 
       const result = await hook(context);
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(formatterUsed).toBe("prettier");
     });
 
@@ -392,8 +392,8 @@ describe("markdown formatter hook", () => {
       );
 
       const result = await hook(context);
-      expect(result.success).toBe(false);
-      expect(result.message).toContain("No markdown formatter available");
+      expect(result.continue).toBe(false);
+      expect(result.systemMessage).toContain("No markdown formatter available");
     });
   });
 
@@ -640,8 +640,8 @@ describe("markdown formatter hook", () => {
       );
 
       const result = await hook(context);
-      expect(result.success).toBe(false);
-      expect(result.message).toContain("File not found");
+      expect(result.continue).toBe(false);
+      expect(result.systemMessage).toContain("File not found");
     });
 
     test("should handle formatter errors gracefully", async () => {
@@ -675,8 +675,8 @@ describe("markdown formatter hook", () => {
       );
 
       const result = await hook(context);
-      expect(result.success).toBe(false);
-      expect(result.message).toContain("Failed to format with markdownlint");
+      expect(result.continue).toBe(false);
+      expect(result.systemMessage).toContain("Failed to format with markdownlint");
     });
 
     test("should accept toolInput.path as an alternative to file_path", async () => {
@@ -702,7 +702,7 @@ describe("markdown formatter hook", () => {
         }
       );
       const result = await hook(context);
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
     });
   });
 
@@ -730,7 +730,7 @@ describe("markdown formatter hook", () => {
           }
         );
         const result = await hook(ctx);
-        expect(result.success).toBe(true);
+        expect(result.continue).not.toBe(false);
       }
       expect(mockExecFileSync).toHaveBeenCalled();
     });
@@ -772,9 +772,9 @@ describe("markdown formatter hook", () => {
         }
       );
       const result = await hook(context);
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(formatterUsed).toBe("markdownlint");
-      expect((result as any).data?.formatter).toBe("markdownlint");
+      expect((result as any).hookSpecificOutput?.formatter).toBe("markdownlint");
     });
 
     test("should pass additional arguments to prettier", async () => {

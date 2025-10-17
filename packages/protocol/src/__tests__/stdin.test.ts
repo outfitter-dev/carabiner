@@ -208,13 +208,13 @@ describe("StdinProtocol", () => {
       process.stdout = mockStdout as any;
 
       const protocol = new StdinProtocol();
-      const result = { success: true, message: "Test success" };
+      const result = { continue: true, systemMessage: "Test success" };
 
       await protocol.writeOutput(result);
 
-      expect(result).not.toHaveProperty("continue");
+      // normalizeHookResult adds success field for backward compatibility
       expect(mockStdout.writtenData).toBe(
-        JSON.stringify({ ...result, continue: true })
+        JSON.stringify({ ...result, success: true })
       );
     });
 
@@ -223,13 +223,13 @@ describe("StdinProtocol", () => {
       process.stdout = mockStdout as any;
 
       const protocol = new StdinProtocol({ prettyOutput: true });
-      const result = { success: true, message: "Test success" };
+      const result = { continue: true, systemMessage: "Test success" };
 
       await protocol.writeOutput(result);
 
-      expect(result).not.toHaveProperty("continue");
+      // normalizeHookResult adds success field for backward compatibility
       expect(mockStdout.writtenData).toBe(
-        JSON.stringify({ ...result, continue: true }, null, 2)
+        JSON.stringify({ ...result, success: true }, null, 2)
       );
     });
 
@@ -238,7 +238,7 @@ describe("StdinProtocol", () => {
       process.stdout = mockStdout as any;
 
       const protocol = new StdinProtocol();
-      const result = { success: true, message: "Test" };
+      const result = { continue: true, systemMessage: "Test" };
 
       await expect(protocol.writeOutput(result)).rejects.toThrow(
         ProtocolOutputError
