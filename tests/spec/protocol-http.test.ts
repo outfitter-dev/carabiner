@@ -18,7 +18,8 @@ function loadFixture(filename: string): Record<string, unknown> {
 
 function normalizeFixture<T extends Record<string, unknown>>(body: T): T {
   if ("transcript_path" in body) {
-    body.transcript_path = "/tmp/test-transcript.md";
+    (body as Record<string, unknown>).transcript_path =
+      "/tmp/test-transcript.md";
   }
   return body;
 }
@@ -72,7 +73,6 @@ describe("HttpProtocol", () => {
 
     await protocol.writeOutput({
       continue: true,
-      success: true,
       systemMessage: "Notification handled",
     });
 
