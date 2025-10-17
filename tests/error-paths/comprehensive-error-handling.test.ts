@@ -349,8 +349,8 @@ describe("Comprehensive Error Handling", () => {
             }));
 
             return {
-              success: true,
-              message: `Processed ${processed.length} items`,
+              continue: true,
+              systemMessage: `Processed ${processed.length} items`,
               hookSpecificOutput: { count: processed.length },
             };
           };
@@ -716,8 +716,8 @@ describe("Comprehensive Error Handling", () => {
         }
 
         return {
-          success: true,
-          message: "Graceful degradation successful",
+          continue: true,
+          systemMessage: "Graceful degradation successful",
           hookSpecificOutput: {
             successful: results,
             failed: errors,
