@@ -90,28 +90,24 @@ class TestWorkspace {
  */
 const mockHandler = {
   allow: async (_context: HookContext): Promise<HookResult> => ({
-    continue: true,
+    ...HookResults.allow("Hook allowed execution"),
     systemMessage: "Hook allowed execution",
   }),
 
   deny: async (_context: HookContext): Promise<HookResult> => ({
-    continue: false,
+    ...HookResults.deny("Hook denied execution"),
     systemMessage: "Hook denied execution",
   }),
 
   ask: async (_context: HookContext): Promise<HookResult> => ({
-    continue: false,
-    askUser: {
-      question: "Do you want to proceed with this action?",
-      defaultChoice: "allow",
-    },
+    ...HookResults.ask("Needs user confirmation"),
     systemMessage: "Hook requested user permission",
   }),
 
   timeout: async (_context: HookContext): Promise<HookResult> => {
     await new Promise((resolve) => setTimeout(resolve, 5000)); // 5 second delay
     return {
-      continue: true,
+      ...HookResults.continue(),
       systemMessage: "Hook completed after delay",
     };
   },
@@ -302,6 +298,7 @@ describe("Claude Code Compliance Test Suite", () => {
 
       expect(result.continue).toBe(true);
       expect(result.systemMessage).toBe("Hook allowed execution");
+      expect(result.hookSpecificOutput?.permissionDecision).toBe("allow");
     });
 
     test("should handle deny decision correctly", async () => {
@@ -312,6 +309,8 @@ describe("Claude Code Compliance Test Suite", () => {
 
       expect(result.continue).toBe(false);
       expect(result.systemMessage).toBe("Hook denied execution");
+      expect(result.hookSpecificOutput?.permissionDecision).toBe("deny");
+      expect(result.stopReason).toBe("blocked");
     });
 
     test("should handle ask decision correctly", async () => {
@@ -321,10 +320,10 @@ describe("Claude Code Compliance Test Suite", () => {
       const result = await executeHook(mockHandler.ask, context);
 
       expect(result.continue).toBe(false);
-      expect(result.askUser).toMatchObject({
-        question: "Do you want to proceed with this action?",
-        defaultChoice: "allow",
-      });
+      expect(result.hookSpecificOutput?.permissionDecision).toBe("ask");
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toBe(
+        "Needs user confirmation"
+      );
     });
   });
 
@@ -347,25 +346,33 @@ describe("Claude Code Compliance Test Suite", () => {
 
   describe("Exit Code Behavior", () => {
     test("should handle exit code 0 (success)", async () => {
-      const fixture = loadFixture("stop.json");
+      const fixture = loadFixture("stop.json") as { exit_code?: number };
       expect(fixture.exit_code).toBe(0);
     });
 
     test("should use HookResults for consistent exit behavior", async () => {
-      const successResult = HookResults.success(
-        "Operation completed successfully"
+      const allowedResult = HookResults.allow("Operation completed");
+      expect(allowedResult.continue).toBe(true);
+      expect(allowedResult.hookSpecificOutput?.permissionDecision).toBe(
+        "allow"
       );
-      expect(successResult.continue).toBe(true);
-      expect(successResult.success).toBe(true);
 
-      const failureResult = HookResults.failure("Operation failed");
-      expect(failureResult.continue).toBe(false);
-      expect(failureResult.success).toBe(false);
+      const deniedResult = HookResults.deny("Operation denied");
+      expect(deniedResult.continue).toBe(false);
+      expect(deniedResult.stopReason).toBe("blocked");
+      expect(deniedResult.hookSpecificOutput?.permissionDecision).toBe("deny");
 
-      const blockedResult = HookResults.block("Operation blocked");
-      expect(blockedResult.continue).toBe(false);
-      expect(blockedResult.block).toBe(true);
-      expect(blockedResult.stopReason).toBe("blocked");
+      const askedResult = HookResults.ask("Operation requires approval");
+      expect(askedResult.continue).toBe(false);
+      expect(askedResult.hookSpecificOutput?.permissionDecision).toBe("ask");
+
+      const stoppedResult = HookResults.stop("Operation stopped");
+      expect(stoppedResult.continue).toBe(false);
+      expect(stoppedResult.stopReason).toBe("Operation stopped");
+
+      const suppressedResult = HookResults.suppress("Output suppressed");
+      expect(suppressedResult.suppressOutput).toBe(true);
+      expect(suppressedResult.systemMessage).toBe("Output suppressed");
     });
   });
 
@@ -457,7 +464,7 @@ describe("Claude Code Compliance Test Suite", () => {
 
   describe("stop_hook_active Flag Handling", () => {
     test("should handle stop_hook_active flag correctly", async () => {
-      const fixture = loadFixture("stop.json");
+      const fixture = loadFixture("stop.json") as { stop_hook_active?: boolean };
       expect(fixture.stop_hook_active).toBe(true);
 
       const context = createHookContext(fixture);
