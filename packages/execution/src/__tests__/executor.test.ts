@@ -169,10 +169,9 @@ describe("HookExecutor", () => {
       // Verify clearTimeout was called even though handler failed
       expect(clearTimeoutCalled).toBe(true);
 
-      // Verify the error was handled (continue === false means failure)
-      expect(mockProtocol.output?.continue).toBe(false);
-      // The error might be in different fields based on the protocol output structure
-      expect(mockProtocol.output).toBeDefined();
+      // Verify the error was handled via writeError
+      expect(mockProtocol.error).toBeDefined();
+      expect(mockProtocol.error?.message).toContain("systemMessage");
     } finally {
       global.setTimeout = originalSetTimeout;
       global.clearTimeout = originalClearTimeout;
@@ -311,7 +310,10 @@ describe("HookExecutor", () => {
       },
     };
 
-    const handler: HookHandler = () => "Raw context string from SessionStart";
+    const handler: HookHandler = () => ({
+      continue: true,
+      additionalContext: "Raw context string from SessionStart",
+    });
 
     const executor = new HookExecutor(protocol, {
       exitProcess: false,
@@ -342,8 +344,11 @@ describe("HookExecutor", () => {
     }) as TestProtocol;
 
     const handler: HookHandler = () => {
-      // Return raw string instead of JSON
-      return "Additional context from user prompt";
+      // Return HookResult with additionalContext
+      return {
+        continue: true,
+        additionalContext: "Additional context from user prompt",
+      };
     };
 
     const executor = new HookExecutor(testProtocol, {
