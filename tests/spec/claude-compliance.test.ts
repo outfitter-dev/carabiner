@@ -464,7 +464,9 @@ describe("Claude Code Compliance Test Suite", () => {
 
   describe("stop_hook_active Flag Handling", () => {
     test("should handle stop_hook_active flag correctly", async () => {
-      const fixture = loadFixture("stop.json") as { stop_hook_active?: boolean };
+      const fixture = loadFixture("stop.json") as {
+        stop_hook_active?: boolean;
+      };
       expect(fixture.stop_hook_active).toBe(true);
 
       const context = createHookContext(fixture);
