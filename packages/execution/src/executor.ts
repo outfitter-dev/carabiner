@@ -706,11 +706,13 @@ export class HookExecutor {
     executionContext: HookExecutionContext | null
   ): Promise<void> {
     // Try to write error to protocol
-    const errorMessage = result.stopReason || result.systemMessage;
-    if (errorMessage) {
-      const error = new ExecutionError(errorMessage, "EXECUTION_FAILED");
-      await this.writeError(error);
-    }
+    const errorMessage =
+      result.stopReason ??
+      result.systemMessage ??
+      result.additionalContext ??
+      "Hook execution failed";
+    const error = new ExecutionError(errorMessage, "EXECUTION_FAILED");
+    await this.writeError(error);
 
     // Collect metrics if context is available
     if (this.options.collectMetrics && context) {
@@ -735,15 +737,13 @@ export class HookExecutor {
         memoryBefore,
         memoryAfter
       );
-      const errorMessage =
-        result.stopReason || result.systemMessage || "Hook execution failed";
-      const error = new ExecutionError(errorMessage, "EXECUTION_FAILED");
       this.logger.failExecution(executionContext, error, metrics);
     } else {
       // Log generic failure if no execution context
       this.logger.error("Hook execution failed without context", {
         stopReason: result.stopReason,
         systemMessage: result.systemMessage,
+        additionalContext: result.additionalContext,
         continue: result.continue,
       });
     }
