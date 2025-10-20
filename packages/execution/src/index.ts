@@ -101,6 +101,15 @@ export {
   runTestHooks,
 } from "./runner";
 
+// Timeout and process execution
+export {
+  type ExecutionResult,
+  executeHook as executeHookProcess,
+  executeWithTimeout,
+  type Hook,
+  type HookProcessResult,
+} from "./timeout";
+
 /**
  * Version information
  */

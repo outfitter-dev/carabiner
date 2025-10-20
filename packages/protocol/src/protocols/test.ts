@@ -241,11 +241,8 @@ export class TestProtocol implements HookProtocol {
    * Check if hook execution was successful
    */
   get wasSuccessful(): boolean {
-    // In Claude SDK v2, continue defaults to true if not specified
-    // Success requires output to be present AND continue !== false
     return (
       this.wroteOutput &&
-      this.output !== undefined &&
       this.output?.continue !== false &&
       this.error === undefined
     );
