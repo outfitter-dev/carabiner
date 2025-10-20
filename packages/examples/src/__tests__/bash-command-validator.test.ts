@@ -4,14 +4,12 @@
 
 import { describe, expect, test } from "bun:test";
 import type {
+  CreateContextOptions,
   DirectoryPath,
   SessionId,
   TranscriptPath,
 } from "@carabiner/types";
-import {
-  type CreateContextOptions,
-  createToolHookContext,
-} from "@carabiner/types";
+import { createToolHookContext } from "@carabiner/types";
 import {
   bashCommandValidatorHook,
   VALIDATION_RULES,
@@ -89,8 +87,8 @@ describe("Bash Command Validator", () => {
       );
 
       const result = await bashCommandValidatorHook(context);
-      expect(result.success).toBe(true);
-      expect(result.block).toBeUndefined();
+      expect(result.continue).toBe(true);
+      expect(result.stopReason).toBeUndefined();
     });
 
     test("should continue for Bash without command", async () => {
@@ -102,8 +100,8 @@ describe("Bash Command Validator", () => {
       );
 
       const result = await bashCommandValidatorHook(context);
-      expect(result.success).toBe(true);
-      expect(result.block).toBeUndefined();
+      expect(result.continue).toBe(true);
+      expect(result.stopReason).toBeUndefined();
     });
 
     test("should block inefficient grep command", async () => {
@@ -115,9 +113,9 @@ describe("Bash Command Validator", () => {
       );
 
       const result = await bashCommandValidatorHook(context);
-      expect(result.success).toBe(false);
-      expect(result.block).toBe(true);
-      expect(result.message).toContain("ripgrep");
+      expect(result.continue).toBe(false);
+      expect(result.stopReason).toBe("blocked");
+      expect(result.systemMessage).toContain("ripgrep");
     });
 
     test("should continue for efficient commands", async () => {
@@ -129,8 +127,8 @@ describe("Bash Command Validator", () => {
       );
 
       const result = await bashCommandValidatorHook(context);
-      expect(result.success).toBe(true);
-      expect(result.block).toBeUndefined();
+      expect(result.continue).toBe(true);
+      expect(result.stopReason).toBeUndefined();
     });
 
     test("should include validation errors in modified input", async () => {
@@ -142,8 +140,8 @@ describe("Bash Command Validator", () => {
       );
 
       const result = await bashCommandValidatorHook(context);
-      expect(result.success).toBe(false);
-      const modified = (result.data as any)?.modifiedInput as
+      expect(result.continue).toBe(false);
+      const modified = (result.hookSpecificOutput as any)?.modifiedInput as
         | { _validation_errors?: unknown[] }
         | undefined;
       expect(modified?._validation_errors).toBeDefined();

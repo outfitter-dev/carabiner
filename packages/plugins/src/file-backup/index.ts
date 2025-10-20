@@ -487,7 +487,7 @@ function createSuccessResult(
   pluginVersion: string
 ): PluginResult {
   return {
-    success: true,
+    continue: true,
     pluginName,
     pluginVersion,
   };
@@ -502,7 +502,7 @@ function createSkippedResult(
   reason: string
 ): PluginResult {
   return {
-    success: true,
+    continue: true,
     pluginName,
     pluginVersion,
     metadata: { skipped: true, reason },
@@ -546,10 +546,11 @@ async function processFileBackups(
   }
 
   return {
-    success: !hasErrors,
+    continue: !hasErrors,
+    stopReason: hasErrors ? "error" : undefined,
     pluginName,
     pluginVersion,
-    message: hasErrors
+    systemMessage: hasErrors
       ? `Some backups failed: ${results.filter((r) => r.error).length}/${results.length}`
       : `Created ${results.filter((r) => r.backup).length} backups`,
     metadata: {

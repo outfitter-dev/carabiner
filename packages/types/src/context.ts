@@ -5,6 +5,11 @@
 
 import type { DirectoryPath, SessionId, TranscriptPath } from "./brands";
 import type {
+  NotificationType,
+  PreCompactTrigger,
+  SessionStartTrigger,
+} from "./decisions";
+import type {
   HookEvent,
   NotificationEvent,
   ToolHookEvent,
@@ -13,10 +18,12 @@ import type {
 import type { ToolInput, ToolInputMap } from "./tools";
 
 /**
- * Hook environment variables
+ * Hook environment variables - Claude Code compliant
  */
 export type HookEnvironment = {
   readonly CLAUDE_PROJECT_DIR?: string;
+  readonly CLAUDE_SESSION_ID?: string;
+  readonly CLAUDE_HOOK_EVENT?: string;
   readonly [key: string]: string | undefined;
 };
 
@@ -94,24 +101,56 @@ export type HookContext =
   | FileHookContext
   | SearchHookContext
   | UserPromptHookContext
-  | NotificationHookContext;
+  | NotificationHookContext
+  | PreCompactContext;
 
 /**
  * Context discriminated by event type
  */
 export type PreToolUseContext = ToolHookContext & {
   readonly event: "PreToolUse";
+  readonly hookSpecificInput?: {
+    readonly permissionPrompt?: string;
+  };
+  readonly stopHookActive?: boolean;
 };
 export type PostToolUseContext = ToolHookContext & {
   readonly event: "PostToolUse";
   readonly toolResponse: Record<string, unknown>;
+  readonly stopHookActive?: boolean;
 };
+
+export type NotificationContext = NotificationHookContext & {
+  readonly event: "Notification";
+  readonly notificationType?: NotificationType;
+  readonly stopHookActive?: boolean;
+};
+
 export type SessionStartContext = NotificationHookContext & {
   readonly event: "SessionStart";
+  readonly sessionStartTrigger?: SessionStartTrigger;
+  readonly stopHookActive?: boolean;
 };
-export type StopContext = NotificationHookContext & { readonly event: "Stop" };
+
+export type SessionEndContext = NotificationHookContext & {
+  readonly event: "SessionEnd";
+  readonly stopHookActive?: boolean;
+};
+
+export type StopContext = NotificationHookContext & {
+  readonly event: "Stop";
+  readonly stopHookActive?: boolean;
+};
+
 export type SubagentStopContext = NotificationHookContext & {
   readonly event: "SubagentStop";
+  readonly stopHookActive?: boolean;
+};
+
+export type PreCompactContext = BaseHookContext & {
+  readonly event: "PreCompact";
+  readonly preCompactTrigger: PreCompactTrigger;
+  readonly stopHookActive?: boolean;
 };
 
 /**
@@ -125,16 +164,19 @@ export type ToolHookHandler = HookHandler<ToolHookContext>;
 export type BashHookHandler = HookHandler<BashHookContext>;
 export type FileHookHandler = HookHandler<FileHookContext>;
 export type UserPromptHandler = HookHandler<UserPromptHookContext>;
-export type NotificationHandler = HookHandler<NotificationHookContext>;
+export type NotificationHookHandler = HookHandler<NotificationHookContext>;
 
 /**
  * Specific event handlers
  */
 export type PreToolUseHandler = HookHandler<PreToolUseContext>;
 export type PostToolUseHandler = HookHandler<PostToolUseContext>;
+export type NotificationContextHandler = HookHandler<NotificationContext>;
 export type SessionStartHandler = HookHandler<SessionStartContext>;
+export type SessionEndHandler = HookHandler<SessionEndContext>;
 export type StopHandler = HookHandler<StopContext>;
 export type SubagentStopHandler = HookHandler<SubagentStopContext>;
+export type PreCompactHandler = HookHandler<PreCompactContext>;
 
 /**
  * Type guards for context discrimination
@@ -177,7 +219,19 @@ export function isUserPromptContext(
 export function isNotificationContext(
   context: HookContext
 ): context is NotificationHookContext {
-  return ["SessionStart", "Stop", "SubagentStop"].includes(context.event);
+  return [
+    "Notification",
+    "SessionStart",
+    "SessionEnd",
+    "Stop",
+    "SubagentStop",
+  ].includes(context.event);
+}
+
+export function isPreCompactContext(
+  context: HookContext
+): context is PreCompactContext {
+  return context.event === "PreCompact";
 }
 
 export function isPreToolUseContext(
@@ -240,6 +294,38 @@ export function createNotificationContext(
   return {
     event,
     message,
+    ...options,
+    environment: options.environment || {},
+  };
+}
+
+export function createPreToolUseContext(
+  toolName: ToolName,
+  toolInput: ToolInput,
+  options: CreateContextOptions,
+  hookSpecificInput?: { permissionPrompt?: string },
+  stopHookActive?: boolean
+): PreToolUseContext {
+  return {
+    event: "PreToolUse",
+    toolName,
+    toolInput,
+    hookSpecificInput,
+    stopHookActive,
+    ...options,
+    environment: options.environment || {},
+  };
+}
+
+export function createPreCompactContext(
+  preCompactTrigger: PreCompactTrigger,
+  options: CreateContextOptions,
+  stopHookActive?: boolean
+): PreCompactContext {
+  return {
+    event: "PreCompact",
+    preCompactTrigger,
+    stopHookActive,
     ...options,
     environment: options.environment || {},
   };

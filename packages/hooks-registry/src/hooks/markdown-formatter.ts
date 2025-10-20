@@ -204,7 +204,7 @@ export function createMarkdownFormatterHook(
   return (context) => {
     // Only process PostToolUse events for file editing tools
     if (context.event !== "PostToolUse") {
-      return { success: true };
+      return { continue: true };
     }
 
     // Check if this is a file editing tool
@@ -212,7 +212,7 @@ export function createMarkdownFormatterHook(
     if (
       !("toolName" in context && fileEditingTools.includes(context.toolName))
     ) {
-      return { success: true };
+      return { continue: true };
     }
 
     // Extract file path(s) from tool input - handle both single and multi-file tools
@@ -233,13 +233,13 @@ export function createMarkdownFormatterHook(
     }
 
     if (filePaths.length === 0) {
-      return { success: true };
+      return { continue: true };
     }
 
     // Process all matching files
     const results: Array<{
       success: boolean;
-      message: string;
+      systemMessage: string;
       filePath: string;
       formatter?: string;
     }> = [];
@@ -257,7 +257,7 @@ export function createMarkdownFormatterHook(
       if (!existsSync(filePath)) {
         results.push({
           success: false,
-          message: `File not found: ${filePath}`,
+          systemMessage: `File not found: ${filePath}`,
           filePath,
         });
         continue;
@@ -285,7 +285,7 @@ export function createMarkdownFormatterHook(
       if (!selectedFormatter) {
         results.push({
           success: false,
-          message:
+          systemMessage:
             "No markdown formatter available. Install markdownlint-cli2 or prettier.",
           filePath,
         });
@@ -300,7 +300,7 @@ export function createMarkdownFormatterHook(
 
       results.push({
         success: result.success,
-        message: result.output,
+        systemMessage: result.output,
         filePath,
         formatter: selectedFormatter,
       });
@@ -308,21 +308,19 @@ export function createMarkdownFormatterHook(
 
     // Return aggregated results
     if (results.length === 0) {
-      return { success: true };
+      return { continue: true };
     }
 
     const allSuccess = results.every((r) => r.success);
     const messages = results
-      .map((r) => `${r.filePath}: ${r.message}`)
+      .map((r) => `${r.filePath}: ${r.systemMessage}`)
       .join("\n");
 
     return {
-      success: allSuccess,
-      message: messages,
-      metadata: {
+      continue: allSuccess,
+      systemMessage: messages,
+      hookSpecificOutput: {
         timestamp: new Date().toISOString(),
-      },
-      data: {
         formatter: results[0]?.formatter,
         filesProcessed: results.length,
         autoFix,

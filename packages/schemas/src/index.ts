@@ -28,7 +28,6 @@ export type {
 
 export type {
   ClaudeHookInput,
-  ClaudeHookOutput,
   ClaudeNotificationInput,
   ClaudeToolHookInput,
   ClaudeUserPromptInput,
@@ -40,7 +39,6 @@ export type {
 export {
   baseClaudeHookInputSchema,
   claudeHookInputSchema,
-  claudeHookOutputSchema,
   claudeNotificationInputSchema,
   claudeToolHookInputSchema,
   claudeUserPromptInputSchema,

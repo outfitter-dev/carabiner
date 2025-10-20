@@ -84,7 +84,7 @@ describe("Git Safety Plugin", () => {
       const context = createNonBashContext();
       const result = await gitSafetyPlugin.apply(context);
 
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(result.pluginName).toBe("git-safety");
     });
 
@@ -96,14 +96,14 @@ describe("Git Safety Plugin", () => {
 
       const result = await gitSafetyPlugin.apply(context);
 
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
     });
 
     test("should ignore non-git commands", async () => {
       const context = createBashContext("ls -la");
       const result = await gitSafetyPlugin.apply(context);
 
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(result.metadata?.safe).toBe(true);
     });
   });
@@ -123,7 +123,7 @@ describe("Git Safety Plugin", () => {
         const context = createBashContext(command);
         const result = await gitSafetyPlugin.apply(context);
 
-        expect(result.success).toBe(true);
+        expect(result.continue).not.toBe(false);
         expect(result.metadata?.allowed).toBe(true);
       }
     });
@@ -132,7 +132,7 @@ describe("Git Safety Plugin", () => {
       const context = createBashContext("git log --oneline --graph");
       const result = await gitSafetyPlugin.apply(context);
 
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
     });
   });
 
@@ -149,9 +149,9 @@ describe("Git Safety Plugin", () => {
         const context = createBashContext(command);
         const result = await gitSafetyPlugin.apply(context);
 
-        expect(result.success).toBe(false);
-        expect(result.block).toBe(true);
-        expect(result.message).toContain("dangerous pattern");
+        expect(result.continue).toBe(false);
+        expect(result.stopReason).toBe("blocked");
+        expect(result.systemMessage).toContain("dangerous pattern");
       }
     });
 
@@ -166,8 +166,8 @@ describe("Git Safety Plugin", () => {
         const context = createBashContext(command);
         const result = await gitSafetyPlugin.apply(context);
 
-        expect(result.success).toBe(false);
-        expect(result.block).toBe(true);
+        expect(result.continue).toBe(false);
+        expect(result.stopReason).toBe("blocked");
       }
     });
 
@@ -183,8 +183,8 @@ describe("Git Safety Plugin", () => {
         const context = createBashContext(command);
         const result = await gitSafetyPlugin.apply(context);
 
-        expect(result.success).toBe(false);
-        expect(result.block).toBe(true);
+        expect(result.continue).toBe(false);
+        expect(result.stopReason).toBe("blocked");
       }
     });
 
@@ -198,8 +198,8 @@ describe("Git Safety Plugin", () => {
         const context = createBashContext(command);
         const result = await gitSafetyPlugin.apply(context);
 
-        expect(result.success).toBe(false);
-        expect(result.block).toBe(true);
+        expect(result.continue).toBe(false);
+        expect(result.stopReason).toBe("blocked");
       }
     });
   });
@@ -214,8 +214,8 @@ describe("Git Safety Plugin", () => {
       const context = createBashContext("git custom-dangerous-command");
       const result = await gitSafetyPlugin.apply(context, config);
 
-      expect(result.success).toBe(false);
-      expect(result.block).toBe(true);
+      expect(result.continue).toBe(false);
+      expect(result.stopReason).toBe("blocked");
     });
 
     test("should respect custom allow list", async () => {
@@ -227,7 +227,7 @@ describe("Git Safety Plugin", () => {
       const context = createBashContext("git push --force origin feature");
       const result = await gitSafetyPlugin.apply(context, config);
 
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(result.metadata?.allowed).toBe(true);
     });
 
@@ -237,7 +237,7 @@ describe("Git Safety Plugin", () => {
           {
             name: "No main branch force push",
             pattern: "push.*origin.*main.*--force",
-            message: "Force pushing to main branch is not allowed",
+            systemMessage: "Force pushing to main branch is not allowed",
             severity: "block" as const,
           },
         ],
@@ -246,9 +246,9 @@ describe("Git Safety Plugin", () => {
       const context = createBashContext("git push origin main --force");
       const result = await gitSafetyPlugin.apply(context, config);
 
-      expect(result.success).toBe(false);
-      expect(result.block).toBe(true);
-      expect(result.message).toContain(
+      expect(result.continue).toBe(false);
+      expect(result.stopReason).toBe("blocked");
+      expect(result.systemMessage).toContain(
         "Force pushing to main branch is not allowed"
       );
     });
@@ -259,7 +259,7 @@ describe("Git Safety Plugin", () => {
           {
             name: "Warning rule",
             pattern: "merge.*--no-ff",
-            message: "Consider using fast-forward merge",
+            systemMessage: "Consider using fast-forward merge",
             severity: "warn" as const,
           },
         ],
@@ -268,8 +268,10 @@ describe("Git Safety Plugin", () => {
       const context = createBashContext("git merge --no-ff feature");
       const result = await gitSafetyPlugin.apply(context, config);
 
-      expect(result.success).toBe(true);
-      expect(result.message).toContain("Consider using fast-forward merge");
+      expect(result.continue).not.toBe(false);
+      expect(result.systemMessage).toContain(
+        "Consider using fast-forward merge"
+      );
       expect(result.metadata?.warning).toBe(true);
     });
 
@@ -284,7 +286,7 @@ describe("Git Safety Plugin", () => {
 
       const result = await gitSafetyPlugin.apply(context, config);
 
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
       expect(result.metadata?.skipped).toBe(true);
     });
 
@@ -299,7 +301,7 @@ describe("Git Safety Plugin", () => {
       });
 
       const result1 = await gitSafetyPlugin.apply(context1, config);
-      expect(result1.success).toBe(true);
+      expect(result1.continue).not.toBe(false);
       expect(result1.metadata?.skipped).toBe(true);
 
       // Should process repo in include list
@@ -308,8 +310,8 @@ describe("Git Safety Plugin", () => {
       });
 
       const result2 = await gitSafetyPlugin.apply(context2, config);
-      expect(result2.success).toBe(false);
-      expect(result2.block).toBe(true);
+      expect(result2.continue).toBe(false);
+      expect(result2.stopReason).toBe("blocked");
     });
   });
 
@@ -318,23 +320,23 @@ describe("Git Safety Plugin", () => {
       const context = createBashContext("");
       const result = await gitSafetyPlugin.apply(context);
 
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
     });
 
     test("should handle commands with multiple spaces", async () => {
       const context = createBashContext("git    push    --force");
       const result = await gitSafetyPlugin.apply(context);
 
-      expect(result.success).toBe(false);
-      expect(result.block).toBe(true);
+      expect(result.continue).toBe(false);
+      expect(result.stopReason).toBe("blocked");
     });
 
     test("should handle case insensitive patterns", async () => {
       const context = createBashContext("GIT PUSH --FORCE");
       const result = await gitSafetyPlugin.apply(context);
 
-      expect(result.success).toBe(false);
-      expect(result.block).toBe(true);
+      expect(result.continue).toBe(false);
+      expect(result.stopReason).toBe("blocked");
     });
 
     test("should handle git aliases and shortcuts", async () => {
@@ -344,7 +346,7 @@ describe("Git Safety Plugin", () => {
           {
             name: "Block git aliases",
             pattern: "\\bpf\\b",
-            message: "Dangerous git alias detected",
+            systemMessage: "Dangerous git alias detected",
             severity: "block" as const,
           },
         ],
@@ -352,14 +354,15 @@ describe("Git Safety Plugin", () => {
 
       const result = await gitSafetyPlugin.apply(context, config);
 
-      expect(result.success).toBe(false);
-      expect(result.block).toBe(true);
+      expect(result.continue).toBe(false);
+      expect(result.stopReason).toBe("blocked");
     });
 
     test("should provide detailed metadata", async () => {
       const context = createBashContext("git status");
       const result = await gitSafetyPlugin.apply(context);
 
+      expect(result.continue).not.toBe(false);
       expect(result.metadata?.scanned).toBe(true);
       expect(result.metadata?.command).toBe("git status");
       expect(result.metadata?.safe).toBe(true);

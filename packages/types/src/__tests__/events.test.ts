@@ -4,9 +4,11 @@
 
 import { describe, expect, test } from "bun:test";
 import {
+  type CompactEvent,
   HOOK_EVENTS,
   type HookEvent,
   HookResults,
+  isCompactEvent,
   isHookEvent,
   isNotificationEvent,
   isToolHookEvent,
@@ -17,14 +19,17 @@ import {
 } from "../events.js";
 
 describe("HOOK_EVENTS constant", () => {
-  test("contains all expected events", () => {
+  test("contains all 9 expected events", () => {
     expect(HOOK_EVENTS).toEqual([
       "PreToolUse",
       "PostToolUse",
+      "Notification",
       "UserPromptSubmit",
-      "SessionStart",
       "Stop",
       "SubagentStop",
+      "PreCompact",
+      "SessionStart",
+      "SessionEnd",
     ]);
   });
 
@@ -34,7 +39,7 @@ describe("HOOK_EVENTS constant", () => {
     // HOOK_EVENTS.push('InvalidEvent'); // This would error if uncommented
 
     // Instead, just verify the array is properly typed
-    expect(HOOK_EVENTS.length).toBe(6);
+    expect(HOOK_EVENTS.length).toBe(9);
   });
 });
 
@@ -73,9 +78,12 @@ describe("isToolHookEvent", () => {
   test("rejects non-tool hook events", () => {
     const nonToolEvents: HookEvent[] = [
       "UserPromptSubmit",
+      "Notification",
       "SessionStart",
+      "SessionEnd",
       "Stop",
       "SubagentStop",
+      "PreCompact",
     ];
 
     for (const event of nonToolEvents) {
@@ -87,7 +95,9 @@ describe("isToolHookEvent", () => {
 describe("isNotificationEvent", () => {
   test("identifies notification events", () => {
     const notificationEvents: HookEvent[] = [
+      "Notification",
       "SessionStart",
+      "SessionEnd",
       "Stop",
       "SubagentStop",
     ];
@@ -102,6 +112,7 @@ describe("isNotificationEvent", () => {
       "PreToolUse",
       "PostToolUse",
       "UserPromptSubmit",
+      "PreCompact",
     ];
 
     for (const event of nonNotificationEvents) {
@@ -119,9 +130,12 @@ describe("isUserEvent", () => {
     const nonUserEvents: HookEvent[] = [
       "PreToolUse",
       "PostToolUse",
+      "Notification",
       "SessionStart",
+      "SessionEnd",
       "Stop",
       "SubagentStop",
+      "PreCompact",
     ];
 
     for (const event of nonUserEvents) {
@@ -130,127 +144,157 @@ describe("isUserEvent", () => {
   });
 });
 
-describe("HookResults builders", () => {
-  describe("success", () => {
-    test("creates success result without message or data", () => {
-      const result = HookResults.success();
+describe("isCompactEvent", () => {
+  test("identifies compact events", () => {
+    expect(isCompactEvent("PreCompact")).toBe(true);
+  });
+
+  test("rejects non-compact events", () => {
+    const nonCompactEvents: HookEvent[] = [
+      "PreToolUse",
+      "PostToolUse",
+      "Notification",
+      "UserPromptSubmit",
+      "SessionStart",
+      "SessionEnd",
+      "Stop",
+      "SubagentStop",
+    ];
+
+    for (const event of nonCompactEvents) {
+      expect(isCompactEvent(event)).toBe(false);
+    }
+  });
+});
+
+describe("HookResults builders (Claude Code compliant)", () => {
+  describe("continue", () => {
+    test("creates continue result without additional context", () => {
+      const result = HookResults.continue();
 
       expect(result).toEqual({
-        success: true,
-        message: undefined,
-        data: undefined,
+        continue: true,
+        additionalContext: undefined,
       });
     });
 
-    test("creates success result with message", () => {
-      const result = HookResults.success("Operation completed");
+    test("creates continue result with additional context", () => {
+      const result = HookResults.continue("Processing complete");
 
       expect(result).toEqual({
-        success: true,
-        message: "Operation completed",
-        data: undefined,
-      });
-    });
-
-    test("creates success result with message and data", () => {
-      const data = { count: 5, files: ["a.txt", "b.txt"] };
-      const result = HookResults.success("Files processed", data);
-
-      expect(result).toEqual({
-        success: true,
-        message: "Files processed",
-        data,
+        continue: true,
+        additionalContext: "Processing complete",
       });
     });
   });
 
-  describe("failure", () => {
-    test("creates failure result with message", () => {
-      const result = HookResults.failure("Something went wrong");
+  describe("allow", () => {
+    test("creates allow decision without reason", () => {
+      const result = HookResults.allow();
 
       expect(result).toEqual({
-        success: false,
-        message: "Something went wrong",
-        block: false,
-        data: undefined,
+        continue: true,
+        hookSpecificOutput: {
+          permissionDecision: "allow",
+          permissionDecisionReason: undefined,
+        },
       });
     });
 
-    test("creates blocking failure result", () => {
-      const result = HookResults.failure("Critical error", true);
+    test("creates allow decision with reason", () => {
+      const result = HookResults.allow("File is safe to access");
 
       expect(result).toEqual({
-        success: false,
-        message: "Critical error",
-        block: true,
-        data: undefined,
-      });
-    });
-
-    test("creates failure result with data", () => {
-      const data = { errorCode: "E001", details: "File not found" };
-      const result = HookResults.failure("File error", false, data);
-
-      expect(result).toEqual({
-        success: false,
-        message: "File error",
-        block: false,
-        data,
+        continue: true,
+        hookSpecificOutput: {
+          permissionDecision: "allow",
+          permissionDecisionReason: "File is safe to access",
+        },
       });
     });
   });
 
-  describe("block", () => {
-    test("creates blocking failure result", () => {
-      const result = HookResults.block("Security violation detected");
+  describe("deny", () => {
+    test("creates deny decision without reason", () => {
+      const result = HookResults.deny();
 
       expect(result).toEqual({
-        success: false,
-        message: "Security violation detected",
-        block: true,
+        continue: false,
+        stopReason: "blocked",
+        hookSpecificOutput: {
+          permissionDecision: "deny",
+          permissionDecisionReason: undefined,
+        },
+      });
+    });
+
+    test("creates deny decision with reason", () => {
+      const result = HookResults.deny("Access to sensitive file blocked");
+
+      expect(result).toEqual({
+        continue: false,
+        stopReason: "blocked",
+        hookSpecificOutput: {
+          permissionDecision: "deny",
+          permissionDecisionReason: "Access to sensitive file blocked",
+        },
       });
     });
   });
 
-  describe("skip", () => {
-    test("creates skip result with default message", () => {
-      const result = HookResults.skip();
+  describe("ask", () => {
+    test("creates ask decision without reason", () => {
+      const result = HookResults.ask();
 
       expect(result).toEqual({
-        success: true,
-        message: "Hook skipped",
+        continue: false,
+        hookSpecificOutput: {
+          permissionDecision: "ask",
+          permissionDecisionReason: undefined,
+        },
       });
     });
 
-    test("creates skip result with custom message", () => {
-      const result = HookResults.skip("Not applicable for this tool");
+    test("creates ask decision with reason", () => {
+      const result = HookResults.ask("Requires user confirmation");
 
       expect(result).toEqual({
-        success: true,
-        message: "Not applicable for this tool",
+        continue: false,
+        hookSpecificOutput: {
+          permissionDecision: "ask",
+          permissionDecisionReason: "Requires user confirmation",
+        },
       });
     });
   });
 
-  describe("warn", () => {
-    test("creates warning result with message", () => {
-      const result = HookResults.warn("Deprecated feature used");
+  describe("stop", () => {
+    test("creates stop result with reason", () => {
+      const result = HookResults.stop("Operation cancelled");
 
       expect(result).toEqual({
-        success: true,
-        message: "Deprecated feature used",
-        data: undefined,
+        continue: false,
+        stopReason: "Operation cancelled",
+      });
+    });
+  });
+
+  describe("suppress", () => {
+    test("creates suppress result without message", () => {
+      const result = HookResults.suppress();
+
+      expect(result).toEqual({
+        suppressOutput: true,
+        systemMessage: undefined,
       });
     });
 
-    test("creates warning result with data", () => {
-      const data = { deprecatedFeature: "oldApi", replacement: "newApi" };
-      const result = HookResults.warn("Deprecated API call", data);
+    test("creates suppress result with system message", () => {
+      const result = HookResults.suppress("Output suppressed for security");
 
       expect(result).toEqual({
-        success: true,
-        message: "Deprecated API call",
-        data,
+        suppressOutput: true,
+        systemMessage: "Output suppressed for security",
       });
     });
   });
@@ -280,33 +324,53 @@ describe("Type relationships", () => {
     expect(isHookEvent(hookEvent)).toBe(true);
     expect(isUserEvent(userEvent)).toBe(true);
   });
+
+  test("CompactEvent is subset of HookEvent", () => {
+    const compactEvent: CompactEvent = "PreCompact";
+    const hookEvent: HookEvent = compactEvent; // Should compile
+
+    expect(isHookEvent(hookEvent)).toBe(true);
+    expect(isCompactEvent(compactEvent)).toBe(true);
+  });
 });
 
-describe("HookResult interface", () => {
-  test("accepts minimal result", () => {
-    const result = { success: true };
-
-    // Should satisfy HookResult interface
-    expect(result.success).toBe(true);
+describe("HookResult interface (Claude Code compliant)", () => {
+  test("accepts minimal continue result", () => {
+    const result = { continue: true };
+    expect(result.continue).toBe(true);
   });
 
-  test("accepts complete result", () => {
+  test("accepts complete hook result", () => {
     const result = {
-      success: false,
-      message: "Error occurred",
-      block: true,
-      data: { errorCode: "E001" },
-      metadata: {
-        duration: 150,
-        timestamp: "2024-01-01T00:00:00Z",
-        hookVersion: "1.0.0",
+      continue: false,
+      stopReason: "blocked",
+      suppressOutput: true,
+      systemMessage: "Operation blocked by security policy",
+      hookSpecificOutput: {
+        permissionDecision: "deny",
+        permissionDecisionReason: "Access to sensitive data",
+      },
+      additionalContext: "Security audit log entry created",
+    };
+
+    expect(result.continue).toBe(false);
+    expect(result.stopReason).toBe("blocked");
+    expect(result.suppressOutput).toBe(true);
+    expect(result.systemMessage).toBe("Operation blocked by security policy");
+    expect(result.hookSpecificOutput?.permissionDecision).toBe("deny");
+    expect(result.additionalContext).toBe("Security audit log entry created");
+  });
+
+  test("accepts permission decision result", () => {
+    const result = {
+      continue: true,
+      hookSpecificOutput: {
+        permissionDecision: "allow",
+        permissionDecisionReason: "File access approved",
       },
     };
 
-    expect(result.success).toBe(false);
-    expect(result.message).toBe("Error occurred");
-    expect(result.block).toBe(true);
-    expect(result.data?.errorCode).toBe("E001");
-    expect(result.metadata?.duration).toBe(150);
+    expect(result.continue).toBe(true);
+    expect(result.hookSpecificOutput?.permissionDecision).toBe("allow");
   });
 });

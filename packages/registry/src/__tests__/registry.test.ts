@@ -26,10 +26,10 @@ const createMockPlugin = (
   version: "1.0.0",
   events,
   apply: async (_context: HookContext) => ({
-    success: true,
+    continue: true,
     pluginName: name,
     pluginVersion: "1.0.0",
-    message: `${name} executed`,
+    systemMessage: `${name} executed`,
   }),
   ...options,
 });
@@ -249,11 +249,11 @@ describe("PluginRegistry", () => {
     test("should stop on blocking failure", async () => {
       const blockingPlugin = createMockPlugin("blocking", ["PreToolUse"], {
         apply: async () => ({
-          success: false,
-          block: true,
+          continue: false,
+          stopReason: "blocked",
           pluginName: "blocking",
           pluginVersion: "1.0.0",
-          message: "Blocked",
+          systemMessage: "Blocked",
         }),
       });
       const normalPlugin = createMockPlugin("normal", ["PreToolUse"]);
@@ -266,17 +266,18 @@ describe("PluginRegistry", () => {
 
       expect(results).toHaveLength(1);
       expect(results[0]!.pluginName).toBe("blocking");
-      expect(results[0]!.success).toBe(false);
-      expect(results[0]!.block).toBe(true);
+      expect(results[0]!.continue).toBe(false);
+      expect(results[0]!.stopReason).toBe("blocked");
     });
 
     test("should continue on failure when configured", async () => {
       const failingPlugin = createMockPlugin("failing", ["PreToolUse"], {
         apply: async () => ({
-          success: false,
+          continue: false,
+          stopReason: "error",
           pluginName: "failing",
           pluginVersion: "1.0.0",
-          message: "Failed",
+          systemMessage: "Failed",
         }),
       });
       const normalPlugin = createMockPlugin("normal", ["PreToolUse"]);
@@ -290,8 +291,8 @@ describe("PluginRegistry", () => {
       });
 
       expect(results).toHaveLength(2);
-      expect(results[0]!.success).toBe(false);
-      expect(results[1]!.success).toBe(true);
+      expect(results[0]!.continue).toBe(false);
+      expect(results[1]!.continue !== false).toBe(true);
     });
 
     test("should handle plugin execution errors", async () => {
@@ -307,8 +308,8 @@ describe("PluginRegistry", () => {
       const results = await registry.execute(context);
 
       expect(results).toHaveLength(1);
-      expect(results[0]!.success).toBe(false);
-      expect(results[0]!.message).toContain("Plugin execution failed");
+      expect(results[0]!.continue).toBe(false);
+      expect(results[0]!.systemMessage).toContain("Plugin execution failed");
     });
   });
 

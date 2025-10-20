@@ -58,7 +58,7 @@ describe("HookRunner", () => {
         if (isToolHookContext(context)) {
           expect(context.toolName).toBe("Bash");
         }
-        return { success: true, message: "Hook executed" };
+        return { continue: true, systemMessage: "Hook executed" };
       };
 
       const runner = new HookRunner({
@@ -76,7 +76,7 @@ describe("HookRunner", () => {
         // Missing testInput
       });
 
-      const handler: HookHandler = async () => ({ success: true });
+      const handler: HookHandler = async () => ({ continue: true });
 
       await expect(runner.run(handler)).rejects.toThrow(
         "testInput is required when using test protocol"
@@ -109,7 +109,7 @@ describe("runTestHook", () => {
           expect(context.toolInput.file_path).toBe("/tmp/test.txt");
         }
       }
-      return { success: true, message: "File operation validated" };
+      return { continue: true, systemMessage: "File operation validated" };
     };
 
     await runTestHook(handler, mockInput, {
@@ -154,8 +154,8 @@ describe("runTestHook", () => {
     };
 
     const handler: HookHandler = async () => ({
-      success: true,
-      message: "Command completed",
+      continue: true,
+      systemMessage: "Command completed",
     });
 
     await runTestHook(handler, mockInput, { collectMetrics: true });
@@ -172,7 +172,7 @@ describe("runTestHook", () => {
 
 describe("createRunner", () => {
   test("should create a runner function", () => {
-    const handler: HookHandler = async () => ({ success: true });
+    const handler: HookHandler = async () => ({ continue: true });
     const runner = createRunner(handler, { exitProcess: false });
 
     expect(typeof runner).toBe("function");
@@ -182,7 +182,7 @@ describe("createRunner", () => {
     let executed = false;
     const handler: HookHandler = async () => {
       executed = true;
-      return { success: true };
+      return { continue: true };
     };
     const testRunner = createTestRunner(handler, { collectMetrics: false });
     await testRunner({
@@ -200,7 +200,7 @@ describe("createRunner", () => {
 
 describe("createTestRunner", () => {
   test("should create a test runner function", () => {
-    const handler: HookHandler = async () => ({ success: true });
+    const handler: HookHandler = async () => ({ continue: true });
     const testRunner = createTestRunner(handler, { timeout: 5000 });
 
     expect(typeof testRunner).toBe("function");
@@ -211,7 +211,7 @@ describe("createTestRunner", () => {
 
     const handler: HookHandler = async () => {
       handlerCalled = true;
-      return { success: true, message: "Test runner executed" };
+      return { continue: true, systemMessage: "Test runner executed" };
     };
 
     const testRunner = createTestRunner(handler, {
@@ -250,7 +250,7 @@ describe("Metrics utilities", () => {
       environment: {},
     };
 
-    const handler: HookHandler = async () => ({ success: true });
+    const handler: HookHandler = async () => ({ continue: true });
 
     // Clear any previous metrics
     clearExecutionMetrics();
@@ -274,7 +274,7 @@ describe("Metrics utilities", () => {
       environment: {},
     };
 
-    const handler: HookHandler = async () => ({ success: true });
+    const handler: HookHandler = async () => ({ continue: true });
 
     // Clear any previous metrics
     clearExecutionMetrics();
@@ -312,10 +312,11 @@ describe("Metrics utilities", () => {
       environment: {},
     };
 
-    const successHandler: HookHandler = async () => ({ success: true });
+    const successHandler: HookHandler = async () => ({ continue: true });
     const failureHandler: HookHandler = async () => ({
-      success: false,
-      message: "TIMEOUT_ERROR: Too slow",
+      continue: false,
+      stopReason: "error",
+      systemMessage: "TIMEOUT_ERROR: Too slow",
     });
 
     // Clear any previous metrics
@@ -352,7 +353,7 @@ describe("Metrics utilities", () => {
       environment: {},
     };
 
-    const handler: HookHandler = async () => ({ success: true });
+    const handler: HookHandler = async () => ({ continue: true });
 
     // Clear any previous metrics
     clearExecutionMetrics();
@@ -389,8 +390,9 @@ describe("Metrics utilities", () => {
     };
 
     const failureHandler: HookHandler = async () => ({
-      success: false,
-      message: "Test failure",
+      continue: false,
+      stopReason: "error",
+      systemMessage: "Test failure",
     });
 
     await runTestHook(failureHandler, mockInput, {
@@ -432,7 +434,7 @@ describe("Metrics utilities", () => {
       environment: {},
     };
 
-    const handler: HookHandler = async () => ({ success: true });
+    const handler: HookHandler = async () => ({ continue: true });
 
     await runTestHook(handler, mockInput1, {
       collectMetrics: true,
@@ -468,11 +470,18 @@ describe("Edge cases and error handling", () => {
       { handler: async () => false, expectedSuccess: false },
       { handler: async () => "success message", expectedSuccess: true },
       {
-        handler: async () => ({ success: true, message: "explicit success" }),
+        handler: async () => ({
+          continue: true,
+          systemMessage: "explicit success",
+        }),
         expectedSuccess: true,
       },
       {
-        handler: async () => ({ success: false, message: "explicit failure" }),
+        handler: async () => ({
+          continue: false,
+          stopReason: "error",
+          systemMessage: "explicit failure",
+        }),
         expectedSuccess: false,
       },
     ];
@@ -512,7 +521,7 @@ describe("Edge cases and error handling", () => {
 
     const slowHandler: HookHandler = async () => {
       await new Promise((resolve) => setTimeout(resolve, 200));
-      return { success: true };
+      return { continue: true };
     };
 
     // Should not throw even with timeout
@@ -522,7 +531,7 @@ describe("Edge cases and error handling", () => {
   });
 
   test("should handle malformed input deterministically", async () => {
-    const handler: HookHandler = async () => ({ success: true });
+    const handler: HookHandler = async () => ({ continue: true });
 
     // Helper to avoid repeated double-casts in tests
     const asRecord = (v: unknown): Record<string, unknown> =>

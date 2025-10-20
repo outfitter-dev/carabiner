@@ -175,8 +175,8 @@ export class SecurityScanner {
 
     if (findings.length === 0) {
       return {
-        success: true,
-        message: "No security issues detected",
+        continue: true,
+        systemMessage: "No security issues detected",
         metadata: { scanned: true, findings: [] },
       };
     }
@@ -194,7 +194,7 @@ export class SecurityScanner {
     return {
       success: !blocked,
       block: blocked,
-      message: this.reporter.generateMessage(findings, blocked),
+      systemMessage: this.reporter.generateMessage(findings, blocked),
       metadata: this.reporter.generateMetadata(findings, blocked),
     };
   }

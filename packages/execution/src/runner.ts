@@ -305,10 +305,10 @@ export async function runTestHooks(
       results.push({
         handler,
         result: {
-          success: false,
-          message:
+          continue: false,
+          stopReason: "error",
+          systemMessage:
             error instanceof Error ? error.message : "Handler execution failed",
-          block: true,
         },
         error: error instanceof Error ? error : new Error(String(error)),
       });
@@ -323,31 +323,35 @@ export async function runTestHooks(
  */
 function normalizeTestResult(result: unknown): HookResult {
   if (result === null || result === undefined) {
-    return { success: true };
+    return { continue: true };
   }
 
   if (typeof result === "boolean") {
     return {
-      success: result,
-      message: result ? "Handler completed" : "Handler returned false",
+      continue: result,
+      systemMessage: result ? "Handler completed" : "Handler returned false",
+      stopReason: result ? undefined : "blocked",
     };
   }
 
   if (typeof result === "string") {
-    return { success: true, message: result };
+    return { continue: true, systemMessage: result };
   }
 
   if (typeof result === "object" && result !== null) {
     const obj = result as Partial<HookResult>;
     return {
-      success: obj.success ?? true,
-      message: obj.message,
-      block: obj.block,
-      data: obj.data,
+      continue: obj.continue ?? true,
+      systemMessage: obj.systemMessage,
+      stopReason: obj.stopReason,
+      hookSpecificOutput: obj.hookSpecificOutput,
+      suppressOutput: obj.suppressOutput,
+      additionalContext: obj.additionalContext,
+      metadata: obj.metadata,
     };
   }
 
-  return { success: true, message: String(result) };
+  return { continue: true, systemMessage: String(result) };
 }
 
 /**

@@ -119,7 +119,7 @@ describe("MetricsCollector", () => {
       transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     };
 
-    const result = { success: true, message: "Test completed" };
+    const result = { continue: true, systemMessage: "Test completed" };
 
     const timing = {
       startTime: performance.now(),
@@ -170,7 +170,7 @@ describe("MetricsCollector", () => {
       toolInput: { command: "test" },
       transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     } as const;
-    const result = { success: true };
+    const result = { continue: true };
     const timing = {
       startTime: 0,
       endTime: 100,
@@ -204,7 +204,7 @@ describe("MetricsCollector", () => {
       toolInput: { command: "test" },
       transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     };
-    const result = { success: true };
+    const result = { continue: true };
     const timing = {
       startTime: 0,
       endTime: 100,
@@ -259,7 +259,7 @@ describe("MetricsCollector", () => {
     // Record successful execution
     collector.record(
       context,
-      { success: true, message: "Success 1" },
+      { continue: true, systemMessage: "Success 1" },
       {
         startTime: 0,
         endTime: 100,
@@ -273,9 +273,9 @@ describe("MetricsCollector", () => {
     collector.record(
       context,
       {
-        success: false,
-        message: "VALIDATION_ERROR: Invalid input",
-        block: true,
+        continue: false,
+        stopReason: "error",
+        systemMessage: "VALIDATION_ERROR: Invalid input",
       },
       {
         startTime: 0,
@@ -290,7 +290,7 @@ describe("MetricsCollector", () => {
     // Record another successful execution
     collector.record(
       context,
-      { success: true, message: "Success 2" },
+      { continue: true, systemMessage: "Success 2" },
       {
         startTime: 0,
         endTime: 150,
@@ -343,7 +343,7 @@ describe("MetricsCollector", () => {
       toolInput: { command: "test" },
       transcriptPath: createTranscriptPath("/tmp/transcript.md"),
     };
-    const result = { success: true };
+    const result = { continue: true };
     const timing = {
       startTime: 0,
       endTime: 100,

@@ -177,10 +177,13 @@ export function unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {
 export function fromHookResult(
   hookResult: HookResult
 ): Result<HookResult, Error> {
-  if (hookResult.success) {
+  // In Claude SDK v2, continue defaults to true if not specified
+  if (hookResult.continue !== false) {
     return success(hookResult);
   }
-  return failure(new Error(hookResult.message || "Hook execution failed"));
+  return failure(
+    new Error(hookResult.systemMessage || "Hook execution failed")
+  );
 }
 
 /**
@@ -192,15 +195,15 @@ export function fromHookResult(
 export function toHookResult<T>(result: Result<T, Error>): HookResult {
   if (isSuccess(result)) {
     return {
-      success: true,
-      message: "Execution completed successfully",
+      continue: true,
+      systemMessage: "Execution completed successfully",
     };
   }
 
   return {
-    success: false,
-    message: result.error.message,
-    block: true, // By default, execution failures should block
+    continue: false,
+    stopReason: "error",
+    systemMessage: result.error.message,
   };
 }
 

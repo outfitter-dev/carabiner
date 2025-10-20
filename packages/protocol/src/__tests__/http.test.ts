@@ -137,7 +137,7 @@ describe("HttpProtocol", () => {
     test("should store output for later response generation", async () => {
       const request = new Request("http://test.com", { method: "POST" });
       const protocol = new HttpProtocol(request);
-      const result = { continue: true, message: "Test success" };
+      const result = { continue: true, systemMessage: "Test success" };
 
       await protocol.writeOutput(result);
       const response = protocol.getResponse();
@@ -145,6 +145,7 @@ describe("HttpProtocol", () => {
       expect(response.status).toBe(200);
       const responseBody = await response.json();
       expect(responseBody).toMatchObject(result);
+      // normalizeHookResult adds success field for backward compatibility
       expect(responseBody.success).toBe(true);
     });
 
@@ -152,8 +153,8 @@ describe("HttpProtocol", () => {
       const request = new Request("http://test.com", { method: "POST" });
       const protocol = new HttpProtocol(request);
       const legacyResult = {
-        success: true,
-        message: "Legacy success",
+        continue: true,
+        systemMessage: "Legacy success",
       } satisfies HookResult;
 
       await protocol.writeOutput(legacyResult);
@@ -161,15 +162,20 @@ describe("HttpProtocol", () => {
 
       expect(response.status).toBe(200);
       const responseBody = await response.json();
-      expect(responseBody).toEqual({ ...legacyResult, continue: true });
+      // normalizeHookResult adds success field for backward compatibility
+      expect(responseBody).toEqual({
+        ...legacyResult,
+        continue: true,
+        success: true,
+      });
     });
 
     test("should return 400 when legacy success flag indicates failure", async () => {
       const request = new Request("http://test.com", { method: "POST" });
       const protocol = new HttpProtocol(request);
       const legacyFailure = {
-        success: false,
-        message: "Legacy failure",
+        continue: false,
+        systemMessage: "Legacy failure",
       } satisfies HookResult;
 
       await protocol.writeOutput(legacyFailure);
@@ -177,7 +183,12 @@ describe("HttpProtocol", () => {
 
       expect(response.status).toBe(400);
       const responseBody = await response.json();
-      expect(responseBody).toEqual({ ...legacyFailure, continue: false });
+      // normalizeHookResult adds success field for backward compatibility
+      expect(responseBody).toEqual({
+        ...legacyFailure,
+        continue: false,
+        success: false,
+      });
     });
 
     test("should store error for later response generation", async () => {
@@ -197,12 +208,15 @@ describe("HttpProtocol", () => {
     test("should return 400 for unsuccessful results", async () => {
       const request = new Request("http://test.com", { method: "POST" });
       const protocol = new HttpProtocol(request);
-      const result = { continue: false, message: "Test failure" };
+      const result = { continue: false, systemMessage: "Test failure" };
 
       await protocol.writeOutput(result);
       const response = protocol.getResponse();
 
       expect(response.status).toBe(400);
+      const responseBody = await response.json();
+      // normalizeHookResult adds success field for backward compatibility
+      expect(responseBody.success).toBe(false);
     });
 
     test("should include custom response headers", async () => {

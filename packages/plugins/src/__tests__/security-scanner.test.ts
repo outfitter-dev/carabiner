@@ -51,14 +51,14 @@ describe("Security Scanner Plugin", () => {
       } as any;
 
       const result = await securityScannerPlugin.apply(context);
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
     });
 
     test("should handle empty commands", async () => {
       const context = createBashContext("");
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
     });
   });
 
@@ -76,9 +76,9 @@ describe("Security Scanner Plugin", () => {
         const context = createBashContext(command);
         const result = await securityScannerPlugin.apply(context);
 
-        expect(result.success).toBe(false);
-        expect(result.block).toBe(true);
-        expect(result.message).toContain("Security issues found");
+        expect(result.continue).toBe(false);
+        expect(result.stopReason).toBe("blocked");
+        expect(result.systemMessage).toContain("Security issues found");
       }
     });
 
@@ -94,8 +94,8 @@ describe("Security Scanner Plugin", () => {
         const context = createBashContext(command);
         const result = await securityScannerPlugin.apply(context);
 
-        expect(result.success).toBe(true);
-        expect(result.message).toContain("No security issues");
+        expect(result.continue).not.toBe(false);
+        expect(result.systemMessage).toContain("No security issues");
       }
     });
 
@@ -111,7 +111,7 @@ describe("Security Scanner Plugin", () => {
         const context = createBashContext(command);
         const result = await securityScannerPlugin.apply(context);
 
-        expect(result.success).toBe(false);
+        expect(result.continue).toBe(false);
         expect(result.metadata?.findings).toBeInstanceOf(Array);
       }
     });
@@ -129,8 +129,8 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/config.js", content);
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(false);
-      expect(result.block).toBe(true);
+      expect(result.continue).toBe(false);
+      expect(result.stopReason).toBe("blocked");
       expect(result.metadata?.findings).toBeInstanceOf(Array);
       expect(
         (result.metadata?.findings as any[]).some(
@@ -148,7 +148,7 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/aws-config.js", content);
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(false);
+      expect(result.continue).toBe(false);
       expect(result.metadata?.findings).toBeInstanceOf(Array);
     });
 
@@ -162,8 +162,8 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/key.pem", content);
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(false);
-      expect(result.block).toBe(true);
+      expect(result.continue).toBe(false);
+      expect(result.stopReason).toBe("blocked");
     });
 
     test("should detect hardcoded passwords", async () => {
@@ -178,7 +178,7 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/db-config.js", content);
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(false);
+      expect(result.continue).toBe(false);
       expect(result.metadata?.highFindings).toBeGreaterThan(0);
     });
 
@@ -190,7 +190,7 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/auth.js", content);
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(false);
+      expect(result.continue).toBe(false);
       expect(result.metadata?.highFindings).toBeGreaterThan(0);
     });
 
@@ -203,7 +203,7 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/database.js", content);
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(false);
+      expect(result.continue).toBe(false);
       expect(result.metadata?.findings).toBeInstanceOf(Array);
     });
 
@@ -219,8 +219,8 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/crypto.js", content);
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(true); // Medium severity by default
-      expect(result.message).toContain("Security issues found");
+      expect(result.continue).not.toBe(false); // Medium severity by default
+      expect(result.systemMessage).toContain("Security issues found");
     });
 
     test("should detect insecure HTTP URLs", async () => {
@@ -232,7 +232,7 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/api.js", content);
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(true); // Low severity by default
+      expect(result.continue).not.toBe(false); // Low severity by default
       expect(result.metadata?.findings).toBeInstanceOf(Array);
     });
 
@@ -246,8 +246,8 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/server.js", content);
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(false);
-      expect(result.block).toBe(true);
+      expect(result.continue).toBe(false);
+      expect(result.stopReason).toBe("blocked");
     });
 
     test("should allow safe code", async () => {
@@ -262,8 +262,8 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/secure.js", content);
       const result = await securityScannerPlugin.apply(context);
 
-      expect(result.success).toBe(true);
-      expect(result.message).toContain("No security issues");
+      expect(result.continue).not.toBe(false);
+      expect(result.systemMessage).toContain("No security issues");
     });
   });
 
@@ -280,8 +280,8 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/api.js", content);
       const result = await securityScannerPlugin.apply(context, config);
 
-      expect(result.success).toBe(true);
-      expect(result.message).toContain("No security issues");
+      expect(result.continue).not.toBe(false);
+      expect(result.systemMessage).toContain("No security issues");
     });
 
     test("should respect blocking configuration", async () => {
@@ -297,8 +297,8 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/config.js", content);
       const result = await securityScannerPlugin.apply(context, config);
 
-      expect(result.success).toBe(true);
-      expect(result.message).toContain("Security issues found");
+      expect(result.continue).not.toBe(false);
+      expect(result.systemMessage).toContain("Security issues found");
     });
 
     test("should use custom security rules", async () => {
@@ -322,8 +322,8 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/company.js", content);
       const result = await securityScannerPlugin.apply(context, config);
 
-      expect(result.success).toBe(false);
-      expect(result.block).toBe(true);
+      expect(result.continue).toBe(false);
+      expect(result.stopReason).toBe("blocked");
       expect(result.metadata?.findings).toBeInstanceOf(Array);
     });
 
@@ -338,12 +338,12 @@ describe("Security Scanner Plugin", () => {
       // Should scan .js files
       const jsContext = createWriteContext("/test/config.js", content);
       const jsResult = await securityScannerPlugin.apply(jsContext, config);
-      expect(jsResult.success).toBe(false);
+      expect(jsResult.continue).toBe(false);
 
       // Should skip .test.js files
       const testContext = createWriteContext("/test/config.test.js", content);
       const testResult = await securityScannerPlugin.apply(testContext, config);
-      expect(testResult.success).toBe(true);
+      expect(testResult.continue).not.toBe(false);
       expect(testResult.metadata?.skipped).toBe(true);
     });
 
@@ -356,8 +356,8 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/large.js", largeContent);
       const result = await securityScannerPlugin.apply(context, config);
 
-      expect(result.success).toBe(true);
-      expect(result.message).toContain("too large");
+      expect(result.continue).not.toBe(false);
+      expect(result.systemMessage).toContain("too large");
     });
 
     test("should disable scanning when configured", async () => {
@@ -370,7 +370,7 @@ describe("Security Scanner Plugin", () => {
       const context = createWriteContext("/test/config.js", content);
       const result = await securityScannerPlugin.apply(context, config);
 
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
     });
   });
 
@@ -431,7 +431,7 @@ describe("Security Scanner Plugin", () => {
       const result = await securityScannerPlugin.apply(context, config);
 
       // Should not crash, should continue with other rules
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
     });
 
     test("should handle file read errors gracefully", async () => {
@@ -453,7 +453,7 @@ describe("Security Scanner Plugin", () => {
       const result = await securityScannerPlugin.apply(context);
 
       // Should not crash
-      expect(result.success).toBe(true);
+      expect(result.continue).not.toBe(false);
     });
   });
 });

@@ -218,9 +218,9 @@ export class HookExecutor {
     } catch (error) {
       // Catch-all for any unhandled errors
       const errorResult: HookResult = {
-        success: false,
-        message: `Unhandled execution error: ${error instanceof Error ? error.message : String(error)}`,
-        block: true,
+        continue: false,
+        stopReason: "error",
+        systemMessage: `Unhandled execution error: ${error instanceof Error ? error.message : String(error)}`,
       };
 
       if (executionContext && error instanceof Error) {
@@ -304,10 +304,10 @@ export class HookExecutor {
       return this.normalizeResult(result, context);
     } catch (error) {
       return {
-        success: false,
-        message:
+        continue: false,
+        stopReason: context.event === "PreToolUse" ? "blocked" : "error",
+        systemMessage:
           error instanceof Error ? error.message : "Handler execution failed",
-        block: context.event === "PreToolUse", // Block pre-tool-use by default on errors
       };
     }
   }
@@ -323,27 +323,28 @@ export class HookExecutor {
     // Handle null/undefined results
     if (result === null || result === undefined) {
       return {
-        success: true,
-        message: "Handler completed successfully",
+        continue: true,
+        systemMessage: "Handler completed successfully",
       };
     }
 
     // Handle primitive boolean results
     if (typeof result === "boolean") {
       return {
-        success: result,
-        message: result
+        continue: result,
+        systemMessage: result
           ? "Handler completed successfully"
           : "Handler returned false",
-        block: !result && context.event === "PreToolUse",
+        stopReason:
+          !result && context.event === "PreToolUse" ? "blocked" : undefined,
       };
     }
 
     // Handle string results
     if (typeof result === "string") {
       return {
-        success: true,
-        message: result,
+        continue: true,
+        systemMessage: result,
       };
     }
 
@@ -352,19 +353,24 @@ export class HookExecutor {
       const obj = result as Partial<HookResult>;
 
       return {
-        success: obj.success ?? true,
-        message: obj.message || "Handler completed successfully",
-        block:
-          obj.block ??
-          (obj.success === false && context.event === "PreToolUse"),
-        data: obj.data,
+        continue: obj.continue ?? true,
+        systemMessage: obj.systemMessage || "Handler completed successfully",
+        stopReason:
+          obj.stopReason ??
+          (obj.continue === false && context.event === "PreToolUse"
+            ? "blocked"
+            : undefined),
+        hookSpecificOutput: obj.hookSpecificOutput,
+        suppressOutput: obj.suppressOutput,
+        additionalContext: obj.additionalContext,
+        metadata: obj.metadata,
       };
     }
 
     // Fallback for other types
     return {
-      success: true,
-      message: String(result),
+      continue: true,
+      systemMessage: String(result),
     };
   }
 
@@ -404,24 +410,33 @@ export class HookExecutor {
    */
   private validateResult(result: HookResult): Result<HookResult, Error> {
     try {
-      // Validate success flag when present
-      if (result.success !== undefined && typeof result.success !== "boolean") {
+      // Validate continue flag when present
+      if (
+        result.continue !== undefined &&
+        typeof result.continue !== "boolean"
+      ) {
         return failure(
-          new ValidationError("Result success must be boolean if present")
+          new ValidationError("Result continue must be boolean if present")
         );
       }
 
-      // Validate message field
-      if (result.message !== undefined && typeof result.message !== "string") {
+      // Validate systemMessage field
+      if (
+        result.systemMessage !== undefined &&
+        typeof result.systemMessage !== "string"
+      ) {
         return failure(
-          new ValidationError("Result message must be string if present")
+          new ValidationError("Result systemMessage must be string if present")
         );
       }
 
-      // Validate block field
-      if (result.block !== undefined && typeof result.block !== "boolean") {
+      // Validate stopReason field
+      if (
+        result.stopReason !== undefined &&
+        typeof result.stopReason !== "string"
+      ) {
         return failure(
-          new ValidationError("Result block must be boolean if present")
+          new ValidationError("Result stopReason must be string if present")
         );
       }
 
@@ -487,9 +502,9 @@ export class HookExecutor {
       }
 
       // Additional semantic validation
-      if (result.success === false && !result.message) {
+      if (result.continue === false && !result.systemMessage) {
         return failure(
-          new ValidationError("Failed results should include an error message")
+          new ValidationError("Failed results should include a systemMessage")
         );
       }
 
@@ -570,12 +585,8 @@ export class HookExecutor {
         memoryBefore,
         memoryAfter
       );
-      const wasSuccessful =
-        typeof result.success === "boolean"
-          ? result.success
-          : result.block === true
-            ? false
-            : result.continue !== false;
+      // In Claude SDK v2, continue defaults to true if not specified
+      const wasSuccessful = result.continue !== false;
       this.logger.completeExecution(
         executionContext,
         wasSuccessful,
@@ -596,8 +607,11 @@ export class HookExecutor {
     executionContext: HookExecutionContext | null
   ): Promise<void> {
     // Try to write error to protocol
-    if (result.message) {
-      const error = new ExecutionError(result.message, "EXECUTION_FAILED");
+    if (result.systemMessage) {
+      const error = new ExecutionError(
+        result.systemMessage,
+        "EXECUTION_FAILED"
+      );
       await this.writeError(error);
     }
 
@@ -625,16 +639,16 @@ export class HookExecutor {
         memoryAfter
       );
       const error = new ExecutionError(
-        result.message || "Hook execution failed",
+        result.systemMessage || "Hook execution failed",
         "EXECUTION_FAILED"
       );
       this.logger.failExecution(executionContext, error, metrics);
     } else {
       // Log generic failure if no execution context
       this.logger.error("Hook execution failed without context", {
-        message: result.message,
-        success: result.success,
-        block: result.block,
+        systemMessage: result.systemMessage,
+        continue: result.continue,
+        stopReason: result.stopReason,
       });
     }
   }

@@ -250,9 +250,9 @@ const securityGuardHook: HookHandler = (context): HookResult => {
         }
 
         return {
-          success: false,
-          block: true,
-          message: `Security violation:\n${validation.issues.map((i) => `• ${i}`).join("\n")}`,
+          continue: false,
+          stopReason: "blocked",
+          systemMessage: `Security violation:\n${validation.issues.map((i) => `• ${i}`).join("\n")}`,
         };
       }
     }
@@ -266,9 +266,9 @@ const securityGuardHook: HookHandler = (context): HookResult => {
 
     if (!validation.safe) {
       return {
-        success: false,
-        block: true,
-        message: `Security violation: ${validation.issue}`,
+        continue: false,
+        stopReason: "blocked",
+        systemMessage: `Security violation: ${validation.issue}`,
       };
     }
   }
@@ -281,14 +281,14 @@ const securityGuardHook: HookHandler = (context): HookResult => {
 
     if (!validation.safe) {
       return {
-        success: false,
-        block: true,
-        message: `Security violation: ${validation.issue}`,
+        continue: false,
+        stopReason: "blocked",
+        systemMessage: `Security violation: ${validation.issue}`,
       };
     }
   }
   return {
-    success: true,
+    continue: true,
   };
 };
 
