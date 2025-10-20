@@ -12,6 +12,8 @@ export {
   hook,
   middleware,
 } from "./builder";
+// Export context factories and environment utilities
+export * from "./context";
 // Export production logging system
 export * from "./logging";
 // Export provider adapters and registry helpers
