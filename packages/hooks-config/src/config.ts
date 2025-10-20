@@ -4,9 +4,9 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { access, constants } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import type {
-  HookConfiguration,
   HookEvent,
   ToolHookConfig,
   ToolName,
@@ -14,6 +14,305 @@ import type {
 import { getEnvVar } from "@carabiner/hooks-core";
 // Note: Error management lives in a separate package. To avoid build-order
 // coupling here, we use a local error type and keep integration optional.
+
+/**
+ * Multi-hook configuration interfaces for Claude Code compliance
+ */
+
+/**
+ * Multi-hook configuration structure - supports multiple hooks per event
+ * while maintaining backwards compatibility with legacy map-based configs.
+ */
+export type HookConfigurationValue =
+  | HookConfigItem[]
+  | ToolHookConfig
+  | Partial<Record<ToolName, ToolHookConfig>>;
+
+export type MultiHookConfiguration = Partial<
+  Record<HookEvent, HookConfigItem[]>
+>;
+
+export type HookConfiguration = Partial<
+  Record<HookEvent, HookConfigurationValue>
+>;
+
+/**
+ * Configuration item for a specific event with optional matcher
+ */
+export type HookConfigItem = {
+  matcher?: string; // Optional matcher pattern
+  enabled?: boolean;
+  hooks: HookCommand[];
+};
+
+/**
+ * Hook command configuration
+ */
+export type HookCommand = {
+  type: "command";
+  command: string;
+  timeout?: number; // Default 60000ms
+  enabled?: boolean;
+};
+
+/**
+ * Enum for PreCompact trigger types
+ */
+export enum PreCompactTrigger {
+  Manual = "manual",
+  Auto = "auto",
+}
+
+/**
+ * Enum for SessionStart trigger types
+ */
+export enum SessionStartTrigger {
+  Startup = "startup",
+  Resume = "resume",
+  Clear = "clear",
+  Compact = "compact",
+}
+
+/**
+ * Matcher resolver with MCP support
+ */
+export class MatcherResolver {
+  // MCP tool name pattern - allows underscores in provider and tool names
+  private static MCP_PATTERN = /^mcp__([^_]+(?:_[^_]+)*)__(.+)$/;
+
+  static matches(pattern: string, toolName: string): boolean {
+    // Wildcard matcher
+    if (pattern === "*") {
+      return true;
+    }
+
+    // MCP tool exact match (no wildcards for MCP)
+    if (MatcherResolver.MCP_PATTERN.test(toolName)) {
+      return pattern === toolName; // Exact match only
+    }
+
+    // Regular expression matcher
+    if (pattern.startsWith("/") && pattern.endsWith("/")) {
+      const regex = new RegExp(pattern.slice(1, -1));
+      return regex.test(toolName);
+    }
+
+    // Literal match
+    return pattern === toolName;
+  }
+
+  // Validate MCP tool names
+  static validateMcpToolName(name: string): boolean {
+    return MatcherResolver.MCP_PATTERN.test(name);
+  }
+}
+
+/**
+ * Match enum-based triggers for special events
+ */
+export function matchesEnumTrigger(
+  pattern: string,
+  trigger: string,
+  validEnums: string[]
+): boolean {
+  // For enum-based events, pattern must be exact enum value
+  if (!validEnums.includes(pattern)) {
+    throw new Error(
+      `Invalid matcher "${pattern}". Must be one of: ${validEnums.join(", ")}`
+    );
+  }
+  return pattern === trigger;
+}
+
+/**
+ * Check if a command/script is executable
+ */
+export async function isExecutable(command: string): Promise<boolean> {
+  try {
+    // Extract the command name (first part before arguments)
+    const [commandName] = command.trim().split(/\s+/);
+
+    if (!commandName) {
+      return false;
+    }
+
+    // For commands like 'bun run script.ts', check if 'bun' is available
+    // This is a simplified check - in real implementation, you'd want to
+    // check PATH and resolve full paths
+    if (["bun", "node", "npm", "yarn", "pnpm", "bash"].includes(commandName)) {
+      return true;
+    }
+
+    // For file paths, check if the file exists and is executable
+    try {
+      // biome-ignore lint/suspicious/noBitwiseOperators: F_OK and X_OK are bitwise flags for file access
+      await access(commandName, constants.F_OK | constants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validate configuration at startup
+ */
+export async function validateConfiguration(
+  config: HookConfiguration = {}
+): Promise<void> {
+  for (const [eventName, value] of Object.entries(config)) {
+    if (!Array.isArray(value)) {
+      continue;
+    }
+
+    for (const item of value) {
+      // Validate matchers based on event type
+      if (eventName === "PreCompact" && item.matcher) {
+        const validTriggers = Object.values(PreCompactTrigger);
+        if (!validTriggers.includes(item.matcher as any)) {
+          throw new Error(
+            `PreCompact matcher must be one of: ${validTriggers.join(", ")}`
+          );
+        }
+      }
+
+      if (eventName === "SessionStart" && item.matcher) {
+        const validTriggers = Object.values(SessionStartTrigger);
+        if (!validTriggers.includes(item.matcher as any)) {
+          throw new Error(
+            `SessionStart matcher must be one of: ${validTriggers.join(", ")}`
+          );
+        }
+      }
+
+      if (item.enabled !== undefined && typeof item.enabled !== "boolean") {
+        throw new Error(
+          "Hook config item enabled must be a boolean if provided"
+        );
+      }
+
+      // Validate hook commands exist and are executable
+      for (const hook of item.hooks) {
+        if (hook.enabled !== undefined && typeof hook.enabled !== "boolean") {
+          throw new Error("Hook command enabled must be a boolean if provided");
+        }
+        if (!(await isExecutable(hook.command))) {
+          throw new Error(
+            `Hook command not found or not executable: ${hook.command}`
+          );
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Execute hooks for a specific event sequentially
+ */
+export async function executeHooksForEvent(
+  event: { type: HookEvent; toolName?: string; trigger?: string },
+  config: HookConfiguration = {}
+): Promise<void> {
+  const eventConfigs = config[event.type];
+
+  if (!Array.isArray(eventConfigs) || eventConfigs.length === 0) {
+    return;
+  }
+
+  for (const configItem of eventConfigs) {
+    if (configItem.enabled === false) {
+      continue;
+    }
+    // Check if matcher applies
+    if (configItem.matcher && !matchesEvent(configItem.matcher, event)) {
+      continue;
+    }
+
+    // Execute hooks sequentially
+    for (const hook of configItem.hooks) {
+      if (hook.enabled === false) {
+        continue;
+      }
+      await executeHook(hook, event);
+    }
+  }
+}
+
+/**
+ * Check if event matches the given matcher pattern
+ */
+function matchesEvent(
+  pattern: string,
+  event: { type: HookEvent; toolName?: string; trigger?: string }
+): boolean {
+  // For tool-based events, match against tool name
+  if (event.toolName) {
+    return MatcherResolver.matches(pattern, event.toolName);
+  }
+
+  // For enum-based events, match against trigger
+  if (event.trigger) {
+    if (event.type === "PreCompact") {
+      return matchesEnumTrigger(
+        pattern,
+        event.trigger,
+        Object.values(PreCompactTrigger)
+      );
+    }
+    if (event.type === "SessionStart") {
+      return matchesEnumTrigger(
+        pattern,
+        event.trigger,
+        Object.values(SessionStartTrigger)
+      );
+    }
+  }
+
+  // Default to no match if no specific matcher logic applies
+  return false;
+}
+
+/**
+ * Execute a single hook (placeholder implementation)
+ */
+async function executeHook(
+  hook: HookCommand,
+  _event: { type: HookEvent; toolName?: string; trigger?: string }
+): Promise<void> {
+  // This would be implemented by the execution engine
+  // For now, this is a placeholder that validates the hook structure
+  if (!hook.command || typeof hook.command !== "string") {
+    throw new Error("Hook command is required and must be a string");
+  }
+
+  // Timeout defaults to 60000ms if not specified
+  const timeout = hook.timeout ?? 60_000;
+  if (timeout < 0) {
+    throw new Error("Hook timeout must be non-negative");
+  }
+}
+
+/**
+ * Legacy configuration interfaces for backward compatibility
+ */
+
+/**
+ * Hook configuration for a specific tool (legacy)
+ */
+/**
+ * Legacy complete hook configuration structure
+ */
+/**
+ * Legacy complete hook configuration structure
+ */
+export type LegacyHookConfiguration = Partial<
+  Record<
+    HookEvent,
+    ToolHookConfig | Partial<Record<ToolName, ToolHookConfig>> | undefined
+  >
+>;
 
 /**
  * @deprecated Use ConfigurationError from @outfitter/error-management instead
@@ -66,7 +365,7 @@ export type EnvironmentHookConfiguration = {
 };
 
 /**
- * Extended hook configuration with metadata
+ * Extended hook configuration with metadata (updated for multi-hook support)
  */
 export interface ExtendedHookConfiguration extends HookConfiguration {
   $schema?: string;
@@ -88,12 +387,13 @@ export const CONFIG_PATHS = {
 } as const;
 
 /**
- * Default hook configuration
+ * Default hook configuration (backward compatible format)
  */
 export const DEFAULT_CONFIG: ExtendedHookConfiguration = {
   $schema: "https://carabiner.outfitter.dev/schema.json",
   version: "1.0.0",
 
+  // Use traditional format directly for backward compatibility
   PreToolUse: {
     Bash: {
       command: "bun run hooks/pre-tool-use.ts",
@@ -110,7 +410,7 @@ export const DEFAULT_CONFIG: ExtendedHookConfiguration = {
       timeout: 3000,
       enabled: true,
     },
-  },
+  } as any, // Type assertion to allow legacy format
 
   PostToolUse: {
     Write: {
@@ -128,19 +428,19 @@ export const DEFAULT_CONFIG: ExtendedHookConfiguration = {
       timeout: 10_000,
       enabled: true,
     },
-  },
+  } as any, // Type assertion to allow legacy format
 
   SessionStart: {
     command: "bun run hooks/session-start.ts",
     timeout: 10_000,
     enabled: true,
-  },
+  } as any, // Type assertion to allow legacy format
 
   UserPromptSubmit: {
     command: "bun run hooks/user-prompt-submit.ts",
     timeout: 5000,
     enabled: false,
-  },
+  } as any, // Type assertion to allow legacy format
 
   templates: {
     typescript: {
@@ -179,6 +479,82 @@ export const DEFAULT_CONFIG: ExtendedHookConfiguration = {
 };
 
 /**
+ * Example multi-hook configuration
+ * This demonstrates the new configuration format
+ */
+export const EXAMPLE_MULTI_HOOK_CONFIG: HookConfiguration = {
+  PreToolUse: [
+    {
+      matcher: "Write",
+      hooks: [
+        {
+          type: "command",
+          command: "bun run hooks/security-check.ts",
+          timeout: 30_000,
+        },
+        { type: "command", command: "bun run hooks/pre-write.ts" },
+      ],
+    },
+    {
+      matcher: "mcp__filesystem__read_file",
+      hooks: [
+        { type: "command", command: "bun run hooks/validate-mcp-read.ts" },
+      ],
+    },
+    {
+      matcher: "*", // Catch-all for other tools
+      hooks: [{ type: "command", command: "bun run hooks/pre-tool-use.ts" }],
+    },
+  ],
+
+  PostToolUse: [
+    {
+      matcher: "Write",
+      hooks: [
+        {
+          type: "command",
+          command: "bun run hooks/post-write.ts",
+          timeout: 30_000,
+        },
+      ],
+    },
+    {
+      matcher: "Edit",
+      hooks: [
+        {
+          type: "command",
+          command: "bun run hooks/post-edit.ts",
+          timeout: 30_000,
+        },
+      ],
+    },
+  ],
+
+  SessionStart: [
+    {
+      matcher: "startup",
+      hooks: [{ type: "command", command: "bun run hooks/session-startup.ts" }],
+    },
+    {
+      matcher: "resume",
+      hooks: [{ type: "command", command: "bun run hooks/session-resume.ts" }],
+    },
+  ],
+
+  UserPromptSubmit: [
+    {
+      hooks: [
+        {
+          type: "command",
+          command: "bun run hooks/user-prompt-submit.ts",
+          timeout: 5000,
+        },
+      ],
+    },
+  ],
+};
+
+/**
  * Configuration manager class
  */
 export class ConfigManager {
@@ -191,12 +567,41 @@ export class ConfigManager {
   constructor(private readonly workspacePath: string) {}
 
   /**
+   * Deep clone an object to ensure immutability
+   */
+  private deepClone<T>(obj: T): T {
+    if (obj === null || typeof obj !== "object") {
+      return obj;
+    }
+
+    if (obj instanceof Date) {
+      return new Date(obj.getTime()) as T;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.deepClone(item)) as T;
+    }
+
+    const cloned = {} as T;
+    for (const key in obj) {
+      if (Object.hasOwn(obj, key)) {
+        cloned[key] = this.deepClone(obj[key]);
+      }
+    }
+
+    return cloned;
+  }
+
+  /**
    * Private setter method to assign readonly config property
    */
   private setConfig(config: ExtendedHookConfiguration | null): void {
+    // Deep clone the config to ensure immutability
+    const clonedConfig = config ? this.deepClone(config) : null;
+
     // Use Object.defineProperty to set readonly property
     Object.defineProperty(this, "config", {
-      value: config,
+      value: clonedConfig,
       writable: false,
       configurable: true,
     });
@@ -415,13 +820,18 @@ export class ConfigManager {
   }
 
   /**
-   * Update configuration
+   * Update configuration (immutable)
    */
   async updateConfig(
     updates: Partial<ExtendedHookConfiguration>
   ): Promise<ExtendedHookConfiguration> {
     const current = this.getConfig();
-    const updated = this.deepMerge<ExtendedHookConfiguration>(current, updates);
+    // Deep clone the current config to ensure immutability
+    const currentClone = this.deepClone(current);
+    const updated = this.deepMerge<ExtendedHookConfiguration>(
+      currentClone,
+      updates
+    );
 
     if (this.configPath) {
       const format = this.getFormatFromPath(this.configPath);
@@ -433,6 +843,7 @@ export class ConfigManager {
 
   /**
    * Get hook configuration for specific event and tool
+   * Handles both legacy and new multi-hook configurations
    */
   getHookConfig(event: HookEvent, tool?: ToolName): ToolHookConfig | undefined {
     const config = this.getConfig();
@@ -442,10 +853,43 @@ export class ConfigManager {
       return;
     }
 
+    if (Array.isArray(eventConfig)) {
+      // For new format, try to find a matching config item
+      if (tool) {
+        const matchingItem = eventConfig.find(
+          (item) => !item.matcher || MatcherResolver.matches(item.matcher, tool)
+        );
+        const firstHook = matchingItem?.hooks?.[0];
+        if (firstHook) {
+          const itemEnabled = matchingItem?.enabled ?? true;
+          const hookEnabled = firstHook.enabled ?? true;
+          return {
+            command: firstHook.command,
+            timeout: firstHook.timeout ?? 60_000,
+            enabled: itemEnabled && hookEnabled,
+          };
+        }
+      } else {
+        const firstHook = eventConfig.at(0)?.hooks?.[0];
+        if (firstHook) {
+          const itemEnabled = eventConfig.at(0)?.enabled ?? true;
+          const hookEnabled = firstHook.enabled ?? true;
+          return {
+            command: firstHook.command,
+            timeout: firstHook.timeout ?? 60_000,
+            enabled: itemEnabled && hookEnabled,
+          };
+        }
+      }
+      return;
+    }
+
+    // Handle legacy format
     // For events that support tool-specific configuration
     if (
       tool &&
       typeof eventConfig === "object" &&
+      !Array.isArray(eventConfig) &&
       !("command" in eventConfig)
     ) {
       const toolConfig = (eventConfig as Record<string, ToolHookConfig>)[tool];
@@ -453,7 +897,11 @@ export class ConfigManager {
     }
 
     // For events with single configuration
-    if (typeof eventConfig === "object" && "command" in eventConfig) {
+    if (
+      typeof eventConfig === "object" &&
+      !Array.isArray(eventConfig) &&
+      "command" in eventConfig
+    ) {
       return eventConfig as ToolHookConfig;
     }
 
@@ -462,6 +910,7 @@ export class ConfigManager {
 
   /**
    * Set hook configuration for specific event and tool
+   * Updated to handle both legacy and new multi-hook configurations
    */
   async setHookConfig(
     event: HookEvent,
@@ -470,19 +919,141 @@ export class ConfigManager {
   ): Promise<void> {
     const currentConfig = this.getConfig();
     const nextConfig = { ...currentConfig } as ExtendedHookConfiguration;
+    const existing = nextConfig[event];
 
     if (typeof toolOrConfig === "string" && config) {
-      // Setting tool-specific config - create immutable copy
-      const existing = nextConfig[event];
-      const eventMap =
-        existing && typeof existing === "object" && !("command" in existing)
-          ? { ...existing }
-          : {};
-      eventMap[toolOrConfig] = { ...config };
-      (nextConfig as Record<string, unknown>)[event] = eventMap;
+      // Setting tool-specific config
+      if (Array.isArray(existing)) {
+        const newConfig = existing.map((item) => ({
+          ...item,
+          hooks: item.hooks.map((hook) => ({ ...hook })),
+        }));
+        // Find existing config item for this tool or create new one
+        const itemIndex = newConfig.findIndex(
+          (item) => item.matcher === toolOrConfig
+        );
+
+        if (itemIndex >= 0) {
+          const currentItem = newConfig[itemIndex];
+          if (currentItem) {
+            const itemEnabled = config.enabled ?? currentItem.enabled ?? true;
+            const updatedHooks = [...currentItem.hooks];
+
+            if (updatedHooks.length > 0 && updatedHooks[0]) {
+              updatedHooks[0] = {
+                ...updatedHooks[0],
+                type: "command",
+                command: config.command,
+                timeout: config.timeout,
+                enabled: config.enabled ?? updatedHooks[0].enabled ?? true,
+              };
+            } else {
+              updatedHooks.push({
+                type: "command",
+                command: config.command,
+                timeout: config.timeout,
+                enabled: itemEnabled,
+              });
+            }
+
+            newConfig[itemIndex] = {
+              ...currentItem,
+              enabled: itemEnabled,
+              hooks: updatedHooks,
+            };
+          } else {
+            newConfig[itemIndex] = {
+              matcher: toolOrConfig,
+              enabled: config.enabled ?? true,
+              hooks: [
+                {
+                  type: "command",
+                  command: config.command,
+                  timeout: config.timeout,
+                  enabled: config.enabled ?? true,
+                },
+              ],
+            };
+          }
+        } else {
+          // Add new item
+          newConfig.push({
+            matcher: toolOrConfig,
+            enabled: config.enabled ?? true,
+            hooks: [
+              {
+                type: "command",
+                command: config.command,
+                timeout: config.timeout,
+                enabled: config.enabled ?? true,
+              },
+            ],
+          });
+        }
+        nextConfig[event] = newConfig;
+      } else {
+        const eventMap =
+          existing &&
+          typeof existing === "object" &&
+          !Array.isArray(existing) &&
+          !("command" in existing)
+            ? { ...existing }
+            : {};
+        eventMap[toolOrConfig] = { ...config };
+        nextConfig[event] = eventMap as HookConfigurationValue;
+      }
     } else if (typeof toolOrConfig === "object" && "command" in toolOrConfig) {
-      // Setting event-level config - create immutable copy
-      (nextConfig as Record<string, unknown>)[event] = { ...toolOrConfig };
+      // Setting event-level config
+      if (Array.isArray(existing)) {
+        const newConfig = existing.map((item) => ({
+          ...item,
+          hooks: item.hooks.map((hook) => ({ ...hook })),
+        }));
+
+        const defaultIndex = newConfig.findIndex((item) => !item.matcher);
+        const defaultEnabled = toolOrConfig.enabled ?? true;
+        const baseHook = {
+          type: "command" as const,
+          command: toolOrConfig.command,
+          timeout: toolOrConfig.timeout,
+          enabled: toolOrConfig.enabled ?? true,
+        };
+
+        if (defaultIndex >= 0) {
+          const currentDefault = newConfig[defaultIndex];
+          if (currentDefault) {
+            const updatedHooks = [...currentDefault.hooks];
+            if (updatedHooks.length > 0) {
+              updatedHooks[0] = {
+                ...updatedHooks[0],
+                ...baseHook,
+              };
+            } else {
+              updatedHooks.push(baseHook);
+            }
+
+            newConfig[defaultIndex] = {
+              ...currentDefault,
+              enabled: toolOrConfig.enabled ?? currentDefault.enabled ?? true,
+              hooks: updatedHooks,
+            };
+          } else {
+            newConfig[defaultIndex] = {
+              enabled: defaultEnabled,
+              hooks: [baseHook],
+            };
+          }
+        } else {
+          newConfig.push({
+            enabled: defaultEnabled,
+            hooks: [baseHook],
+          });
+        }
+
+        nextConfig[event] = newConfig as HookConfigurationValue;
+      } else {
+        nextConfig[event] = { ...toolOrConfig } as HookConfigurationValue;
+      }
     }
 
     await this.updateConfig(nextConfig);
@@ -490,6 +1061,7 @@ export class ConfigManager {
 
   /**
    * Enable/disable hook
+   * Updated to handle both legacy and new multi-hook configurations
    */
   async toggleHook(
     event: HookEvent,
@@ -503,24 +1075,64 @@ export class ConfigManager {
     }
 
     // Create immutable copy of config with enabled toggle
-    const nextHookConfig = { ...hookConfig, enabled };
-
     if (tool) {
-      // Tool-specific config update
-      const eventMap = {
-        ...(currentConfig[event] as Record<string, ToolHookConfig>),
-      };
-      eventMap[tool] = nextHookConfig;
-      await this.updateConfig({
-        ...currentConfig,
-        [event]: eventMap,
-      } as ExtendedHookConfiguration);
+      const eventConfig = currentConfig[event];
+      if (Array.isArray(eventConfig)) {
+        const updated = eventConfig.map((item) => {
+          if (item.matcher && !MatcherResolver.matches(item.matcher, tool)) {
+            return item;
+          }
+          return {
+            ...item,
+            enabled,
+            hooks: item.hooks.map((hook) => ({
+              ...hook,
+              enabled,
+            })),
+          };
+        });
+        await this.updateConfig({
+          ...currentConfig,
+          [event]: updated,
+        } as ExtendedHookConfiguration);
+      } else {
+        const nextHookConfig = { ...hookConfig, enabled };
+        const eventMap = {
+          ...(eventConfig as Record<string, ToolHookConfig>),
+        };
+        eventMap[tool] = nextHookConfig;
+        await this.updateConfig({
+          ...currentConfig,
+          [event]: eventMap,
+        } as ExtendedHookConfiguration);
+      }
     } else {
-      // Event-level config update
-      await this.updateConfig({
-        ...currentConfig,
-        [event]: nextHookConfig,
-      } as ExtendedHookConfiguration);
+      const eventConfig = currentConfig[event];
+      if (Array.isArray(eventConfig)) {
+        const updated = eventConfig.map((item) => {
+          if (item.matcher) {
+            return item;
+          }
+          return {
+            ...item,
+            enabled,
+            hooks: item.hooks.map((hook) => ({
+              ...hook,
+              enabled,
+            })),
+          };
+        });
+        await this.updateConfig({
+          ...currentConfig,
+          [event]: updated,
+        } as ExtendedHookConfiguration);
+      } else {
+        const nextHookConfig = { ...hookConfig, enabled };
+        await this.updateConfig({
+          ...currentConfig,
+          [event]: nextHookConfig,
+        } as ExtendedHookConfiguration);
+      }
     }
   }
 
@@ -559,6 +1171,55 @@ export class ConfigManager {
         if ("command" in eventConfig) {
           // Single hook config
           hooks[event] = this.processHookConfig(eventConfig);
+        } else if (Array.isArray(eventConfig)) {
+          // Multi-hook array format
+          const eventHooks: unknown[] = [];
+          for (const item of eventConfig) {
+            if (item && typeof item === "object" && "hooks" in item) {
+              const hookConfigItem = item as {
+                hooks: unknown[];
+                matcher?: string;
+                enabled?: boolean;
+              };
+
+              if (hookConfigItem.enabled === false) {
+                continue;
+              }
+
+              const processedHooks = hookConfigItem.hooks
+                .filter(
+                  (hook): hook is ToolHookConfig =>
+                    !!(
+                      hook &&
+                      typeof hook === "object" &&
+                      "command" in hook &&
+                      (hook as HookCommand).enabled !== false
+                    )
+                )
+                .map((hook) => this.processHookConfig(hook));
+
+              if (processedHooks.length === 0) {
+                continue;
+              }
+
+              const serializedItem: Record<string, unknown> = {
+                hooks: processedHooks,
+              };
+
+              if (hookConfigItem.matcher) {
+                serializedItem.matcher = hookConfigItem.matcher;
+              }
+
+              if (hookConfigItem.enabled !== undefined) {
+                serializedItem.enabled = hookConfigItem.enabled;
+              }
+
+              eventHooks.push(serializedItem);
+            }
+          }
+          if (eventHooks.length > 0) {
+            hooks[event] = eventHooks;
+          }
         } else {
           // Tool-specific configs
           const eventHooks: Record<string, unknown> = {};
@@ -595,6 +1256,10 @@ export class ConfigManager {
 
     if (config.detached !== undefined) {
       processed.detached = config.detached;
+    }
+
+    if (config.enabled !== undefined) {
+      processed.enabled = config.enabled;
     }
 
     return processed;
@@ -947,6 +1612,23 @@ export default config;
     if (config && typeof config === "object" && "command" in config) {
       // Single hook config
       this.validateToolHookConfig(config, `${event} hook`);
+    } else if (Array.isArray(config)) {
+      // Multi-hook array format
+      for (let i = 0; i < config.length; i++) {
+        const item = config[i];
+        if (item && typeof item === "object" && "hooks" in item) {
+          const hookConfigItem = item as { hooks: unknown[] };
+          if (Array.isArray(hookConfigItem.hooks)) {
+            for (let j = 0; j < hookConfigItem.hooks.length; j++) {
+              const hookCommand = hookConfigItem.hooks[j];
+              this.validateToolHookConfig(
+                hookCommand,
+                `${event}[${i}].hooks[${j}]`
+              );
+            }
+          }
+        }
+      }
     } else if (config && typeof config === "object") {
       // Tool-specific configs
       for (const [tool, toolConfig] of Object.entries(config)) {
