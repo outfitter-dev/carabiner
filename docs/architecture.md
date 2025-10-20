@@ -152,7 +152,7 @@ The monorepo is organized into focused packages with clear responsibilities:
 
 ### Core Packages
 
-#### @outfitter/hooks-core
+#### @carabiner/hooks-core
 
 **Purpose**: Runtime engine, type system, and core APIs
 
@@ -166,7 +166,7 @@ The monorepo is organized into focused packages with clear responsibilities:
 
 **Dependencies**: None (foundation package)
 
-#### @outfitter/hooks-cli
+#### @carabiner/hooks-cli
 
 **Purpose**: Command-line tools and project scaffolding
 
@@ -180,7 +180,7 @@ The monorepo is organized into focused packages with clear responsibilities:
 
 **Dependencies**: hooks-core, hooks-config
 
-#### @outfitter/hooks-validators
+#### @carabiner/hooks-validators
 
 **Purpose**: Security validation and environment-specific rules
 
@@ -193,7 +193,7 @@ The monorepo is organized into focused packages with clear responsibilities:
 
 **Dependencies**: hooks-core
 
-#### @outfitter/hooks-testing
+#### @carabiner/hooks-testing
 
 **Purpose**: Testing framework and utilities
 
@@ -206,7 +206,7 @@ The monorepo is organized into focused packages with clear responsibilities:
 
 **Dependencies**: hooks-core
 
-#### @outfitter/hooks-config
+#### @carabiner/hooks-config
 
 **Purpose**: Configuration management and templates
 

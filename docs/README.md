@@ -60,10 +60,10 @@ carabiner --version
 
 ```bash
 # Install core library for TypeScript development
-npm install @outfitter/hooks-core
+npm install @carabiner/hooks-core
 
 # Install full development suite
-npm install @outfitter/hooks-core @outfitter/hooks-cli @outfitter/hooks-validators @outfitter/hooks-testing
+npm install @carabiner/hooks-core @carabiner/hooks-cli @carabiner/hooks-validators @carabiner/hooks-testing
 ```
 
 ### 2. Initialize Your Project
@@ -81,7 +81,7 @@ carabiner init --template minimal
 ```typescript
 #!/usr/bin/env bun
 
-import { runClaudeHook, HookResults } from '@outfitter/hooks-core';
+import { runClaudeHook, HookResults } from '@carabiner/hooks-core';
 
 runClaudeHook(async (context) => {
   console.log(`🔍 Validating ${context.toolName} usage`);
@@ -300,7 +300,7 @@ Start with these comprehensive guides:
 
 **TypeScript errors?**
 
-1. Check imports: `import { runClaudeHook } from '@outfitter/hooks-core'`
+1. Check imports: `import { runClaudeHook } from '@carabiner/hooks-core'`
 2. Verify types: `bun run typecheck`
 3. Use type guards: `if (isBashToolInput(context.toolInput)) { ... }`
 
