@@ -1,0 +1,214 @@
+{
+  "$schema": "https://raw.githubusercontent.com/outfitter-dev/carabiner/main/docs/schema.json",
+  "name": "basic-pretooluse-hook",
+  "description": "Basic PreToolUse hook configuration for Claude Code compliance",
+  "version": "1.0.0",
+  "claude_code_version": ">=0.4.0",
+
+  "hooks": {
+    "PreToolUse": {
+      "*": {
+        "command": "bun hooks/basic-security.ts",
+        "timeout": 5000,
+        "description": "Universal security validation for all tools"
+      },
+      "Bash": {
+        "command": "bun hooks/bash-validator.ts",
+        "timeout": 3000,
+        "description": "Bash command security validation"
+      },
+      "Write": {
+        "command": "bun hooks/file-security.ts",
+        "timeout": 2000,
+        "description": "File write security validation"
+      },
+      "Edit": {
+        "command": "bun hooks/file-security.ts",
+        "timeout": 2000,
+        "description": "File edit security validation"
+      },
+      "MultiEdit": {
+        "command": "bun hooks/file-security.ts",
+        "timeout": 3000,
+        "description": "Multi-file edit security validation"
+      }
+    }
+  },
+
+  "examples": {
+    "basic_security_hook": {
+      "description": "Basic security hook that validates tool usage",
+      "file": "hooks/basic-security.ts",
+      "content": [
+        "#!/usr/bin/env bun",
+        "",
+        "import { runClaudeHook, HookResults } from '@carabiner/hooks-core';",
+        "",
+        "runClaudeHook(async (context) => {",
+        "  console.log(`🔍 Security validation for ${context.toolName}`);",
+        "",
+        "  // Universal security checks",
+        "  if (context.sessionId.includes('test')) {",
+        "    console.log('⚠️ Test session detected - enhanced monitoring');",
+        "  }",
+        "",
+        "  return HookResults.success('Security validation passed');",
+        "});"
+      ]
+    },
+
+    "bash_validator_hook": {
+      "description": "Bash-specific security validation",
+      "file": "hooks/bash-validator.ts",
+      "content": [
+        "#!/usr/bin/env bun",
+        "",
+        "import { runClaudeHook, HookResults } from '@carabiner/hooks-core';",
+        "",
+        "runClaudeHook(async (context) => {",
+        "  if (context.toolName !== 'Bash') {",
+        "    return HookResults.success('Not a Bash command');",
+        "  }",
+        "",
+        "  const { command } = context.toolInput as { command: string };",
+        "  console.log(`🐚 Validating Bash command: ${command}`);",
+        "",
+        "  // Define dangerous patterns",
+        "  const dangerousPatterns = [",
+        "    /rm\\s+-rf\\s+\\//, // rm -rf /",
+        "    /sudo\\s+rm/, // sudo rm",
+        "    /curl.*\\|\\s*sh/, // curl | sh",
+        "    /wget.*\\|\\s*sh/, // wget | sh",
+        "    /dd\\s+if=/, // dd if=",
+        "    /:\\(\\)\\{.*\\}/, // fork bombs",
+        "    /chmod\\s+777/, // dangerous permissions",
+        "    /chown\\s+root/, // changing ownership to root",
+        "  ];",
+        "",
+        "  for (const pattern of dangerousPatterns) {",
+        "    if (pattern.test(command)) {",
+        "      return HookResults.block(",
+        "        `🚫 Blocked dangerous command: ${command}`,",
+        "        `Matched pattern: ${pattern.source}`",
+        "      );",
+        "    }",
+        "  }",
+        "",
+        "  // Check for package managers in production",
+        "  if (process.env.NODE_ENV === 'production') {",
+        "    const packageManagerPatterns = [",
+        "      /npm\\s+install/, /yarn\\s+add/, /bun\\s+add/,",
+        "      /pip\\s+install/, /apt\\s+install/, /yum\\s+install/",
+        "    ];",
+        "",
+        "    for (const pattern of packageManagerPatterns) {",
+        "      if (pattern.test(command)) {",
+        "        return HookResults.custom({",
+        "          continue: true,",
+        "          systemMessage: '⚠️ Package installation in production - please review carefully'",
+        "        });",
+        "      }",
+        "    }",
+        "  }",
+        "",
+        "  return HookResults.success('Bash command validated');",
+        "});"
+      ]
+    },
+
+    "file_security_hook": {
+      "description": "File operation security validation",
+      "file": "hooks/file-security.ts",
+      "content": [
+        "#!/usr/bin/env bun",
+        "",
+        "import { runClaudeHook, HookResults } from '@carabiner/hooks-core';",
+        "",
+        "runClaudeHook(async (context) => {",
+        "  const supportedTools = ['Write', 'Edit', 'MultiEdit'];",
+        "  if (!supportedTools.includes(context.toolName)) {",
+        "    return HookResults.success('Not a file operation');",
+        "  }",
+        "",
+        "  // Extract file path based on tool type",
+        "  let filePath: string;",
+        "  if (context.toolName === 'Write') {",
+        "    filePath = (context.toolInput as { file_path: string }).file_path;",
+        "  } else if (context.toolName === 'Edit') {",
+        "    filePath = (context.toolInput as { file_path: string }).file_path;",
+        "  } else if (context.toolName === 'MultiEdit') {",
+        "    filePath = (context.toolInput as { file_path: string }).file_path;",
+        "  } else {",
+        "    return HookResults.success('Unknown tool type');",
+        "  }",
+        "",
+        "  console.log(`📝 Validating file operation: ${context.toolName} on ${filePath}`);",
+        "",
+        "  // Sensitive file patterns",
+        "  const sensitivePatterns = [",
+        "    /\\.env$/, /\\.key$/, /\\.pem$/, /\\.crt$/,",
+        "    /\\.ssh\\//, /\\.aws\\//, /\\.config\\/git/,",
+        "    /password/, /secret/, /token/, /api[_-]?key/i,",
+        "    /node_modules\\//, /\\.git\\//",
+        "  ];",
+        "",
+        "  for (const pattern of sensitivePatterns) {",
+        "    if (pattern.test(filePath)) {",
+        "      return HookResults.block(",
+        "        `🚫 Access denied to sensitive file: ${filePath}`,",
+        "        'This file may contain sensitive information'",
+        "      );",
+        "    }",
+        "  }",
+        "",
+        "  // Configuration files - warn but allow",
+        "  const configPatterns = [",
+        "    /\\.json$/, /\\.yaml$/, /\\.yml$/, /\\.toml$/,",
+        "    /\\.config\\.(js|ts)$/, /package\\.json$/",
+        "  ];",
+        "",
+        "  for (const pattern of configPatterns) {",
+        "    if (pattern.test(filePath)) {",
+        "      return HookResults.custom({",
+        "        continue: true,",
+        "        systemMessage: `⚠️ Modifying configuration file: ${filePath} - please review carefully`",
+        "      });",
+        "    }",
+        "  }",
+        "",
+        "  // System files - block",
+        "  const systemPatterns = [",
+        "    /^\\/etc\\//, /^\\/var\\//, /^\\/usr\\//, /^\\/sys\\//, /^\\/proc\\//",
+        "  ];",
+        "",
+        "  for (const pattern of systemPatterns) {",
+        "    if (pattern.test(filePath)) {",
+        "      return HookResults.block(",
+        "        `🚫 System file access denied: ${filePath}`,",
+        "        'System files are protected from modification'",
+        "      );",
+        "    }",
+        "  }",
+        "",
+        "  return HookResults.success('File operation validated');",
+        "});"
+      ]
+    }
+  },
+
+  "documentation": {
+    "overview": "This configuration provides basic PreToolUse hook examples for Claude Code compliance.",
+    "setup": [
+      "1. Copy the hook files to your project's hooks/ directory",
+      "2. Make sure you have @carabiner/hooks-core installed",
+      "3. Update your Claude Code settings to reference these hooks",
+      "4. Test with: echo '{...}' | bun hooks/basic-security.ts"
+    ],
+    "testing": [
+      "Test each hook individually with sample JSON input",
+      "Verify dangerous commands are blocked",
+      "Check that safe commands are allowed",
+      "Test timeout handling and error scenarios"
+    ]
+  }
+}
