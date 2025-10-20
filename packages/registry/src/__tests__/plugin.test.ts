@@ -22,7 +22,7 @@ describe("Plugin Utilities", () => {
         version: "1.0.0",
         events: ["PreToolUse"],
         apply: async () => ({
-          success: true,
+          continue: true,
           pluginName: "test",
           pluginVersion: "1.0.0",
         }),
@@ -36,7 +36,7 @@ describe("Plugin Utilities", () => {
         version: "1.0.0",
         events: ["PreToolUse"],
         apply: async () => ({
-          success: true,
+          continue: true,
           pluginName: "test",
           pluginVersion: "1.0.0",
         }),
@@ -50,7 +50,7 @@ describe("Plugin Utilities", () => {
         name: "test-plugin",
         events: ["PreToolUse"],
         apply: async () => ({
-          success: true,
+          continue: true,
           pluginName: "test",
           pluginVersion: "1.0.0",
         }),
@@ -65,7 +65,7 @@ describe("Plugin Utilities", () => {
         version: "1.0.0",
         events: "PreToolUse", // Should be array
         apply: async () => ({
-          success: true,
+          continue: true,
           pluginName: "test",
           pluginVersion: "1.0.0",
         }),
@@ -106,8 +106,7 @@ describe("Plugin Utilities", () => {
     test("should return true for plugin result with additional fields", () => {
       const result: PluginResult = {
         continue: false,
-        stopReason: "blocked",
-        systemMessage: "Test failed",
+        stopReason: "Test failed",
         pluginName: "test-plugin",
         pluginVersion: "1.0.0",
         executionTime: 100,
@@ -117,14 +116,13 @@ describe("Plugin Utilities", () => {
       expect(isPluginResult(result)).toBe(true);
     });
 
-    test("should return true for plugin result with defaults (continue undefined means true)", () => {
-      const result = {
+    test("should return false for invalid plugin result - missing continue", () => {
+      const invalid = {
         pluginName: "test-plugin",
         pluginVersion: "1.0.0",
       };
 
-      // In Claude SDK v2, continue defaults to true if not specified
-      expect(isPluginResult(result)).toBe(true);
+      expect(isPluginResult(invalid)).toBe(false);
     });
 
     test("should return false for invalid plugin result - missing pluginName", () => {
@@ -158,7 +156,7 @@ describe("Plugin Utilities", () => {
 
       const hookResult = {
         continue: true,
-        systemMessage: "Test passed",
+        stopReason: "Test passed",
       };
 
       const pluginResult = createPluginResult(plugin, hookResult, 150, {
@@ -168,7 +166,7 @@ describe("Plugin Utilities", () => {
 
       expect(pluginResult).toEqual({
         continue: true,
-        systemMessage: "Test passed",
+        stopReason: "Test passed",
         pluginName: "test-plugin",
         pluginVersion: "1.0.0",
         executionTime: 150,

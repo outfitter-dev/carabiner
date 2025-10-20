@@ -1,0 +1,18 @@
+{
+  "environment": "development",
+  "startTime": "2025-09-24T17:44:02.049Z",
+  "endTime": "2025-09-24T17:44:02.049Z",
+  "totalDuration": 0,
+  "phases": [],
+  "overallSuccess": true,
+  "performanceMetrics": {
+    "avgTestDuration": 0,
+    "memoryUsage": {
+      "peak": 231054,
+      "average": 231054
+    },
+    "slowestTests": []
+  },
+  "timestamp": "2025-09-24T17:44:02.049Z",
+  "version": "0.1.0-alpha"
+}

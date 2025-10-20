@@ -436,10 +436,8 @@ export class PluginRegistry {
     execOptions: PluginExecutionOptions,
     _plugin: HookPlugin
   ): boolean {
-    // In Claude SDK v2, continue: false means the operation should be blocked
     if (
       result.continue === false &&
-      result.stopReason === "blocked" &&
       !(execOptions.continueOnFailure ?? false)
     ) {
       if (this.options.logLevel !== "silent") {
@@ -890,8 +888,7 @@ export class PluginRegistry {
 
     return {
       continue: false,
-      stopReason: "error",
-      systemMessage: `Plugin execution failed: ${error.message}`,
+      stopReason: `Plugin execution failed: ${error.message}`,
       pluginName: plugin.name,
       pluginVersion: plugin.version,
       metadata: { error: error.name, stack: error.stack },
@@ -925,7 +922,6 @@ export class PluginRegistry {
       }
 
       // Update success rate
-      // In Claude SDK v2, continue defaults to true if not specified
       if (result.continue !== false) {
         successCount++;
       }

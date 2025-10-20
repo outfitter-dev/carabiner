@@ -27,3 +27,13 @@ Removed committed `test-results/*` artifacts and added a dedicated protocol pars
 All MCP examples reference the real helpers and new tuple return shape (README, migration guide, troubleshooting, playground JSON). Compliance suite runs green (`bun test`).
 
 **Next:** feature branches should rebase onto this stack and drop redundant local patches. Add commit hashes once merged to `main`.
+
+## 2025-10-15 Progress
+
+- `gt/test-integration-add-Claude-Code-compliance-test-suite`: runtime vs permission helper split validated; `bun run check` clean.
+- `gt/feat-config-add-multi-hook-support-and-MCP-validation`: executor conflict + Biome negation fixes verified via `bun run check` and `bun test packages/hooks-config`.
+- `gt/feat-execution-implement-timeouts-exit-codes-and-JSON-handling`: executor conflict cleared; `bun run check` + `bun test packages/execution` green.
+- `gt/feat-protocol-handle-stop_hook_active-and-new-input-parsing`: lint clean and `bun test packages/protocol` green.
+- `gt/feat-context-add-environment-variables-and-new-context-fields`: updated snapshots for provider version; `bun test packages/hooks-core` all green.
+- `gt/feat-types-align-with-Claude-Code-SDK-types-and-schemas`: `bun run check` & `bun test packages/types` green.
+- Remaining legacy stash: `environment test cleanup changes` (older context cleanup work to revisit separately).

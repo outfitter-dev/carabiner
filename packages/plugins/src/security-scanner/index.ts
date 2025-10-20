@@ -498,7 +498,7 @@ function createErrorResult(
     continue: false,
     pluginName,
     pluginVersion,
-    systemMessage: `Security scan failed: ${errorMessage}`,
+    stopReason: `Security scan failed: ${errorMessage}`,
     metadata: { error: errorMessage },
   };
 }
@@ -637,7 +637,7 @@ async function scanFileOperation(
       continue: true,
       pluginName,
       pluginVersion,
-      systemMessage: `File too large to scan (${content.length} > ${config.maxFileSize} bytes)`,
+      stopReason: `File too large to scan (${content.length} > ${config.maxFileSize} bytes)`,
       metadata: { skipped: true, reason: "File too large" },
     };
   }
@@ -728,7 +728,7 @@ function processFindings(
       continue: true,
       pluginName,
       pluginVersion,
-      systemMessage: "No security issues detected",
+      stopReason: "No security issues detected",
       metadata: { scanned: true, findings: [] },
     };
   }
@@ -744,16 +744,16 @@ function processFindings(
   const highFindings = findings.filter((f) => f.severity === "high");
 
   const summary = formatFindings(findings);
-  const systemMessage = shouldBlock
+  const message = shouldBlock
     ? `🔒 Security issues found - operation blocked: ${summary}`
     : `⚠️  Security issues found: ${summary}`;
 
   return {
     continue: !shouldBlock,
-    stopReason: shouldBlock ? "blocked" : undefined,
+    stopReason: shouldBlock ? message : undefined,
+    additionalContext: shouldBlock ? undefined : message,
     pluginName,
     pluginVersion,
-    systemMessage,
     metadata: {
       findings: findings.map((f) => ({
         id: f.id,

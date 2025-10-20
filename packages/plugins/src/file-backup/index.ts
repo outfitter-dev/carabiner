@@ -547,11 +547,13 @@ async function processFileBackups(
 
   return {
     continue: !hasErrors,
-    stopReason: hasErrors ? "error" : undefined,
     pluginName,
     pluginVersion,
-    systemMessage: hasErrors
+    stopReason: hasErrors
       ? `Some backups failed: ${results.filter((r) => r.error).length}/${results.length}`
+      : undefined,
+    additionalContext: hasErrors
+      ? undefined
       : `Created ${results.filter((r) => r.backup).length} backups`,
     metadata: {
       backupResults: results,
