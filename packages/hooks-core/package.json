@@ -5,7 +5,7 @@
   "author": "Outfitter Dev <hello@outfitter.dev>",
   "bugs": "https://github.com/outfitter-dev/carabiner/issues",
   "dependencies": {
-    "@anthropic-ai/claude-code": "^1.0.115",
+    "@anthropic-ai/claude-code": "^2.0.22",
     "pino": "^9.8.0"
   },
   "devDependencies": {
