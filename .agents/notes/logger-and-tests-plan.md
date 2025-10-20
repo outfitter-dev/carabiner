@@ -62,6 +62,11 @@ The new work will sit on top of the stack to avoid re-ordering the existing Grap
 3. Reuse existing fixture data where possible to avoid duplication.
 4. Update `bun test` config if needed so the new specs run with the rest of the suite.
 
+### Status
+
+- ✅ Added `tests/spec/protocol-http.test.ts` covering request parsing, success/error responses, CORS handling, and factory creation
+- ✅ Added `tests/spec/execution-process.test.ts` verifying exit-code semantics (0/1/2) map to the expected `HookProcessResult`
+
 ## 3. Documentation & Example Alignment (`gt/docs-logger-alignment`)
 
 **Base branch:** `gt/tests-expand-fixtures`

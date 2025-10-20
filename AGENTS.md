@@ -1,6 +1,8 @@
 # AGENTS.md
 
-> **Current Work**: See `.agents/notes/hook-adapter-architecture.md` for the provider plugin architecture plan. Remove this line when the stack lands on `main`.
+> **Current Work**:
+> - Provider adapter rollout: `.agents/notes/hook-adapter-architecture.md`
+> - Logger & fixture plan (unified logger, fixtures, docs, lefthook): `.agents/notes/logger-and-tests-plan.md`
 
 ## About Matt
 
