@@ -1,0 +1,52 @@
+# CodeRabbit Configuration
+# Reference: https://docs.coderabbit.ai/reference/configuration
+# Last updated: 2025-10-20
+
+language: en-US
+early_access: true
+
+reviews:
+  profile: chill
+  review_status: false  # Stop posting "Review skipped" status comments
+  poem: false
+  in_progress_fortune: false
+  collapse_walkthrough: true
+  auto_title_instructions: "Conventional commit style"
+
+  auto_review:
+    enabled: true
+    drafts: false
+    labels:
+      - "!wip"  # Don't review PRs with 'wip' label
+    base_branches:
+      - "main"
+      - "fix/.*"
+      - "feat/.*"
+      - "gt/.*"      # Graphite stacked branches with slash prefix
+      - "gt-.*"      # Graphite stacked branches with dash prefix
+      - "cb-.*"      # Linear-generated branches starting with cb-
+      - ".*-cb-[0-9]+"  # Linear-generated branches like feature-cb-123
+
+  tools:
+    gitleaks:
+      enabled: true
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "/**/AGENTS.md"
+      - "/**/CLAUDE.md"
+      - "/.agents/rules/**/*.md"
+
+  linear:
+    usage: enabled
+    team_keys:
+      - "CB"    # Carabiner project team
+      - "ID"    # Outfitter team
+      - "MONO"  # Outfitter Monorepo team
+
+chat:
+  integrations:
+    linear:
+      usage: enabled
