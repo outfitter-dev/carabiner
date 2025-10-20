@@ -30,6 +30,7 @@ import {
   ProtocolOutputError,
   ProtocolParseError,
 } from "../interface";
+import { normalizeHookResult } from "./utils";
 
 /**
  * Configuration options for StdinProtocol
@@ -247,9 +248,10 @@ export class StdinProtocol implements HookProtocol {
    */
   async writeOutput(result: HookResult): Promise<void> {
     try {
+      const normalizedResult = normalizeHookResult(result);
       const output = this.options.prettyOutput
-        ? JSON.stringify(result, null, 2)
-        : JSON.stringify(result);
+        ? JSON.stringify(normalizedResult, null, 2)
+        : JSON.stringify(normalizedResult);
 
       process.stdout.write(output);
 

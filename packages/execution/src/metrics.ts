@@ -64,6 +64,8 @@ export type ExecutionMetrics = {
   readonly toolName?: string;
   /** Whether execution was successful */
   readonly success: boolean;
+  /** Whether execution requested continuation (Claude Code format) */
+  readonly continue?: boolean;
   /** Error code if execution failed */
   readonly errorCode?: string;
   /** Execution timing information */
@@ -267,13 +269,41 @@ export class MetricsCollector {
     if (!this.enabled) {
       return;
     }
-    const success = result.success !== false;
-    const message = "message" in result ? result.message : undefined;
+    let continueValue: boolean | undefined;
+    if ("continue" in result && typeof result.continue === "boolean") {
+      continueValue = result.continue;
+    } else if (
+      "success" in result &&
+      typeof (result as { success?: unknown }).success === "boolean"
+    ) {
+      continueValue = (result as { success: boolean }).success;
+    }
+
+    // In Claude SDK v2, continue defaults to true if not specified.
+    const success = continueValue !== false;
+    let message: string | undefined;
+    if (
+      "systemMessage" in result &&
+      typeof (result as { systemMessage?: unknown }).systemMessage === "string"
+    ) {
+      message = (result as { systemMessage: string }).systemMessage;
+    } else if (
+      "message" in result &&
+      typeof (result as { message?: unknown }).message === "string"
+    ) {
+      message = (result as { message: string }).message;
+    } else if (
+      "stopReason" in result &&
+      typeof (result as { stopReason?: unknown }).stopReason === "string"
+    ) {
+      message = (result as { stopReason: string }).stopReason;
+    }
     const metrics: ExecutionMetrics = {
       id: this.generateId(),
       event: context.event,
       toolName: "toolName" in context ? context.toolName : undefined,
       success,
+      continue: continueValue,
       errorCode: success ? undefined : this.extractErrorCode(message),
       timing,
       memoryBefore,

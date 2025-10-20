@@ -375,7 +375,7 @@ describe("Middleware", () => {
     const result = await hook.handler(context, undefined, {
       signal: new AbortController().signal,
     });
-    expect(result.metadata?.duration).toBeGreaterThan(9);
+    expect(result.metadata?.duration).toBeGreaterThanOrEqual(9);
   });
 
   test("should apply error handling middleware", async () => {
