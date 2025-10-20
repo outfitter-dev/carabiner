@@ -169,7 +169,7 @@ export type HookProcessResult = ExecutionResult & {
   readonly stopReason?: string;
 };
 
-export async function executeHook(
+export async function executeHookProcess(
   hook: Hook,
   context?: { event?: { type?: string } }
 ): Promise<HookProcessResult> {

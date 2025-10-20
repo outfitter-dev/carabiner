@@ -446,13 +446,22 @@ export class HookExecutor {
   private validateResult(result: HookResult): Result<HookResult, Error> {
     try {
       const legacyResult = result as Record<string, unknown>;
-      const legacySuccessValue = Object.hasOwn(legacyResult, "success")
+      const legacySuccessValue = Object.prototype.hasOwnProperty.call(
+        legacyResult,
+        "success"
+      )
         ? (legacyResult as { success?: unknown }).success
         : undefined;
-      const legacyMessageValue = Object.hasOwn(legacyResult, "message")
+      const legacyMessageValue = Object.prototype.hasOwnProperty.call(
+        legacyResult,
+        "message"
+      )
         ? (legacyResult as { message?: unknown }).message
         : undefined;
-      const legacyBlockValue = Object.hasOwn(legacyResult, "block")
+      const legacyBlockValue = Object.prototype.hasOwnProperty.call(
+        legacyResult,
+        "block"
+      )
         ? (legacyResult as { block?: unknown }).block
         : undefined;
 
@@ -745,6 +754,7 @@ export class HookExecutor {
         systemMessage: result.systemMessage,
         additionalContext: result.additionalContext,
         continue: result.continue,
+        suppressOutput: result.suppressOutput,
       });
     }
   }

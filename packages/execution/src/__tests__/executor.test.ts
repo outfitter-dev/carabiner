@@ -290,6 +290,14 @@ describe("HookExecutor", () => {
       transcriptPath: createTranscriptPath("/tmp/transcript.md"),
       cwd: createDirectoryPath("/tmp"),
       environment: { PATH: "/usr/bin" },
+      context: {
+        project_name: "test-project",
+        claude_version: "3.5-sonnet",
+        environment: {
+          CLAUDE_PROJECT_ID: "test-project-123",
+          CLAUDE_SESSION_ID: "test-session-123",
+        },
+      },
     };
     const context = createNotificationContext("SessionStart", baseOptions);
     let capturedOutput: HookResult | undefined;
