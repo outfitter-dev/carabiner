@@ -58,7 +58,13 @@ export type ToolName = LiteralUnion<
  * Hook execution result
  */
 export type HookResult = {
-  readonly success: boolean;
+  readonly success?: boolean;
+  readonly continue?: boolean;
+  readonly stopReason?: string;
+  readonly suppressOutput?: boolean;
+  readonly systemMessage?: string;
+  readonly hookSpecificOutput?: Record<string, unknown>;
+  readonly additionalContext?: string;
   readonly message?: string;
   readonly block?: boolean; // For PreToolUse hooks - true blocks tool execution
   readonly data?: Record<string, unknown>;

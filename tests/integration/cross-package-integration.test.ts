@@ -118,7 +118,12 @@ describe("Cross-Package Integration Tests", () => {
       const parsedConfig = JSON.parse(configContent);
 
       expect(parsedConfig).toEqual(config);
-      expect(parsedConfig.PreToolUse.Bash.command).toBe(
+      const preToolUse = parsedConfig.PreToolUse;
+      if (!preToolUse || Array.isArray(preToolUse) || "command" in preToolUse) {
+        throw new Error("Expected PreToolUse to be a tool map");
+      }
+
+      expect(preToolUse.Bash?.command).toBe(
         "bun run ./hooks/security-check.ts"
       );
     });
@@ -166,9 +171,19 @@ describe("Cross-Package Integration Tests", () => {
       const loadedConfig = await configManager.load();
 
       expect(loadedConfig.version).toBe("1.0.0");
-      expect(loadedConfig.PreToolUse).toBeDefined();
-      expect(loadedConfig.PreToolUse?.Bash).toBeDefined();
-      expect(loadedConfig.PreToolUse?.Bash?.timeout).toBe(5000);
+      const loadedPreToolUse = loadedConfig.PreToolUse;
+      expect(loadedPreToolUse).toBeDefined();
+
+      if (
+        !loadedPreToolUse ||
+        Array.isArray(loadedPreToolUse) ||
+        "command" in loadedPreToolUse
+      ) {
+        throw new Error("Expected PreToolUse to be a tool map");
+      }
+
+      expect(loadedPreToolUse.Bash).toBeDefined();
+      expect(loadedPreToolUse.Bash?.timeout).toBe(5000);
     });
 
     test("should execute hooks through hooks-core runtime", async () => {
@@ -340,8 +355,18 @@ export default async function(context) {
       const configManager = new ConfigManager(workspace.path);
       const loadedConfig = await configManager.load();
 
-      expect(loadedConfig.PreToolUse).toBeDefined();
-      expect(loadedConfig.PreToolUse?.Bash).toBeDefined();
+      const hookPreToolUse = loadedConfig.PreToolUse;
+      expect(hookPreToolUse).toBeDefined();
+
+      if (
+        !hookPreToolUse ||
+        Array.isArray(hookPreToolUse) ||
+        "command" in hookPreToolUse
+      ) {
+        throw new Error("Expected PreToolUse to be a tool map");
+      }
+
+      expect(hookPreToolUse.Bash).toBeDefined();
 
       // Verify metrics collection is available
       const initialMetrics = getExecutionStats();
@@ -399,7 +424,17 @@ export default async function(context) {
 
       // Configuration should load successfully even with failing hooks
       expect(loadedConfig).toBeDefined();
-      expect(loadedConfig.PreToolUse?.Bash?.command).toBe(
+
+      const failingPreToolUse = loadedConfig.PreToolUse;
+      if (
+        !failingPreToolUse ||
+        Array.isArray(failingPreToolUse) ||
+        "command" in failingPreToolUse
+      ) {
+        throw new Error("Expected PreToolUse to be a tool map");
+      }
+
+      expect(failingPreToolUse.Bash?.command).toBe(
         "bun run ./hooks/failing-hook.ts"
       );
     });

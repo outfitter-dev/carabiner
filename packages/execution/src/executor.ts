@@ -404,10 +404,10 @@ export class HookExecutor {
    */
   private validateResult(result: HookResult): Result<HookResult, Error> {
     try {
-      // Check required fields
-      if (typeof result.success !== "boolean") {
+      // Validate success flag when present
+      if (result.success !== undefined && typeof result.success !== "boolean") {
         return failure(
-          new ValidationError("Result must have boolean success field")
+          new ValidationError("Result success must be boolean if present")
         );
       }
 
@@ -425,8 +425,69 @@ export class HookExecutor {
         );
       }
 
+      if (
+        result.continue !== undefined &&
+        typeof result.continue !== "boolean"
+      ) {
+        return failure(
+          new ValidationError("Result continue must be boolean if present")
+        );
+      }
+
+      if (
+        result.stopReason !== undefined &&
+        typeof result.stopReason !== "string"
+      ) {
+        return failure(
+          new ValidationError("Result stopReason must be string if present")
+        );
+      }
+
+      if (
+        result.suppressOutput !== undefined &&
+        typeof result.suppressOutput !== "boolean"
+      ) {
+        return failure(
+          new ValidationError(
+            "Result suppressOutput must be boolean if present"
+          )
+        );
+      }
+
+      if (
+        result.systemMessage !== undefined &&
+        typeof result.systemMessage !== "string"
+      ) {
+        return failure(
+          new ValidationError("Result systemMessage must be string if present")
+        );
+      }
+
+      if (
+        result.hookSpecificOutput !== undefined &&
+        (typeof result.hookSpecificOutput !== "object" ||
+          result.hookSpecificOutput === null)
+      ) {
+        return failure(
+          new ValidationError(
+            "Result hookSpecificOutput must be an object if present"
+          )
+        );
+      }
+
+      if (
+        result.additionalContext !== undefined &&
+        typeof result.additionalContext !== "string"
+      ) {
+        return failure(
+          new ValidationError(
+            "Result additionalContext must be string if present"
+          )
+        );
+      }
+
       // Additional semantic validation
-      if (!(result.success || result.message)) {
+      if (result.success === false && !result.message) {
         return failure(
           new ValidationError("Failed results should include an error message")
         );
@@ -509,9 +570,15 @@ export class HookExecutor {
         memoryBefore,
         memoryAfter
       );
+      const wasSuccessful =
+        typeof result.success === "boolean"
+          ? result.success
+          : result.block === true
+            ? false
+            : result.continue !== false;
       this.logger.completeExecution(
         executionContext,
-        result.success,
+        wasSuccessful,
         metrics,
         result
       );
