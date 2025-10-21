@@ -375,6 +375,7 @@ describe("Middleware", () => {
     const result = await hook.handler(context, undefined, {
       signal: new AbortController().signal,
     });
+    // Use >= instead of > to avoid flaky failures in CI when timing is exactly 9ms
     expect(result.metadata?.duration).toBeGreaterThanOrEqual(9);
   });
 
