@@ -13,7 +13,7 @@
   "devDependencies": {
     "@types/bun": "*",
     "typescript": "^5.9.2",
-    "ultracite": "^5.3.4"
+    "ultracite": "^6.3.2"
   },
   "exports": {
     ".": {
