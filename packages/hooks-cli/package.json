@@ -11,7 +11,7 @@
     "@carabiner/hooks-config": "0.1.0-alpha",
     "@carabiner/hooks-core": "0.1.0-alpha",
     "@carabiner/hooks-validators": "0.1.0-alpha",
-    "@inquirer/prompts": "^7.2.1"
+    "@inquirer/prompts": "^8.2.0"
   },
   "devDependencies": {
     "@types/bun": "*",
