@@ -6,7 +6,7 @@
   "bugs": "https://github.com/outfitter-dev/carabiner/issues",
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.0.14",
-    "pino": "^9.8.0"
+    "pino": "^10.2.0"
   },
   "devDependencies": {
     "@carabiner/types": "0.1.0-alpha",
